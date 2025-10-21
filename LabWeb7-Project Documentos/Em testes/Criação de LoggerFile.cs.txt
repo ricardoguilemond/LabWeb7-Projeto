@@ -1,0 +1,74 @@
+
+
+/////////colocar em Extensions/Utils
+/*
+   USO:
+            try 
+            {
+            } catch
+            {
+               LoggerFile.Write("Erro teste erro");
+            }
+
+*/
+
+
+
+
+
+using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text;
+
+namespace CaminhoQualquerAcimaDeTudo.Utils
+{
+   public static class LoggerFile
+   {
+      private const string DefaultDirPath = "C:\\temp\\log";
+
+      private static void WriteLog(String line, String folderPath = DefaultDirPath, string methodName = "", string className = "", int lineNumber = 0)
+      {
+         try
+         {
+            if (!Directory.Exists(folderPath))
+            {
+               Directory.CreateDirectory(folderPath);
+            }
+            var filename = string.Format("Log_Rede_{0}.log", DateTime.Now.ToString("yyyy-MM-dd"));
+            var path = Path.Combine(folderPath, filename);
+            var fw = File.Open(path, FileMode.Append, FileAccess.Write);
+            var sw = new StreamWriter(fw, Encoding.UTF8);
+            var format = String.Format("{0} {1} -> {2}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.ffffttzzz"), className,
+                String.IsNullOrEmpty(methodName) ? "" : String.Format("{0}({1}) -> ", methodName, lineNumber));
+            sw.WriteLine(format + line);
+            sw.Flush();
+            sw.Close();
+         }
+         finally
+         {
+
+         }
+
+      }
+
+      public static void Write(Exception ex, String folderPath = DefaultDirPath, [CallerMemberName] string methodName = "", [CallerFilePath] string className = "", [CallerLineNumber] int lineNumber = 0)
+      {
+         if (ex != null)
+         {
+            Exception exInner = ex;
+            do
+            {
+               WriteLog(exInner.Message, folderPath, methodName, className, lineNumber);
+               WriteLog(exInner.StackTrace, folderPath, methodName, className, lineNumber);
+            } while ((exInner = exInner.InnerException) != null);
+         }
+      }
+
+      public static void Write(String line, String folderPath = DefaultDirPath, [CallerMemberName] string methodName = "", [CallerFilePath] string className = "", [CallerLineNumber] int lineNumber = 0)
+      {
+         WriteLog(line, folderPath, methodName, className, lineNumber);
+      }
+   }
+
+}

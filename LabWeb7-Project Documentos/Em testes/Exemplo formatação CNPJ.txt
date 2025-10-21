@@ -1,0 +1,44 @@
+        public static string Formatar(string texto, string mascara)
+        {
+            if (texto.Trim().Length == 0 || mascara.Length == 0)
+                return texto;
+
+            // Obter separadores.                
+            char[] Separadores = mascara.Replace("#", string.Empty).ToCharArray();
+            // Quebra máscara por grupo.
+            string[] Grupos = mascara.Split(Separadores);
+
+            // Prepara formato.
+            string Formato = "^";
+
+            foreach (string grp in Grupos)
+                Formato += string.Format(@"(\d{{{0}}})", grp.Length.ToString());
+
+            // Cria objeto de expressão regular.
+            Regex r = new Regex(Formato);
+            Match m = r.Match(texto);
+
+            // Montar retorno.
+            string Retorno = string.Empty;
+
+            for (int i = 1; i <= m.Groups.Count; i++)
+            {
+                Retorno += m.Groups[i].Value;
+
+                if (i < m.Groups.Count - 1)
+                    Retorno += Separadores[(i - 1) < Separadores.Length ? (i - 1) : Separadores.Length - 1];
+            }
+
+            if (Retorno.Equals(string.Empty))
+                return texto;
+
+            return Retorno;
+        }
+
+        public static String RemoveAcentuacao(this String value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : Encoding.ASCII.GetString(
+                Encoding.GetEncoding("Cyrillic").GetBytes(value)
+            );
+        }
+

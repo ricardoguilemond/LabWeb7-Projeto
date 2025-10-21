@@ -1,0 +1,31 @@
+Exemplo de query com MERGE:
+
+var sqlquery = "MERGE INTO tblFatFaturaGrupo T                                                          " +
+                         "USING                                                                                   " +
+                         "(                                                                                       " +
+                         "    SELECT nf.DataEnvioNF,                                                              " +
+                         "           nf.NumeroNF,                                                                 " +
+                         "           nf.CodigoVerificacao,                                                        " +
+                         "           fg.PK_CodigoFaturaGrupo                                                      " +
+                         "    FROM tblfatFaturaGrupoNF nf                                                         " +
+                         "         CROSS APPLY                                                                    " +
+                         "    (                                                                                   " +
+                         "        SELECT TOP 1 st.*                                                               " +
+                         "        FROM tblfatFaturaGrupoNF_X_StatusLog st                                         " +
+                         "        WHERE st.FK_fatFaturaGrupoNF = nf.PK_fatFaturaGrupoNF                           " +
+                         "        ORDER BY st.Data DESC                                                           " +
+                         "    ) st                                                                                " +
+                         "         JOIN tblFatFaturaGrupo fg ON fg.PK_CodigoFaturaGrupo = nf.FK_CodigoFaturaGrupo " +
+                         "    WHERE st.FK_fatFaturaGrupoNFStatus = " + (int)LoteNFStatus.PROCESSADO + "           " + //3 - Nota Gerada
+                         "    and (nf.CodigoVerificacao is not null)                                              " +
+                         "    and (fg.CodigoVerificacaoNFSE is null OR fg.CodigoVerificacaoNFSE<>nf.CodigoVerificacao)                             " +
+                         ") S                                                                                     " +
+                         "ON T.PK_CodigoFaturaGrupo = S.PK_CodigoFaturaGrupo                                      " +
+                         "    WHEN MATCHED                                                                        " +
+                         "    THEN UPDATE SET                                                                     " +
+                         "                    CodigoVerificacaoNFSE = S.CodigoVerificacao,                        " +
+                         "                    NumeroNota = S.NumeroNF,                                            " +
+                         "                    DataEmissaoNF = S.DataEnvioNF;                                       ";
+
+         db.Database.ExecuteSqlCommand(sqlquery);
+
