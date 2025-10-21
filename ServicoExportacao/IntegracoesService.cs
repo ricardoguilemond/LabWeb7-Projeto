@@ -8,33 +8,24 @@ namespace ServicoExportacao
 {
     public class IntegracaoService : IDisposable
     {
-        private Db db;
-        private readonly IConnectionService _connectionService;
-
-        public IntegracaoService(Db db, IConnectionService connectionService)
+        private readonly Db _db;
+        public IntegracaoService(Db db)
         {
-            this.db = db;
-            _connectionService = connectionService;
+            _db = db;
         }
-
         public void Dispose()
         {
-            db.Dispose();
+            _db?.Dispose();
         }
 
         public RodarIntegracaoAgendadaResponse RodarIntegracaoAgendada()
         {
-            RodarIntegracaoAgendadaResponse response = new();
+            var response = new RodarIntegracaoAgendadaResponse();
 
             try
             {
-                if (db == null) //para atender quando vier pelo Windows Service, pois estrategicamente vem sem o DBContext.
-                {
-                    db = new Db(_connectionService);
-                }
-
-                Integracoes bt = new(db);
-                response = bt.RodarIntegracaoAgendada();
+                var integracoes = new Integracoes(_db);
+                response = integracoes.RodarIntegracaoAgendada();
             }
             catch (Exception ex)
             {
@@ -42,9 +33,7 @@ namespace ServicoExportacao
                     ex = ex.InnerException;
 
                 LoggerFile.Write(ex.Message);
-
-                response = new RodarIntegracaoAgendadaResponse();
-                response.Errors?.Add(ex.Message.ToString());
+                response.Errors?.Add(ex.Message);
             }
 
             return response;

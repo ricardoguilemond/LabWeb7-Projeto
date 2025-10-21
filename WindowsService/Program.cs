@@ -1,4 +1,7 @@
-﻿using System.ServiceProcess;
+﻿using ExtensionsMethods.EventViewerHelper;
+using LabWebMvc.MVC.Areas.ServicosDatabase;
+using LabWebMvc.MVC.Models;
+using System.ServiceProcess;
 using WindowsService;
 
 internal class Program
@@ -7,7 +10,12 @@ internal class Program
     {
         if (OperatingSystem.IsWindows())
         {
-            using (FileWriteService service = new())
+            // Instancia manual das dependências
+            IConnectionService connectionService = new ConnectionService(); // sua implementação real
+            IEventLogHelper eventLogHelper = new EventLogHelper();          // sua implementação real
+            IDbFactory dbFactory = new DbFactory(connectionService, eventLogHelper);
+
+            using (FileWriteService service = new FileWriteService(dbFactory))
             {
                 if (!Environment.UserInteractive)
                 {

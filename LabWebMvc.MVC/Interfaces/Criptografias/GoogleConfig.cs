@@ -2,9 +2,9 @@
 {
     public static class GoogleConfig
     {
-        public static readonly string MySecretKeyGoogle;
-        public static readonly string MySecretKeyLEGADA;
-        public static readonly string MyVetorDeCifras;
+        public static readonly string MySecretKeyGoogle = string.Empty;
+        public static readonly string MySecretKeyLEGADA = string.Empty;
+        public static readonly string MyVetorDeCifras = string.Empty;
 
         static GoogleConfig()
         {
