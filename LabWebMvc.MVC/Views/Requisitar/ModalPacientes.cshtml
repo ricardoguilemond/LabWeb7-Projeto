@@ -1,0 +1,175 @@
+﻿@page
+@using BLL
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Areas.Controllers
+@using LabWebMvc.MVC.Interfaces
+@using LabWebMvc.MVC.ViewModel
+@model vmRequisitar
+@* <!-- Esse Modal é uma tela de pesquisa/consulta de pacientes --> *@
+<script>
+    $(document).ready(function () {
+
+        //Constrói o Modal
+        configTableModal('#tabelaPacientes');
+
+        // Função para preencher o formulário com os dados do paciente selecionado
+        function preencherFormularioPaciente(vm) {
+            var $conteudo = $("#conteudoPaciente");
+    
+            $conteudo.find("#pacienteId").val(vm.pacienteId);
+            $conteudo.find("#buscaNomePaciente").val(vm.nomePaciente);
+    
+            $conteudo.find("#Nascimento").val(vm.nascimento);
+            $conteudo.find("#CPFPaciente").val(vm.cpfPaciente);
+            $conteudo.find("#Telefone").val(vm.telefone);
+            $conteudo.find("#Email").val(vm.email);
+    
+            // Campos de texto simples
+            $conteudo.find("#Mae").val(vm.nomeMae);
+            $conteudo.find("#Naturalidade").val(vm.naturalidade);
+            $conteudo.find("#Nacionalidade").val(vm.nacionalidade);
+            $conteudo.find("#Profissao").val(vm.profissao);
+            $conteudo.find("#CEP").val(vm.cep);
+            $conteudo.find("#Logradouro").val(vm.logradouro);
+            $conteudo.find("#Endereco").val(vm.endereco);
+            $conteudo.find("#Numero").val(vm.numero);
+            $conteudo.find("#Complemento").val(vm.complemento);
+            $conteudo.find("#Bairro").val(vm.bairro);
+            $conteudo.find("#Cidade").val(vm.cidade);
+            $conteudo.find("#Observacao").val(vm.observacao);
+    
+            // Dropdowns
+            $conteudo.find("select[name='vmGeral.TipoUF']").val(vm.uf);
+            $conteudo.find("select[name='vmGeral.TipoTempoGestacao']").val(vm.tempoGestacao);
+    
+            // RadioButtons (Sexo e EstadoCivil)
+            $conteudo.find("input[name='Sexo'][value='" + vm.sexo + "']").prop("checked", true);
+            $conteudo.find("input[name='EstadoCivil'][value='" + vm.estadoCivil + "']").prop("checked", true);
+    
+            // Campo DUM (data)
+            $conteudo.find("input[name='VmPacientes.DUM']").val(vm.dum);
+        }
+        //..
+
+        //AJAX
+        function ajaxFunction(valorSelecionado) {
+            if (valorSelecionado.length > 0) {
+                $.ajax({
+                    url: '@Url.Action("RetornoDoModalPacientes", "Requisitar")', //quando o paciente é selecionado no Grid do Modal
+                    type: "GET",
+                    data: { id: valorSelecionado }, //ATENÇÃO: o valor "id" aqui é o Nome do paciente!
+                    cache: false,
+                    dataType: "json",
+                    success: function (data) {
+                        if (!data.vm.nomePaciente) {
+                            clickAviso('Atenção', 'Não trouxe dados nesta busca', 'falha');
+                            return;
+                        }
+                        // Preenchendo os campos após retornar do Controller
+                        preencherFormularioPaciente(data.vm);
+                    },
+                    error: function () {
+                        clickAviso('Interrompido', 'Falha no carregamento dos dados', 'falha');
+                    },
+                }).done(function () {
+                    ModalManager.fechar('modeloTableModalPaciente');
+                });
+            }
+        }
+
+        // delegação: garante que funcione mesmo se o input for recriado pelo DataTables
+        $(document).on("keydown", "input[type='search']", function (event) {
+            if (event.keyCode === 13) {
+                const table = $('#tabelaPacientes').DataTable();
+                const linhasVisiveis = table.rows({ filter: 'applied' }).nodes();
+        
+                if (linhasVisiveis.length > 0) {
+                    const idPaciente = $(linhasVisiveis[0]).find("td:eq(2)").text().trim();
+                    ajaxFunction(idPaciente);
+        
+                    // Fecha o modal com Bootstrap
+                    const modalPaciente = bootstrap.Modal.getInstance(document.getElementById('modeloTableModalPaciente'));
+                    if (modalPaciente) {
+                       modalPaciente.hide();
+                    }
+                } else {
+                    clickAviso('Atenção', 'Nenhum paciente encontrado com esse nome', 'falha');
+                }
+            }
+        });
+        //..
+
+        //Controlando o input checkbox pelo TR e TD (marcando somente de um único por vez!)
+        $(document).on('click', 'tr', function (event) { //marca o input em qualquer posição que o cursor estiver dentro do TR.
+
+            /*  Esta linha verifica se a tag clicada contém algum checkbox dentro dela.
+                $(this) refere-se ao elemento que foi clicado, e .find('input[type="checkbox"]') procura por checkboxes dentro desse
+                elemento. Se houver um ou mais checkboxes, a condição será verdadeira.
+             */
+            if ($(this).find('input[type="checkbox"]').length > 0) {
+                $('input[type="checkbox"]').prop('checked', false);
+                $(this).find('input[type="checkbox"]').prop('checked', true);
+            }
+            else if ($(this).is('input[type="checkbox"]')) {
+                $('input[type="checkbox"]').prop('checked', false);
+                $(this).prop('checked', true);
+            }
+            //event.preventDefault();//não pode conter esta linha, pois trava o checkbox!!!
+
+            var valorSelecionado = $(this).find("input[type='checkbox']").attr("id").replace("chk_", "");
+            ajaxFunction(valorSelecionado);
+
+            const modalPaciente = bootstrap.Modal.getInstance(document.getElementById('modeloTableModalPaciente'));
+            if (modalPaciente) {
+                 modalPaciente.hide();
+            }
+
+            $(document).off('click.modalTriggerPaciente'); // remove só esse handler
+
+        });
+        //..
+    });
+</script>
+<div class="modal fade" id="modeloTableModalPaciente" tabindex="-1" aria-labelledby="tituloModalPaciente" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-top modal-dialog-largo">
+        <div class="modal-content shadow rounded">
+            <div class="modal-header bg-verde-escuro">
+                <h5 class="modal-title" id="tituloModalPaciente">@ViewBag.TextoMenu[0]</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="table-responsive">
+                    <table id="tabelaPacientes" name="datatable" class="table table-striped table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Nome Paciente</th>
+                                <th>CPF</th>
+                                <th class="text-end">Id</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewBag.ListaPacientes != null)
+                            {
+                                @foreach (var item in ViewBag.ListaPacientes)
+                                {
+                                    <tr id="tr_@item.NomePaciente" name="trModal" title="Selecionar" style="width: 90%;">
+                                        <td id="@item.NomePaciente" style="width:58%;"><input id="chk_@item.NomePaciente" name="input" type="checkbox" /> @item.NomePaciente</td>
+                                        <td id="@item.CPF" style="width:12%;">@item.CPF</td>
+                                        <td id="@item.Id">@item.Id</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="3">Nenhum registro encontrado.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Fim da página do Modal -->

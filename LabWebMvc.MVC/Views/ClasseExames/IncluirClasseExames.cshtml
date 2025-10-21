@@ -1,0 +1,366 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using LabWebMvc.MVC.Areas.Utils
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmClasseExames
+@{
+    Layout = "_Layout";
+}
+<script>
+    $(document).ready(function () {
+        $("#divFileAss1").hide();
+        $("#divFileAss2").hide();
+        $("#divFileAss3").hide();
+        $("#divFileAss4").hide();
+        //fileAss1
+        $("[id='botaoAss10']").click(function () {
+            $("#divFileAss1").hide();
+        });
+        $("[id='botaoAss11']").click(function () {
+            $("#divFileAss1").show();
+        });
+        //fileAss2
+        $("[id='botaoAss20']").click(function () {
+            $("#divFileAss2").hide();
+        });
+        $("[id='botaoAss21']").click(function () {
+            $("#divFileAss2").show();
+        });
+        //fileAss3
+        $("[id='botaoAss30']").click(function () {
+            $("#divFileAss3").hide();
+        });
+        $("[id='botaoAss31']").click(function () {
+            $("#divFileAss3").show();
+        });
+        //fileAss4
+        $("[id='botaoAss40']").click(function () {
+            $("#divFileAss4").hide();
+        });
+        $("[id='botaoAss41']").click(function () {
+            $("#divFileAss4").show();
+        });
+        $('#clickSubmit').click(function (event) {
+            event.preventDefault();
+            $.ajax({
+                //url: '@Url.Action("IncluirClasseExames", "ClasseExames")',
+                type: "POST",
+                async: true,
+                dataType: "json",
+                data: $('#form').serialize(),
+                success: function (data) {
+                    //console.log("data: ", data);
+                    var titulo = data['titulo'];
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var sucesso = data['sucesso'];
+                    titulo = (titulo == null) ? 'Atenção' : data['titulo'];
+                    var tipo = 'falha';
+                    if (sucesso == true) tipo = 'sucesso';
+                    //success: Javascript ::: aqui acontece todas as mensagens de sucesso e não sucesso
+                    clickAviso(titulo, mensagem, tipo, actionPos);  //mensagem normal com desvio para outra action (site.js)
+                },
+                error: function (request, status, error) {
+                    //aqui somente acontece no caso de exception/erro do javascript
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', actionPos);  //mensagem crítica e com desvio para outra action (site.js)
+                }
+            });
+            //Limpa todos os campos do formulário!
+            $('#form')[0].reset();
+        })
+    });
+</script>
+@using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))
+{
+    <div class="row">
+        <div class="col-md-4">
+            <form asp-action="Pacientes">
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                <div class="form-group">
+                    @Html.Label("Nome da FOLHA de Exames", null, new { @class = "" })
+                    @Html.TextBoxFor(p => p.RefExame, new { @class = "form-control", @placeholder = "Entre com o nome da Folha de Exame", @required = "required", @style = "text-transform:uppercase" } )
+                </div>
+                <div class="form-group">
+                    @Html.Label("Sigla ou parte nome do Laboratório Externo/Apoio (20 caracteres) ou VAZIO se não existir", null, new { @class = "" })
+                    @Html.TextBoxFor(p => p.LaboratorioExterno, new { @class = "form-control capitalize", @placeholder = "Entre com a Instituição/Laboratório Externo", @required = "required" })
+                </div>
+                <div class="form-group">
+                    @{
+                        ICollection<int> listaEtiquetas = new HashSet<int>();
+                    }
+                    @for (int i = 0; i <= 10; i++)
+                    {
+                        listaEtiquetas.Add(i);
+                    }
+                    @Html.Label("Quantidade de Etiquetas (Máximo de 10)")
+                    @Html.DropDownListFor(p => p.Etiquetas, new SelectList(listaEtiquetas, "Value"), new { onmouseover = "this.size=5", onmouseout = "this.size=1", onclick = "this.size=1", style = "width:50px", size = "1" })
+                </div>
+                <div class="form-group">
+                    @Html.Label("Tipo de Mapa de Trabalho")
+                    @for (int i = 0; i < Utils.ListaTipoMapa().Count; i++)
+                    {
+                        string mapaSigla = Utils.RetornaItem(i, "ListaTipoMapa", 1);
+                        string mapaDescricao = Utils.RetornaItem(i, "ListaTipoMapa", 2);
+                        bool check = (mapaSigla == "F");
+                        <div style="display: inline-block;">
+                            @Html.RadioButton("TipoMapa", mapaSigla, check)
+                            @Html.Label(mapaDescricao)
+                        </div>
+                    }
+                </div>
+                <div class="form-group">
+                    @Html.Label("Primeira Assinatura")
+                    @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                    {
+                        int ass1Index = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                        string ass1Sigla = Utils.RetornaItem(i, "ListaSN", 1);
+                        string ass1Descricao = Utils.RetornaItem(i, "ListaSN", 2);
+                        bool check = (ass1Index == 0);
+                        string botao1 = "botaoAss1" + i.ToString();
+                        <div style="display: inline-block;">
+                            @Html.RadioButton("Assinatura1", ass1Index, check, new { @id = botao1 })
+                            @Html.Label(ass1Descricao)
+                        </div>
+                    }
+                    @Html.Raw("<span style='display: inline; font-size: small; margin-left: 1%;'>(Obrigatória nos Resultados de Exames)</span>")
+                </div>
+                <!--
+                    Carregamento da imagem
+                -->
+                <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
+                    <div id="divFileAss1" class="form-group">
+                        @Html.Label("Primeira Assinatura (obrigatória) ::: Máximo 775x226 pixels (Largura_x_altura)")
+                        @Html.TextBoxFor(p => p.CaminhoImgAss1, new { @type = "file", @id = "fileAss1", @name = "fileAss1", @value = @ViewBag.PathImages })
+                        @Html.Raw("<div id='imgsAss1'></div>")
+                        @Html.HiddenFor(p => p.NomeAss1, new { @id = "nomeAss1" })
+                        @Html.HiddenFor(p => p.CaminhoImgAss1, new { @id = "caminhoImgAss1" })
+                        @Html.HiddenFor(p => p.ImgAss1, new { @id = "bytesAss1" })
+                    </div>
+                </fieldset>
+                <!--
+                    Fim do carregamento da imagem
+                -->
+                <div class="form-group">
+                    <!-- Salto de Linha -->
+                </div>
+                <div class="form-group">
+                    @Html.Label("Segunda Assinatura ou Foto Marketing")
+                    @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                    {
+                        int ass2Index = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                        string ass2Sigla = Utils.RetornaItem(i, "ListaSN", 1);
+                        string ass2Descricao = Utils.RetornaItem(i, "ListaSN", 2);
+                        bool check = (ass2Index == 0);
+                        string botao2 = "botaoAss2" + i.ToString();
+                        <div style="display: inline-block;">
+                            @Html.RadioButton("Assinatura2", ass2Index, check, new { @id = botao2 })
+                            @Html.Label(ass2Descricao)
+                        </div>
+                    }
+                </div>
+                <!--
+                    Carregamento da imagem
+                -->
+                <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
+                    <div id="divFileAss2" class="form-group">
+                        @Html.Label("Segunda Assinatura ou Foto Marketing ::: Máximo 775x226 pixels (Largura_x_altura)")
+                        @Html.TextBoxFor(p => p.CaminhoImgAss2, new { @type = "file", @id = "fileAss2", @name = "fileAss2", @value = @ViewBag.PathImages })
+                        @Html.Raw("<div id='imgsAss2'></div>")
+                        @Html.HiddenFor(p => p.NomeAss2, new { @id = "nomeAss2" })
+                        @Html.HiddenFor(p => p.CaminhoImgAss2, new { @id = "caminhoImgAss2" })
+                        @Html.HiddenFor(p => p.ImgAss2, new { @id = "bytesAss2" })
+                    </div>
+                </fieldset>
+                <!--
+                    Fim do carregamento da imagem
+                -->
+                <div class="form-group">
+                    <!-- Salto de Linha -->
+                </div>
+                <div class="form-group">
+                    @Html.Label("Terceira Assinatura ou Foto Marketing")
+                    @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                    {
+                        int ass3Index = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                        string ass3Sigla = Utils.RetornaItem(i, "ListaSN", 1);
+                        string ass3Descricao = Utils.RetornaItem(i, "ListaSN", 2);
+                        bool check = (ass3Index == 0);
+                        string botao3 = "botaoAss3" + i.ToString();
+                        <div style="display: inline-block;">
+                            @Html.RadioButton("Assinatura3", ass3Index, check, new { @id = botao3 })
+                            @Html.Label(ass3Descricao)
+                        </div>
+                    }
+                </div>
+                <!--
+                    Carregamento da imagem
+                -->
+                <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
+                    <div id="divFileAss3" class="form-group">
+                        @Html.Label("Terceira Assinatura ou Foto Marketing ::: Máximo 775x226 pixels (Largura_x_altura)")
+                        @Html.TextBoxFor(p => p.CaminhoImgAss3, new { @type = "file", @id = "fileAss3", @name = "fileAss3", @value = @ViewBag.PathImages })
+                        @Html.Raw("<div id='imgsAss3'></div>")
+                        @Html.HiddenFor(p => p.NomeAss3, new { @id = "nomeAss3" })
+                        @Html.HiddenFor(p => p.CaminhoImgAss3, new { @id = "caminhoImgAss3" })
+                        @Html.HiddenFor(p => p.ImgAss3, new { @id = "bytesAss3" })
+                    </div>
+                </fieldset>
+                <!--
+                    Fim do carregamento da imagem
+                -->
+                <div class="form-group">
+                    <!-- Salto de Linha -->
+                </div>
+                <div class="form-group">
+                    @Html.Label("Quarta Assinatura ou Foto Marketing")
+                    @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                    {
+                        int ass4Index = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                        string ass4Sigla = Utils.RetornaItem(i, "ListaSN", 1);
+                        string ass4Descricao = Utils.RetornaItem(i, "ListaSN", 2);
+                        bool check = (ass4Index == 0);
+                        string botao4 = "botaoAss4" + i.ToString();
+                        <div style="display: inline-block;">
+                            @Html.RadioButton("Assinatura4", ass4Index, check, new { @id = botao4 })
+                            @Html.Label(ass4Descricao)
+                        </div>
+                    }
+                </div>
+                <!--
+                    Carregamento da imagem
+                -->
+                <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
+                    <div id="divFileAss4" class="form-group">
+                        @Html.Label("Quarta Assinatura ou Foto Marketing ::: Máximo 775x226 pixels (Largura_x_altura)")
+                        @Html.TextBoxFor(p => p.CaminhoImgAss4, new { @type = "file", @id = "fileAss4", @name = "fileAss4", @value = @ViewBag.PathImages })
+                        @Html.Raw("<div id='imgsAss4'></div>")
+                        @Html.HiddenFor(p => p.NomeAss4, new { @id = "nomeAss4" })
+                        @Html.HiddenFor(p => p.CaminhoImgAss4, new { @id = "caminhoImgAss4" })
+                        @Html.HiddenFor(p => p.ImgAss4, new { @id = "bytesAss4" })
+                    </div>
+                </fieldset>
+                <!--
+                    Fim do carregamento da imagem
+                -->
+                <div class="form-group">
+                    <!-- Salto de Linha -->
+                </div>
+                <div class="form-group">
+                    <input id="clickSubmit" type="submit" value="Salvar" class="btn btn-lg btn-success btn-block btn-altura" />
+                    <i id="setaGravacao"></i>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        /*
+            Arquivo de Imagem (Upload) Faz a entrega das imagens que serão salvas na tabela de dados
+         */
+        $('#fileAss1').on('change', function (e) {
+            //OK: pegando apenas o nome do arquivo que veio após o click no input
+            var files = e.target.files;   //pega todos os possíveis arquivos do upload, mas aqui só virá um único arquivo selecionado.
+            var fileName = files[0].name; //pega o nome do arquivo selecionado.
+            //OK: cria objeto URL temporário para exibição em tela, porque o path original vem como "fakepath" por segurança imposta pelos navegadores
+            //console.log("e.target.files[0]: ", e.target.files[0]);
+            var objURL = URL.createObjectURL(e.target.files[0]);
+            //OK: pegando apenas o caminho correto que veio do controller via ViewBag.PathImages
+            var path = $(this).val();
+            //console.log("path: ", path);
+            //OK: pega as propriedades do arquivo que será enviado ao controller para ser salva na tabela...
+            if (files.length > 0) {
+                if (window.FormData !== undefined) {
+                    var data = new FormData();
+                    data.append("myFile", files[0]);  //entrega no controller via Ajax o nome do arquivo e propriedades (se eu fosse passar para o controller).
+                    data.append("myPath", path);      //entrega o controler via Ajax o caminho completo de onde veio o arquivo (se eu fosse passar para o controller).
+                    //alimenta os campos hidden da "vm" em runtime da query
+                    $("#nomeAss1").val(fileName);
+                    $("#caminhoImgAss1").val(path);
+                    //mostra a imagem no formulário
+                    $("#imgsAss1").fadeIn("fast").html("<img src='" + objURL + "' style='width:300px; height:215px;' />");
+                }
+            }
+        });
+        $('#fileAss2').on('change', function (e) {
+            //OK: pegando apenas o nome do arquivo que veio após o click no input
+            var files = e.target.files;   //pega todos os possíveis arquivos do upload, mas aqui só virá um único arquivo selecionado.
+            var fileName = files[0].name; //pega o nome do arquivo selecionado.
+            //OK: cria objeto URL temporário para exibição em tela, porque o path original vem como "fakepath" por segurança imposta pelos navegadores
+            //console.log("e.target.files[0]: ", e.target.files[0]);
+            var objURL = URL.createObjectURL(e.target.files[0]);
+            //OK: pegando apenas o caminho correto que veio do controller via ViewBag.PathImages
+            var path = $(this).val();
+            //console.log("path: ", path);
+            //OK: pega as propriedades do arquivo que será enviado ao controller para ser salva na tabela...
+            if (files.length > 0) {
+                if (window.FormData !== undefined) {
+                    var data = new FormData();
+                    data.append("myFile", files[0]);  //entrega no controller via Ajax o nome do arquivo e propriedades (se eu fosse passar para o controller).
+                    data.append("myPath", path);      //entrega o controler via Ajax o caminho completo de onde veio o arquivo (se eu fosse passar para o controller).
+                    //alimenta os campos hidden da "vm" em runtime da query
+                    $("#nomeAss2").val(fileName);
+                    $("#caminhoImgAss2").val(path);
+                    //mostra a imagem no formulário
+                    $("#imgsAss2").fadeIn("fast").html("<img src='" + objURL + "' style='width:300px; height:215px;' />");
+                }
+            }
+        });
+        $('#fileAss3').on('change', function (e) {
+            //OK: pegando apenas o nome do arquivo que veio após o click no input
+            var files = e.target.files;   //pega todos os possíveis arquivos do upload, mas aqui só virá um único arquivo selecionado.
+            var fileName = files[0].name; //pega o nome do arquivo selecionado.
+            //OK: cria objeto URL temporário para exibição em tela, porque o path original vem como "fakepath" por segurança imposta pelos navegadores
+            //console.log("e.target.files[0]: ", e.target.files[0]);
+            var objURL = URL.createObjectURL(e.target.files[0]);
+            //OK: pegando apenas o caminho correto que veio do controller via ViewBag.PathImages
+            var path = $(this).val();
+            //console.log("path: ", path);
+            //OK: pega as propriedades do arquivo que será enviado ao controller para ser salva na tabela...
+            if (files.length > 0) {
+                if (window.FormData !== undefined) {
+                    var data = new FormData();
+                    data.append("myFile", files[0]);  //entrega no controller via Ajax o nome do arquivo e propriedades (se eu fosse passar para o controller).
+                    data.append("myPath", path);      //entrega o controler via Ajax o caminho completo de onde veio o arquivo (se eu fosse passar para o controller).
+                    //alimenta os campos hidden da "vm" em runtime da query
+                    $("#nomeAss3").val(fileName);
+                    $("#caminhoImgAss3").val(path);
+                    //mostra a imagem no formulário
+                    $("#imgsAss3").fadeIn("fast").html("<img src='" + objURL + "' style='width:300px; height:215px;' />");
+                }
+            }
+        });
+        $('#fileAss4').on('change', function (e) {
+            //OK: pegando apenas o nome do arquivo que veio após o click no input
+            var files = e.target.files;   //pega todos os possíveis arquivos do upload, mas aqui só virá um único arquivo selecionado.
+            var fileName = files[0].name; //pega o nome do arquivo selecionado.
+            //OK: cria objeto URL temporário para exibição em tela, porque o path original vem como "fakepath" por segurança imposta pelos navegadores
+            //console.log("e.target.files[0]: ", e.target.files[0]);
+            var objURL = URL.createObjectURL(e.target.files[0]);
+            //OK: pegando apenas o caminho correto que veio do controller via ViewBag.PathImages
+            var path = $(this).val();
+            //console.log("path: ", path);
+            //OK: pega as propriedades do arquivo que será enviado ao controller para ser salva na tabela...
+            if (files.length > 0) {
+                if (window.FormData !== undefined) {
+                    var data = new FormData();
+                    data.append("myFile", files[0]);  //entrega no controller via Ajax o nome do arquivo e propriedades (se eu fosse passar para o controller).
+                    data.append("myPath", path);      //entrega o controler via Ajax o caminho completo de onde veio o arquivo (se eu fosse passar para o controller).
+                    //alimenta os campos hidden da "vm" em runtime da query
+                    $("#nomeAss4").val(fileName);
+                    $("#caminhoImgAss4").val(path);
+                    //mostra a imagem no formulário
+                    $("#imgsAss4").fadeIn("fast").html("<img src='" + objURL + "' style='width:300px; height:215px;' />");
+                }
+            }
+        });
+
+    </script>
+
+}

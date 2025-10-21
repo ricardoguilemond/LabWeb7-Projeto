@@ -1,0 +1,186 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@using LabWebMvc.MVC.Areas.Utils
+@model vmRequisitar
+<style>
+    .noSelectedLinha {
+        color: inherit;
+        font-weight: normal;
+        background-color: inherit !important;
+    }
+
+    .selectedLinha {
+        color: white;
+        font-weight: normal;
+        background-color: blue;
+    }
+</style>
+<script>
+    function montarCupomPorId(id) {
+        if (!id) {
+            console.warn('ID inválido ou ausente.');
+            return;
+        }
+        $.ajax({
+            url: '/PartialMontarItensCupom?id=' + id,
+            type: "GET",
+            async: true,
+            dataType: "html",
+            success: function (data) {
+                $("#conteudoItensCupomCaixa").html(data);
+            },
+            failure: function () {
+                clickAviso('Interrompido', 'Falha no carregamento dos dados do cupom', 'falha');
+            }
+        });
+    }
+
+    $(document).ready(function () {
+
+        configTableCompacta();   //constrói o DataTable com parâmetros de uma tabela compacta/simples/reduzida
+
+        //Seleciona os itens de exames e acumula para salvar e montar o mapa para lançamentos de resultados.
+        //Delegação correta: captura clicks em qualquer linha com name="itemLancarExame", mesmo após renderizações do DataTables
+        $(document).on('click', '[name="itemLancarExame"]', function (event) {
+            event.preventDefault();
+
+            const id = this.getAttribute("data-id");
+
+            if ($(this).hasClass("noSelectedLinha")) {
+                $(this).removeClass('noSelectedLinha').addClass('selectedLinha');
+                $(this).find('[name="itemLE"]').prop('checked', true);
+            } else {
+                $(this).removeClass('selectedLinha').addClass('noSelectedLinha');
+                $(this).find('[name="itemLE"]').prop('checked', false);
+            }
+
+            montarCupomPorId(id);
+        });
+        //..
+
+        //Excuta Ajax no campo search para localizar o primeiro item visível do grid
+        const campoSearch = document.getElementById('customSearchBox');
+        campoSearch.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+
+                const texto = campoSearch.value.trim();
+
+                const primeiraLinha = document.querySelector('#modeloTableCompacta tbody tr:not(.dtr-hidden):not(.dataTables_empty)');
+                if (!primeiraLinha) {
+                    //console.warn('Nenhuma linha visível após filtro.');
+                    return;
+                }
+
+                const id = primeiraLinha.dataset.id;
+                if (!id) {
+                    //console.warn('ID não encontrado na linha. Verifique se há atributo data-id.');
+                    return;
+                }
+
+                montarCupomPorId(id);
+            }
+        });
+        //..
+
+        //declarações para controle de formulário no submmit ::: TROCA ENTRE "Formulário Completo" e "Formulário Simples"
+        var numeroItemTabela = $(".itemTabelaExame").val(1); //declara apenas, porque aqui ainda fica o default do Combobox, colocamos 1 = SUS!
+        var numeroItemFolha = $(".itemFolhaExame").val(1);   //declara no carregamento da página, o número da folha que está DEFAULT no ComboBox!
+        //..
+        //------------------------------------------------------------------------------------------
+        //começa pelo formulário simples (default, formulário simples)
+        var contaPills = 'pills-simples-ttab';
+        $(".NotView").hide("fast");   //classe que controla o "esconde-mostra" campos do formulário
+        $("#pills-completo-ttab").removeClass('active');
+        $("#pills-simples-ttab").addClass('active');
+        //------------------------------------------------------------------------------------------
+        //..
+        //Datatables: Carrega novo grid de acordo com os boxes
+        $('.itemFolhaExame, .itemTabelaExame').change(function (event) {//class from RadioButton
+            event.preventDefault();
+            numeroItemTabela = $(".itemTabelaExame").val();  //obrigatório porque aqui pega em realtime o número da folha que ESTÁ selecionado no ComboBox!
+            numeroItemFolha = $(".itemFolhaExame").val();    //obrigatório porque aqui pega em realtime o número da folha que ESTÁ selecionado no ComboBox!
+
+            //Vamos atualizar o número da folha e chamar depois a partial view que vai atualizar AJAX somente a DIV chamada "contaDiv"
+            $.ajax({
+                url: '/PlanoExamesItens?numeroItemFolha=' + numeroItemFolha + "&numeroTabela=" + numeroItemTabela + "&partial=true",
+                type: "GET",
+                async: true,
+                dataType: "html",
+                success: function (data) {
+                    $('#modeloTable').DataTable().destroy();  //destrói o DataTables para conseguir atualizar o "data" paginando corretamente!
+                    $("#modeloTable").html(data);             //contaDiv é do "tbody" que monta/substitui a partial grid na posição
+
+                    configTable();                       //reconstrói o DataTable com "draw()" com as configurações determinadas
+
+                },
+                failure: function () {
+                    clickAviso('Interrompido', 'Falha no carregamento do grid de exames', 'falha');
+                }
+            });
+            numeroItemFolha = $(".itemFolhaExame").val(); //atualiza em realtime o número da folha que FOI selecionado no ComboBox!
+            numeroItemTabela = $(".itemTabelaExame").val();
+        });
+        //..
+        //OK:Troca de abas montando o formulário simples ou completo
+        $('#pills-simples-ttab').on("click", function (event) {//class from button das abas
+            event.preventDefault;
+            var pills = event.target.getAttribute("id");
+
+            //console.log("simples:pills: ", pills);
+            //console.log("simples:contaPills: ", contaPills);
+
+            if (contaPills != pills) {
+                $(".NotView").hide(400);  //esconde e mostra o campo no formulário (200="fast" e 600="slow")
+                contaPills = event.target.getAttribute("id");
+            }
+        });
+        $('#pills-completo-ttab').on("click", function (event) {//class from button das abas
+            event.preventDefault;
+            var pills = event.target.getAttribute("id");
+
+            //console.log("completo:pills: ", pills);
+            //console.log("completo:contaPills: ", contaPills);
+
+            if (contaPills != pills) {
+                $(".NotView").show(400);   //esconde e mostra o campo no formulário (200="fast" e 600="slow")
+                contaPills = event.target.getAttribute("id");
+            }
+        });
+        //..
+    }); //FIM do $(document).ready
+</script>
+<div class="table-responsive">
+    <!-- Esse input search está sendo tratado em function configTableCompacta() no mydatatable.js -->
+    <input type="text" id="customSearchBox" placeholder="Buscar exame..." class="form-control mb-2" style="font-size: 0.90rem;">
+    <table id="modeloTableCompacta" name="datatable" data-order='[[ 0, "asc" ]]' class="display compact order-column table-striped table-hover nowrap">
+        <thead>
+            <tr>
+                <th><span style="font-size: 12px !important;">Check</span></th>
+                <th><span style="font-size: 12px !important;">Roll de exames</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (ViewBag.ListaDeExames == null)  //Quando ainda não tiver a lista filtrada...
+            {
+                @Html.Raw("<tr class='noSelectedLinha' data-id='0' name='itemLancarExame' title='Selecionar' style='width: 90%;'>")
+                @Html.Raw("<td data-id='0' style = 'width:7%;'></td>")
+                @Html.Raw("<td style='width: 90%;'>Aguardando dados...</td>")
+                @Html.Raw("</tr>")
+            }
+            else
+            {
+                @foreach (var item in ViewBag.ListaDeExames)
+                {
+                    @Html.Raw("<tr class='noSelectedLinha' data-id='" + @item.Id.ToString() + "' name='itemLancarExame' title='Selecionar' style='width: 90%;'>")
+                    @Html.Raw("<td data-id='" + @item.Id.ToString() + "' style = 'width:7%;'>" + Utils.FormataContaView(@item.ContaExame.ToString()) + "</td>")
+                    @Html.Raw("<td style='width:90%;'>" + @item.Descricao + "</td>")
+                    @Html.Raw("</tr>")
+                }
+            }
+        </tbody>
+    </table>
+</div>

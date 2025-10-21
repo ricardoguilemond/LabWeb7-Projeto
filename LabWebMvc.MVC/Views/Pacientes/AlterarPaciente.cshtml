@@ -1,0 +1,182 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using LabWebMvc.MVC.Areas.Utils
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmPacientes
+@{
+    Layout = "_Layout";
+}
+<script>
+    $(document).ready(function () {
+        $('#clickSubmit').click(function (event) {
+            event.preventDefault();
+            $.ajax({
+                //url: '/Pacientes/AlterarPaciente',
+                //url: '@Url.Action("AlterarPaciente", "Pacientes")',
+                type: "POST",
+                async: true,
+                dataType: "json",
+                data: $('#form').serialize(),
+                success: function (data) {
+                    //console.log("data: ", data);
+                    var titulo = data['titulo'];
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var sucesso = data['sucesso'];
+                    titulo = (titulo == null) ? 'Atenção' : data['titulo'];
+                    var tipo = 'falha';
+                    if (sucesso == true) tipo = 'sucesso';
+                    //success: Javascript ::: aqui acontece todas as mensagens de sucesso e não sucesso
+                    clickAviso(titulo, mensagem, tipo, actionPos);  //mensagem normal com desvio para outra action (site.js)
+                },
+                error: function (request, status, error) {
+                    //aqui somente acontece no caso de exception/erro do javascript
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', actionPos);  //mensagem crítica e com desvio para outra action (site.js)
+                }
+            });
+        })
+    });
+</script>
+
+@using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))  //@id-"form" é obrigatório para campos chegarem do doutro lado
+{
+    <div class="row">
+        <div class="col-md-4">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="form-group">
+                @Html.Label("*Nome paciente:")
+                @Html.TextBoxFor(p => p.NomePaciente, new { @class = "form-control capitalize", @placeholder = "Entre com o nome completo do paciente", @required = "required" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Sexo:")
+                @for (int i = 0; i < Utils.ListaGenero().Count; i++)
+                {
+                    string sexo = Utils.RetornaItem(i, "Sexo", 1);  //index
+                    string nome = Utils.RetornaItem(i, "Sexo", 2);
+                    bool check = (sexo == ViewBag.Sexo);
+
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("Sexo", sexo, check)
+                        @Html.Label(nome)
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                @Html.Label("Tipo de Documento:")
+                @Html.DropDownListFor(p => p.vmGeral.TipoDocumento, new SelectList(Utils.ListaDocumento(), "Index", "Nome", selectedValue: 0))
+            </div>
+            <div class="form-group">
+                @Html.Label("O documento será também o Login do paciente no Site/App", null, new { style = "color: red" })
+                @Html.TextBoxFor(p => p.CPF, new { @class = "form-control", @placeholder = "Entre com o documento", @required = "required" })
+                @Html.Label("Órgão Emissor:")
+                @Html.DropDownListFor(p => p.vmGeral.TipoOrgaoEmissor, new SelectList(Utils.ListaOrgaoEmissor(), "Index", "Nome", selectedValue: 0))
+            </div>
+            <div class="form-group">
+                @Html.Label("*Data Nascimento:")
+                @Html.TextBoxFor(p => p.Nascimento, "{0:dd/MM/yyyy}", new { @class = "form-control", @type = "text", @readonly = "readonly" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Estado Civil:")
+                @for (int i = 0; i < Utils.ListaEstadoCivil().Count; i++)
+                {
+                    int index = Utils.RetornaItem(i, "EstadoCivil", 0).ToInt32();
+                    string nome = Utils.RetornaItem(i, "EstadoCivil", 1);
+                    //bool check = Utils.RetornaItem(i, "EstadoCivil", 2).ConvertStringToBool();
+                    bool check = (index == ViewBag.EstadoCivil);
+
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("EstadoCivil", index, check)
+                        @Html.Label(nome)
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                @Html.Label("Naturalidade:")
+                @Html.TextBoxFor(p => p.Naturalidade, new { @class = "form-control capitalize", @placeholder = "Naturalidade" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Nacionalidade:")
+                @Html.TextBoxFor(p => p.Nacionalidade, new { @class = "form-control capitalize", @placeholder = "Nacionalidade" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Profissão:")
+                @Html.TextBoxFor(p => p.Profissao, new { @class = "form-control capitalize", @placeholder = "Profissão" })
+            </div>
+            <div class="form-group">
+                @Html.Label("CEP:")
+                @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Logradouro (Rua, Av, Estrada etc)", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Endereço completo", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Número:")
+                @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Complemento:")
+                @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Bairro:")
+                @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Cidade/Município:")
+                @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município" })
+            </div>
+            <div class="form-group">
+                @Html.Label("UF:")
+                <div style="display: inline-block;">
+                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF))
+                </div>
+            </div>
+            <div class="form-group">
+                @Html.Label("Telefone com DDD:")
+                @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD" })
+                @Html.ValidationMessageFor(p => p.Telefone, null, new { @class = "has-error" })
+            </div>
+            <div class="form-group">
+                @Html.Label("e-mail:")
+                @Html.TextBoxFor(p => p.Email, new { @class = "form-control lowercase", @style = "color: blue;", @placeholder = "e-mail", @type = "email" })
+            </div>
+            <div class="form-group">
+                @Html.Label("DUM:")
+                @Html.TextBoxFor(p => p.DUM, new { @class = "form-control", @type = "date", @placeholder = "DUM" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Tempo de Gestação:")
+                <div style="display: inline-block;">
+                    @Html.DropDownListFor(p => p.vmGeral.TipoTempoGestacao, new SelectList(Utils.ListaTempoGestacao(), "Index", "Nome", selectedValue: "10"))
+                </div>
+            </div>
+            <div class="form-group">
+                @Html.Label("Observação:")
+                @Html.TextAreaFor(p => p.Observacao, new { @class = "form-control capitalize mediumTextBox", @placeholder = "Observação" })
+            </div>
+            <!--
+            Submeter Formulário
+            -->
+            <div class="form-group botao-centralizado">
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

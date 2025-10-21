@@ -1,0 +1,25 @@
+﻿@{
+    Layout = "_Layout";
+    ViewBag.men1 = "Acesso não autorizado ou suas credenciais não foram suficientes para acessar um determinado conteúdo.";
+    ViewBag.men2 = "Talvez seja importante comunicar ao suporte deste sistema.";
+}
+<head>
+    <style>
+        .fonteError {
+            font-size: 1.1em;
+            color: darkgreen;
+        }
+    </style>
+</head>
+<script>
+    console.log("Error401");
+    console.log("@ViewBag.men1");
+    console.log("@ViewBag.men2");
+</script>
+<div class="row fonteError">
+    <div class="col-md-10 ml-3">
+        <p><b>Erro 401:</b></p>
+        <p>@ViewBag.men1</p>
+        <p>@ViewBag.men2</p>
+    </div>
+</div>

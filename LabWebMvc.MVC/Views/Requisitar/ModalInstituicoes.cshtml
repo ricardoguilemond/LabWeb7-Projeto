@@ -1,0 +1,149 @@
+﻿@page
+@using BLL
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Interfaces
+@using LabWebMvc.MVC.ViewModel
+@model vmRequisitar
+@* <!-- Esse Modal é uma tela de pesquisa/consulta de instituições --> *@
+<script>
+    $(document).ready(function () {
+
+        //Constrói o Modal
+        configTableModal('#tabelaInstituicao');
+
+        function preencherFormularioInstituicao(vm) {
+            var $conteudo = $("#conteudoInstituicao");
+            $conteudo.find("#buscaSiglaInstituicao").val(vm.siglaInstituicao);
+            $conteudo.find("#buscaNomeInstituicao").val(vm.nomeInstituicao);
+            $conteudo.find("#instituicaoId").val(vm.instituicaoId);  //o valor "id" aqui é o Id da primary key retornado!
+        }
+
+        function ajaxFunction(valorSelecionado) {
+            if (valorSelecionado.length > 0) {
+                $.ajax({
+                    url: '@Url.Action("RetornoDoModalInstituicoes", "Requisitar")',
+                    type: "GET",
+                    data: { id: valorSelecionado }, // ATENÇÃO: o valor "id" aqui é a Sigla!
+                    cache: false,
+                    dataType: "json",
+                    success: function (data) {
+                        if (!data.vm.siglaInstituicao || !data.vm.nomeInstituicao) {
+                            clickAviso('Atenção', 'Não trouxe dados nesta busca', 'falha');
+                            return;
+                        }
+
+                        // Preenchendo os campos após retornar do Controller
+                        preencherFormularioInstituicao(data.vm);
+                    },
+                    error: function () {
+                        clickAviso('Interrompido', 'Falha no carregamento dos dados', 'falha');
+                    },
+                }).done(function () {
+                    ModalManager.fechar('modeloTableModalInstituicao');
+                });
+            }
+        }
+        //..
+
+        //Captura o que foi digitado no campo "search" ("input[type='search']") do Datatable e entrega no campo certo do formulário...
+        $(document).on("keydown", "input[type='search']", function (event) {
+            console.log("keydown");
+            if (event.keyCode === 13) { // ENTER
+                var valorSelecionado = event.target.value.trim(); // remove espaços extras
+                var palavras = valorSelecionado.split(/\s+/).filter(p => p.length > 0); // remove strings vazias
+                // Se vazio ou apenas uma palavra
+                if (palavras.length <= 1) {
+                    ajaxFunction(valorSelecionado);
+                    ModalManager.fechar('modeloTableModalInstituicao');
+                }
+            }
+        });
+        //..
+
+        //Captura o que foi digitado no campo "search" ("input[type='search']") do Datatable e entrega no campo certo do formulário...
+        $("input[type='search']").on("keydown", function (event) {
+            if (event.keyCode === 13) {
+                var table = $('#tabelaInstituicao').DataTable();
+                var linhasVisiveis = table.rows({ filter: 'applied' }).nodes();
+
+                if (linhasVisiveis.length > 0) {
+                    // O campo certo é o da primeira coluna da linha da primeira célula da linha (td:eq(0))
+                    var siglaInstituicao = $(linhasVisiveis[0]).find("td:eq(0)").text().trim();
+
+                    ajaxFunction(siglaInstituicao); // envia o nome, não o CPF
+                    ModalManager.fechar('modeloTableModalInstituicao');
+                }
+            }
+        });
+        //..
+
+        //Controlando o input checkbox pelo TR e TD (marcando somente de um único por vez!)
+        $(document).on('click', 'tr', function (event) { //marca o input em qualquer posição que o cursor estiver dentro do TR.
+
+            /*  Esta linha verifica se a tag clicada contém algum checkbox dentro dela.
+                $(this) refere-se ao elemento que foi clicado, e .find('input[type="checkbox"]') procura por checkboxes dentro desse
+                elemento. Se houver um ou mais checkboxes, a condição será verdadeira.
+             */
+            if ($(this).find('input[type="checkbox"]').length > 0) {
+                $('input[type="checkbox"]').prop('checked', false);
+                $(this).find('input[type="checkbox"]').prop('checked', true);
+            }
+            else if ($(this).is('input[type="checkbox"]')) {
+                $('input[type="checkbox"]').prop('checked', false);
+                $(this).prop('checked', true);
+            }
+            //event.preventDefault();//não pode conter esta linha, pois trava o checkbox!!!
+            var valorSelecionado = event.target.id;
+
+            ajaxFunction(valorSelecionado);
+
+            ModalManager.fechar('modeloTableModalInstituicao');
+            $(document).off('click.modalTriggerInstituicao');  //Desligamos o chamamento do último "click" de Ajax, PARA EVITAR QUE AS REQUISIÇÕES DE AJAX FIQUEM REPETINDO A CADA ACIONAMENTO.
+        });
+        //..
+    });
+</script>
+<div class="modal fade" id="modeloTableModalInstituicao" tabindex="-1" aria-labelledby="tituloModalInstituicao" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-top modal-dialog-largo">
+        <div class="modal-content shadow rounded">
+            <div class="modal-header bg-verde-escuro">
+                <h5 class="modal-title" id="tituloModalInstituicao">@ViewBag.TextoMenu[0]</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="table-responsive">
+                    <table id="tabelaInstituicao" name="datatable" class="table table-striped table-hover table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Sigla</th>
+                                <th>Nome</th>
+                                <th class="text-end">Id</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewBag.ListaIntituicoes != null)
+                            {
+                                @foreach (var item in ViewBag.ListaIntituicoes)
+                                {
+                                    <tr id="tr_@item.Sigla" name="trModal" title="Selecionar" style="width: 90%;">
+                                        <td id="@item.Sigla" style="width:10%;"><input id="chk_@item.Sigla" name="input" type="checkbox" /> @item.Sigla</td>
+                                        <td id="@item.Sigla" style="width:60%;"> @item.Nome</td>
+                                        <td id="@item.Id"> @item.Id</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="3">Nenhum registro encontrado.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Fim da página do Modal -->
+

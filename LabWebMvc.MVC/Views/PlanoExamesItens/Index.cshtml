@@ -1,0 +1,201 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Interfaces
+@using LabWebMvc.MVC.ViewModel
+@model vmPlanoExames
+<style>
+    .getColorBackNormal {
+        color: inherit;
+        font-weight: normal;
+        background-color: inherit !important;
+    }
+
+    .getColorBackPrincipal {
+        color: blue;
+        font-weight: bold;
+        background-color: #add2fd !important;
+    }
+
+    .moeda {
+        color: darkblue;
+        background-color: white !important;
+        border: 2px solid #cccad0 !important;
+        border-radius: 2px;
+        font-weight: 500;
+        height: 21px;
+    }
+
+    .summary {
+        color: #646464;
+        background-color: #add2fd;
+        height: 21px;
+    }
+
+    .summary_item {
+        color: black;
+        background-color: inherit;
+        height: 21px;
+    }
+
+    .summary_item {
+        cursor: pointer;
+    }
+
+        .summary_item a {
+            position: relative;
+            display: inline-block;
+        }
+
+            .summary_item a[title]:hover::after {
+                content: attr(title);
+                position: absolute;
+                top: -100%;
+                left: 0;
+                color: blue;
+                background-color: #cccad0;
+                padding: 2px;
+                padding-left: 4px;
+                padding-right: 4px;
+                border: 1px solid blue !important;
+                border-radius: 3px;
+            }
+</style>
+<script>
+    $(document).ready(function () {
+        var numeroItemTabela = $(".itemTabelaExame").val(1); //declara apenas, porque aqui ainda fica o default do Combobox, colocamos 1 = SUS!
+        var numeroItemFolha = $(".itemFolhaExame").val(1);   //declara no carregamento da página, o número da folha que está DEFAULT no ComboBox!
+
+        //Carrega novo grid de acordo com os boxes
+        $('.itemFolhaExame, .itemTabelaExame').change(function (event) {//class from RadioButton
+            event.preventDefault();
+            numeroItemTabela = $(".itemTabelaExame").val();  //obrigatório porque aqui pega em realtime o número da folha que ESTÁ selecionado no ComboBox!
+            numeroItemFolha = $(".itemFolhaExame").val();  //obrigatório porque aqui pega em realtime o número da folha que ESTÁ selecionado no ComboBox!
+
+            //Vamos atualizar o número da folha e chamar depois a partial view que vai atualizar AJAX somente a DIV chamada "contaDiv"
+            $.ajax({
+                url: '/PlanoExamesItens?numeroItemFolha=' + numeroItemFolha + "&numeroTabela=" + numeroItemTabela + "&partial=true",
+                type: "GET",
+                async: true,
+                dataType: "html",
+                success: function (data) {
+                    $('#modeloTable').DataTable().destroy();  //destrói o DataTables para conseguir atualizar o "data" paginando corretamente!
+                    $("#modeloTable").html(data);             //contaDiv é do "tbody" que monta/substitui a partial grid na posição
+
+                    configTable();                       //reconstrói o DataTable com "draw()" com as configurações determinadas
+
+                },
+                failure: function () { alert("Falhou carregamento do Grid"); }
+            });
+            numeroItemFolha = $(".itemFolhaExame").val(); //atualiza em realtime o número da folha que FOI selecionado no ComboBox!
+            numeroItemTabela = $(".itemTabelaExame").val();
+
+        });
+
+    });
+</script>
+<div class="form-group">
+    @Html.Label("Tabela de Preço?")
+    <div style="display: inline-block;">
+        @Html.DropDownListFor(x => x.TabelaExamesId, Model.TabelaIdList, new { @id = "id_tabela", @class = "itemTabelaExame", onchange = "atualizaBoxTabela(this);" })
+        @Html.DropDownListFor(x => x.TabelaExamesId, Model.TabelaNomeList, new { @id = "nome_tabela", @class = "itemTabelaExame", onchange = "atualizaBoxTabela(this);" })
+    </div>
+</div>
+<div class="form-group">
+    @Html.Label("Folha de Exame?")
+    <div style="display: inline-block;">
+        @Html.DropDownListFor(x => x.ExameId, Model.FolhaIdList, new { @id = "id_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
+        @Html.DropDownListFor(x => x.ExameId, Model.FolhaNomeList, new { @id = "nome_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
+    </div>
+</div>
+<div class="table-responsive">
+    <table id="modeloTable" name="datatable" data-order='[[ 3, "asc" ]]' class="display compact order-column table-striped table-hover nowrap">
+        @{
+            await Html.RenderPartialAsync("Partials/_PartialPlanoContaItem");
+        }
+    </table>
+</div>
+@section Scripts {
+    <div class="toolbar"><partial name='_PartialDatatables' /></div>
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/jquery.maskMoney.min.js"></script>
+    <script type="text/javascript">
+        //Declara os dois boxes com o default, e vamos sempre atualizar os dois Ids.
+        var TabelaId = 1;
+        var FolhaId = 1;
+        //Atualiza os dois Combobox do DropDownList
+        function atualizaBoxFolha(id) {//recebe o valor e atualiza os combobox da folha de exame
+            FolhaId = id.value;
+            $("#id_folha").val(FolhaId);
+            $("#nome_folha").val(FolhaId);
+            $("#id_tabela").val(TabelaId);
+            $("#nome_tabela").val(TabelaId);
+        }
+        //
+        function atualizaBoxTabela(id) {//recebe o valor e atualiza os combobox da tabela de preços
+            TabelaId = id.value;
+            $("#id_tabela").val(TabelaId);
+            $("#nome_tabela").val(TabelaId);
+            $("#id_folha").val(FolhaId);
+            $("#nome_folha").val(FolhaId);
+        }
+        //
+        function clickModelo(x) {
+            //"x" é a linha toda da tag (tem que passar a linha TODA de "x")
+            //x.id é somente o "id" na tag da linha
+            window.location.href = '@Url.Action("ModeloPlanoExamesItens", "PlanoExamesItens")?registroID=' + x.id;
+        };
+        function clickConsulta(x) {
+            var url = "ConsultarPlanoExamesItens?id=" + x.id;
+            window.open(url, "_self")
+        }
+        //
+        //_PartialPlanoContaItem.cshtml
+        function clickSalva(x) {
+            var id = x.id;
+            var valorCusto = $('#valorCusto' + id).val().replace(".", "").replace(",", ".");
+            var valorItem = $('#valorItem' + id).val().replace(".", "").replace(",", ".");
+            var idTabela = $("#id_tabela").val();
+            var idFolha = $("#id_folha").val();
+
+            //Todos os dados que vamos enviar da linha do grid para o controller
+            var parameters = [
+                id,
+                valorCusto,
+                valorItem,
+                idTabela,
+                idFolha
+            ];
+            $.ajax({
+                url: '@Url.Action("SalvarItemGrid")?parameters=' + parameters,
+                type: "GET",
+                async: true,
+                data: { parameters: parameters },
+                dataType: "json",
+                success: function (data) {
+                    //console.log("data: ", data);
+                    var titulo = data['titulo'];
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var sucesso = data['sucesso'];
+                    titulo = (titulo == null) ? 'Atenção' : data['titulo'];
+                    var tipo = 'falha';
+
+                    //Json: Substitui certo na posição do summary
+                    $('#summary').html(data['sumario']);   //atualiza o sumário pelo tbody
+                    $('#' + data['id']).html(data['linhaLucroVariante']);  //atualiza o valor de uma única linha do grid que está num "<td>"
+
+                    if (sucesso == true) tipo = 'sucesso';
+                    //success: Javascript ::: aqui acontece todas as mensagens de sucesso e não sucesso
+                    clickAviso(titulo, mensagem, tipo, actionPos);  //mensagem normal com desvio para outra action (site.js)
+                },
+                error: function (request, status, error) {
+                    //aqui somente acontece no caso de exception/erro do javascript
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', actionPos);  //mensagem crítica e com desvio para outra action (site.js)
+                },
+                failure: function () { alert("Falhou carregamento do Grid"); }
+            });
+        }
+    </script>
+}

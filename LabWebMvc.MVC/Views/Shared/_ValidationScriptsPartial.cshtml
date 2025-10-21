@@ -1,0 +1,25 @@
+@*
+<!-- Todas as validações genéricas dos formulários -->
+*@
+<!-- Scripts do Development - desenvolvimento e testes -->
+<environment include="Development">
+    <!-- JQuery Validate e unobtrusive-->
+    <script src="~/js/jquery-validate/dist/jquery.validate.min.js"></script>
+    <script src="~/js/jquery-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        <!-- Para as mensagens de validação personalizadas com "ValidationMessageFor" via classe também personalizada HtmlHelpers -->
+        jQuery.validator.addMethod("true", (_, element) => element.checked);  //jQuery.validator.addMethod("must-be-true", (_, element) => element.checked);
+        jQuery.validator.unobtrusive.adapters.addBool("true");   //jQuery.validator.unobtrusive.adapters.addBool("must-be-true");
+    </script>
+</environment>
+<!-- Scripts de Produção -->
+<environment exclude="Development">
+    <!-- JQuery Validate e unobtrusive-->
+    <script src="~/js/jquery-validate/dist/jquery.validate.min.js"></script>
+    <script src="~/js/jquery-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        <!-- Para as mensagens de validação personalizadas com "ValidationMessageFor" via classe também personalizada HtmlHelpers -->
+        jQuery.validator.addMethod("true", (_, element) => element.checked);
+        jQuery.validator.unobtrusive.adapters.addBool("true");
+    </script>
+</environment>

@@ -1,0 +1,83 @@
+﻿@page
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmPostos
+@{
+    Layout = "_Layout";
+}
+<style>
+    label {
+        color: gray;
+    }
+
+    .wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr; /* até 3 colunas em cada wrapper */
+    }
+
+    .campo {
+        display: flex;
+        border: none;
+        background-color: inherit;
+        color: black;
+        font-size: small;
+        width: 400px;
+    }
+
+    .border0 {
+        border: none;
+        appearance: none; /* retira qualquer símbolo e formatação do drop down */
+        -webkit-appearance: none;
+        background-color: inherit;
+    }
+
+    .email {
+        width: 200px;
+        color: blue;
+    }
+
+    .width300 {
+        width: 300px;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        $(".close").click(function (event) {
+            event.preventDefault();
+            window.location.href = 'Postos';
+        });
+    });
+</script>
+<!-- Trigger/Open The Modal -->
+<div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">@ViewBag.TextoMenu[0]</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <!-- Linha 1 -->
+            <div class="wrapper">
+                <div>
+                    @Html.Label("Nome")
+                    @Html.TextBoxFor(p => p.NomePosto, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Responsável")
+                    @Html.TextBoxFor(p => p.Responsavel, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Telefone")
+                    @Html.TextBoxFor(p => p.Telefone, new { @id = "telefone", @class = "campo", @disabled = "disabled" })
+                </div>
+            </div>
+            <!-- Linha 2 -->
+            <div class="wrapper">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Meu JS (sempre no final) para poder renderizar junto com a página -->
+<script src="@Url.Content("~/js/site.js")" type="text/javascript"></script>
+<!-- Fim da página do Modal -->

@@ -1,0 +1,19 @@
+﻿<!--
+  JS DATATABLE ::: apoiado em \js\mydatatables.js
+-->
+<script>
+    /* Total de linhas de registros da tabela inteira trazida para a view */
+    var totalTabela = $('#modeloTable').find('.grid_fundo_opcoes').length;
+    /*
+    Inicio do Grid
+    */
+    $(document).ready(function () {
+        var idTable = $('[name="datatable"]').prop("id");
+        if (idTable == "modeloTableCompacta") {
+            configTableCompacta();   //constrói o DataTable com parâmetros de uma tabela compacta/simples/reduzida
+        }
+        else {
+            configTable();   //constrói o DataTable com parâmetros
+        }
+    });
+</script>

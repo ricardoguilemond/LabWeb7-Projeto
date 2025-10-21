@@ -1,0 +1,238 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@using LabWebMvc.MVC.Areas.Utils
+@using static ExtensionsMethods.Genericos.Enumeradores
+@model vmPlanoExames
+@{
+    Layout = "_Layout";
+}
+<script>
+    $(document).ready(function () {
+        var numeroItemFolha = $(".itemFolhaExame").val(); //declara no carregamento da página, o número da folha que está DEFAULT no ComboBox!
+        $('.itemFolhaExame').change(function (event) {//class from RadioButton
+            event.preventDefault();
+            numeroItemFolha = $(".itemFolhaExame").val(); //pega em realtime o número da folha que ESTÁ selecionado no ComboBox!
+            //Vamos atualizar o código do item da folha e chamar depois a partial view que vai atualizar AJAX somente a DIV chamada "contaDiv"
+            $.ajax({
+                url: '/FiltraFolhaExame?numeroItemFolha=' + numeroItemFolha,
+                type: "GET",
+                async: true,
+                dataType: "html",
+                success: function (data) {
+                    $("#contaDiv").html("");
+                    $("#contaDiv").append(data);
+                    //coloca o default das contas itens
+                    $("#item1").prop("disabled", true);
+                    $("#item2").prop("disabled", true);
+                    $("#item3").prop("disabled", true);
+                    //check default do radio bottom das contas itens
+                    $('input:radio[name=TipoContaExame]:nth(0)').prop('checked', true);
+                }
+            });
+            numeroItemFolha = $(".itemFolhaExame").val(); //atualiza em realtime o número da folha que FOI selecionado no ComboBox!
+        });
+        /*
+         *  Captura alguns resultados dos componentes de tela
+         */
+        $('.tipoContaExame').change(function (event) {//class from RadioButton or Text
+            event.preventDefault();
+            var id = 0;
+            var conta = 0;
+            var arrSerial = $('#form').serializeArray();  //todos os objetos com seus nomes e valores
+            $.each(arrSerial, function (i, field) {
+                if (field.name == "Id")
+                    id = field.value;
+                if (field.name == "TipoContaExame")
+                    conta = field.value;
+            });
+            var placeHolder = 'ENTRE COM A DESCRIÇÃO DA CONTA PRINCIPAL';
+            if (conta == 0) {//principal
+                placeHolder = 'ENTRE COM A DESCRIÇÃO DA CONTA PRINCIPAL';
+                document.getElementById('labelConta').innerHTML = 'Descrição da conta principal ou conta agrupamento';
+                $("#Descricao").attr("placeholder", placeHolder);
+                $("#Descricao").removeClass('form-control').addClass('form-control uppercase');
+                $("#item1").prop("disabled", true);
+                $("#item2").prop("disabled", true);
+                $("#item3").prop("disabled", true);
+            }
+            else {//item
+                placeHolder = 'Entre com a descrição da conta item';
+                document.getElementById('labelConta').innerHTML = 'Descrição da conta item';
+                $("#Descricao").attr("placeholder", placeHolder);
+                $("#Descricao").removeClass('form-control uppercase').addClass('form-control');
+                $("#item1").prop("disabled", false);
+                $("#item2").prop("disabled", false);
+                $("#item3").prop("disabled", false);
+            }
+        });
+        /*
+         * Submete o formulário para gravação
+        */
+        $('#clickSubmit').click(function (event) {
+            event.preventDefault();
+            var arrSerial = $('#form[name="formulario"]').serializeArray();  //Id da Conta (registro primary na tabela)
+            //console.log("arrSerial: ", arrSerial);
+            var paramId = 0;
+            var paramTipoConta = 0;
+            $.each(arrSerial, function (i, field) {
+                if (field.name == "ExameId")
+                    paramId = field.value;
+                if (field.name == "TipoContaExame")
+                    paramTipoConta = field.value;
+            });
+            if (paramTipoConta == 0) paramId = 0;   //para conseguir criar uma conta principal
+            console.log("paramTipoConta: ", paramTipoConta);
+            //console.log("paramId: ", paramId);
+            $.ajax({
+                //url: '@Url.Action("IncluirPlanoExames", "PlanoExames")',   //nao precisaria colocar, mas seria assim mesmo.
+                url: '/IncluirPlanoExames?registroID=' + paramId,            //mas vou ter que passar esse "id" para conseguir incluir um "item" na conta certa
+                type: "POST",
+                async: true,
+                dataType: "json",
+                data: $('#form').serialize(),
+                success: function (data) {
+                    ///console.log("data: ", data);
+                    var titulo = data['titulo'];
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var sucesso = data['sucesso'];
+                    titulo = (titulo == null) ? 'Atenção' : data['titulo'];
+                    var tipo = 'falha';
+                    if (sucesso == true) tipo = 'sucesso';
+                    //success: Javascript ::: aqui acontece todas as mensagens de sucesso e não sucesso
+                    clickAviso(titulo, mensagem, tipo, actionPos);  //mensagem normal com desvio para outra action (site.js)
+                },
+                error: function (request, status, error) {
+                    //aqui somente acontece no caso de exception/erro do javascript
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', actionPos);  //mensagem crítica e com desvio para outra action (site.js)
+                }
+            });
+            //Limpa todos os campos do formulário!
+            $('#form')[0].reset();
+        })
+    });
+</script>
+@using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @name = "formulario", @enctype = "multipart/form-data" }))
+{
+    <div class="row">
+        <div class="col-md-4">
+            <form asp-action="Pacientes">
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                @Html.Hidden("ExameId", TempData["NumeroFolha"])   @* //vai ser pego pela vm *@
+                @Html.Hidden("RefExame", TempData["Descricao"])    @* //vai ser pego pela vm *@
+
+                <div class="form-group" style="font-weight: 600;">
+                    @Html.Label("FOLHA: " + TempData["NumeroFolha"] + " - " + TempData["Descricao"])
+                    <div style="display: block; font-size: 0.8em; color: red; font-weight: 500;">Atenção: A descrição será incluída em todas as instituições do plano para a Folha: @TempData["Descricao"].</div>
+                </div>
+
+                <!-- atualizando o box do item de conta conforme seleciona o box acima de Folha de Exame -->
+                <div class="form-group">
+                    @Html.Label("Título da Conta Principal:")
+                    @Html.DropDownListFor(x => x.ExameId, Model.Item1, new { @id = "item1", @class = "itemExamePrincipal", disabled = true, onchange = "atualizaBoxItem(this);" })
+                    @Html.DropDownListFor(x => x.ExameId, Model.Item2, new { @id = "item2", @class = "itemExamePrincipal", disabled = true, onchange = "atualizaBoxItem(this);" })
+                    @Html.DropDownListFor(x => x.ExameId, Model.Item3, new { @id = "item3", @class = "itemExamePrincipal", disabled = true, onchange = "atualizaBoxItem(this);" })
+                </div>
+
+                <div class="form-group">
+                    @Html.Label("Tipo de Conta?")
+                    @{
+                        var itensConta = new List<SelectListItem>()
+                                {
+                                new SelectListItem { Text = "Grupo ou Conta Principal", Value = "0" },
+                                new SelectListItem { Text = "Conta Item", Value = "1" }
+                                };
+                    }
+                    @for (int i = 0; i < itensConta.Count; i++)
+                    {
+                        bool check = (i == 0);
+                        <div style="display: inline-block;">
+                            @Html.RadioButton("TipoContaExame", i, check, new { @class = "tipoContaExame", @name = "TipoContaExame" })
+                            @Html.Label(itensConta[i].Text)
+                        </div>
+                    }
+                </div>
+                <div class="form-group">
+                    <label id="labelConta">Descrição da conta principal ou conta agrupamento</label>
+                    @Html.TextBoxFor(p => p.Descricao, new { @id = "Descricao", @class = "form-control uppercase", @placeholder = "ENTRE COM A DESCRIÇÃO DA CONTA PRINCIPAL", @style = "display: block; width: 400px;", @required = "required" })
+                    <label id="labelMapaHorizontal">Sinonímia (para Mapa Horizontal, se houver)</label>
+                    @Html.TextBoxFor(p => p.MapaHorizontal, new { @id = "MapaHorizontal", @class = "form-control uppercase", @style = "width: 100px;" })
+                </div>
+                <div class="form-group">
+                    <fieldset class="borda_redonda" style="padding: 6px;">
+                        @{
+                            ICollection<int> listaEtiquetas = new HashSet<int>();
+                        }
+                        @for (int i = 0; i <= 10; i++)
+                        {
+                            listaEtiquetas.Add(i);
+                        }
+                        @Html.Label("Quantidade de Etiquetas (Máximo de 10)")
+                        @Html.DropDownListFor(p => p.Etiquetas, new SelectList(listaEtiquetas, "Value"), new { style = "width:50px", size = "1" })
+                    </fieldset>
+                </div>
+                <div class="form-group">
+                    @Html.Label("Agrupar na lista de itens exames de rotina?")
+                    @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                    {
+                        int rotinaIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                        string rotinaSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                        string rotinaDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                        bool check = (rotinaIndex == 0);
+                        <div style="display: inline-block;">
+                            @Html.RadioButton("Seleciona", rotinaIndex, check)
+                            @Html.Label(rotinaDescricao)
+                        </div>
+                    }
+                </div>
+                <div class="form-group">
+                    @Html.Label("Mostrar este item de exame na recepção?")
+                    @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                    {
+                        int recepcaoIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                        string recepcaoSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                        string recepcaoDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                        bool check = (recepcaoIndex == 0);
+                        <div style="display: inline-block;">
+                            @Html.RadioButton("NaoMostrar", recepcaoIndex, check)
+                            @Html.Label(recepcaoDescricao)
+                        </div>
+                    }
+                </div>
+                <div class="form-group">
+                    @Html.Label("Prazo Entrega em Dias")
+                    @Html.TextBoxFor(p => p.PrazoResultadoDias, new { @class = "form-control" })
+                </div>
+                <div class="form-group botao-centralizado">
+                    <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script type="text/javascript">
+        //Atualiza os dois Combobox do DropDownList
+        function atualizaBoxFolha(id) {//recebe o valor e atualiza os combobox da folha de exame
+            var id = id.value;
+            $("#id_folha").val(id);
+            $("#nome_folha").val(id);
+        }
+        function atualizaBoxItem(id) {//recebe o valor e atualiza os combobox do item de exame
+            var id = id.value;
+            $("#item1").val(id);
+            $("#item2").val(id);
+            $("#item3").val(id);
+        }
+    </script>
+}

@@ -1,0 +1,110 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@using LabWebMvc.MVC.Areas.Utils
+@model vmPostos
+@{
+    Layout = "_Layout";
+}
+<script>
+    /*
+       AQUI CARREGAMOS TODOS OS OBJETOS SÍNCRONOS, QUE SÃO CARREGADOS IMEDIATAMENTE APÓS CARREGAR A PÁGINA OU APÓS UM POST.
+    */
+    $(document).ready(function () {
+        $('#clickSubmit').click(function (event) {
+            event.preventDefault();
+            $.ajax({
+                //url: '@Url.Action("AlterarInstituicao", "Instituicoes")',   //se habiliar a URL terá que passar o "id", porque só iria a vm sem id.
+                type: "POST",
+                async: true,
+                dataType: "json",
+                data: $('#form').serialize(),
+                success: function (data) {
+                    var titulo = data['titulo'];
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var sucesso = data['sucesso'];
+                    titulo = (titulo == null) ? 'Atenção' : data['titulo'];
+                    var tipo = 'falha';
+                    if (sucesso == true) tipo = 'sucesso';
+                    //success: Javascript ::: aqui acontece todas as mensagens de sucesso e não sucesso
+                    clickAviso(titulo, mensagem, tipo, actionPos);  //mensagem normal com desvio para outra action (site.js)
+                },
+                error: function (request, status, error) {
+                    //aqui somente acontece no caso de exception/erro do javascript
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', actionPos);  //mensagem crítica e com desvio para outra action (site.js)
+                }
+            });
+        })
+    });
+</script>
+
+@using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))  //@id-"form" é obrigatório para campos chegarem do doutro lado
+{
+    <div class="row">
+        <div class="col-md-4">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="form-group">
+                @Html.Label("*Nome do Posto/anexo")
+                @Html.TextBoxFor(p => p.NomePosto, new { @class = "form-control capitalize", @readonly = "readonly" })
+            </div>
+            <div class="form-group">
+                @Html.Label("*Responsável")
+                @Html.TextBoxFor(p => p.Responsavel, new { @class = "form-control capitalize", @placeholder = "Entre com o nome do responsável", @required = "required" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Telefone ou celular com DDD")
+                @Html.ValidationMessageFor(p => p.Telefone, null, new { @class = "has-error" })
+                @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD" })
+            </div>
+            <div class="form-group">
+                @Html.Label("CEP")
+                @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Logradouro (Rua/Trav)")
+                @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Endereço")
+                @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Número")
+                @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Complemento")
+                @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Bairro")
+                @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Cidade/Município")
+                @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município" })
+            </div>
+            <div class="form-group">
+                @Html.Label("UF:")
+                <div style="display: inline-block;">
+                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF))
+                </div>
+            </div>
+            <div class="form-group botao-centralizado">
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

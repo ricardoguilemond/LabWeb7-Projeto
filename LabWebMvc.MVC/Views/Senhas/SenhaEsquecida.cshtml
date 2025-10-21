@@ -1,0 +1,65 @@
+﻿@page
+@using LabWebMvc.MVC.ViewModel
+@model vmLogin
+@{
+    //Layout = "_Layout";
+}
+<div class="col-md-12">
+    <section id="LoginForm">
+        <div class="row d-flex justify-content-center col-12">
+            <div class="col-4 border border-primary rounded m-20">
+                <div class="d-flex justify-content-center mt-2">
+                    <i class="fa-solid fa-user fa-2x"></i>
+                </div>
+                @using (Html.BeginForm("ResetarSenha", "Senhas", new { @class = "form-horizontal", role = "form" }, FormMethod.Post))
+                {
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                    //Para o retorno das mensagens de controller
+                    //text-muted cor mais clara para o texto de label
+                    <div class="d-flex justify-content-center">
+                        <h4 class="mb-3 font-weight-normal">Recuperação de senha</h4>
+                    </div>
+                    <div class="form-group ">
+                        @Html.LabelFor(m => m.LoginUsuario, new { @class = "text-muted" })
+                        @Html.TextBoxFor(m => m.LoginUsuario, new { @class="form-control",
+                        @type = "email", @placeholder = "Informe seu Email de usuário do cadastro",
+                                        @required = "required",
+                                        @autofocus = "autofocus",
+                                        @title = "Entre com um Email válido",
+                                        @style = "text-transform: lowercase;"
+                                        })
+                    @*@Html.ValidationMessageFor(m => m.LoginUsuario, "", new { @class="field-validation-valid" })*@
+                </div>
+                <div class="form-group ">
+                    @Html.LabelFor(m => m.CPF, new { @class = "text-muted" })
+                    @Html.TextBoxFor(m => m.CPF, new { @class="form-control cpf",
+                                        @type = "text", @placeholder = "Informe seu CPF",
+                                        @required = "required",
+                                        @title = "O CPF é obrigatório"
+                                        })
+                    @*@Html.ValidationMessageFor(m => m.CPF, "", new { @class="field-validation-valid" })*@
+                </div>
+                <div class="form-group ">
+                    @Html.LabelFor(m => m.DataNascimento, new { @class = "text-muted" })
+                    @Html.TextBoxFor(m => m.DataNascimento, "{0:yyyy-MM-dd}", new { @class="form-control",
+                                        @type = "date", @placeholder = "Informe sua data de nascimento",
+                                        @required = "required",
+                                        @title = "A data de nascimento é obrigatória",
+                                        @style = "text-transform: lowercase;"
+                                        })
+                    @Html.ValidationMessageFor(m => m.DataNascimento, "", new { @class = "field-validation-valid" })
+                </div>
+                <div class="form-group botao-centralizado">
+                    <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                        Salvar
+                    </button>
+                </div>
+            }
+            </div>
+        </div>
+    </section>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

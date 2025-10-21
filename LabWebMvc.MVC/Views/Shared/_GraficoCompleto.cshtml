@@ -1,0 +1,122 @@
+﻿@model LabWebMvc.MVC.IndicadoresGraficos.Shared.GraficoModel
+@using System.Text.Json
+@using LabWebMvc.MVC.IndicadoresGraficos.Shared
+
+@{
+    var canvasId = Model.CanvasId;
+    var jsonLabels = JsonSerializer.Serialize(Model.Labels ?? new List<string>());
+    var jsonValores = JsonSerializer.Serialize(Model.Valores ?? new List<int>());
+}
+
+<div class="grafico-cabecalho">
+    <div class="grafico-titulo">@Model.Titulo</div>
+    @if (!string.IsNullOrEmpty(Model.Subtitulo))
+    {
+        <div class="grafico-subtitulo">@Model.Subtitulo</div>
+    }
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="chart-container" style="position: relative; height: 50vh;">
+            <canvas id="@canvasId"
+                    data-labels='@jsonLabels'
+                    data-valores='@jsonValores'
+                    data-tipo='@Model.TipoGrafico'>
+            </canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grafico-rodape @(Model.RodapeMostrarAlerta ? "alerta" : "")">
+    @if (!string.IsNullOrEmpty(Model.RodapeIconeCss))
+    {
+        <i class="@Model.RodapeIconeCss"></i>
+    }
+
+    <div class="rodape-texto">@Model.RodapeTextoPrincipal</div>
+
+    @if (!string.IsNullOrEmpty(Model.RodapeSubtexto))
+    {
+        <div class="rodape-subtexto">@Model.RodapeSubtexto</div>
+        <div class="rodape-subtexto" id="info-@Model.CanvasId"></div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.RodapeLinkTexto) && !string.IsNullOrEmpty(Model.RodapeLinkUrl))
+    {
+        <div class="rodape-link">
+            <a href="@Model.RodapeLinkUrl" target="_blank">@Model.RodapeLinkTexto</a>
+        </div>
+    }
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+     //Controlando os steps do eixo "Y"
+     function calcularStepSize(maxValor) {
+        if (maxValor <= 1000) return 60;
+        if (maxValor <= 5000) return 200;
+        if (maxValor <= 10000) return 500;
+        if (maxValor <= 50000) return 1000;
+        return Math.ceil(maxValor / 10 / 100) * 100; // arredonda para múltiplos de 100
+    }
+    //Montagem do gráfico
+    document.addEventListener("DOMContentLoaded", function () {
+        const canvas = document.getElementById('@canvasId');
+        if (!canvas) return;
+
+        const labels = JSON.parse(canvas.dataset.labels);
+        const valores = JSON.parse(canvas.dataset.valores);
+        const tipo = canvas.dataset.tipo;
+
+        const maxValor = Math.max(...valores);
+        const stepSize = calcularStepSize(maxValor);
+        const limiteY = Math.ceil(maxValor * 1.2 / stepSize) * stepSize;
+
+        // Atualiza o rodapé com os valores
+        const infoDiv = document.getElementById("info-@canvasId");
+        if (infoDiv) {
+            infoDiv.textContent = `Intervalo de "Y": ${stepSize} para máximo de ${limiteY}`;
+        }
+
+        //Monta o gráfico
+        new Chart(canvas.getContext('2d'), {
+            type: tipo,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'ReCaptcha',
+                    data: valores,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: limiteY,
+                        ticks: {
+                            stepSize: 60,
+                            color: '#646464',
+                            font: { size: 12 }
+                        },
+                        grid: { color: 'rgba(200, 200, 200, 0.2)' }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#646464',
+                            font: { size: 12 }
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    });
+</script>

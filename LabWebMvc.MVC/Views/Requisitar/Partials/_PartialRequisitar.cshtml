@@ -1,0 +1,156 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using LabWebMvc.MVC.ViewModel
+@model List<vmRequisitarSimplificado>
+
+<script>
+    $(document).ready(function () {
+        //Requisições do dia
+        const modeloTable = $('#modeloTableRequisitar').DataTable({
+            ajax: {
+                url: '/Requisitar/GetLancamentosHoje',
+                dataSrc: 'data'
+            },
+            columns: [    //aqui já vai preencher o tbody linha a linha <tbody></tbody>
+                { data: 'id' },
+                { data: 'pacienteId' },
+                { data: 'nomePaciente' },
+                { data: 'nascimento' },
+                { data: 'nomeInstituicao' },
+                { data: 'nomePosto' },
+                { data: 'nomeTabela' },
+                { data: 'laboratorioApoio' },
+                { data: 'dataIni' },
+                { data: 'dataEntregaParcial' }
+            ],
+            responsive: true,
+            order: [[5, 'asc']],
+            language: {
+                        "search": "Busca:",
+                        "lengthMenu": "Mostrar _MENU_ resultados por página",
+                        "emptyTable": "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
+                        "info": "Exibindo: _START_/_END_ de _TOTAL_ registros",
+                        "infoFiltered": "(Total de _MAX_ registros existentes na base de dados)",
+                        "infoThousands": ".",
+                        "thousands": ".",
+                        "decimal": ",",
+                        "loadingRecords": "Carregando...",
+                        "zeroRecords": "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
+                        "paginate": {
+                            "next": "<img src='images/icones/arrow_right_uno.png' width='28%' border='none' />",
+                            "previous": "<img src='images/icones/arrow_left_uno.png' width='28%' border='none' />",
+                            "first": "<img src='images/icones/arrow_left.png' width='28%' border='none' />",
+                            "last": "<img src='images/icones/arrow_right.png' width='28%' border='none' />",
+                        },
+                        //Fixa o header e o footer para auxiliar na identificação das colunas
+                        fixedHeader: {
+                            header: true,
+                            footer: true
+                        }
+            }
+        });
+        //..
+        // Evento de duplo clique na linha
+        document.querySelector('#modeloTableRequisitar tbody').addEventListener('dblclick', function (event) {
+            const tr = event.target.closest('tr');
+            const rowData = modeloTable.row(tr).data();
+        
+            if (!rowData) {
+                console.error("Nenhum dado encontrado na linha.");
+                clickAviso("Erro", "Não foi possível obter os dados da linha selecionada", "falha", null);
+                return;
+            }
+        
+            //console.log("Dados da linha selecionada:", rowData); //Ajuda a inspecionar os campos disponíveis
+        
+            const idPaciente = parseInt(rowData.pacienteId, 10);
+            const dataBruta = rowData.dataIni;
+        
+            if (!idPaciente || !dataBruta) {
+                //console.error("Dados inválidos:", { idPaciente, dataBruta });
+                clickAviso("Erro", "Dados incompletos para impressão do cupom", "falha", null);
+                return;
+            }
+        
+            // Validação da data no formato dd/MM/yyyy
+            const regexData = /^\d{2}\/\d{2}\/\d{4}$/;
+            if (!regexData.test(dataBruta)) {
+                //console.error("Formato de data inválido:", dataBruta);
+                clickAviso("Erro", "Formato de data inválido", "falha", null);
+                return;
+            }
+        
+            const [dia, mes, ano] = dataBruta.split('/');
+            const dataFormatada = `${ano}-${mes}-${dia}`; // yyyy-MM-dd
+
+            fetch('/Requisitar/CupomRequisicao', {
+               method: 'POST',
+               headers: {
+                   'Content-Type': 'application/json'
+               },
+               body: JSON.stringify({
+                   idPaciente: idPaciente,
+                   data: dataFormatada
+               })
+           })
+           .then(response => {
+               if (!response.ok) {
+                   return response.text().then(text => { throw new Error(text); });
+               }
+               return response.json(); //lendo o json retornado
+           })
+           .then(data => {
+               const titulo = data.titulo ?? 'Atenção';
+               const mensagem = data.mensagem ?? 'Cupom processado.';
+               const sucesso = data.sucesso ?? false;
+               const tipo = sucesso ? 'sucesso' : 'falha';
+       
+               clickAviso(titulo, mensagem, tipo, null);
+           })
+           .catch(error => {
+               clickAviso("Impressão", "A impressão do Cupom falhou: " + error.message, "falha", null);
+           });
+        });    
+        //..
+    });
+</script>
+<div class="col-xl-12">
+    <div class="card">
+        <div class="card-header"><i class="fas fa-chart-bar me-1"></i>Grid das Requisições de Hoje!</div>
+        <div class="table-responsive">
+            <table id="modeloTableRequisitar" name="datatable" data-order='[[ 0, "desc" ]]' class="display compact order-column table-striped table-hover nowrap">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Id Paciente</th>
+                        <th>Nome Paciente</th>
+                        <th>Nascimento</th>
+                        <th>Instituição</th>
+                        <th>Posto de Coleta</th>
+                        <th>Tabela de Preço</th>
+                        <th>Laboratorio Apoio</th>
+                        <th>DT Entrada</th>
+                        <th>DT Entrega Parcial</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Id</th>
+                        <th>Id Paciente</th>
+                        <th>Nome Paciente</th>
+                        <th>Nascimento</th>
+                        <th>Instituição</th>
+                        <th>Posto de Coleta</th>
+                        <th>Tabela de Preço</th>
+                        <th>Laboratorio Apoio</th>
+                        <th>DT Entrada</th>
+                        <th>DT Entrega Parcial</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>

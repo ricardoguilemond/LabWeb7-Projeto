@@ -1,0 +1,1005 @@
+Loading solution 'F:\Projetos dotNet\Web-Project\LabWeb7-Project\LabWebMvc.sln'...
+Analyze solution 'F:\Projetos dotNet\Web-Project\LabWeb7-Project\LabWebMvc.sln'
+Analyze 'BLL' 1/6
+Analyze 'ExtensionsMethods' 2/6
+  Genericos\GenericValidations.cs(159,24): info CA1825: Evite alocaÅEes de matriz de comprimento zero desnecess†rias.  Use Array.Empty<IPAddress>() em vez disso.
+  Criptografias\CriptoDecripto.cs(240,17): info CA1861: Prefira campos 'static readonly' em vez de argumentos de matriz constante se o mÇtodo chamado for chamado repetidamente e n∆o estiver modificando a matriz passada
+  Genericos\GenericValidations.cs(14,30): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Genericos\GenericValidations.cs(15,30): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+Analyze 'LabWebMvc.MVC' 3/6
+  Areas\Strategy\DefaulDeleteStrategy.cs(82,34): warning CS0168: A vari†vel "ex" est† declarada, mas nunca ÅEusada
+  Areas\Controllers\RequisitarController.cs(79,42): warning CS1998: Este mÇtodo ass°ncrono n∆o possui operadores 'await' e ser† executado de modo s°ncrono. ÅErecomend†vel o uso do operador 'await' para aguardar chamadas ÅEAPI desbloqueadas ou do operador 'await Task.Run(...)' para realizar um trabalho associado ÅECPU em um thread em segundo plano.
+  Integracoes\IntegracaoUtils.cs(68,28): warning CS8602: DesreferÅEcia de uma referÅEcia possivelmente nula.
+  Models\db.cs(192,100): warning CS8602: DesreferÅEcia de uma referÅEcia possivelmente nula.
+  Areas\ServicosDatabase\HttpContextHelper.cs(12,46): warning CS8603: Poss°vel retorno de referÅEcia nula.
+  Areas\ServicosDatabase\HttpContextHelper.cs(5,45): warning CS8618: O campo n∆o anul†vel '_httpContextAccessor' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o campo como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Assinaturas' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ClasseExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ControleConcorrencia' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDeAcesso' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDePerfil' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDePerfilMenu' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDePerfilModelo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDePerfilTipo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Cor' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Empresa' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ERTemporario' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'EstadoCivil' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesExportados' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesImpressos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesPendentes' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesRealizados' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesRealizadosAM' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'FichasInternas' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'FichasLotes' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'FichasPlanilhas' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Instituicao' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosArmazenamento' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosConfiguracao' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosExecucao' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosExecucaoArquivo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosLayout' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosPeriodicidade' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ItensExamesRealizados' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'ItensExamesRealizadosAM' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'LogArquivos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Logradouro' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Medicos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'MemoAuxiliar' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Pacientes' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'PlanoExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Postos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Rastreamentos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Requisitar' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Senhas' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'Sexo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'SituacaoExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'TabelaExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'TextosProntos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'TipoSanguineo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'TituloExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'UF' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(76,12): warning CS8618: O propriedade n∆o anul†vel 'UsuariosWeb' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Assinaturas' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ClasseExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ControleConcorrencia' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDeAcesso' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDePerfil' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDePerfilMenu' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDePerfilModelo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ControleDePerfilTipo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Cor' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Empresa' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ERTemporario' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'EstadoCivil' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesExportados' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesImpressos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesPendentes' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesRealizados' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ExamesRealizadosAM' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'FichasInternas' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'FichasLotes' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'FichasPlanilhas' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Instituicao' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosArmazenamento' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosConfiguracao' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosExecucao' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosExecucaoArquivo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosLayout' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'IntegracaoDadosPeriodicidade' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ItensExamesRealizados' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'ItensExamesRealizadosAM' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'LogArquivos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Logradouro' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Medicos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'MemoAuxiliar' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Pacientes' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'PlanoExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Postos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Rastreamentos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Requisitar' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Senhas' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'Sexo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'SituacaoExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'TabelaExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'TextosProntos' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'TipoSanguineo' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'TituloExames' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'UF' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Models\db.cs(86,12): warning CS8618: O propriedade n∆o anul†vel 'UsuariosWeb' precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar o propriedade como anul†vel.
+  Areas\Utils\UtilsBase.cs(650,20): info ASP0015: The header 'Referer' can be accessed using the Referer property
+  Interfaces\Base.cs(4,14): info CA1050: Declarar tipos em namespaces
+  Areas\EventViewerHelper\EventViewerHelper.cs(58,22): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.SourceExists(string)' em: 'windows'.
+  Areas\EventViewerHelper\EventViewerHelper.cs(60,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.CreateEventSource(EventSourceCreationData)' em: 'windows'.
+  Areas\EventViewerHelper\EventViewerHelper.cs(60,48): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventSourceCreationData' em: 'windows'.
+  Areas\EventViewerHelper\EventViewerHelper.cs(65,55): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  Areas\EventViewerHelper\EventViewerHelper.cs(66,51): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Warning' em: 'windows'.
+  Areas\EventViewerHelper\EventViewerHelper.cs(67,49): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Error' em: 'windows'.
+  Areas\EventViewerHelper\EventViewerHelper.cs(68,56): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.SuccessAudit' em: 'windows'.
+  Areas\EventViewerHelper\EventViewerHelper.cs(69,56): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.FailureAudit' em: 'windows'.
+  Areas\EventViewerHelper\EventViewerHelper.cs(70,26): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  Areas\EventViewerHelper\EventViewerHelper.cs(73,17): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, string, EventLogEntryType)' em: 'windows'.
+  Interfaces\Criptografias\CriptoDecripto.cs(75,49): info CA1507: Usar nameof em lugar do literal de cadeia de caracteres 'plainText'
+  Interfaces\Criptografias\CriptoDecripto.cs(77,49): info CA1507: Usar nameof em lugar do literal de cadeia de caracteres 'Key'
+  Interfaces\Criptografias\CriptoDecripto.cs(79,49): info CA1507: Usar nameof em lugar do literal de cadeia de caracteres 'IV'
+  Interfaces\Criptografias\CriptoDecripto.cs(114,49): info CA1507: Usar nameof em lugar do literal de cadeia de caracteres 'cipherText'
+  Interfaces\Criptografias\CriptoDecripto.cs(116,49): info CA1507: Usar nameof em lugar do literal de cadeia de caracteres 'Key'
+  Interfaces\Criptografias\CriptoDecripto.cs(118,49): info CA1507: Usar nameof em lugar do literal de cadeia de caracteres 'IV'
+  Areas\ServicosDatabase\ConectionManager.cs(17,17): info CA1513: Use 'ObjectDisposedException.ThrowIf' em vez de lanáar explicitamente uma nova instÉncia de exceÅEo
+  Interfaces\Criptografias\CriptoDecripto.cs(57,21): info CA1816: Altere CriptoDecripto.Dispose() para chamar GC.SuppressFinalize(object). Isso impedir† que tipos derivados que introduzem um finalizador precisem reimplementar 'IDisposable' para cham†-lo.
+  Interfaces\Repositorio.cs(121,13): info CA1816: Repositorio<T>.Dispose() chama GC.SuppressFinalize(object), um mÇtodo que geralmente s¢ ÅEchamado de dentro de uma implementaÅEo de 'IDisposable.Dispose'. Consulte o padr∆o IDisposable para obter mais informaÅEes.
+  Areas\Controllers\ClasseExamesController.cs(41,28): info CA1822: O membro 'AtualizaFolhaNoPlanoDeExames' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Areas\Controllers\InstituicoesController.cs(628,22): info CA1822: O membro 'GetImagemTimbre' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Areas\Controllers\InstituicoesController.cs(661,22): info CA1822: O membro 'GetImagemLogomarca' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Areas\Controllers\SenhasController.cs(476,22): info CA1822: O membro 'GetImagemAssinatura' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Integracoes\Exportacao\ExportacaoPacientes.cs(195,24): info CA1822: O membro 'Titulos' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Integracoes\Importacao\MovimentacaoImportacao.cs(8,22): info CA1822: O membro 'ProcessaArquivo' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Integracoes\Integracoes.cs(66,26): info CA1822: O membro 'GetNovaData' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Integracoes\Integracoes.cs(83,26): info CA1822: O membro 'GetNovaDataMes' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Integracoes\ServicoIntegracao.cs(121,24): info CA1822: O membro 'ValidarRestricaoNegocio' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Interfaces\Database\DB.cs(114,22): info CA1822: O membro 'deleteOrphans' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  info CA1824: Marcar assemblies com NeutralResourcesLanguageAttribute
+  Areas\Concorrencias\ConcorrenciaService.cs(133,91): info CA1825: Evite alocaÅEes de matriz de comprimento zero desnecess†rias.  Use Array.Empty<object>() em vez disso.
+  Areas\Controllers\PlanoExamesController.cs(114,35): info CA1825: Evite alocaÅEes de matriz de comprimento zero desnecess†rias.  Use Array.Empty<string>() em vez disso.
+  Areas\Controllers\ReleaseController.cs(17,94): info CA1825: Evite alocaÅEes de matriz de comprimento zero desnecess†rias.  Use Array.Empty<string>() em vez disso.
+  Areas\Utils\UtilsBase.cs(938,24): info CA1825: Evite alocaÅEes de matriz de comprimento zero desnecess†rias.  Use Array.Empty<string>() em vez disso.
+  Areas\Utils\UtilsBase.cs(1066,29): info CA1825: Evite alocaÅEes de matriz de comprimento zero desnecess†rias.  Use Array.Empty<string>() em vez disso.
+  Integracoes\IntegracaoUtils.cs(136,20): info CA1825: Evite alocaÅEes de matriz de comprimento zero desnecess†rias.  Use Array.Empty<DateTime>() em vez disso.
+  Models\db.cs(201,83): info CA1826: N∆o use mÇtodos Enumerable em coleÅEes index†veis. Em vez disso, use a coleÅEo.
+  UtilHelper\TrataExcecoes.cs(24,145): info CA1826: N∆o use mÇtodos Enumerable em coleÅEes index†veis. Em vez disso, use a coleÅEo.
+  Interfaces\Database\DB.cs(88,21): info CA1827: Count() ÅEusado onde Any() poderia ser usado para melhorar o desempenho
+  Models\db.cs(116,17): info CA1827: Count() ÅEusado onde Any() poderia ser usado para melhorar o desempenho
+  Areas\Controllers\PacientesController.cs(84,25): info CA1829: Use a propriedade "Length" em vez de Enumerable.Count()
+  Areas\Controllers\PacientesController.cs(84,61): info CA1829: Use a propriedade "Length" em vez de Enumerable.Count()
+  Areas\Controllers\PlanoExamesController.cs(68,34): info CA1829: Use a propriedade "Count" em vez de Enumerable.Count()
+  Areas\Controllers\PlanoExamesItensController.cs(79,34): info CA1829: Use a propriedade "Count" em vez de Enumerable.Count()
+  Areas\Controllers\RequisitarController.cs(54,34): info CA1829: Use a propriedade "Count" em vez de Enumerable.Count()
+  Areas\Controllers\SenhasController.cs(82,25): info CA1829: Use a propriedade "Length" em vez de Enumerable.Count()
+  Areas\Controllers\SenhasController.cs(82,61): info CA1829: Use a propriedade "Length" em vez de Enumerable.Count()
+  Areas\Controllers\PlanoExamesController.cs(136,33): info CA1845: Use a 'cadeia de caracteres' baseada em intervalo. Concat' e 'AsSpan' em vez de 'Substring'
+  Areas\Controllers\PlanoExamesController.cs(244,50): info CA1845: Use a 'cadeia de caracteres' baseada em intervalo. Concat' e 'AsSpan' em vez de 'Substring'
+  Areas\Controllers\PlanoExamesItensController.cs(116,50): info CA1845: Use a 'cadeia de caracteres' baseada em intervalo. Concat' e 'AsSpan' em vez de 'Substring'
+  Areas\Controllers\PacientesController.cs(87,48): info CA1859: Altere o tipo de vari†vel 'dadosQuery' de 'System.Collections.Generic.ICollection<LabWebMvc.MVC.Models.Pacientes>' para 'System.Collections.Generic.List<LabWebMvc.MVC.Models.Pacientes>' para melhorar o desempenho
+  Areas\Controllers\PlanoExamesController.cs(437,42): info CA1859: Altere o tipo de vari†vel 'planoExames' de 'System.Collections.Generic.ICollection<LabWebMvc.MVC.Models.PlanoExames>' para 'System.Collections.Generic.List<LabWebMvc.MVC.Models.PlanoExames>' para melhorar o desempenho
+  Areas\Controllers\PlanoExamesItensController.cs(324,42): info CA1859: Altere o tipo de vari†vel 'planoExames' de 'System.Collections.Generic.ICollection<LabWebMvc.MVC.Models.PlanoExames>' para 'System.Collections.Generic.List<LabWebMvc.MVC.Models.PlanoExames>' para melhorar o desempenho
+  Areas\Controllers\RequisitarController.cs(298,31): info CA1859: Altere o tipo de vari†vel 'acumulador' de 'LabWebMvc.MVC.Interfaces.Collections.IListaAcumulativa' para 'LabWebMvc.MVC.Interfaces.Collections.ListaAcumulativa' para melhorar o desempenho
+  Areas\Controllers\RequisitarController.cs(387,35): info CA1859: Altere o tipo de vari†vel 'limpaCupom' de 'LabWebMvc.MVC.Interfaces.Collections.IListaAcumulativa' para 'LabWebMvc.MVC.Interfaces.Collections.ListaAcumulativa' para melhorar o desempenho
+  Areas\Controllers\RequisitarController.cs(400,35): info CA1859: Altere o tipo de vari†vel 'acumulador' de 'LabWebMvc.MVC.Interfaces.Collections.IListaAcumulativa' para 'LabWebMvc.MVC.Interfaces.Collections.ListaAcumulativa' para melhorar o desempenho
+  Areas\Controllers\SenhasController.cs(85,45): info CA1859: Altere o tipo de vari†vel 'dadosQuery' de 'System.Collections.Generic.ICollection<LabWebMvc.MVC.Models.Senhas>' para 'System.Collections.Generic.List<LabWebMvc.MVC.Models.Senhas>' para melhorar o desempenho
+  Areas\Utils\UtilsBase.cs(219,49): info CA1859: Altere o tipo de vari†vel 'row' de 'System.Collections.Generic.IDictionary<string, object>' para 'System.Collections.Generic.Dictionary<string, object>' para melhorar o desempenho
+  Areas\Utils\UtilsBase.cs(325,30): info CA1859: Altere o tipo de vari†vel 'HttpContextAccessor' de 'Microsoft.AspNetCore.Http.IHttpContextAccessor' para 'Microsoft.AspNetCore.Http.HttpContextAccessor' para melhorar o desempenho
+  Areas\Utils\UtilsBase.cs(331,30): info CA1859: Altere o tipo de vari†vel 'HttpContextAccessor' de 'Microsoft.AspNetCore.Http.IHttpContextAccessor' para 'Microsoft.AspNetCore.Http.HttpContextAccessor' para melhorar o desempenho
+  Areas\Utils\UtilsBase.cs(337,30): info CA1859: Altere o tipo de vari†vel 'HttpContextAccessor' de 'Microsoft.AspNetCore.Http.IHttpContextAccessor' para 'Microsoft.AspNetCore.Http.HttpContextAccessor' para melhorar o desempenho
+  Areas\Utils\UtilsBase.cs(342,30): info CA1859: Altere o tipo de vari†vel 'HttpContextAccessor' de 'Microsoft.AspNetCore.Http.IHttpContextAccessor' para 'Microsoft.AspNetCore.Http.HttpContextAccessor' para melhorar o desempenho
+  Areas\Utils\UtilsBase.cs(348,30): info CA1859: Altere o tipo de vari†vel 'HttpContextAccessor' de 'Microsoft.AspNetCore.Http.IHttpContextAccessor' para 'Microsoft.AspNetCore.Http.HttpContextAccessor' para melhorar o desempenho
+  Interfaces\Repositorio.cs(117,25): info CA1859: Altere o tipo de vari†vel 'd' de 'System.IDisposable' para 'LabWebMvc.MVC.Models.Db' para melhorar o desempenho
+  Interfaces\Repositorio.cs(254,25): info CA1859: Altere o tipo de vari†vel 'd' de 'System.IDisposable' para 'LabWebMvc.MVC.Models.Db' para melhorar o desempenho
+  Models\db.cs(79,37): info CA1859: Altere o tipo de retorno do mÇtodo 'GetOptions' de 'Microsoft.EntityFrameworkCore.DbContextOptions' para 'Microsoft.EntityFrameworkCore.DbContextOptions<LabWebMvc.MVC.Models.Db>' para melhorar o desempenho
+  Areas\Strategy\DefaulDeleteStrategy.cs(107,25): info CA1860: Prefira comparar 'Count' com 0 em vez de usar 'Any()', tanto para clareza quanto para desempenho
+  Models\db.cs(234,25): info CA1860: Prefira comparar 'Count' com 0 em vez de usar 'Any()', tanto para clareza quanto para desempenho
+  Models\db.cs(268,13): info CA1860: Prefira comparar 'Count' com 0 em vez de usar 'Any()', tanto para clareza quanto para desempenho
+  Areas\Concorrencias\ConcorrenciaService.cs(133,91): info CA1861: Prefira campos 'static readonly' em vez de argumentos de matriz constante se o mÇtodo chamado for chamado repetidamente e n∆o estiver modificando a matriz passada
+  Areas\Utils\UtilsBase.cs(673,45): info CA1861: Prefira campos 'static readonly' em vez de argumentos de matriz constante se o mÇtodo chamado for chamado repetidamente e n∆o estiver modificando a matriz passada
+  Areas\Utils\UtilsBase.cs(679,45): info CA1861: Prefira campos 'static readonly' em vez de argumentos de matriz constante se o mÇtodo chamado for chamado repetidamente e n∆o estiver modificando a matriz passada
+  Areas\Validations\ValidacoesDeSenhas.cs(453,56): info CA1861: Prefira campos 'static readonly' em vez de argumentos de matriz constante se o mÇtodo chamado for chamado repetidamente e n∆o estiver modificando a matriz passada
+  Integracoes\ServicoIntegracao.cs(35,55): info CA1861: Prefira campos 'static readonly' em vez de argumentos de matriz constante se o mÇtodo chamado for chamado repetidamente e n∆o estiver modificando a matriz passada
+  Interfaces\Criptografias\CriptoDecripto.cs(194,17): info CA1861: Prefira campos 'static readonly' em vez de argumentos de matriz constante se o mÇtodo chamado for chamado repetidamente e n∆o estiver modificando a matriz passada
+  Areas\Controllers\ClasseExamesController.cs(205,83): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\ClasseExamesController.cs(208,85): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\ClasseExamesController.cs(213,83): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\ClasseExamesController.cs(624,46): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.Contains(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\ClasseExamesController.cs(647,46): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.Contains(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\ClasseExamesController.cs(670,46): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.Contains(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\ClasseExamesController.cs(693,46): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.Contains(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\InstituicoesController.cs(65,79): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\InstituicoesController.cs(68,81): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\InstituicoesController.cs(73,79): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\InstituicoesController.cs(164,25): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\InstituicoesController.cs(166,30): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\InstituicoesController.cs(630,51): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.Contains(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\InstituicoesController.cs(663,54): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.Contains(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\MedicosController.cs(63,85): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\MedicosController.cs(66,87): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\MedicosController.cs(71,85): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\MedicosController.cs(134,30): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\MensagemController.cs(14,36): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\PacientesController.cs(66,87): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\PacientesController.cs(69,89): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\PacientesController.cs(74,87): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\PacientesController.cs(161,30): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\PostosController.cs(59,85): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\PostosController.cs(62,86): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\PostosController.cs(67,84): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\PostosController.cs(135,25): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\SenhasController.cs(68,86): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\SenhasController.cs(71,89): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\SenhasController.cs(76,87): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.StartsWith(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\SenhasController.cs(478,55): info CA1862: Prefira a sobrecarga do mÇtodo de comparaÅEo de strings 'string.Contains(string)' que usa um valor enum 'StringComparison' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se a comparaÅEo culturalmente sens°vel n∆o for necess†ria, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Identity\IdentityHostingStartup.cs(16,51): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(25,51): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(52,51): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Validations\ValidacoesDeSenhas.cs(136,30): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Validations\ValidacoesDeSenhas.cs(451,56): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Validations\ValidacoesDeSenhas.cs(453,17): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Validations\Validations.cs(42,51): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Validations\Validations.cs(76,51): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Integracoes\ServicoIntegracao.cs(28,94): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Interfaces\Database\DB.cs(63,55): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  Areas\Controllers\ClasseExamesController.cs(144,86): info CA2208: O mÇtodo AtualizaFolhaNoPlanoDeExames passa 'RefExame' como o argumento paramName para um construtor ArgumentNullException. Substitua este argumento por um dos nomes de parÉmetro do mÇtodo. Observe que o nome do parÉmetro fornecido deve ter o uso exato de mai£sculas e min£sculas conforme declarado no mÇtodo.
+  Areas\Utils\UtilsBase.cs(870,19): info CA2208: O mÇtodo FormataConta passa 'Conta n∆o pode ser nula ou vazia.' como o argumento paramName para um construtor ArgumentNullException. Substitua este argumento por um dos nomes de parÉmetro do mÇtodo. Observe que o nome do parÉmetro fornecido deve ter o uso exato de mai£sculas e min£sculas conforme declarado no mÇtodo.
+  Areas\Utils\UtilsBase.cs(26,26): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Integracoes\ServicoIntegracao.cs(9,39): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Settings.cs(6,30): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Settings.cs(11,30): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Settings.cs(12,30): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Settings.cs(13,30): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Settings.cs(18,30): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Settings.cs(19,30): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Settings.cs(20,30): info CA2211: Campos n∆o constantes n∆o devem ser vis°veis
+  Areas\Validations\Validations.cs(43,17): info RCS1001: Add braces to if statement (when expression spans over multiple lines)
+  Areas\Validations\Validations.cs(77,17): info RCS1001: Add braces to if statement (when expression spans over multiple lines)
+  Areas\Controllers\ClasseExamesController.cs(196,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\GeralController.cs(58,13): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\InstituicoesController.cs(56,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\MedicosController.cs(54,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\MensagemController.cs(93,13): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\PacientesController.cs(57,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\PostosController.cs(53,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\RequisitarController.cs(257,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\RequisitarController.cs(280,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\RequisitarController.cs(308,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\RequisitarController.cs(362,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\SenhasController.cs(61,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Controllers\SenhasController.cs(453,21): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\ServicosDatabase\DatabaseHelper.cs(30,13): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\ServicosDatabase\EmpresaClienteRepository.cs(37,13): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Areas\Utils\UtilsBase.cs(275,9): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Integracoes\Exportacao\ExportacaoPacientes.cs(171,25): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Interfaces\Criptografias\CriptoDecriptoBase.cs(53,13): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Interfaces\Database\DB.cs(88,17): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Models\db.cs(116,13): info RCS1003: Add braces to if-else (when expression spans over multiple lines)
+  Interfaces\Criptografias\CriptoDecripto.cs(75,49): info RCS1015: Use nameof operator
+  Interfaces\Criptografias\CriptoDecripto.cs(77,49): info RCS1015: Use nameof operator
+  Interfaces\Criptografias\CriptoDecripto.cs(79,49): info RCS1015: Use nameof operator
+  Interfaces\Criptografias\CriptoDecripto.cs(114,49): info RCS1015: Use nameof operator
+  Interfaces\Criptografias\CriptoDecripto.cs(116,49): info RCS1015: Use nameof operator
+  Interfaces\Criptografias\CriptoDecripto.cs(118,49): info RCS1015: Use nameof operator
+  Program.cs(67,17): info RCS1021: Use expression-bodied lambda
+  Areas\Controllers\ReleaseController.cs(25,52): info RCS1033: Remove redundant '== true'
+  Integracoes\Integracoes.cs(206,91): info RCS1033: Remove redundant '== true'
+  Interfaces\Criptografias\CriptoDecripto.cs(267,22): info RCS1033: Remove redundant '== true'
+  Areas\Concorrencias\ConcorrenciaService.cs(60,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Concorrencias\ConcorrenciaService.cs(200,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Concorrencias\ConcorrenciaService.cs(201,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ControleDeImagens\Imagem.cs(82,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ControleDeImagens\Imagem.cs(83,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\BaseController.cs(12,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ClasseExamesController.cs(118,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ClasseExamesController.cs(171,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ClasseExamesController.cs(415,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ClasseExamesController.cs(504,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ClasseExamesController.cs(572,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ClasseExamesController.cs(712,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\GeralController.cs(157,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\HomeController.cs(40,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\HomeController.cs(214,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\HomeController.cs(285,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\HomeController.cs(341,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\HomeController.cs(355,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\HomeController.cs(384,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\HomeController.cs(410,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\HomeController.cs(411,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ImplantacaoController.cs(55,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ImplantacaoController.cs(56,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\InstituicoesController.cs(419,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\InstituicoesController.cs(434,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\InstituicoesController.cs(506,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\InstituicoesController.cs(602,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\InstituicoesController.cs(624,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\InstituicoesController.cs(690,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\InstituicoesController.cs(691,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\MedicosController.cs(243,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\MedicosController.cs(279,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\MedicosController.cs(324,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\MedicosController.cs(325,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\MensagemController.cs(8,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\MensagemController.cs(53,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\MensagemController.cs(190,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\MenuController.cs(50,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PacientesController.cs(151,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PacientesController.cs(243,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PacientesController.cs(404,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PacientesController.cs(419,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PacientesController.cs(510,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PacientesController.cs(511,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(36,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(45,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(93,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(298,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(317,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(338,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(343,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(344,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(358,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(423,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(507,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(517,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(521,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(522,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesController.cs(560,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(98,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(188,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(207,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(228,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(233,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(234,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(248,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(310,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(395,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(470,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PlanoExamesItensController.cs(471,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PostosController.cs(32,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PostosController.cs(362,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PostosController.cs(363,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\PostosController.cs(368,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ReleaseController.cs(97,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\ReleaseControllerHelpers.cs(5,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\RequisitarController.cs(32,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\RequisitarController.cs(245,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\RequisitarController.cs(377,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\RequisitarController.cs(423,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\SenhasController.cs(166,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\SenhasController.cs(219,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\SenhasController.cs(235,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\SenhasController.cs(305,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\SenhasController.cs(505,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\SenhasController.cs(506,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\EventViewerHelper\EventViewerHelper.cs(74,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\EventViewerHelper\EventViewerHelper.cs(101,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\EventViewerHelper\EventViewerHelper.cs(102,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\EventViewerHelper\EventViewerHelper.cs(104,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Identity\IdentityHostingStartup.cs(3,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Middleware\ExceptionHandlingMiddleware.cs(59,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\ConectionManager.cs(47,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(44,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(70,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(71,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(74,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\DatabaseHelper.cs(42,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\DatabaseHelper.cs(43,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\EmpresaClienteRepository.cs(89,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\EmpresaClienteRepository.cs(101,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\EmpresaClienteRepository.cs(102,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\ServicosDatabase\HttpContextHelper.cs(14,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Strategy\DefaulDeleteStrategy.cs(93,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Strategy\DefaulDeleteStrategy.cs(123,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Strategy\DefaulDeleteStrategy.cs(124,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Strategy\DeleteContext.cs(44,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Strategy\DeleteContext.cs(63,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Strategy\IDeleteStrategy.cs(9,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Strategy\IDeleteStrategy.cs(10,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\Utils.cs(4,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(105,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(189,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(375,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(456,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(492,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(533,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(979,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(1015,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(1032,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsBase.cs(1079,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Utils\UtilsImages.cs(89,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Validations\ValidacoesDeSenhas.cs(16,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Validations\ValidacoesDeSenhas.cs(207,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Validations\ValidacoesDeSenhas.cs(442,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Validations\ValidacoesDeSenhas.cs(545,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Validations\ValidacoesDeSenhas.cs(558,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Validations\ValidacoesDeSenhas.cs(560,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Validations\ValidacoesDeSenhas.cs(561,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Validations\Validations.cs(316,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Validations\Validations.cs(317,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(36,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(166,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(183,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(189,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(201,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(221,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(227,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(272,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(276,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(281,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(289,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(298,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(304,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  HtmlHelpers\HtmlHelpers.cs(305,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Enum.cs(61,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Enum.cs(62,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\EnumAtributos.cs(23,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\EnumAtributos.cs(24,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Exportacao\ExportacaoPacientes.cs(234,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Importacao\IMovimentacaoImportacao.cs(30,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Importacao\IMovimentacaoImportacao.cs(31,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Importacao\MovimentacaoImportacao.cs(7,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Importacao\MovimentacaoImportacao.cs(15,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Importacao\MovimentacaoImportacao.cs(16,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Importacao\MovimentacaoImportacao.cs(40,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Importacao\MovimentacaoImportacao.cs(41,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\IntegracaoUtils.cs(54,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\IntegracaoUtils.cs(80,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\IntegracaoUtils.cs(88,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\IntegracaoUtils.cs(165,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Integracoes.cs(47,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Integracoes.cs(422,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Integracoes.cs(535,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Integracoes.cs(538,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Integracoes.cs(542,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Integracoes.cs(543,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Interfaces\IIntegracoes.cs(12,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\Interfaces\Parameters\RodarIntegracaoAgendadaParameter.cs(6,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\ServicoIntegracao.cs(118,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Integracoes\ServicoIntegracao.cs(138,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Base.cs(33,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Collections\IListaAcumulativa.cs(74,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Criptografias\CriptoDecripto.cs(6,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Criptografias\CriptoDecripto.cs(11,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Criptografias\CriptoDecripto.cs(62,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Criptografias\CriptoDecripto.cs(303,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Criptografias\CriptoDecripto.cs(304,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Criptografias\CriptoDecriptoBase.cs(10,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Criptografias\Criptografias.cs(49,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\DAL\PersistenceDAL.cs(146,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Database\DB.cs(80,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Database\DB.cs(94,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\IRepositorio.cs(36,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Menu.cs(45,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Menu.cs(47,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Menu.cs(49,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Interfaces\Repositorio.cs(142,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Models\db.cs(122,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Models\db.cs(243,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Models\db.cs(401,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Models\db.cs(2059,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Models\DbContextOptionsBuilder.cs(7,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Settings.cs(22,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Startup.cs(80,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Startup.cs(151,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Startup.cs(153,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Startup.cs(154,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  UtilHelper\MyTagHelpers.cs(17,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  UtilHelper\MyTagHelpers.cs(19,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  UtilHelper\MyTagHelpers.cs(20,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  UtilHelper\MyTagHelpers.cs(22,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  UtilHelper\TrataExcecoes.cs(43,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmClasseExames.cs(68,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmClasseExames.cs(69,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmInstituicao.cs(100,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmInstituicao.cs(101,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmLogin.cs(36,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmLogin.cs(43,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmMedicos.cs(33,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmMedicos.cs(36,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmMedicos.cs(44,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmMenu.cs(33,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPacientes.cs(6,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPacientes.cs(16,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPacientes.cs(116,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPacientes.cs(143,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPacientes.cs(148,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPacientes.cs(149,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPlanoExames.cs(81,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPlanoExames.cs(90,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPlanoExamesSumario.cs(8,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPlanoExamesSumario.cs(9,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmPostos.cs(47,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmRequisitar.cs(72,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmRequisitar.cs(105,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmRequisitar.cs(106,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\VMSenhas.cs(56,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\VMSenhas.cs(59,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  ViewModel\vmTabelaExames.cs(32,1): info RCS1036: ([deprecated] Use RCS0063 instead) Remove unnecessary blank line
+  Areas\Controllers\InstituicoesController.cs(619,98): info RCS1037: Remove trailing white-space
+  Areas\Controllers\MedicosController.cs(320,83): info RCS1037: Remove trailing white-space
+  Areas\ServicosDatabase\DatabaseHelper.cs(30,96): info RCS1037: Remove trailing white-space
+  Areas\ServicosDatabase\DatabaseHelper.cs(33,96): info RCS1037: Remove trailing white-space
+  Areas\ServicosDatabase\DatabaseHelper.cs(36,96): info RCS1037: Remove trailing white-space
+  Areas\Strategy\DeleteContext.cs(48,1): info RCS1037: Remove trailing white-space
+  Areas\Strategy\DeleteContext.cs(52,49): info RCS1037: Remove trailing white-space
+  Areas\Utils\UtilsImages.cs(23,65): info RCS1037: Remove trailing white-space
+  Areas\Utils\UtilsImages.cs(89,1): info RCS1037: Remove trailing white-space
+  Areas\Utils\UtilsImages.cs(90,1): info RCS1037: Remove trailing white-space
+  Areas\Utils\UtilsImages.cs(91,1): info RCS1037: Remove trailing white-space
+  Areas\Validations\ValidacoesDeSenhas.cs(353,54): info RCS1037: Remove trailing white-space
+  Integracoes\Exportacao\ExportacaoPacientes.cs(189,187): info RCS1037: Remove trailing white-space
+  Interfaces\Criptografias\AvaliacaoReCaptchaGoogle.cs(81,21): info RCS1049: Simplify boolean comparison
+  Areas\Controllers\MensagemController.cs(118,13): info RCS1073: Convert 'if' to 'return' statement
+  Areas\Utils\UtilsBase.cs(368,9): info RCS1073: Convert 'if' to 'return' statement
+  Areas\Controllers\ClasseExamesController.cs(204,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\ClasseExamesController.cs(207,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\ClasseExamesController.cs(212,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\InstituicoesController.cs(64,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\InstituicoesController.cs(67,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\InstituicoesController.cs(72,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\MedicosController.cs(62,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\MedicosController.cs(65,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\MedicosController.cs(70,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PacientesController.cs(65,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PacientesController.cs(68,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PacientesController.cs(73,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PacientesController.cs(84,45): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PacientesController.cs(84,81): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PlanoExamesController.cs(68,40): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PlanoExamesController.cs(457,62): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PlanoExamesItensController.cs(79,40): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PlanoExamesItensController.cs(344,62): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PostosController.cs(61,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\PostosController.cs(66,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\RequisitarController.cs(54,40): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\SenhasController.cs(67,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\SenhasController.cs(70,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\SenhasController.cs(75,63): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\SenhasController.cs(82,45): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\SenhasController.cs(82,81): info RCS1077: Optimize LINQ method call
+  Integracoes\Integracoes.cs(222,62): info RCS1077: Optimize LINQ method call
+  Interfaces\Database\DB.cs(88,50): info RCS1077: Optimize LINQ method call
+  Models\db.cs(116,46): info RCS1077: Optimize LINQ method call
+  Areas\Controllers\ReleaseController.cs(17,32): info RCS1084: Use coalesce expression instead of conditional expression
+  Areas\Controllers\RequisitarController.cs(368,36): info RCS1084: Use coalesce expression instead of conditional expression
+  Areas\Utils\UtilsBase.cs(393,16): info RCS1084: Use coalesce expression instead of conditional expression
+  Integracoes\Exportacao\ExportacaoPacientes.cs(69,44): info RCS1084: Use coalesce expression instead of conditional expression
+  Integracoes\Exportacao\ExportacaoPacientes.cs(70,42): info RCS1084: Use coalesce expression instead of conditional expression
+  Areas\Controllers\ClasseExamesController.cs(228,104): info RCS1097: Remove redundant 'ToString' call
+  Areas\Controllers\ClasseExamesController.cs(586,105): info RCS1097: Remove redundant 'ToString' call
+  Areas\Controllers\PlanoExamesController.cs(212,101): info RCS1097: Remove redundant 'ToString' call
+  Areas\Controllers\PlanoExamesController.cs(491,101): info RCS1097: Remove redundant 'ToString' call
+  Areas\Controllers\PlanoExamesItensController.cs(380,101): info RCS1097: Remove redundant 'ToString' call
+  Areas\Utils\UtilsBase.cs(917,30): info RCS1097: Remove redundant 'ToString' call
+  Interfaces\Criptografias\AvaliacaoReCaptchaGoogle.cs(91,129): info RCS1097: Remove redundant 'ToString' call
+  Models\db.cs(213,111): info RCS1097: Remove redundant 'ToString' call
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(7,18): warning RCS1102: Make class static
+  Areas\ServicosDatabase\HttpContextHelper.cs(3,18): warning RCS1102: Make class static
+  Areas\Validations\ValidacoesDeSenhas.cs(14,18): warning RCS1102: Make class static
+  Interfaces\Database\InicializaBD.cs(8,18): warning RCS1102: Make class static
+  Program.cs(5,18): warning RCS1102: Make class static
+  Settings.cs(3,18): warning RCS1102: Make class static
+  Settings.cs(9,18): warning RCS1102: Make class static
+  Settings.cs(16,18): warning RCS1102: Make class static
+  UtilHelper\TrataExcecoes.cs(8,18): warning RCS1102: Make class static
+  Areas\Controllers\ConnectionController.cs(20,20): info RCS1104: Simplify conditional expression
+  Interfaces\DAL\PersistenceDAL.cs(21,31): info RCS1104: Simplify conditional expression
+  Interfaces\Menu.cs(43,50): info RCS1104: Simplify conditional expression
+  Interfaces\Repositorio.cs(112,20): info RCS1104: Simplify conditional expression
+  Interfaces\Repositorio.cs(237,20): info RCS1104: Simplify conditional expression
+  Interfaces\Base.cs(4,14): info RCS1110: Declare 'BaseClass' inside namespace
+  Areas\Controllers\SenhasController.cs(368,13): info RCS1118: Mark local variable as const
+  Areas\Controllers\SenhasController.cs(369,13): info RCS1118: Mark local variable as const
+  Areas\Utils\UtilsBase.cs(577,9): info RCS1118: Mark local variable as const
+  Areas\Validations\ValidacoesDeSenhas.cs(111,21): info RCS1118: Mark local variable as const
+  Areas\Validations\Validations.cs(237,13): info RCS1118: Mark local variable as const
+  Integracoes\Exportacao\ExportacaoPacientes.cs(53,25): info RCS1118: Mark local variable as const
+  Integracoes\Exportacao\ExportacaoPacientes.cs(54,25): info RCS1118: Mark local variable as const
+  Integracoes\Exportacao\ExportacaoPacientes.cs(60,29): info RCS1118: Mark local variable as const
+  Integracoes\IntegracaoUtils.cs(84,13): info RCS1118: Mark local variable as const
+  Integracoes\ServicoIntegracao.cs(124,13): info RCS1118: Mark local variable as const
+  Integracoes\ServicoIntegracao.cs(132,17): info RCS1118: Mark local variable as const
+  Interfaces\Criptografias\CriptoDecriptoBase.cs(34,13): info RCS1118: Mark local variable as const
+  Interfaces\Database\InicializaBD.cs(12,13): info RCS1118: Mark local variable as const
+  Interfaces\Database\InicializaBD.cs(13,13): info RCS1118: Mark local variable as const
+  Integracoes\IntegracaoUtils.cs(28,12): warning RCS1139: Add summary element to documentation comment
+  Integracoes\IntegracaoUtils.cs(35,12): warning RCS1139: Add summary element to documentation comment
+  Areas\Controllers\ClasseExamesController.cs(624,17): info RCS1146: Use conditional access
+  Areas\Controllers\ClasseExamesController.cs(647,17): info RCS1146: Use conditional access
+  Areas\Controllers\ClasseExamesController.cs(670,17): info RCS1146: Use conditional access
+  Areas\Controllers\ClasseExamesController.cs(693,17): info RCS1146: Use conditional access
+  Areas\Controllers\ConnectionController.cs(20,20): info RCS1146: Use conditional access
+  Areas\Controllers\HomeController.cs(196,17): info RCS1146: Use conditional access
+  Areas\Controllers\HomeController.cs(219,22): info RCS1146: Use conditional access
+  Areas\Controllers\HomeController.cs(224,22): info RCS1146: Use conditional access
+  Areas\Controllers\HomeController.cs(322,41): info RCS1146: Use conditional access
+  Areas\Controllers\InstituicoesController.cs(630,17): info RCS1146: Use conditional access
+  Areas\Controllers\InstituicoesController.cs(663,17): info RCS1146: Use conditional access
+  Areas\Controllers\SenhasController.cs(385,17): info RCS1146: Use conditional access
+  Areas\Controllers\SenhasController.cs(478,17): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(43,29): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(50,34): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(59,34): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(423,21): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(428,26): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(433,26): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(463,21): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(470,26): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(477,44): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(509,33): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(515,38): info RCS1146: Use conditional access
+  Areas\Validations\ValidacoesDeSenhas.cs(520,38): info RCS1146: Use conditional access
+  Integracoes\Integracoes.cs(139,25): info RCS1146: Use conditional access
+  Integracoes\Integracoes.cs(206,53): info RCS1146: Use conditional access
+  Integracoes\ServicoIntegracao.cs(33,29): info RCS1146: Use conditional access
+  Interfaces\Database\InicializaBD.cs(19,21): info RCS1146: Use conditional access
+  Models\db.cs(229,32): info RCS1146: Use conditional access
+  Areas\Controllers\ClasseExamesController.cs(214,83): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\ClasseExamesController.cs(624,46): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\ClasseExamesController.cs(647,46): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\ClasseExamesController.cs(670,46): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\ClasseExamesController.cs(693,46): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\InstituicoesController.cs(74,79): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\InstituicoesController.cs(630,51): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\InstituicoesController.cs(663,54): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\MedicosController.cs(72,85): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\MensagemController.cs(14,36): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\PacientesController.cs(75,87): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\PostosController.cs(68,84): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\SenhasController.cs(77,87): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Controllers\SenhasController.cs(478,55): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Identity\IdentityHostingStartup.cs(16,51): warning RCS1155: Use StringComparison when comparing strings
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(25,51): warning RCS1155: Use StringComparison when comparing strings
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(52,51): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Validations\ValidacoesDeSenhas.cs(451,56): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Validations\ValidacoesDeSenhas.cs(453,17): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Validations\Validations.cs(42,51): warning RCS1155: Use StringComparison when comparing strings
+  Areas\Validations\Validations.cs(76,51): warning RCS1155: Use StringComparison when comparing strings
+  Integracoes\ServicoIntegracao.cs(28,94): warning RCS1155: Use StringComparison when comparing strings
+  Interfaces\Database\DB.cs(63,55): warning RCS1155: Use StringComparison when comparing strings
+  Interfaces\Criptografias\CriptoDecripto.cs(189,17): info RCS1156: Use string.Length instead of comparison with empty string
+  Interfaces\Criptografias\CriptoDecripto.cs(262,17): info RCS1156: Use string.Length instead of comparison with empty string
+  Areas\Concorrencias\ConcorrenciaService.cs(82,73): info RCS1163: Unused parameter 'transaction'
+  Areas\Controllers\GeralController.cs(51,40): info RCS1163: Unused parameter 'retornoDeRota'
+  Areas\Controllers\HomeController.cs(117,49): info RCS1163: Unused parameter 'modo'
+  Areas\Controllers\ImplantacaoController.cs(32,36): info RCS1163: Unused parameter 'Conteudo'
+  Areas\Controllers\ImplantacaoController.cs(32,54): info RCS1163: Unused parameter 'registros'
+  Areas\Controllers\MensagemController.cs(90,68): info RCS1163: Unused parameter 'codError'
+  Areas\Controllers\PlanoExamesItensController.cs(63,48): info RCS1163: Unused parameter 'vm'
+  Areas\Controllers\PlanoExamesItensController.cs(399,57): info RCS1163: Unused parameter 'vm'
+  Areas\Controllers\RequisitarController.cs(79,59): info RCS1163: Unused parameter 'vm'
+  Areas\Controllers\RequisitarController.cs(79,76): info RCS1163: Unused parameter 'registroID'
+  Areas\Controllers\SenhasController.cs(337,38): info RCS1163: Unused parameter 'usu'
+  Areas\Controllers\SenhasController.cs(466,45): info RCS1163: Unused parameter 'login'
+  Areas\Utils\UtilsBase.cs(430,140): info RCS1163: Unused parameter 'geraCripto'
+  Areas\Utils\UtilsBase.cs(976,50): info RCS1163: Unused parameter 'contaFolha'
+  Areas\Utils\UtilsBase.cs(976,88): info RCS1163: Unused parameter 'tipoConta'
+  HtmlHelpers\HtmlHelpers.cs(175,78): info RCS1163: Unused parameter 'customErrorMessage'
+  HtmlHelpers\HtmlHelpers.cs(176,78): info RCS1163: Unused parameter 'trocaTag'
+  Integracoes\Importacao\MovimentacaoImportacao.cs(8,54): info RCS1163: Unused parameter 'tabela'
+  Integracoes\ServicoIntegracao.cs(121,48): info RCS1163: Unused parameter 'tipoServico'
+  Program.cs(61,45): info RCS1163: Unused parameter 'context'
+  Areas\Controllers\PacientesController.cs(516,9): info RCS1169: Make field read-only
+  Areas\ServicosDatabase\EmpresaClienteRepository.cs(8,9): info RCS1169: Make field read-only
+  Interfaces\Base.cs(9,5): info RCS1169: Make field read-only
+  Interfaces\Collections\IListaAcumulativa.cs(34,9): info RCS1169: Make field read-only
+  Interfaces\Repositorio.cs(14,9): info RCS1169: Make field read-only
+  Interfaces\Collections\IListaAcumulativa.cs(45,17): info RCS1171: Simplify lazy initialization
+  Areas\ServicosDatabase\EmpresaClienteRepository.cs(20,13): info RCS1179: Unnecessary assignment
+  Areas\ServicosDatabase\EmpresaClienteRepository.cs(37,13): info RCS1179: Unnecessary assignment
+  Areas\EventViewerHelper\EventViewerHelper.cs(26,9): info RCS1187: Use constant instead of field
+  Areas\Controllers\HomeController.cs(335,35): info RCS1190: Join string expressions
+  Areas\Controllers\PlanoExamesController.cs(271,162): info RCS1190: Join string expressions
+  Areas\Controllers\PlanoExamesController.cs(277,163): info RCS1190: Join string expressions
+  Areas\Controllers\HomeController.cs(135,44): info RCS1192: Unnecessary usage of verbatim string literal
+  Areas\Controllers\HomeController.cs(136,44): info RCS1192: Unnecessary usage of verbatim string literal
+  Areas\Controllers\HomeController.cs(137,44): info RCS1192: Unnecessary usage of verbatim string literal
+  Areas\Controllers\HomeController.cs(147,36): info RCS1192: Unnecessary usage of verbatim string literal
+  Areas\Utils\UtilsBase.cs(514,16): info RCS1192: Unnecessary usage of verbatim string literal
+  Areas\Validations\ValidacoesDeSenhas.cs(111,38): info RCS1192: Unnecessary usage of verbatim string literal
+  Areas\Validations\ValidacoesDeSenhas.cs(268,54): info RCS1192: Unnecessary usage of verbatim string literal
+  Areas\Validations\ValidacoesDeSenhas.cs(277,47): info RCS1192: Unnecessary usage of verbatim string literal
+  Interfaces\Criptografias\AvaliacaoReCaptchaGoogle.cs(83,44): info RCS1192: Unnecessary usage of verbatim string literal
+  Interfaces\Criptografias\AvaliacaoReCaptchaGoogle.cs(91,44): info RCS1192: Unnecessary usage of verbatim string literal
+  Interfaces\Criptografias\AvaliacaoReCaptchaGoogle.cs(92,44): info RCS1192: Unnecessary usage of verbatim string literal
+  Interfaces\Criptografias\AvaliacaoReCaptchaGoogle.cs(99,40): info RCS1192: Unnecessary usage of verbatim string literal
+  Interfaces\Criptografias\AvaliacaoReCaptchaGoogle.cs(100,40): info RCS1192: Unnecessary usage of verbatim string literal
+  Interfaces\Criptografias\CriptoDecriptoBase.cs(44,81): info RCS1192: Unnecessary usage of verbatim string literal
+  Interfaces\Criptografias\CriptoDecriptoBase.cs(44,99): info RCS1192: Unnecessary usage of verbatim string literal
+  Interfaces\Criptografias\CriptoDecriptoBase.cs(44,126): info RCS1192: Unnecessary usage of verbatim string literal
+  Areas\Controllers\PlanoExamesItensController.cs(401,22): info RCS1196: Call extension method as instance method
+  Areas\Controllers\PlanoExamesItensController.cs(402,33): info RCS1196: Call extension method as instance method
+  Areas\Controllers\PlanoExamesItensController.cs(403,32): info RCS1196: Call extension method as instance method
+  Areas\Controllers\PlanoExamesItensController.cs(404,28): info RCS1196: Call extension method as instance method
+  Areas\Controllers\PlanoExamesItensController.cs(405,27): info RCS1196: Call extension method as instance method
+  HtmlHelpers\HtmlHelpers.cs(13,18): warning RCS1203: Use AttributeUsageAttribute
+  Interfaces\Menu.cs(43,50): info RCS1206: Use conditional access instead of conditional expression
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(40,13): info RCS1212: Remove redundant assignment
+  Areas\ServicosDatabase\DatabaseContextFactory.cs(67,13): info RCS1212: Remove redundant assignment
+  Areas\Utils\UtilsBase.cs(445,28): info RCS1212: Remove redundant assignment
+  Areas\Validations\ValidacoesDeSenhas.cs(250,21): info RCS1212: Remove redundant assignment
+  Areas\Validations\ValidacoesDeSenhas.cs(289,37): info RCS1212: Remove redundant assignment
+  Areas\Validations\ValidacoesDeSenhas.cs(299,37): info RCS1212: Remove redundant assignment
+  Areas\Validations\ValidacoesDeSenhas.cs(306,33): info RCS1212: Remove redundant assignment
+  Areas\Validations\ValidacoesDeSenhas.cs(315,21): info RCS1212: Remove redundant assignment
+  Integracoes\EnumAtributos.cs(18,17): info RCS1212: Remove redundant assignment
+  Areas\Controllers\ImplantacaoController.cs(19,22): info RCS1213: Remove unused method declaration
+  Areas\Controllers\MensagemController.cs(116,22): info RCS1213: Remove unused method declaration
+  Areas\Controllers\SenhasController.cs(30,36): info RCS1213: Remove unused field declaration
+  Areas\Controllers\SenhasController.cs(476,22): info RCS1213: Remove unused method declaration
+  Areas\Validations\Validations.cs(194,36): info RCS1213: Remove unused method declaration
+  Areas\Validations\Validations.cs(223,29): info RCS1213: Remove unused method declaration
+  HtmlHelpers\HtmlHelpers.cs(74,31): info RCS1213: Remove unused method declaration
+  HtmlHelpers\HtmlHelpers.cs(103,31): info RCS1213: Remove unused method declaration
+  HtmlHelpers\HtmlHelpers.cs(127,31): info RCS1213: Remove unused method declaration
+  HtmlHelpers\HtmlHelpers.cs(147,31): info RCS1213: Remove unused method declaration
+  Integracoes\Importacao\MovimentacaoImportacao.cs(8,22): info RCS1213: Remove unused method declaration
+  Integracoes\ServicoIntegracao.cs(11,24): info RCS1213: Remove unused method declaration
+  Areas\Controllers\ClasseExamesController.cs(492,94): info RCS1214: Unnecessary interpolated string
+  Areas\Controllers\PacientesController.cs(237,86): info RCS1214: Unnecessary interpolated string
+  Areas\Controllers\PacientesController.cs(394,44): info RCS1214: Unnecessary interpolated string
+  Areas\Validations\ValidacoesDeSenhas.cs(47,53): info RCS1214: Unnecessary interpolated string
+  Areas\Validations\ValidacoesDeSenhas.cs(54,53): info RCS1214: Unnecessary interpolated string
+  Areas\Validations\ValidacoesDeSenhas.cs(477,44): warning RCS1215: Expression is always equal to 'true'
+  Interfaces\Collections\IListaAcumulativa.cs(31,18): info RCS1225: Make class sealed
+  Areas\Utils\UtilsBase.cs(144,40): info RCS1235: Optimize 'Add' call
+  Interfaces\Criptografias\CriptoDecripto.cs(74,55): info RCS1240: The '<=' operator is unnecessary
+  Interfaces\Criptografias\CriptoDecripto.cs(76,43): info RCS1240: The '<=' operator is unnecessary
+  Interfaces\Criptografias\CriptoDecripto.cs(78,41): info RCS1240: The '<=' operator is unnecessary
+  Interfaces\Criptografias\CriptoDecripto.cs(113,57): info RCS1240: The '<=' operator is unnecessary
+  Interfaces\Criptografias\CriptoDecripto.cs(115,43): info RCS1240: The '<=' operator is unnecessary
+  Interfaces\Criptografias\CriptoDecripto.cs(117,41): info RCS1240: The '<=' operator is unnecessary
+  Areas\Controllers\ClasseExamesController.cs(205,131): info RCS1246: Use element access
+  Areas\Controllers\ClasseExamesController.cs(209,84): info RCS1246: Use element access
+  Areas\Controllers\ClasseExamesController.cs(210,130): info RCS1246: Use element access
+  Areas\Controllers\ClasseExamesController.cs(213,131): info RCS1246: Use element access
+  Areas\Controllers\ClasseExamesController.cs(214,129): info RCS1246: Use element access
+  Areas\Controllers\InstituicoesController.cs(65,123): info RCS1246: Use element access
+  Areas\Controllers\InstituicoesController.cs(69,84): info RCS1246: Use element access
+  Areas\Controllers\InstituicoesController.cs(70,122): info RCS1246: Use element access
+  Areas\Controllers\InstituicoesController.cs(73,123): info RCS1246: Use element access
+  Areas\Controllers\InstituicoesController.cs(74,121): info RCS1246: Use element access
+  Areas\Controllers\MedicosController.cs(63,135): info RCS1246: Use element access
+  Areas\Controllers\MedicosController.cs(67,84): info RCS1246: Use element access
+  Areas\Controllers\MedicosController.cs(68,134): info RCS1246: Use element access
+  Areas\Controllers\MedicosController.cs(71,135): info RCS1246: Use element access
+  Areas\Controllers\MedicosController.cs(72,133): info RCS1246: Use element access
+  Areas\Controllers\PacientesController.cs(66,139): info RCS1246: Use element access
+  Areas\Controllers\PacientesController.cs(70,84): info RCS1246: Use element access
+  Areas\Controllers\PacientesController.cs(71,138): info RCS1246: Use element access
+  Areas\Controllers\PacientesController.cs(74,139): info RCS1246: Use element access
+  Areas\Controllers\PacientesController.cs(75,137): info RCS1246: Use element access
+  Areas\Controllers\PostosController.cs(59,134): info RCS1246: Use element access
+  Areas\Controllers\PostosController.cs(63,84): info RCS1246: Use element access
+  Areas\Controllers\PostosController.cs(64,132): info RCS1246: Use element access
+  Areas\Controllers\PostosController.cs(67,133): info RCS1246: Use element access
+  Areas\Controllers\PostosController.cs(68,131): info RCS1246: Use element access
+  Areas\Controllers\SenhasController.cs(68,137): info RCS1246: Use element access
+  Areas\Controllers\SenhasController.cs(72,84): info RCS1246: Use element access
+  Areas\Controllers\SenhasController.cs(73,138): info RCS1246: Use element access
+  Areas\Controllers\SenhasController.cs(76,139): info RCS1246: Use element access
+  Areas\Controllers\SenhasController.cs(77,137): info RCS1246: Use element access
+  Models\db.cs(201,116): info RCS1246: Use element access
+  Integracoes\ServicoIntegracao.cs(50,61): info RCS1249: Unnecessary null-forgiving operator
+  ViewModel\vmFiltroPesquisas.cs(8,47): info RCS1249: Unnecessary null-forgiving operator
+  Areas\Controllers\ReleaseControllerHelpers.cs(4,5): info RCS1251: Remove unnecessary braces
+  Areas\Utils\Utils.cs(3,37): info RCS1251: Remove unnecessary braces
+  Areas\Validations\Validations.cs(8,32): info RCS1251: Remove unnecessary braces
+  Models\DbContextOptions.cs(4,5): info RCS1251: Remove unnecessary braces
+  Areas\Controllers\ClasseExamesController.cs(73,29): info RCS1259: Remove empty 'finally' clause
+  Areas\Controllers\ClasseExamesController.cs(128,33): info RCS1259: Remove empty 'finally' clause
+  Areas\Controllers\ClasseExamesController.cs(167,33): info RCS1259: Remove empty 'finally' clause
+  Areas\Controllers\HomeController.cs(75,13): info RCS1259: Remove empty 'finally' clause
+  Areas\Controllers\HomeController.cs(271,21): info RCS1259: Remove empty 'finally' clause
+  Areas\Controllers\HomeController.cs(314,13): info RCS1259: Remove empty 'finally' clause
+  Areas\Controllers\PlanoExamesController.cs(307,17): info RCS1259: Remove empty 'finally' clause
+  Areas\Controllers\PlanoExamesController.cs(553,13): info RCS1259: Remove empty 'finally' clause
+  Areas\Controllers\PlanoExamesItensController.cs(39,90): info RCS1259: Remove empty statement
+  Areas\Controllers\PlanoExamesItensController.cs(197,17): info RCS1259: Remove empty 'finally' clause
+  Areas\Controllers\PlanoExamesItensController.cs(466,17): info RCS1259: Remove empty 'finally' clause
+  Areas\Utils\UtilsBase.cs(658,9): info RCS1259: Remove empty 'finally' clause
+  Areas\Validations\ValidacoesDeSenhas.cs(77,13): info RCS1259: Remove empty 'finally' clause
+  Areas\Validations\ValidacoesDeSenhas.cs(540,13): info RCS1259: Remove empty 'finally' clause
+  Integracoes\ServicoIntegracao.cs(113,17): info RCS1259: Remove empty 'finally' clause
+  Areas\ControleDeImagens\Imagem.cs(57,17): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(46,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(55,25): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(94,29): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(138,29): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(192,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(288,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(306,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(380,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(446,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(457,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\ClasseExamesController.cs(578,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\InstituicoesController.cs(52,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\InstituicoesController.cs(159,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\InstituicoesController.cs(249,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\InstituicoesController.cs(338,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\InstituicoesController.cs(426,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\InstituicoesController.cs(440,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\InstituicoesController.cs(518,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\InstituicoesController.cs(566,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\MedicosController.cs(50,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\MedicosController.cs(124,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\MedicosController.cs(177,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\MedicosController.cs(209,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\MedicosController.cs(255,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\MedicosController.cs(285,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PacientesController.cs(53,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PacientesController.cs(152,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PacientesController.cs(170,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PacientesController.cs(251,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PacientesController.cs(328,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PacientesController.cs(337,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PacientesController.cs(411,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PacientesController.cs(425,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesController.cs(58,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesController.cs(119,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesController.cs(239,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesController.cs(323,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesController.cs(364,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesController.cs(431,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesController.cs(528,17): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesItensController.cs(72,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesItensController.cs(111,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesItensController.cs(213,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesItensController.cs(254,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesItensController.cs(318,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PlanoExamesItensController.cs(412,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PostosController.cs(49,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PostosController.cs(130,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PostosController.cs(185,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PostosController.cs(235,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PostosController.cs(294,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\PostosController.cs(323,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(47,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(83,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(192,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(211,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(230,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(253,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(276,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(304,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(327,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(358,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\RequisitarController.cs(395,17): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\SenhasController.cs(57,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\SenhasController.cs(210,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Controllers\SenhasController.cs(277,17): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(126,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(145,17): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(219,17): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(222,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(224,25): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(256,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(261,25): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(269,37): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(278,37): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(345,13): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(349,17): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(351,21): info RCS1261: Resource can be disposed asynchronously
+  Areas\Validations\ValidacoesDeSenhas.cs(406,13): info RCS1261: Resource can be disposed asynchronously
+  Interfaces\Database\DB.cs(105,43): info RCS1267: Use string interpolation instead of 'string.Concat'
+  Models\db.cs(133,39): info RCS1267: Use string interpolation instead of 'string.Concat'
+Analyze 'ServicoExportacao' 4/6
+  Program.cs(33,14): info CA1050: Declarar tipos em namespaces
+  IntegracoesService.cs(22,21): info CA1816: Altere IntegracaoService.Dispose() para chamar GC.SuppressFinalize(object). Isso impedir† que tipos derivados que introduzem um finalizador precisem reimplementar 'IDisposable' para cham†-lo.
+  Startup.cs(22,21): info CA1822: O membro 'ConfigureServices' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Startup.cs(77,21): info CA1822: O membro 'Configure' n∆o acessa os dados da instÉncia e pode ser marcado como est†tico
+  Startup.cs(29,55): info CA1862: Prefira usar 'string.Equals(string, StringComparison)' para realizar uma comparaÅEo que n∆o diferencia mai£sculas de min£sculas, mas lembre-se de que isso pode causar mudanáas sutis no comportamento, portanto, certifique-se de realizar testes completos ap¢s aplicar a sugest∆o, ou se for uma comparaÅEo culturalmente sens°vel n∆o ÅEobrigat¢rio, considere usar 'StringComparison.OrdinalIgnoreCase'
+  SvcExportacao.cs(77,56): info CA2254: O modelo de mensagem de log n∆o deve variar entre as chamadas para 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])'
+Analyze 'WindowsService' 5/6
+  FileWriteService.cs(16,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.ServiceName' em: 'windows'.
+  FileWriteService.cs(18,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.CanStop' em: 'windows'.
+  FileWriteService.cs(19,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.CanPauseAndContinue' em: 'windows'.
+  FileWriteService.cs(22,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.AutoLog' em: 'windows'.
+  FileWriteService.cs(23,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(23,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(23,88): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  FileWriteService.cs(24,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(24,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.Source' em: 'windows'.
+  FileWriteService.cs(24,36): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.ServiceName' em: 'windows'.
+  FileWriteService.cs(25,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(25,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.Log' em: 'windows'.
+  FileWriteService.cs(30,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.OnStart(string[])' em: 'windows'.
+  FileWriteService.cs(32,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(32,13): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(32,126): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.ServiceName' em: 'windows'.
+  FileWriteService.cs(32,165): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  FileWriteService.cs(45,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(45,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(45,104): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.ServiceName' em: 'windows'.
+  FileWriteService.cs(45,123): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  FileWriteService.cs(46,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.OnPause()' em: 'windows'.
+  FileWriteService.cs(61,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(61,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(61,108): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.ServiceName' em: 'windows'.
+  FileWriteService.cs(61,127): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  FileWriteService.cs(62,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.OnContinue()' em: 'windows'.
+  FileWriteService.cs(78,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(78,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(78,140): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  FileWriteService.cs(96,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(96,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(96,151): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  FileWriteService.cs(99,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(99,21): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(99,158): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  FileWriteService.cs(104,25): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(104,25): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(104,132): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.ServiceName' em: 'windows'.
+  FileWriteService.cs(104,165): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  FileWriteService.cs(112,33): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(112,33): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(112,119): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+  FileWriteService.cs(124,25): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(124,25): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(124,151): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Error' em: 'windows'.
+  FileWriteService.cs(131,33): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(131,33): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(131,116): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Error' em: 'windows'.
+  FileWriteService.cs(137,25): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'ServiceBase.EventLog' em: 'windows'.
+  FileWriteService.cs(137,25): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLog.WriteEntry(string, EventLogEntryType)' em: 'windows'.
+  FileWriteService.cs(137,147): warning CA1416: Este site de chamada pode ser acessado em todas as plataformas. S¢ h† suporte para 'EventLogEntryType.Information' em: 'windows'.
+Analyze 'Lab7WorkerService' 6/6
+Analyzed solution 'F:\Projetos dotNet\Web-Project\LabWeb7-Project\LabWebMvc.sln' (in 43,9 s)
+
+  1 ASP0015    Suggest using IHeaderDictionary properties
+  2 CA1050     Declarar tipos em namespaces
+  1 CA1069     Os valores de enumeraÅEes n∆o devem ser duplicados
+ 62 CA1416     Validar a compatibilidade da plataforma
+ 12 CA1507     Usar nameof para expressar nomes de s°mbolo
+  1 CA1510     Usar o auxiliar de lanáamento de ArgumentNullException
+  1 CA1513     Usar o auxiliar de lanáamento ObjectDisposedException
+  3 CA1816     Os mÇtodos Dispose devem chamar SuppressFinalize
+ 22 CA1822     Marcar membros como est†ticos
+  1 CA1824     Marcar assemblies com NeutralResourcesLanguageAttribute
+  7 CA1825     Evite alocaÅEes de matriz de comprimento zero
+  2 CA1826     N∆o use mÇtodos Enumerable em coleÅEes index†veis
+  4 CA1827     N∆o usar Count() ou LongCount() quando Any() puder ser usado
+  8 CA1829     Usar a propriedade Length/Count em vez de Count() quando dispon°vel
+  6 CA1845     Use a 'cadeia de caracteres' baseada em intervalo. Concat'
+ 16 CA1859     Usar tipos concretos quando poss°vel para melhorar o desempenho
+  3 CA1860     Evite usar o mÇtodo de extens∆o 'Enumerable.Any()'
+  7 CA1861     Evite matrizes constantes como argumentos
+ 44 CA1862     Use as sobrecargas do mÇtodo 'StringComparison' para realizar comparaÅEes de strings que n∆o diferenciam mai£sculas de min£sculas
+  1 CA1866     Usar sobrecarga de caractere
+  3 CA2208     Instanciar exceÅEes de argumentos corretamente
+ 41 CA2211     Campos n∆o constantes n∆o devem ser vis°veis
+  1 CA2254     O modelo deve ser uma express∆o est†tica
+  1 CS0168     A vari†vel foi declarada, mas nunca foi usada
+  1 CS1998     O mÇtodo ass°ncrono n∆o possui operadores 'await' e ser† executado de forma s°ncrona
+  2 CS8602     DesreferÅEcia de uma referÅEcia possivelmente nula.
+  1 CS8603     Poss°vel retorno de referÅEcia nula.
+ 95 CS8618     O campo n∆o anul†vel precisa conter um valor n∆o nulo ao sair do construtor. Considere adicionar o modificador "obrigat¢rio" ou declarar como anul†vel.
+  2 RCS1001    Add braces (when expression spans over multiple lines)
+ 20 RCS1003    Add braces to if-else (when expression spans over multiple lines)
+  6 RCS1015    Use nameof operator
+  1 RCS1021    Convert lambda expression body to expression body
+  3 RCS1033    Remove redundant boolean literal
+230 RCS1036    [deprecated] Remove unnecessary blank line
+ 13 RCS1037    Remove trailing white-space
+  1 RCS1049    Simplify boolean comparison
+  2 RCS1073    Convert 'if' to 'return' statement
+ 29 RCS1077    Optimize LINQ method call
+  5 RCS1084    Use coalesce expression instead of conditional expression
+  8 RCS1097    Remove redundant 'ToString' call
+  9 RCS1102    Make class static
+  5 RCS1104    Simplify conditional expression
+  1 RCS1110    Declare type inside namespace
+ 14 RCS1118    Mark local variable as const
+  2 RCS1139    Add summary element to documentation comment
+ 30 RCS1146    Use conditional access
+ 23 RCS1155    Use StringComparison when comparing strings
+  2 RCS1156    Use string.Length instead of comparison with empty string
+ 20 RCS1163    Unused parameter
+  5 RCS1169    Make field read-only
+  1 RCS1171    Simplify lazy initialization
+  2 RCS1179    Unnecessary assignment
+  1 RCS1187    Use constant instead of field
+  3 RCS1190    Join string expressions
+ 16 RCS1192    Unnecessary usage of verbatim string literal
+  5 RCS1196    Call extension method as instance method
+  1 RCS1203    Use AttributeUsageAttribute
+  1 RCS1206    Use conditional access instead of conditional expression
+  9 RCS1212    Remove redundant assignment
+ 12 RCS1213    Remove unused member declaration
+  5 RCS1214    Unnecessary interpolated string
+  1 RCS1215    Expression is always equal to true/false
+  1 RCS1225    Make class sealed
+  1 RCS1235    Optimize method call
+  6 RCS1240    Operator is unnecessary
+ 31 RCS1246    Use element access
+  2 RCS1249    Unnecessary null-forgiving operator
+  4 RCS1251    Remove unnecessary braces from record declaration
+ 15 RCS1259    Remove empty syntax
+ 80 RCS1261    Resource can be disposed asynchronously
+  2 RCS1267    Use string interpolation instead of 'string.Concat'
+ 20 SYSLIB1045 Converter em 'GeneratedRegexAttribute'.
+
+999 diagnostics found

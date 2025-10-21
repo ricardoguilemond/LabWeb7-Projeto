@@ -1,0 +1,19 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using BLL
+@using static BLL.UtilBLL
+<div class="groupButtton">
+    @if (!PartialFiltro.Esconde)
+    {
+        <button class="myButton">
+            <a asp-action=@PartialFiltro.ActionButton asp-controller=@PartialFiltro.ControllerButton><i class="fa-sharp fa-solid fa-square-plus"></i> Incluir Instituição</a>
+        </button>
+    }
+    @if (!PartialFiltro.Esconde)
+    {
+        <button class="myButton">
+            <a asp-action=@PartialFiltro.ActionButton asp-controller=@PartialFiltro.ControllerButton><i class="fa-sharp fa-solid fa-square-plus"></i> Postos de Coletas</a>
+        </button>
+    }
+</div>

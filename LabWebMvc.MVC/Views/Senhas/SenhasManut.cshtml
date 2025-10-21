@@ -1,0 +1,74 @@
+﻿@page
+@model LabWebMvc.MVC.ViewModel.vmSenhas
+@{
+    Layout = "_Layout";
+}
+@using (Html.BeginForm("Index", "Senhas", FormMethod.Post, "frmSenhasIncluir"))
+{
+    <div id="layout_menuflutuante">
+        <!-- PADRÃO TODOS OS FORMULÁRIOS ::: Montagem dos Botões do PopUp Genérico -->
+        @for (int i = 0; i < ViewBag.ViewBotoes.Length; i++)
+        {
+            @Html.Raw(ViewBag.ViewBotoes[i])
+        }
+        @*<div class="circulo" href="#"></div>*@
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <form asp-action="Senhas">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="form-group">
+                    <label asp-for="NomeUsuario" class="control-label">Nick do Usuário (usar uma palavra única)(</label>
+                    <input asp-for="NomeUsuario" class="form-control" />
+                    <span asp-validation-for="NomeUsuario" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="NomeCompleto" class="control-label">Nome Completo</label>
+                    <input asp-for="NomeCompleto" class="form-control" />
+                    <span asp-validation-for="NomeCompleto" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="DataCadastro" class="control-label">Data Cadastro</label>
+                    <input asp-for="DataCadastro" class="form-control" />
+                    <span asp-validation-for="DataCadastro" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="DataExpira" class="control-label">Data Expira</label>
+                    <input asp-for="DataExpira" class="form-control" />
+                    <span asp-validation-for="DataExpira" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="UsarAssinatura" class="control-label">Usa Assinatura nos Laudos?</label>
+                    <input asp-for="UsarAssinatura" class="form-control" />
+                    <span asp-validation-for="UsarAssinatura" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Assinatura" class="control-label">Imagem da Assinatura</label>
+                    <input asp-for="Assinatura" class="form-control" />
+                    <span asp-validation-for="Assinatura" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Bloqueado" class="control-label">Acesso Bloqueado?</label>
+                    <input asp-for="Bloqueado" class="form-control" />
+                    <span asp-validation-for="Bloqueado" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Administrador" class="control-label">Conta de Administrador?</label>
+                    <input asp-for="Administrador" class="form-control" />
+                    <span asp-validation-for="Administrador" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Count" class="control-label"></label>
+                    <input asp-for="Count" class="form-control" />
+                    <span asp-validation-for="Count" class="text-danger"></span>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

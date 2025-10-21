@@ -1,0 +1,238 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using ExtensionsMethods.Genericos
+@using LabWebMvc.MVC.Areas.Utils
+@using LabWebMvc.MVC.HtmlHelpers
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmRequisitar
+@{
+    //Classe que constrói o style dinamicamente com ".has-error"
+    var styleProvider = new StyleProvider();
+    var style = styleProvider.GetStyle();
+}
+@Html.Raw(style)   @*//acionando o style criado dinamicamente em StyleProvider() *@
+<script>
+    // Máscaras
+    function getTipoDocumento(id) {
+        if (id == 0) //CPF
+            $(".cpf").mask("999.999.999-99", { placeholder: " ", autoclear: false });
+        else if (id == 1)  //RG
+            $(".cpf").mask("99.999.999-9", { placeholder: " ", autoclear: false });
+        else if (id == 2)  //CNH
+            $(".cpf").mask("999.999.999.99", { placeholder: " ", autoclear: false });
+        else if (id == 4)  //CNS/SUS
+            $(".cpf").mask("999 9999 9999 9999", { placeholder: " ", autoclear: false });
+    };
+
+    // Chama Modal de Pacientes ao digitar ENTER no campo do nome do paciente
+    $(document).ready(function () {
+        let modalCarregado = false;
+
+        $("#buscaNomePaciente").off('keydown').on('keydown', function (event) {
+            const teclasPermitidas = [13, 38, 40]; // Enter, Seta cima, Seta baixo
+
+            if (teclasPermitidas.includes(event.which)) {
+                setTimeout(() => {
+                    const inputEscrito = event.target.value.trim();
+                    const palavras = inputEscrito.split(/\s+/).filter(p => p.length > 0);
+
+                    if (palavras.length <= 1) {
+                        const aplicarBuscaNoDataTables = () => {
+                            const tabela = $.fn.dataTable.isDataTable('#modeloTableModalPacientes') ? $('#modeloTableModalPacientes').DataTable() : null;
+
+                            if (tabela) {
+                                tabela.search(inputEscrito).draw();
+                            } else {
+                                // Aguarda até que o DataTables esteja pronto
+                                const intervalo = setInterval(() => {
+                                    const tabelaPronta = $.fn.dataTable.isDataTable('#modeloTableModalPacientes') ? $('#modeloTableModalPacientes').DataTable() : null;
+
+                                    if (tabelaPronta) {
+                                        tabelaPronta.search(inputEscrito).draw();
+                                        clearInterval(intervalo);
+                                    }
+                                }, 100);
+                            }
+                        };
+
+                        if (!modalCarregado) {
+                            $('#modalTriggerPaciente').load('@Url.Action("ModalPacientes", "Requisitar")', function () {
+                                $("#modeloTableModalPaciente").modal("show");
+                                modalCarregado = true;
+                                aplicarBuscaNoDataTables();
+                            });
+                        } else {
+                            $('#modalTriggerPaciente').show();
+                            aplicarBuscaNoDataTables();
+                        }
+                    }
+                }, 0);
+            }
+        });
+        //..
+
+        //Limpa todos os campos de todos os formulários
+        $("#buttonLimpaFormulario").on("click", function (event) {
+            event.preventDefault(); // evita submit
+       
+            // Limpa todos os campos do formulário principal
+           $("#formRequisitar").find("input, select, textarea").each(function () {
+                const tipo = $(this).attr("type");
+                const tag = this.tagName.toLowerCase();
+           
+                // Ignora botões de submit e button
+                if (tipo === "submit" || tipo === "button") {
+                    return; // pula para o próximo
+                }
+           
+                if (tipo === "checkbox" || tipo === "radio") {
+                    $(this).prop("checked", false);
+                } else if (tag === "select") {
+                    $(this).prop("selectedIndex", 0);
+                } else {
+                    $(this).val(""); // limpa text, hidden, email, etc.
+                }
+            });
+        });
+    //..
+    });
+</script>
+<div class="row">
+    <div class="col-md-12">
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "has-error" })
+        <div class="modalPaciente" id="conteudoPaciente">
+            <div class="form-group fg2">
+                @Html.Label("Nome do Paciente (sem abreviar!)", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.NomePaciente, new { @id = "buscaNomePaciente", @name = "buscaNomePaciente", @class = "form-control fm2 capitalize", @placeholder = "Entre com o nome completo do paciente", @required = "required" })
+                @Html.ValidationMessageFor(p => p.VmPacientes.NomePaciente, null, new { @class = "has-error" }, "div")
+                <!-- Campo hidden para armazenar o Id do paciente -->
+                @Html.HiddenFor(p => p.VmPacientes.Id, new { @id = "pacienteId", @name = "pacienteId" })
+            </div>
+            <div class="form-group fg2">
+                @Html.Label("Data Nascimento", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Nascimento, new { @id = "Nascimento", @name = "Nascimento", @class = "form-control fm2", @type = "date", @placeholder = "Data de nascimento", @required = "required" })
+                @Html.ValidationMessageFor(p => p.VmPacientes.Nascimento, null, new { @class = "has-error" }, "div")
+            </div>
+            <div class="form-group fg2">
+                @Html.Label("Sexo:", null, new { @class = "" })
+                @for (int i = 0; i < Utils.ListaGenero().Count; i++)
+                {
+                    string sexo = Utils.RetornaItem(i, "Sexo", 1);  //index
+                    string nome = Utils.RetornaItem(i, "Sexo", 2);
+                    bool check = Utils.RetornaItem(i, "Sexo", 3).ConvertStringToBool();
+
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("Sexo", sexo, check)
+                        @Html.Label(nome, null, new { @class = "" })
+                    </div>
+                }
+            </div>
+            <div class="form-group fg2">
+                @Html.Label("Tipo de Documento:", null, new { @class = "" })
+                @Html.DropDownListFor(p => p.vmGeral.TipoDocumento, new SelectList(Utils.ListaDocumento(), "Index", "Nome", selectedValue: 0), new { @name = "Documento", @class = "fm2", @onchange = "getTipoDocumento(this.selectedIndex)" })
+            </div>
+            <div class="form-group fg2">
+                @Html.Label("O nº do documento será também o Login do paciente no Site/App", null, new { @class = "cpf", @style = "color: blue;" })
+                @Html.TextBoxFor(p => p.VmPacientes.CPF, new { @id = "CPFPaciente", @name = "CPFPaciente", @class = "form-control fm2 cpf", @placeholder = "Entre com o nº do documento", @required = "required" })
+                @Html.Label("Órgão Emissor:", null, new { @class = "" })
+                @Html.DropDownListFor(p => p.vmGeral.TipoOrgaoEmissor, new SelectList(Utils.ListaOrgaoEmissor(), "Index", "Nome", selectedValue: 0), new { @class = "fm2" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Est Civil:", null, new { @class = "" })
+                @for (int i = 0; i < Utils.ListaEstadoCivil().Count; i++)
+                {
+                    int index = Utils.RetornaItem(i, "EstadoCivil", 0).ToInt32();
+                    string nome = Utils.RetornaItem(i, "EstadoCivil", 1);
+                    bool check = Utils.RetornaItem(i, "EstadoCivil", 2).ConvertStringToBool();
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("EstadoCivil", index, check)
+                        @Html.Label(nome, null, new { @class = "fm2" })
+                    </div>
+                }
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Mãe", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.NomeMae, new { @id = "Mae", @name = "Mae", @class = "form-control fm2 capitalize", @placeholder = "Nome da mãe" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Naturalidade", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Naturalidade, new { @id = "Naturalidade", @name = "Naturalidade", @class = "form-control fm2 capitalize", @placeholder = "Naturalidade" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Nacionalidade", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Nacionalidade, new { @id = "Nacionalidade", @name = "Nacionalidade", @class = "form-control fm2 capitalize", @placeholder = "Nacionalidade" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Profissão", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Profissao, new { @id = "Profissao", @name = "Profissao", @class = "form-control fm2 capitalize", @placeholder = "Profissão" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("CEP", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.CEP, new { @id = "CEP", @name = "CEP", @class = "form-control fm2 cep", @placeholder = "CEP" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Logradouro", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Logradouro, new { @id = "Logradouro", @name = "Logradouro", @class = "form-control fm2 capitalize", @placeholder = "Logradouro/Rua" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Endereço", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Endereco, new { @id = "Endereco", @name = "Endereco", @class = "form-control fm2 capitalize", @placeholder = "Endereço" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Número", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Numero, new { @id = "Numero", @name = "Numero", @class = "form-control fm2 capitalize", @placeholder = "Número" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Complemento", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Complemento, new { @id = "Complemento", @name = "Complemento", @class = "form-control fm2", @placeholder = "Complemento/Apto/Quadra/Lote" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Bairro", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Bairro, new { @id = "Bairro", @name = "Bairro", @class = "form-control fm2 capitalize", @placeholder = "Bairro" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Cidade", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Cidade, new { @id = "Cidade", @name = "Cidade", @class = "form-control fm2 capitalize", @placeholder = "Cidade/Município" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("UF:", null, new { @class = "" })
+                <div style="display: inline-block;">
+                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF), new { @id = "UF", @name = "UF", @class = "fm2" })
+                </div>
+            </div>
+            <div class="form-group fg2">
+                @Html.Label("Telefone com DDD", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Telefone, new { @id = "Telefone", @name = "Telefone", @class = "form-control fm2 telefone", @placeholder = "Telefone com DDD" })
+                @Html.ValidationMessageFor(p => p.VmPacientes.Telefone, null, new { @class = "has-error" }, "div")
+            </div>
+            <div class="form-group fg2">
+                @Html.Label("e-mail", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.Email, new { @id = "Email", @name = "Email", @class = "form-control fm2 lowercase", @style = "color: blue;", @placeholder = "e-mail", @type = "email" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("DUM", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.VmPacientes.DUM, new { @id = "DUM", @name = "DUM", @class = "form-control fm2", @type = "date", @placeholder = "DUM" })
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.Label("Tempo de Gestação:", null, new { @class = "" })
+                <div style="display: inline-block;">
+                    @Html.DropDownListFor(p => p.vmGeral.TipoTempoGestacao, new SelectList(Utils.ListaTempoGestacao(), "Index", "Nome", selectedValue: "10"), new { @id = "TipoTempoGestacao", @name = "TipoTempoGestacao", @class = "fm2" })
+                </div>
+            </div>
+            <div class="form-group fg2 NotView">
+                @Html.TextAreaFor(p => p.VmPacientes.Observacao, new { @id = "Observacao", @name = "Observacao", @class = "form-control fm2 capitalize", @rows = "2", @placeholder = "Observação" })
+            </div>
+            <div class="form-group fg2">
+               <button id="buttonLimpaFormulario" name="buttonLimpaFormulario" class="buttonTableCompacto">Esvaziar este formulário</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,10 @@
+﻿@using System.Text.Json
+@using LabWebMvc.MVC.IndicadoresGraficos.Shared
+@model LabWebMvc.MVC.IndicadoresGraficos.Shared.GraficoModel
+
+@section Head {
+    <link href="https://fonts.googleapis.com/css2?family=Didact+Gothic&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/mygraficos.css" />
+}
+
+@await Html.PartialAsync("_GraficoCompleto", (GraficoModel)ViewBag.GraficoModel)

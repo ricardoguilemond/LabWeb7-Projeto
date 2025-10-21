@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+		<UserSecretsId>1bde491a-f64f-4d6b-8052-d8b97d86202e</UserSecretsId>
+		<ApplicationIcon>wwwroot\favicon.ico</ApplicationIcon>
+		<PackageIcon>Lab-Web7.png</PackageIcon>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<Optimize>False</Optimize>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Pages\**" />
+		<Content Remove="Pages\**" />
+		<EmbeddedResource Remove="Pages\**" />
+		<None Remove="Pages\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="8.0.19" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.19" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.19" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.19" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.19" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
+		<PackageReference Include="AWSSDK.S3" Version="4.0.6.2" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
+		<PackageReference Include="Google.Api.Gax" Version="4.11.0" />
+		<PackageReference Include="Google.Cloud.RecaptchaEnterprise.V1" Version="2.18.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageReference Include="PdfSharpCore" Version="1.3.67" />
+		<PackageReference Include="RecaptchaNet" Version="3.1.0" />
+		<PackageReference Include="SixLabors.Fonts" Version="2.1.3" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="9.0.10" />
+		<PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.10" />
+		<PackageReference Include="itext" Version="9.3.0" />
+		<PackageReference Include="itext7.licensekey" Version="3.1.6" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\BLL\BLL.csproj" />
+		<ProjectReference Include="..\ExtensionsMethods\ExtensionsMethods.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="IndicadoresGraficos\Custom\" />
+	</ItemGroup>
+</Project>

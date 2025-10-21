@@ -1,0 +1,975 @@
+﻿/* 
+   Please see documentation at --https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+   for details on configuring this project to bundle and minify static web assets. 
+*/
+
+a.navbar-brand { /* jamais alterar */
+    white-space: normal;
+    text-align: center;
+    word-break: break-all;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html { /* jamais alterar */
+    position: relative;
+    min-height: 100vh;
+    font-size: 14px;
+    text-rendering: optimizeLegibility;
+}
+/*
+html {
+    -ms-overflow-style: none;   //esconde barra de rolagem no edge, ie11+ 
+}
+*/
+/* Largura da barra de rolagem */
+/*
+::-webkit-scrollbar {
+    width: 0px;   //em zero esconde a barra simulando não ter a mesma para: chrome, vivaldi
+}
+*/
+
+body { /* jamais alterar */
+    /* Margin bottom by footer height */
+    margin-bottom: 60px;
+    margin: 0;
+    font-size: 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, -apple-system, Roboto, Arial, sans-serif;
+    font-weight: 400;
+    color: #363636;
+    padding-bottom: 140px; /* para dar um espaço no final, após rolagem, e não encostar no footer */
+    margin-top: -45px; /* para se aproximar do menu, se alterar aqui então alterar também no caixa_page */
+    /* abaixo, somente interfere na imagem de fundo mesmo, totalmente desconectado da parte anterior */
+    background-image: url(../images/cirurgia_cardiaca_1000_FUNDO_AGUA.png);
+    background-position: center center;
+    background-size: 100% auto;
+}
+
+header { /* jamais alterar */
+    position: fixed;
+    top: 0;
+    width: 100%;
+    white-space: nowrap;
+    z-index: 2 !important;
+}
+
+label { /* para o label no form-control */
+    color: #363636 !important;
+    margin-bottom: 1px !important;
+}
+
+.fm2 { /* auxiliar do form-control para diminuir tamanho de box e fonte */
+    height: 22px;
+    font-size: 0.9em;
+    font-weight: 600 !important;
+}
+
+.fm3 { /* auxiliar do form-control para diminuir tamanho de box e fonte e colocar os box na mesma linha  */
+    height: 22px;
+    font-size: 0.9em;
+    font-weight: 600 !important;
+    display: inline;
+}
+
+.fg2 { /* auxiliar do form-group */
+    margin-bottom: 4px !important;
+}
+
+.myModal {
+    z-index: 3000;
+}
+
+form {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    margin-left: 4px !important;
+    margin-right: 4px !important;
+}
+
+.form-group label {
+    color: gray;
+    font-size: 0.9em;
+    font-weight: 400;
+}
+
+.form-group input {
+    color: black;
+    font-size: 1.0em;
+    font-weight: 400;
+}
+
+.caixa_page { /* jamais alterar */
+    position: fixed;
+    white-space: nowrap;
+    width: 100%;
+    margin-top: -41px; /* encostando a caixa_page no header */
+    height: 27px;
+    background-color: #099DD1;
+    border-top: 1px solid white;
+    border-bottom: 1px solid white;
+    z-index: 1 !important;
+}
+
+.titulo_page { /* jamais alterar */
+    padding-top: 0px;
+    padding-left: 1.2em;
+    font-weight: 500;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: small;
+    color: white;
+    letter-spacing: 0.070em;
+}
+
+.grid_fundo_opcoes {
+    background-color: #cce2bf;
+}
+
+.grid_itens {
+    background-color: inherit;
+    display: inline-block;
+    margin-left: 7px !important;
+    padding-left: 3px;
+    padding-right: 3px;
+    border-collapse: separate;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    border-color: #69c38a;
+}
+
+    .grid_itens:hover {
+        padding-left: 3px;
+        padding-right: 3px;
+        background-color: #69c38a;
+        color: white;
+    }
+
+#layout_menuflutuante { /* jamais alterar */
+    z-index: 3 !important;
+    top: 82px;
+    width: 300px;
+    height: 70%;
+    background-color: inherit;
+    position: fixed;
+    right: 0;
+}
+
+.layout_menu { /* jamais alterar */
+    clear: both;
+    z-index: 4 !important;
+    position: absolute;
+    margin-left: 18px;
+    margin-top: -60px;
+    width: 230px;
+    height: 470px;
+    background-color: #eeeff0;
+    text-align: center;
+    /* borda */
+    border-collapse: separate;
+    -webkit-border-radius: 9px;
+    -moz-border-radius: 9px;
+    border-radius: 9px;
+    border-color: #edecec;
+    /* sombra */
+    color: #646464;
+    font-size: 0.9em;
+    box-shadow: 1px 1px 1px black, 0 0 25px gray, 0 0 5px darkblue;
+}
+
+#layout_menuflutuante .subbotao { /* jamais alterar */
+    margin-left: 28px;
+    margin-top: -20px;
+    margin-bottom: 15px;
+    z-index: 5 !important;
+    position: relative;
+    background-color: #eeeff0;
+    width: 207px;
+    height: 35px;
+    color: #646464;
+    font-size: 0.9em;
+    font-weight: 400;
+    font: roboto, arial, verdana;
+    /* borda */
+    border-color: #edecec;
+    border-collapse: separate;
+    -webkit-border-radius: 7px;
+    -moz-border-radius: 7px;
+    border-radius: 7px;
+}
+
+    #layout_menuflutuante .subbotao:hover { /* jamais alterar */
+        background-color: #1096c7;
+        color: white;
+    }
+
+
+main { /* jamais alterar */
+    margin-top: 140px;
+}
+
+div { /* jamais alterar, talvez acrescentar */
+    clear: both; /* jamais retirar */
+    line-height: 1.8em;
+}
+
+p { /* jamais alterar */
+    text-align: justify;
+    width: 65%;
+}
+
+/* Aumentando o tamanho de um check box  */
+.checkbox-lg .form-check-input {
+    top: 0.2rem;
+    /*scale: 1.4; */
+    margin-right: 0.7rem;
+    margin-left: -15px;
+}
+
+.checkbox-lg .form-check-label {
+    padding-left: 4px;
+    font-size: 1.0em;
+    width: 340%;
+}
+
+.checkbox-xl .form-check-input {
+    top: 0.2rem;
+    /*scale: 1.9; */
+    margin-right: 0.8rem;
+    margin-left: -15px;
+}
+
+.checkbox-xl .form-check-label {
+    padding-left: 8px;
+    font-size: 1.0em;
+    width: 340%;
+}
+
+/* Imagem à esquerda do texto */
+.imageleft {
+    float: left;
+    position: relative;
+    margin: 0 9px 3px 0;
+}
+
+.imageright {
+    float: right;
+    margin: 0 9px 3px 13px;
+}
+
+.footer { /* jamais alterar */
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    background-color: #7abf84;
+    /* fixando a altura do footer aqui */
+    height: 40px;
+    line-height: 40px; /* Vertically center the text there */
+    padding-top: 5px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+.border-top {
+    border-top: 1px solid #e5e5e5;
+}
+
+.border-bottom {
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow {
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button {
+    background-color: #69c38a;
+}
+
+    button.accept-policy {
+        font-size: 1rem;
+        line-height: inherit;
+    }
+
+.fontetela {
+    color: darkgreen; /*  darkseagreen;  */
+    text-align: center;
+}
+
+    .fontetela.tit {
+        font: bold 32px Segoi UI, arial, sans-serif;
+        text-align: center;
+    }
+
+p.fontetela {
+    font-size: 1.0em;
+    min-width: 100%;
+}
+
+h3 {
+    clear: both;
+}
+
+.link-alternativo {
+    color: black;
+    background-color: inherit;
+    text-decoration: underline;
+}
+
+a.link-alternativo:hover, a.link-alternativo:focus {
+    color: white;
+    background-color: inherit;
+}
+
+a.link-alternativo:focus, a.link-alternativo.focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.5);
+}
+
+label {
+    font-size: 0.8em;
+    margin-bottom: -3px;
+}
+
+input {
+    margin-top: -3px;
+}
+
+
+/*
+ *  formulário 
+*/
+.formulario { /* jamais alterar */
+    width: 100%;
+    white-space: pre;
+    padding: 10px;
+    font-size: 0.9em;
+    color: #646464;
+}
+
+    .formulario.fundo-preto {
+        background-color: black;
+    }
+
+    .formulario.fundo-claro {
+        background-color: #e5e5e5;
+    }
+
+    .formulario.fundo-silver {
+        background-color: silver;
+    }
+
+    .formulario.fundo-verde {
+        background-color: #7abf84;
+    }
+
+    .formulario.fundo-branco {
+        background-color: white;
+    }
+/* 
+ *  formatando o formulário dentro de uma DIV 
+*/
+div.formulario { /* jamais alterar */
+    border: 1px solid silver;
+    border-radius: 5px;
+    border-collapse: collapse;
+}
+
+    div.formulario.arredondado { /* jamais alterar */
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+    }
+
+.form-check, form-check-reduzido {
+    width: 30%;
+}
+
+.borda_redonda {
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+
+/*
+ *  formatando o formulário dentro de uma TABLE
+*/
+table.formulario {
+    width: 100%;
+    cursor: pointer;
+    column-count: 1;
+    border: 1px solid silver;
+    border-radius: 7px;
+}
+
+    table.formulario.width-90 {
+        width: 90%;
+    }
+
+    table.formulario.width-80 {
+        width: 80%;
+    }
+
+    table.formulario.width-70 {
+        width: 70%;
+    }
+
+    table.formulario.width-60 {
+        width: 60%;
+    }
+
+    table.formulario.width-50 {
+        width: 50%;
+    }
+
+    table.formulario.width-40 {
+        width: 50%;
+    }
+
+    table.formulario.width-30 {
+        width: 30%;
+    }
+
+    table.formulario.colunas2 {
+        column-count: 2;
+    }
+
+    table.formulario.colunas3 {
+        column-count: 3;
+    }
+
+    table.formulario.colunas4 {
+        column-count: 4;
+    }
+
+    table.formulario.colunas5 {
+        column-count: 5;
+    }
+
+    table.formulario.colunas6 {
+        column-count: 6;
+    }
+
+    table.formulario.colunas7 {
+        column-count: 7;
+    }
+
+    table.formulario.colunas8 {
+        column-count: 8;
+    }
+
+    table.formulario.colunas9 {
+        column-count: 9;
+    }
+
+    table.formulario.colunas10 {
+        column-count: 10;
+    }
+
+    table.formulario.colunas11 {
+        column-count: 11;
+    }
+
+    table.formulario.colunas12 {
+        column-count: 12;
+    }
+
+    table.formulario.arredondado {
+        border-collapse: collapse;
+        -webkit-border-radius: 7px;
+        -moz-border-radius: 7px;
+        border-radius: 7px;
+    }
+
+    table.formulario.arredondado-separado {
+        border-collapse: separate;
+        -webkit-border-radius: 7px;
+        -moz-border-radius: 7px;
+        border-radius: 7px;
+        border-color: #e5e5e5;
+    }
+
+        table.formulario.arredondado-separado.claro {
+            border-color: #e5e5e5;
+        }
+
+        table.formulario.arredondado-separado.escuro {
+            border-color: #646464;
+        }
+
+    table.formulario tr {
+    }
+
+    table.formulario td {
+        padding: 5px;
+    }
+
+    table.formulario tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    table.formulario tr:hover {
+        background-color: #ddd;
+    }
+
+    table.formulario thead { /* apenas quando quiser nomear/títulos da tabela */
+        padding-top: 7px;
+        padding-bottom: 7px;
+        text-align: left;
+        background-color: #7abf84;
+        color: white;
+    }
+
+        table.formulario thead td {
+            font-size: 1.1em;
+            padding-left: 12px;
+        }
+
+.capitalize {
+    text-transform: capitalize;
+}
+
+.uppercase {
+    text-transform: uppercase;
+}
+
+.lowercase {
+    text-transform: lowercase;
+}
+
+/*
+   Círculo do menu flutuante dos formulários
+*/
+.circulo { /* jamais alterar */
+    float: left;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    float: left;
+    margin-top: 130px !important;
+    margin-left: -32px !important;
+    transition: 0.3s ease;
+    background-color: gainsboro;
+    box-shadow: 1px 1px 2px black, 0 0 25px gray, 0 0 5px darkblue;
+    z-index: 7 !important;
+}
+
+/* Setas: esquerda, direita, acima, abaixo */
+.bloco_setas { /* jamais alterar */
+    clear: both;
+    margin-left: 17px;
+    margin-top: 15px;
+    width: 77px;
+}
+
+/**
+*** Seta para ESQUERDA
+**/
+.seta-esquerda { /* jamais alterar */
+    float: left;
+    margin-top: 18px;
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+    width: 0;
+    height: 0;
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    border-right: 15px solid silver;
+}
+
+    .seta-esquerda:hover { /* jamais alterar */
+        content: "";
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 10px;
+        width: 0;
+        height: 0;
+        border-top: 15px solid transparent;
+        border-bottom: 15px solid transparent;
+        border-right: 15px solid #1096c7;
+    }
+
+/**
+*** Seta para DIREITA
+**/
+.seta-direita { /* jamais alterar */
+    float: right;
+    margin-top: 19px;
+    margin-left: -8px;
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+    width: 0;
+    height: 0;
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    border-left: 15px solid silver;
+}
+
+    .seta-direita:hover { /* jamais alterar */
+        content: "";
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 10px;
+        width: 0;
+        height: 0;
+        border-top: 15px solid transparent;
+        border-bottom: 15px solid transparent;
+        border-left: 15px solid #1096c7;
+    }
+
+/**
+*** Seta para CIMA
+**/
+.seta-cima { /* jamais alterar */
+    float: left;
+    margin-left: -7px;
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 15px solid silver;
+}
+
+    .seta-cima:hover { /* jamais alterar */
+        content: "";
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 10px;
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-bottom: 15px solid #1096c7;
+    }
+
+/**
+*** Seta para BAIXO
+**/
+.seta-baixo { /* jamais alterar */
+    float: left;
+    margin-top: 52px;
+    margin-left: -40px;
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 15px solid silver;
+}
+
+    .seta-baixo:hover { /* jamais alterar */
+        content: "";
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 10px;
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-top: 15px solid #1096c7;
+    }
+
+/*
+   Movimenta a página em até 5 partes:
+   top, middle-top, middle, middle-down, down
+   Atenção: "top" existe por padrão no bootstrap (usá-lo então!)
+*/
+a {
+}
+
+#mypagetop { /* prefira usar "top" que usar este */
+}
+
+#mypagedown {
+}
+
+#mypagemiddle {
+}
+
+#mypagemiddle-top {
+}
+
+#mypagemiddle-down {
+}
+
+/* 
+    Alterações das classes do Bootstrap CSS 
+*/
+.dropdown-item:hover { /* hover do fundo do menu principal */
+    background-color: darkseagreen;
+}
+
+.menu-lateral a {
+    font-size: 14px;
+    padding: 6px 12px;
+}
+
+#layoutSidenav_nav {
+    width: auto;
+    width: 230px;
+    white-space: nowrap;
+}
+
+.sb-sidenav .nav-link {
+    text-overflow: ellipsis; /* Opcional: mostra "..." se o texto estourar */
+    overflow: hidden;
+    white-space: nowrap;
+    padding-top: 0.1rem; /* diminui o espaçamento interno acima */
+    padding-bottom: 0.1rem; /* diminui o espaçamento interno abaixo */
+    line-height: 1.1;
+    min-height: 1.0rem; /* ajuste altura da caixa invisível da opção do menu */
+}
+
+    .sb-sidenav .nav-link:hover {
+        white-space: normal; /* Quebra a linha ao passar mouse para ver o texto completo */
+    }
+
+.sb-sidenav .nav-item {
+    margin-bottom: 0.1rem; /* diminui espaço entre os itens da lista */
+}
+
+
+/*
+    MODAL DE MENSAGENS EM TELA
+*/
+/* The Modal (foreground) */
+.modal {
+    display: block;
+    position: fixed !important; /* Stay in place */
+    z-index: 3000 !important; /* Sit on top */
+    padding-top: 100px; /* Location of the box */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+/* Close Button padrão */
+.close {
+    color: #aaaaaa;
+    float: right;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        background-color: inherit;
+        cursor: pointer;
+    }
+
+span, .modal-x {
+    font-size: 40px;
+}
+
+/* Fim do Modal de Mensagens em Tela */
+/* 
+    Sombras 
+*/
+/*.sombra {*/ /* Coloca sombra num botão, fieldset, div, etc  */
+/*-webkit-box-shadow: 0px 6px 0px #2b638f, 0px 6px 60px rgba(0,0,0,.4);
+    -moz-box-shadow: 0px 6px 0px #2b638f, 0px 6px 60px rgba(0,0,0,.4);
+    box-shadow: 0px 6px 0px #2b638f, 0px 6px 60px rgba(0,0,0,.4);
+}
+
+.sombra_cinza {*/ /* Coloca sombra mais escura num botão, fieldset, div etc */
+/*-webkit-box-shadow: 0px 0px 0px gray, 0px 4px 120px rgba(0,0,0,2);
+    -moz-box-shadow: 0px 0px 0px gray, 0px 4px 120px rgba(0,0,0,2);
+    box-shadow: 0px 0px 0px gray, 0px 4px 120px rgba(0,0,0,2);
+}*/
+
+/* Sombra bem clara: quase imperceptível, apenas para destacar levemente */
+.sombra-leve {
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sombra clara: visível, mas suave */
+.sombra,
+.sombra-clara {
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Sombra média: mais definida, ideal para destacar elementos */
+.sombra-media {
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Sombra escura: forte contraste, usada para profundidade ou destaque intenso */
+.sombra_cinza,
+.sombra-escura {
+    box-shadow: 0px 10px 16px rgba(0, 0, 0, 1);
+}
+
+label {
+    margin-right: 20px;
+    margin-left: 2px;
+}
+
+.smallTextBox {
+    height: 180px !important;
+}
+
+.mediumTextBox {
+    height: 240px !important;
+}
+
+.largeTextBox {
+    height: 440px !important;
+}
+
+.superTextBox {
+    height: 660px !important;
+}
+
+hr.new1 {
+    border-top: 1px solid gray;
+}
+
+.has-error {
+    float: left;
+    margin-left: 2px;
+    display: inline-block;
+    font-family: tahoma, calibri, arial, sans-serif;
+    font-size: 12.5px !important;
+    font-weight: 400;
+    color: red;
+    width: 100%;
+}
+
+@media (max-width: 480px) {
+    .textoRotaciona {
+        font-size: clamp(1.2em, 6vw, 2.5em);
+    }
+}
+
+/* botão centralizado */
+.botao-centralizado {
+    background-color: #e6ffe6; /* verde bem claro */
+    padding: 20px 0;
+}
+
+.botao-verde {
+    width: 305px;
+    display: block;
+    margin: 0 auto; /* centraliza horizontalmente */
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* coloca o cursor mãozinha para todos os Datatables */
+table.dataTable tbody tr:hover {
+    cursor: pointer;
+}
+/* título do modal */
+.modal-compact .modal-title {
+    font-size: 0.85rem; /* antes estava 0.95rem */
+    font-weight: 500; /* opcional: suaviza o peso da fonte */
+    margin-bottom: 0; /* remove espaçamento extra abaixo do título */
+}
+
+.modal-header {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+}
+/* estilo de cores do modal */
+.bg-verde-escuro {
+    background-color: #14532d !important; /* verde escuro */
+    color: white !important;
+}
+
+.modal-dialog-top {
+    margin-top: 10px; /* sobe o modal */
+    max-width: 90vw; /* largura ampla */
+    width: 90vw;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn-close-white {
+    filter: invert(1); /* deixa o "X" branco sobre fundo escuro */
+}
+
+.modal-dialog-largo {
+    max-width: 70vw; /* ocupa 90% da largura da tela */
+    width: 70vw;
+}
+
+.modal-compact {
+    font-size: 0.85rem; /* ~15% menor que o padrão de 1rem */
+    line-height: 1.3; /* levemente mais compacto entre linhas */
+}
+
+    .modal-compact .modal-title {
+        font-size: 0.95rem; /* título com leve destaque */
+    }
+
+    .modal-compact table td,
+    .modal-compact table th {
+        padding: 0.4rem 0.6rem; /* células mais enxutas */
+        font-size: 0.85rem;
+    }
+
+/* Título dos campos/colunas */
+#modeloTableModalMedicos .dt-column-title {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+}
+#modeloTableModalInstituicao .dt-column-title {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+}
+#modeloTableModalTabelas .dt-column-title {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+}
+#modeloTableModalPaciente .dt-column-title {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+}
+/* evitar que apareçam comportamentos padrões do Windows nos navegadores, sobre o texto das linhas do Grid 
+   fazendo com que o Datatables ficque em silêncio ao clicar ou arrastar o mouse sobre as linhas.
+*/
+#modeloTableRequisitar tbody tr {
+    user-select: none; /* Impede seleção de texto */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+    #modeloTableRequisitar tbody tr:focus {  /* remove o higligh azul */
+        outline: none; /* Remove borda de foco */
+    }
+#modeloTableRequisitar tbody tr {
+    cursor: pointer; /* Mantém cursor como ponteiro */
+}

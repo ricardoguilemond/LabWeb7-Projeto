@@ -1,0 +1,235 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using LabWebMvc.MVC.HtmlHelpers
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmRequisitar
+<script>
+    const ModalManager = (() => {
+        const modais = {};
+
+        function abrir(idModal, campoFocusSelector = null) {
+            const modalElement = document.getElementById(idModal);
+            if (!modalElement) return;
+
+            // Sempre recria a instância para garantir que o DOM esteja atualizado
+            modais[idModal] = new bootstrap.Modal(modalElement);
+
+            modalElement.addEventListener('shown.bs.modal', () => {
+                if (campoFocusSelector) {
+                    const campo = modalElement.querySelector(campoFocusSelector);
+                    if (campo) campo.focus();
+                }
+            });
+            modais[idModal].show();
+        }
+
+        function fechar(idModal) {
+            if (modais[idModal]) {
+                modais[idModal].hide();
+            }
+        }
+
+        return {
+            abrir,
+            fechar
+        };
+    })();
+
+    $(document).ready(function () {
+        const teclasPermitidas = [13, 38, 40];
+        const modaisCarregados = {
+            Instituicao: false,
+            Tabela: false,
+            Medico: false
+        };
+
+        const aplicarBusca = (idTabela, texto) => {
+            const tabela = $.fn.dataTable.isDataTable(idTabela) ? $(idTabela).DataTable() : null;
+
+            if (tabela) {
+                tabela.search(texto).draw();
+            } else {
+                const intervalo = setInterval(() => {
+                    const tabelaPronta = $.fn.dataTable.isDataTable(idTabela) ? $(idTabela).DataTable() : null;
+                    if (tabelaPronta) {
+                        tabelaPronta.search(texto).draw();
+                        clearInterval(intervalo);
+                    }
+                }, 100);
+            }
+        };
+
+        $("#buscaSiglaInstituicao, #buscaNomeInstituicao, #buscaSiglaTabela, #buscaNomeTabela, #buscaCRM, #buscaNomeMedico")
+            .off('keydown')
+            .on('keydown', function (event) {
+                if (teclasPermitidas.includes(event.which)) {
+                    setTimeout(() => {
+                        const inputEscrito = event.target.value.trim();
+                        const palavras = inputEscrito.split(/\s+/).filter(p => p.length > 0);
+                        const campoId = $(this).attr("id");
+
+                        if (palavras.length <= 1) {
+                            switch (campoId) {
+                                case "buscaSiglaInstituicao":
+                                case "buscaNomeInstituicao":
+                                    if (!modaisCarregados.Instituicao) {
+                                        $('#modalTriggerInstituicao').load("ModalInstituicoes", function () {
+                                            modaisCarregados.Instituicao = true;
+                                            setTimeout(() => {
+                                                ModalManager.abrir('modeloTableModalInstituicao', 'input[type="search"]');
+                                                aplicarBusca('#modeloTableModalInstituicao', inputEscrito);
+                                            }, 100);
+                                        });
+                                    } else {
+                                        ModalManager.abrir('modeloTableModalInstituicao', 'input[type="search"]');
+                                        aplicarBusca('#modeloTableModalInstituicao', inputEscrito);
+                                    }
+                                    break;
+
+                                case "buscaNomePosto":
+                                    if (!modaisCarregados.Posto) {
+                                        $('#modalTriggerPosto').load("ModalPostos", function () {
+                                            modaisCarregados.Posto = true;
+                                            setTimeout(() => {
+                                                ModalManager.abrir('modeloTableModalPostos', 'input[type="search"]');
+                                                aplicarBusca('#modeloTableModalPostos', inputEscrito);
+                                            }, 100);
+                                        });
+                                    } else {
+                                        ModalManager.abrir('modeloTableModalPostos', 'input[type="search"]');
+                                        aplicarBusca('#modeloTableModalPostos', inputEscrito);
+                                    }
+                                    break;
+
+                                case "buscaSiglaTabela":
+                                case "buscaNomeTabela":
+                                    if (!modaisCarregados.Tabela) {
+                                        $('#modalTriggerTabela').load("ModalTabelas", function () {
+                                            modaisCarregados.Tabela = true;
+                                            setTimeout(() => {
+                                                ModalManager.abrir('modeloTableModalTabelas', 'input[type="search"]');
+                                                aplicarBusca('#modeloTableModalTabelas', inputEscrito);
+                                            }, 100);
+                                        });
+                                    } else {
+                                        ModalManager.abrir('modeloTableModalTabelas', 'input[type="search"]');
+                                        aplicarBusca('#modeloTableModalTabelas', inputEscrito);
+                                    }
+                                    break;
+
+                                case "buscaCRM":
+                                case "buscaNomeMedico":
+                                    if (!modaisCarregados.Medico) {
+                                        $('#modalTriggerMedico').load("ModalMedicos", function () {
+                                            modaisCarregados.Medico = true;
+                                            setTimeout(() => {
+                                                ModalManager.abrir('modeloTableModalMedicos', 'input[type="search"]');
+                                                aplicarBusca('#modeloTableModalMedicos', inputEscrito);
+                                            }, 100);
+                                        });
+                                    } else {
+                                        ModalManager.abrir('modeloTableModalMedicos', 'input[type="search"]');
+                                        aplicarBusca('#modeloTableModalMedicos', inputEscrito);
+                                    }
+                                    break;
+                            }
+                        }
+                    }, 0);
+                }
+            });
+
+        $("#buttonLimpaCupom").on("click", function (event) {
+            event.preventDefault();
+            $.ajax({
+                url: '/PartialMontarItensCupom?id=0',
+                type: "GET",
+                async: true,
+                dataType: "html",
+                success: function (data) {
+                    $("#conteudoItensCupomCaixa").html(data);
+                },
+                failure: function () {
+                    clickAviso('Interrompido', 'Falha ao tentar zerar os dados do cupom', 'falha');
+                }
+            });
+        });
+    });
+</script>
+<div class="row">
+    <div class="col-md-12">
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group fg2">
+            <div id='conteudoInstituicao' class="modalInstituicao">
+                @Html.Label("Instituição:", null, new { @class = "fm3", @style = "width: 8px;" })
+                @Html.TextBoxFor(p => p.VmInstituicao.Sigla, new { @id = "buscaSiglaInstituicao", @class = "form-control fm3 upper", @placeholder = "Sigla", @required = "required", @style = "width: 15%;" })
+                @Html.TextBoxFor(p => p.VmInstituicao.Nome, new { @id = "buscaNomeInstituicao", @class = "form-control fm3 upper", @placeholder = "Nome da Instituição", @required = "required", @style = "width: 60%;" })
+                <!-- Campo hidden para armazenar o Id da instituição -->
+                @Html.HiddenFor(p => p.VmInstituicao.Id, new { @id = "instituicaoId" })
+                @Html.DisplayFor(p => p.VmInstituicao.Id, new { @class = "form-control fm3 upper", @style = "width: 5%;" })
+            </div>
+        </div>
+        <div class="form-group fg2">
+            <div id='conteudoPosto' class="modalPostos">
+                @Html.Label("Posto de Coleta:", null, new { @class = "fm3", @style = "width: 8px;" })
+                @Html.TextBoxFor(p => p.VmPostos.NomePosto, new { @id = "buscaNomePosto", @class = "form-control fm3 upper", @placeholder = "Nome do Posto", @style = "width: 60%;" })
+                <!-- Campo hidden para armazenar o Id do posto de coleta -->
+                @Html.HiddenFor(p => p.VmPostos.Id, new { @id = "postoId" })
+                @Html.DisplayFor(p => p.VmPostos.Id, new { @class = "form-control fm3 upper", @style = "width: 5%;" })
+            </div>
+        </div>
+        <div class="form-group fg2">
+            <div id='conteudoTabela' class="modalTabelas">
+                @Html.Label("Tabela:", null, new { @class = "fm3", @style = "width: 8px;" })
+                @Html.TextBoxFor(p => p.VmTabelaExames.SiglaTabela, new { @id = "buscaSiglaTabela", @class = "form-control fm3 upper", @placeholder = "Sigla", @required = "required", @style = "width: 15%;" })
+                @Html.TextBoxFor(p => p.VmTabelaExames.NomeTabela, new { @id = "buscaNomeTabela", @class = "form-control fm3 upper", @placeholder = "Nome da Tabela de Exames", @required = "required", @style = "width: 60%;" })
+                <!-- Campo hidden para armazenar o Id da tabela -->
+                @Html.HiddenFor(p => p.VmTabelaExames.Id, new { @id = "tabelaExamesId" })
+                @Html.DisplayFor(p => p.VmTabelaExames.Id, new { @class = "form-control fm3 upper", @style = "width: 5%;" })
+            </div>
+        </div>
+        <div class="form-group fg2">
+            <div id='conteudoMedico' class="modalMedicos">
+                @Html.Label("Médico:", null, new { @class = "fm3", @style = "width: 8px;" })
+                @Html.TextBoxFor(p => p.VmMedicos.NomeMedico, new { @id = "buscaNomeMedico", @class = "form-control fm3 upper", @placeholder = "Nome do Médico", @required = "required", @style = "width: 60%;" })
+                @Html.TextBoxFor(p => p.VmMedicos.CRM, new { @id = "buscaCRM", @class = "form-control fm3 upper", @placeholder = "CRM", @required = "required", @style = "width: 15%;" })
+                <!-- Campo hidden para armazenar o Id do médico -->
+                @Html.HiddenFor(p => p.VmMedicos.Id, new { @id = "medicoId" })
+                @Html.DisplayFor(p => p.VmMedicos.Id, new { @class = "form-control fm3 upper", @style = "width: 5%;" })
+            </div>
+        </div>
+    </div>
+    <!-- Grid dos Lançamentos dos Exames com preços (de acordo com a tabela de preços) e Rotinas -->
+    <div class="col-md-12">
+        <div class="row">
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-header"><i class="fas fa-chart-bar me-1"></i>Tabela de Lançamentos dos Exames</div>
+                    <div class="card-body">
+                        <div id="conteudoListaDeExames"><partial name='Partials/_PartialLancarExames'></partial></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="card sombra-escura">
+                    <div class="card-header"><i class="fas fa-chart-bar me-1"></i><strong>Cupom de Caixa / Exames Lançados</strong></div>
+                    <div class="card-body">
+                        <button id="buttonLimpaCupom" name="buttonLimpaCupom" class="buttonTableCompacto">Esvaziar o cupom</button>
+                        <div id="conteudoCupomCaixa"><partial name='Partials/_PartialMontarCupom'></partial></div>
+                    </div>
+                </div>
+                <div class="form-group botao-centralizado">
+                    <button id="clickImprimeCupom" type="submit" class="btn btn-lg btn-success botao-verde">
+                        Salvar e Imprimir Cupom
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+
+    await @Html.RenderPartialAsync("_ValidationScriptsPartial");
+}
