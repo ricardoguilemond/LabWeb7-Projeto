@@ -1,0 +1,239 @@
+Este QRCode foi instalado a partir do NUGET no Projeto da BLL.
+Não será necessário instalação manual.
+
+Manuais e uso podem ser encontrado nos links:
+
+https://www.codeproject.com/Articles/1250071/QR-Code-Encoder-and-Decoder-Csharp-Class-Library-f
+
+Explicações:
+O QR Code é definido pela norma internacional ISO/IEC 18004.
+
+A norma ISO 18004 é a melhor fonte de informação para entender os detalhes do QR Code. 
+Pesquisar na internet produz muitos outros artigos sobre esse assunto, incluindo artigo da Wikipedia sobre QR Code.
+
+O padrão QR Code é uma coleção de 40 quadrados diferentes que variam em tamanho. 
+Cada quadrado tem um número de versão de 1 a 40. 
+O tamanho de cada quadrado varia de 21 por 21 módulos (versão 1) a 177 por 177 módulos (versão 40). 
+Cada versão tem 4 módulos a mais por lado do que a versão anterior.
+
+
+Square-Dimension = 21 + 4 * (Version - 1)
+
+Alguns dos módulos são fixos. Os mais óbvios são os localizadores de três quadrados. 
+Os módulos restantes são divididos entre dados e correção de erros. 
+Existem 4 níveis de correção de erros:
+
+L- Baixo corrigirá até 7% de erros
+M- Médio corrigirá até 15% de erros
+Q-Quarter corrigirá até 25% de erros
+H- Alto corrigirá até 30% de erros
+
+
+
+MODO DE USO:
+
+using QRCodeEncoderLibrary;
+// or
+using QRCodeDecoderLibrary;
+
+
+===>CODIFICAÇÃO
+
+
+// create QR Code encoder object
+QRCodeEncoder Encoder = new();
+
+
+
+--->Defina os dois parâmetros opcionais, se necessário:
+
+// Error correction
+// error correction low (7%)
+Encoder.ErrorCorrection = ErrorCorrection.L;
+
+// or, error correction medium (15%) The Default
+Encoder.ErrorCorrection = ErrorCorrection.M;
+
+// or, error correction quarter (25%)
+Encoder.ErrorCorrection = ErrorCorrection.Q;
+
+// or, error correction high (30%)
+Encoder.ErrorCorrection = ErrorCorrection.H;
+
+// ECI Assignment Value (default is -1 not used)
+// The ECI value is a number in the range of 0 to 999999.
+// or -1 if it is not used
+Encoder.ECIAssignValue = -1;
+
+
+
+--->Uma porcentagem mais alta de correção de erros oferece melhor proteção contra imagens de QR Code danificadas. 
+O custo é o aumento do tamanho do símbolo QR.
+
+Chame um dos quatro métodos:Encode
+
+// single text string input
+public void Encode(string StringDataSegment);
+
+// multiple text strings input
+public void Encode(string[] StringDataSegments);
+
+// single byte array input
+public void Encode(byte[] ByteDataSegment);
+
+// multiple byte arrays input
+public void Encode(byte[][] ByteDataSegments);
+
+
+
+
+--->Se os dados de entrada forem cadeia de caracteres de texto ou matriz de cadeias de caracteres de texto. 
+O texto será convertido em matriz de bytes usando o método a seguir.
+
+// the encoder converts text string to byte array
+// using the conversion method
+byte[] ByteArray = Encoding.UTF8.GetBytes(Text);
+
+
+
+--->Efetivamente, o software da biblioteca converterá o primeiro e o segundo métodos para o terceiro e 
+quarto métodos, respectivamente.Encode
+
+Fará a varredura de cada segmento de matriz de bytes de dados de entrada para determinar o melhor 
+método de codificação. O programa não tentará quebrar um único segmento para minimizar o 
+tamanho da matriz do QR Code. Você pode enviar uma matriz de segmentos de forma a aproveitar as 
+longas sequências de dados numéricos ou alfanuméricos.QRCodeEncoderLibrary
+
+O método retorna uma matriz quadrada de matriz de elementos booleanos. 
+A matriz bool bidimensional de retorno também está disponível como um membro público da classe. 
+Cada elemento representa módulos pretos como e módulos brancos como. 
+A dimensão da matriz é dada no membro público. 
+Se a codificação falhar, uma exceção será lançada.Encodebool[,]QRCodeMatrixQREncodetruefalseQRCodeDimension
+
+O próximo passo é salvar o símbolo do QR Code em um arquivo ou criar um arquivo . 
+O exemplo a seguir mostra como salvar o em um arquivo de imagem PNG. 
+Salvar a imagem do QR Code no arquivo PNG NÃO requer o uso de classe e é adequado para net-core e 
+net-standard. 
+O arquivo de imagem PNG é significativamente menor do que um arquivo PNG criado por 
+classe no .BitmapQRCodeMatrixBitmapBitmapQRSaveBitmapImage
+
+
+// save image as png file
+// create save PNG image class 
+// and load the QR Code matrix 
+QRSavePngImage PngImage = new(QRCodeMatrix);
+
+// set the module size in pixels
+PngImage.ModuleSize = ModuleSize;
+
+// set the quiet zone in pixels
+PngImage.QuietZone = QuietZone;
+
+// save the QR Code PNG image to file name
+// or to open file stream
+PngImage.SaveQRCodeToPngFile(Dialog.FileName);
+
+
+
+--->Salve o QR Code usando a classe. class permite que você selecione o formato do arquivo.BitmapBitmap
+
+// save image as any file format supported by Bitmap class.
+// create image class for the QR Code matrix 
+QRSaveBitmapImage Image = new(QRCodeMatrix);
+
+// set the module size in pixels
+Image.ModuleSize = ModuleSize;
+
+// set the quiet zone in pixels
+Image.QuietZone = QuietZone;
+
+// save the QR Code image to file name
+// or to open file stream
+Image.SaveQRCodeToBitmapFile(Dialog.FileName, ImageFormat);
+
+
+
+===>DECODIFICAÇÃO:
+
+Decodificação de código QR
+O converte arquivos de imagem ou Bitmaps contendo símbolos de QR Code em uma matriz de cada item de 
+resultado contém a matriz de bytes de dados do QR Code e o Valor de Atribuição de ECI. 
+Para decodificar um arquivo de imagem contendo uma ou mais imagens de QR Code, 
+siga estas etapas.QRDecoderQRCodeResult
+
+Criar objeto. Esse objeto é reutilizável. Se você quiser decodificar algumas imagens, 
+basta reutilizar esse objeto. Não há necessidade de inicialização ou descarte.QRDecoder
+
+
+// create QR Code decoder object
+QRDecoder Decoder = new QRDecoder();
+
+// call image decoder method with file name
+QRCodeResult[] ResultArray = Decoder.ImageDecoder(FileName)
+
+
+
+--->Cada símbolo QRCode decodificado com sucesso retornará um elemento. 
+Na maioria dos casos, será uma matriz de um elemento. 
+O resultado é definido abaixo. Eles representam o conteúdo do QR Code. 
+No entanto, em alguns casos, você pode estar interessado nos outros membros. 
+Se o valor retornado for , nenhum QR Code foi detectado.QRCodeResultDataArraynull
+
+
+// QR Code result 
+public class QRCodeResult
+    {
+    // QR Code Data array
+    public byte[] DataArray;
+
+    // ECI Assignment Value
+    public int ECIAssignValue;
+
+    // the next members are for information only
+    // QR Code matrix version
+    public int QRCodeVersion;
+
+    // QR Code matrix dimension in bits
+    public int QRCodeDimension;
+
+    // QR Code error correction code (L, M, Q, H)
+    public ErrorCorrection ErrorCorrection;
+    }
+
+
+
+--->Para converter a matriz de bytes de dados em um texto, use:QRCodeResult.DataArraystring
+
+// convert binary result to text string
+string TextResult = QRCode.ByteArrayToStr(ResultArray[Index].DataArray);
+
+
+--->O método converte a matriz de bytes da seguinte maneira:ByteArrayToStrstring
+
+// The QRDecoder converts byte array to text string 
+// using this conversion
+public static string ByteArrayToStr(byte[] DataArray)
+	{
+	Decoder = Encoding.UTF8.GetDecoder();
+	int CharCount = Decoder.GetCharCount(DataArray, 0, DataArray.Length);
+	char[] CharArray = new char[CharCount];
+	Decoder.GetChars(DataArray, 0, DataArray.Length, CharArray, 0);
+	return new string(CharArray);
+	}
+
+QR Code 1
+Big QR Code
+QR Code 2
+Small QR Code
+
+
+
+
+
+
+
+
+
+
+
+
