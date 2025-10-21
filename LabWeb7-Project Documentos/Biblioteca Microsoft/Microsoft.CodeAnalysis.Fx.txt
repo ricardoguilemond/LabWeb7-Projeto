@@ -1,0 +1,5 @@
+IMPORTANTE para analisar a arquitetura do código e erros de estrutura lógica.
+
+Link para baixar:
+
+https://marketplace.visualstudio.com/items?itemName=VisualStudioPlatformTeam.MicrosoftCodeAnalysis2019
