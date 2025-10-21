@@ -1,0 +1,21 @@
+
+INSTALAR O SERVIÇO NO WINDOWS (FUNCIONA!)
+Instalar:
+>> sc create Lab7ServiceIntegracao binPath="C:\Servicos\ServicoExportacaoPacientes\" DisplayName="Lab7ServiceIntegracao" obj=LocalService start=auto
+
+Depois de instalado, colocar uma Descrição:
+>> sc description Lab7ServiceIntegracao "Serviço de integração de dados do sistema LabWeb7"
+
+Depois de parar o serviço, Deletar:
+>> sc delete ServicoExportacaoPacientes
+
+
+--- Outras opções: 
+https://learn.microsoft.com/en-us/dotnet/framework/windows-services/walkthrough-creating-a-windows-service-application-in-the-component-designer
+
+Instalar o Serviço:
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil ServicoExportacaoPacientes.exe
+
+Desinstalar o Serviço:
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil /u ServicoExportacaoPacientes.exe
+
