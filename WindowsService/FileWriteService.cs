@@ -1,8 +1,10 @@
-﻿using LabWebMvc.MVC.Integracoes.Interfaces.Responses;
+﻿using LabWebMvc.MVC.Areas.ServicosDatabase;
+using LabWebMvc.MVC.Integracoes.Interfaces.Responses;
 using ServicoExportacao;
 using System.Diagnostics;
-using System.Runtime.Versioning; // necessário para o atributo:  [SupportedOSPlatform("windows")]
+using System.Runtime.Versioning;
 using System.ServiceProcess;
+using System.Threading;
 
 namespace WindowsService
 {
@@ -10,28 +12,27 @@ namespace WindowsService
     internal class FileWriteService : ServiceBase
     {
         private const string serviceName = "Lab7ServiceIntegracao";
-        public Thread Worker = null!;
-        public int _intSleepTime = 1;  //argumento passado é para pausa no serviço em minutos
+        private readonly IDbFactory _dbFactory;
+        private Thread Worker = null!;
+        private int _intSleepTime = 1; // pausa em minutos
 
-        public FileWriteService()
+        public FileWriteService(IDbFactory dbFactory)
         {
+            _dbFactory = dbFactory;
+
             ServiceName = serviceName;
-
             CanStop = true;
-            CanPauseAndContinue = false;  //para este serviço não está acontecendo a pausa, então vamos omitir a opção de pausa
-
-            //Setup logging
+            CanPauseAndContinue = false;
             AutoLog = false;
-            EventLog.WriteEntry("Iniciando o serviço 'Lab7ServiceIntegracao'...", EventLogEntryType.Information);
+
             EventLog.Source = ServiceName;
             EventLog.Log = "Application";
+            EventLog.WriteEntry("Iniciando o serviço 'Lab7ServiceIntegracao'...", EventLogEntryType.Information);
         }
 
         protected override void OnStart(string[] args)
         {
-            base.OnStart(args);
-
-            EventLog.WriteEntry(string.Format("OnStart() acionado para '{0}' com pausa de {1} minuto(s) a cada evento", ServiceName, _intSleepTime), EventLogEntryType.Information);
+            EventLog.WriteEntry($"OnStart() acionado para '{ServiceName}' com pausa de {_intSleepTime} minuto(s)", EventLogEntryType.Information);
 
             ThreadStart start = new(Working);
             Worker = new Thread(start);
@@ -40,115 +41,85 @@ namespace WindowsService
 
         protected override void OnPause()
         {
-            try
+            if (Worker != null && Worker.IsAlive)
             {
-                if ((Worker != null) && Worker.IsAlive)
-                {
-                    EventLog.WriteEntry(string.Format("OnPause() o serviço {0} está em pausa...", ServiceName), EventLogEntryType.Information);
-                    base.OnPause();
-                }
-            }
-            catch (Exception)
-            {
-                throw;
+                EventLog.WriteEntry($"OnPause() o serviço {ServiceName} está em pausa...", EventLogEntryType.Information);
+                base.OnPause();
             }
         }
 
         protected override void OnContinue()
         {
-            try
+            if (Worker != null && Worker.IsAlive)
             {
-                if ((Worker != null) && Worker.IsAlive)
-                {
-                    EventLog.WriteEntry(string.Format("OnContinue() o serviço {0} foi continuado...", ServiceName), EventLogEntryType.Information);
-                    base.OnContinue();
-                }
-            }
-            catch (Exception)
-            {
-                throw;
+                EventLog.WriteEntry($"OnContinue() o serviço {ServiceName} foi continuado...", EventLogEntryType.Information);
+                base.OnContinue();
             }
         }
 
         protected override void OnStop()
         {
-            try
+            if (Worker != null && Worker.IsAlive)
             {
-                if ((Worker != null) && Worker.IsAlive)
-                {
-                    EventLog.WriteEntry(string.Format("Windows Service '{0}' parado em {1} ", "Lab7ServiceIntegracao", DateTime.Now), EventLogEntryType.Information);
-                }
-            }
-            catch (Exception)
-            {
-                throw;
+                EventLog.WriteEntry($"Windows Service '{ServiceName}' parado em {DateTime.Now}", EventLogEntryType.Information);
             }
         }
 
         public void Working()
         {
-            int nsleep = 60000; //declarando intervalo de 1 minuto = 60 mil milissegundos!
-            if (_intSleepTime > 0) nsleep = _intSleepTime * 60000;
+            int nsleep = _intSleepTime > 0 ? _intSleepTime * 60000 : 60000;
 
-            try
+            while (true)
             {
-                while (true)
+                EventLog.WriteEntry($"Ciclo do Windows Service '{ServiceName}' iniciado em {DateTime.Now}", EventLogEntryType.Information);
+
+                Thread.Sleep(nsleep);
+                EventLog.WriteEntry($"Serviço fez uma pausa esperada de {_intSleepTime} minuto(s) em {DateTime.Now}", EventLogEntryType.Information);
+
+                try
                 {
-                    EventLog.WriteEntry(string.Format("Ciclo do Windows Service '{0}' iniciado em {1} ", "Lab7ServiceIntegracao", DateTime.Now), EventLogEntryType.Information);
+                    EventLog.WriteEntry($"Serviço '{ServiceName}' vai iniciar processo de integração agendado em {DateTime.Now}", EventLogEntryType.Information);
 
-                    Thread.Sleep(nsleep);  //Faz uma pausa de 1 minuto até recomeçar o serviço para não sobrecarregar a demanda...
-                    EventLog.WriteEntry(string.Format("{0} '{1}' minuto(s) em {2}", "Serviço fez uma pausa esperada de ", _intSleepTime, DateTime.Now), EventLogEntryType.Information);
+                    var db = _dbFactory.Create();
+                    using var srv = new IntegracaoService(db);
+                    var response = srv.RodarIntegracaoAgendada();
 
-                    //Chama o outro serviço (Serviço de Integração da Aplicação) sem passar o DbContext
-                    try
+                    if (response.Log != null)
                     {
-                        EventLog.WriteEntry(string.Format("Serviço '{0}' vai iniciar processo de integração agendado em {1}", ServiceName, DateTime.Now), EventLogEntryType.Information);
-
-                        IntegracaoService srv = new IntegracaoService(null!, null!);
-                        RodarIntegracaoAgendadaResponse response = srv.RodarIntegracaoAgendada();
-                        if (response.Log != null)
+                        foreach (string item in response.Log)
                         {
-                            foreach (string item in response.Log)
-                            {
-                                EventLog.WriteEntry(string.Format("{0} ::: {1}", item.ToString(), DateTime.Now), EventLogEntryType.Information);
-                            }
+                            EventLog.WriteEntry($"{item} ::: {DateTime.Now}", EventLogEntryType.Information);
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        while (ex.InnerException != null)
-                            ex = ex.InnerException;
-
-                        RodarIntegracaoAgendadaResponse response = new();
-                        response.Errors?.Add(ex.Message.ToString());
-
-                        EventLog.WriteEntry(string.Format("*** SERVIÇO '{0}' COM FALHAS GRAVES ::: {1}", "Lab7ServiceIntegracao", DateTime.Now), EventLogEntryType.Error);
-
-                        if (response.Errors != null)
-                        {
-                            foreach (object item in response.Errors)
-                            {
-                                //LoggerFile.Write(string.Format("{0} ::: {1}", (string)item, DateTime.Now));
-                                EventLog.WriteEntry(string.Format("{0} ::: {1}", (string)item, DateTime.Now), EventLogEntryType.Error);
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        EventLog.WriteEntry(string.Format("Ciclo do serviço '{0}' terminou em {1} ", "Lab7ServiceIntegracao", DateTime.Now), EventLogEntryType.Information);
                     }
                 }
-            }
-            catch (Exception)
-            {
-                throw;
+                catch (Exception ex)
+                {
+                    while (ex.InnerException != null)
+                        ex = ex.InnerException;
+
+                    var response = new RodarIntegracaoAgendadaResponse();
+                    response.Errors?.Add(ex.Message);
+
+                    EventLog.WriteEntry($"*** SERVIÇO '{ServiceName}' COM FALHAS GRAVES ::: {DateTime.Now}", EventLogEntryType.Error);
+
+                    if (response.Errors != null)
+                    {
+                        foreach (var item in response.Errors)
+                        {
+                            EventLog.WriteEntry($"{item?.ToString() ?? "Erro desconhecido"} ::: {DateTime.Now}", EventLogEntryType.Error);
+                        }
+                    }
+                }
+                finally
+                {
+                    EventLog.WriteEntry($"Ciclo do serviço '{ServiceName}' terminou em {DateTime.Now}", EventLogEntryType.Information);
+                }
             }
         }
 
         public void OnDebug(string[] args)
         {
-            string[] valor = new string[] { "2" };
-            OnStart(valor);
+            OnStart(args);
         }
     }
 }
