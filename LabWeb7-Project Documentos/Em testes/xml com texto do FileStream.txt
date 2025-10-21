@@ -1,0 +1,53 @@
+
+                                var emptyXML = "<?xml version=\"1.0\" encoding=\"utf-8\"?>                                                                                    \n" +
+                                                "<RemessaFaturamentosTO xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                                                "  <LotesFaturamento>                                                                                                          \n" +
+                                                "    <NumeroLote></NumeroLote>                                                                                                 \n" +
+                                                "    <DataFaturamento></DataFaturamento>                                                                                       \n" +
+                                                "    <FaturasConta>                                                                                                            \n" +
+                                                "    </FaturasConta>                                                                                                           \n" +
+                                                "  </LotesFaturamento>                                                                                                         \n" +
+                                                "</RemessaFaturamentosTO>                                                                                                      \n";
+
+                                AddString(fs, emptyXML);
+
+        private void AddString(FileStream sw, String value)
+        {
+            var enc = new UTF8Encoding(false);
+            var bts = enc.GetBytes(value);
+            sw.Write(bts, 0, bts.Length);
+        }
+
+        private void AddBreakLine(FileStream sw)
+        {
+            AddString(sw, "\n\n");
+
+        }
+
+        private void AglutinaArquivo(FileStream sw, String fileBase)
+        {
+            string line;
+            StreamReader sr = null;
+            try
+            {
+                sr = File.OpenText(fileBase);
+                var first = true;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    line = line.Replace("\r", "");
+                    if (!first) line = "\n" + line;
+                    AddString(sw, line);
+                    first = false;
+                }
+                sw.Flush();
+            }
+            finally
+            {
+                if (sr != null)
+                {
+                    sr.Close();
+                    sr.Dispose();
+                }
+            }
+
+        }

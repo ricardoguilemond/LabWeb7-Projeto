@@ -1,0 +1,6 @@
+        public static String FormatNumber(decimal number, String format = "{0:0.00}")
+        {
+
+            return string.Format(new CultureInfo("en-US"), format, number);
+
+        }

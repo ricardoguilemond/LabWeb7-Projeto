@@ -1,0 +1,45 @@
+Estava em _Layout.cshtml
+
+
+
+   <environment include="Development">
+      <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+   </environment>
+   <environment exclude="Development">
+      <link rel="stylesheet" href="~/css/"
+            asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.css"
+            asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute"
+            crossorigin="anonymous">
+   </environment>
+   <environment include="Development">
+      <script src="~/lib/jquery/dist/jquery.js"></script>
+      <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
+   </environment>
+   <environment exclude="Development">
+      <script src="~/js/jquery.min.js"
+              asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
+              asp-fallback-test="window.jQuery"
+              crossorigin="anonymous">
+      </script>
+      <script src="~/js/bootstrap.bundle.min.js"
+              asp-fallback-src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"
+              asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal"
+              crossorigin="anonymous">
+      </script>
+   </environment>
+
+
+
+
+   <script src="~/js/site.js" asp-append-version="true"></script>
+   <!-- Meus JS ::: DataTables plugin Bootstrap externo 02-10-2010 -->
+   <script src="~/DataTables/datatables.js" asp-append-version="false"></script>
+   <script src="~/DataTables/DataTables-1.10.18/js/dataTables.bootstrap.js" asp-append-version="false"></script>
+   <script src="~/DataTables/DataTables-1.10.18/js/dataTables.bootstrap4.js" asp-append-version="false"></script>
+   <script src="~/DataTables/DataTables-1.10.18/js/dataTables.foundation.js" asp-append-version="false"></script>
+   <script src="~/DataTables/DataTables-1.10.18/js/dataTables.jqueryui.js" asp-append-version="false"></script>
+   <!-- Meus CSS ::: esta lista de CSS sobrepõe classes com mesmo nomes anteriores -->
+   <link rel="stylesheet" href="~/css/site.css" />
+   <link rel="stylesheet" href="~/DataTables/datatables.css" />
+   <link rel="stylesheet" href="~/DataTables/DataTables-1.10.18/css/jquery.dataTables.css" />
+
