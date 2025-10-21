@@ -385,5 +385,9 @@ LabWebMvc.MVC/Interfaces/Criptografias/CriptoDecripto.cs
 LabWeb7-Project Documentos/Biblioteca EXE/
 LabWeb7-Project Documentos/Biblioteca PDF/
 LabWeb7-Project Documentos/Biblioteca SQL/
-
-
+LabWeb7-Project Documentos/Biblioteca PostgreSql/
+LabWeb7-Project Documentos/Biblioteca Google Cloud e ReCaptcha/
+LabWeb7-Project Documentos/Biblioteca Frameworks/*.zip
+LabWeb7-Project Documentos/Biblioteca Frameworks/*.7z
+LabWeb7-Project Documentos/Biblioteca Bootstrap/*.zip
+LabWeb7-Project Documentos/Biblioteca Bootstrap/*.7z
