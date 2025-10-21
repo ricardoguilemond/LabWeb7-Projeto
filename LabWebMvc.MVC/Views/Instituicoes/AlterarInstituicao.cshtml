@@ -1,0 +1,323 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using LabWebMvc.MVC.Areas.Utils
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmInstituicao
+@{
+    Layout = "_Layout";
+}
+<script>
+    /*
+       AQUI CARREGAMOS TODOS OS OBJETOS SÍNCRONOS, QUE SÃO CARREGADOS IMEDIATAMENTE APÓS CARREGAR A PÁGINA OU APÓS UM POST.
+    */
+    $(document).ready(function () {
+        $('[name="excluirTimbre"]').click(function (event) {
+            event.preventDefault();
+            var arrSigla = $('#form').serializeArray()[1];
+            var sigla = arrSigla.value;
+            var actionPos = "ExcluirImagemTimbre";
+            clickConfirm(null,"Exclusão de Imagem", "Excluir a imagem Timbre?", null, actionPos, "Sigla", sigla);  //mensagem normal com desvio para outra action (site.js)
+        });
+        $('[name="excluirLogomarca"]').click(function (event) {
+            event.preventDefault();
+            var arrSigla = $('#form').serializeArray()[1];
+            var sigla = arrSigla.value;
+            var actionPos = "ExcluirImagemLogomarca";
+            clickConfirm(null, "Exclusão de Imagem", "Excluir a imagem Logomarca?", null, actionPos, "Sigla", sigla);  //mensagem normal com desvio para outra action (site.js)
+        });
+
+        //Carrega a imagem do Timbre que vem da base de dados em bytes[], , mas só funciona bem vindo de um "HiddenFor".
+        //Válido para PNG, JPG, BMP, o gif salva na tabela, mas não mostra aqui.
+        var arrayTimbre = "data:image/png;base64," + $("#bytesTimbre").val();
+        if (arrayTimbre != null && arrayTimbre != "data:image/png;base64,")
+            $("#imgsT").fadeIn("fast").html("<img src='" + arrayTimbre + "' style='width:235px; height:215px;' />");
+
+        var arrayLogomarca = "data:image/png;base64," + $("#bytesLogomarca").val();
+        if (arrayLogomarca != null && arrayLogomarca != "data:image/png;base64,")
+            $("#imgsL").fadeIn("fast").html("<img src='" + arrayLogomarca + "' style='width:670px; height:120px;' />");
+
+        $('#clickSubmit').click(function (event) {
+            event.preventDefault();
+            //OBRIGATÓRIO: Vamos limpar os objetos que contém os bytes[] para a "vm" não ficar vazia/null do outro lado. Motivo: elas carregam o "input" inteiro.
+            $("#bytesTimbre").val("");
+            $("#bytesLogomarca").val("");
+            $.ajax({
+                //url: '@Url.Action("AlterarInstituicao", "Instituicoes")',   //se habiliar a URL terá que passar o "id", porque só iria a vm sem id.
+                type: "POST",
+                async: true,
+                dataType: "json",
+                data: $('#form').serialize(),
+                success: function (data) {
+                    var titulo = data['titulo'];
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var sucesso = data['sucesso'];
+                    titulo = (titulo == null) ? 'Atenção' : data['titulo'];
+                    var tipo = 'falha';
+                    if (sucesso == true) tipo = 'sucesso';
+                    //success: Javascript ::: aqui acontece todas as mensagens de sucesso e não sucesso
+                    clickAviso(titulo, mensagem, tipo, actionPos);  //mensagem normal com desvio para outra action (site.js)
+                },
+                error: function (request, status, error) {
+                    //aqui somente acontece no caso de exception/erro do javascript
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', actionPos);  //mensagem crítica e com desvio para outra action (site.js)
+                }
+            });
+        })
+    });
+</script>
+
+@using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))  //@id-"form" é obrigatório para campos chegarem do doutro lado
+{
+    <div class="row">
+        <div class="col-md-4">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="form-group">
+                @Html.Label("*Nome da Instituição")
+                @Html.TextBoxFor(p => p.Nome, new { @class = "form-control capitalize", @placeholder = "Entre com o nome completo da instituição", @required = "required" })
+            </div>
+            <div class="form-group">
+                @Html.Label("*Sigla")
+                @Html.TextBoxFor(p => p.Sigla, new { @class = "form-control capitalize", @readonly = "readonly" })
+            </div>
+            <div class="form-group">
+                @Html.Label("*CNPJ")
+                @Html.TextBoxFor(p => p.CNPJ, new { @class = "form-control capitalize", @readonly = "readonly" })
+            </div>
+            <div class="form-group">
+                @Html.Label("*e-mail")
+                @Html.TextBoxFor(p => p.Email, new { @class = "form-control lowercase", @style = "color: blue;", @placeholder = "e-mail", @type = "email", @required = "required" })
+            </div>
+            <div class="form-group">
+                @Html.Label("*Telefone ou celular com DDD")
+                @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD", @required = "required" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Celular com DDD")
+                @Html.TextBoxFor(p => p.Celular, new { @class = "form-control", @placeholder = "Celular com DDD" })
+            </div>
+            <div class="form-group">
+                @Html.Label("CEP")
+                @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Logradouro (Rua/Trav)")
+                @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Endereço")
+                @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Número")
+                @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Complemento")
+                @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Bairro")
+                @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Cidade/Município")
+                @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município" })
+            </div>
+            <div class="form-group">
+                @Html.Label("UF:")
+                <div style="display: inline-block;">
+                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF))
+                </div>
+            </div>
+            <div class="form-group">
+                @Html.Label("Título do Timbre para Relatórios")
+                @Html.TextBoxFor(p => p.TituloTimbre, new { @class = "form-control", @placeholder = "Título do Timbre para Relatórios" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Subtítulo do Timbre para Relatórios")
+                @Html.TextBoxFor(p => p.SubTituloTimbre, new { @class = "form-control", @placeholder = "Subtítulo do Timbre para Relatórios" })
+            </div>
+            <!--
+                Carregamento das imagens
+            -->
+            <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
+                <div class="form-group">
+                    @Html.Label("TIMBRE: Pequena imagem quadrada: 215x235 pixels (Largura_x_altura), para acompanhar os títulos dos relatórios")
+                    @Html.TextBoxFor(p => p.CaminhoImagemTimbre, new { @type = "file", @id = "fileTimbre", @name = "fileTimbre", @value = @ViewBag.PathImages })
+                    @Html.Raw("<div id='imgsT'></div>")
+                    @if (!string.IsNullOrEmpty(ViewBag.NomeTimbre))
+                    {
+                        <input id=@ViewBag.NomeTimbre type='button' name='excluirTimbre' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a function não vai funcionar --> *@
+                    }
+                    @Html.HiddenFor(p => p.NomeTimbre, new { @id = "nomeTimbre" })
+                    @Html.HiddenFor(p => p.CaminhoImagemTimbre, new { @id = "caminhoTimbre" })
+                    @Html.HiddenFor(p => p.Timbre, new { @id = "bytesTimbre" })
+                </div>
+            </fieldset>
+            <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
+                <div class="form-group">
+                    @Html.Label("LOGOMARCA/BANNER: Imagem retangular: 670x120 pixels (Largura_x_altura), que substitui título e timbre nos relatórios")
+                    @Html.TextBoxFor(p => p.CaminhoImagemLogomarca, new { @type = "file", @id = "fileLogo", @name = "fileLogo", @value = @ViewBag.PathImages })
+                    @Html.Raw("<div id='imgsL'></div>")
+                    @if (!string.IsNullOrEmpty(ViewBag.NomeLogomarca))
+                    {
+                        <input id=@ViewBag.NomeLogomarca type='button' name='excluirLogomarca' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a funtion não vai funcionar --> *@
+                    }
+                    @Html.HiddenFor(p => p.NomeLogomarca, new { @id = "nomeLogomarca" })
+                    @Html.HiddenFor(p => p.CaminhoImagemLogomarca, new { @id = "caminhoLogomarca" })
+                    @Html.HiddenFor(p => p.Logomarca, new { @id = "bytesLogomarca" })
+                </div>
+            </fieldset>
+            <!--
+                Fim do carregamento das imagens
+            -->
+            <div class="form-group">
+                <!-- Saltar linha -->
+            </div>
+            <div class="form-group">
+                @Html.Label("*Usa imagem timbre nos relatórios? S/N ")
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int timbreIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string timbreSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string timbreDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (timbreIndex == (int)ViewBag.TimbreSN);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("TimbreSN", timbreIndex, check)
+                        @Html.Label(timbreDescricao)
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                @Html.Label("*Usa carimbo CRBio no final dos relatórios? S/N ")
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int carimboIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string carimboSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string carimboDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (carimboIndex == (int)ViewBag.CarimboSN);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("CarimboSN", carimboIndex, check)
+                        @Html.Label(carimboDescricao)
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                @Html.Label("*Nome do Contato")
+                @Html.TextBoxFor(p => p.Contato, new { @class = "form-control", @placeholder = "Nome do contato principal" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Nome do Usuário FTP (se houver)")
+                @Html.TextBoxFor(p => p.UsuarioCaminhoFTP, new { @class = "form-control", @placeholder = "Nome Usuário do FTP" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Email do Usuário FTP (se houver)")
+                @Html.TextBoxFor(p => p.UsuarioEmailFTP, new { @class = "form-control", @placeholder = "Email Usuário do FTP" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Número da Porta do Usuário FTP (se houver)")
+                @Html.TextBoxFor(p => p.UsuarioPortaFTP, new { @class = "form-control", @placeholder = "Número Porta do FTP" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Senha do Usuário FTP (se houver)")
+                @Html.TextBoxFor(p => p.UsuarioSenhaFTP, new { @class = "form-control", @placeholder = "Senha do FTP" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Valor para o Exame de Citologia (Exame em lâminas, se houver)")
+                @Html.TextBoxFor(p => p.ValorExameCitologia, new { @class = "form-control", @placeholder = "Valor para o Exame de Citologia (Lâminas)" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Imprime texto de propaganda caso haja algum? S/N ")
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int propIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string propSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string propDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (propIndex == (int)ViewBag.PropagandaSN);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("Propaganda", propIndex, check)
+                        @Html.Label(propDescricao)
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                @Html.Label("Aviso de Rodapé (primeira linha, se desejar algum)")
+                @Html.TextBoxFor(p => p.AvisoRodape1, new { @class = "form-control", @placeholder = "Aviso do Rodapé (primeira linha)" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Aviso de Rodapé (segunda linha, se desejar algum)")
+                @Html.TextBoxFor(p => p.AvisoRodape2, new { @class = "form-control", @placeholder = "Aviso do Rodapé (segunda linha)" })
+            </div>
+            <div class="form-group botao-centralizado">
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        /*  AQUI CARREGAMOS TODOS OS OBJETOS ASSÍNCRONOS OU QUE DEPENDAM POR EXEMPLO DE UM ACIONAMENTO DE BOTÃO COM "GET" PARA EFEITO NA MESMA PÁGINA. */
+        /*
+            Arquivo de Imagem (Upload) Faz a entrega das imagens que serão salvas na tabela de dados
+         */
+        $('#fileTimbre').on('change', function (e) {
+            //OK: pegando apenas o nome do arquivo que veio após o click no input
+            var files = e.target.files;   //pega todos os possíveis arquivos do upload, mas aqui só virá um único arquivo selecionado.
+            var fileName = files[0].name; //pega o nome do arquivo selecionado.
+            //OK: cria objeto URL temporário para exibição em tela, porque o path original vem como "fakepath" por segurança imposta pelos navegadores
+            var objURL = URL.createObjectURL(e.target.files[0]);
+            //OK: pegando apenas o caminho correto que veio do controller via ViewBag.PathImages
+            var path = $(this).attr('value');
+            //OK: pega as propriedades do arquivo que será enviado ao controller para ser salva na tabela...
+            if (files.length > 0) {
+                if (window.FormData !== undefined) {
+                    var data = new FormData();
+                    //data.append("myFile", files[0]);  //entrega no controller via Ajax o nome do arquivo e propriedades (se eu fosse passar para o controller).
+                    //data.append("myPath", path);      //entrega no controller via Ajax o caminho completo de onde veio o arquivo (se eu fosse passar para o controller).
+                    //
+                    //Atribui os valores para as variáveis JQuery dos inputs, alimentando os campos hidden da "vm"
+                    $("#nomeTimbre").val(fileName);
+                    $("#caminhoTimbre").val(path);
+                    //
+                    //mostra a imagem no formulário
+                    $("#imgsT").fadeIn("fast").html("<img src='" + objURL + "' style='width:235px; height:215px;' />");
+                }
+            }
+        });
+        $('#fileLogo').on('change', function (e) {
+            //OK: pegando apenas o nome do arquivo que veio após o click no input
+            var files = e.target.files;   //pega todos os possíveis arquivos do upload, mas aqui só virá um único arquivo selecionado.
+            var fileName = files[0].name; //pega o nome do arquivo selecionado.
+            //OK: cria objeto URL temporário para exibição em tela, porque o path original vem como "fakepath" por segurança imposta pelos navegadores
+            var objURL = URL.createObjectURL(e.target.files[0]);
+            //OK: pegando apenas o caminho correto que veio do controller via ViewBag.PathImages
+            var path = $(this).attr('value');
+            //OK: pega as propriedades do arquivo que será enviado ao controller para ser salva na tabela...
+            if (files.length > 0) {
+                if (window.FormData !== undefined) {
+                    var data = new FormData();
+                    //data.append("myFile", files[0]);  //entrega no controller via Ajax o nome do arquivo e propriedades (se eu fosse passar para o controller).
+                    //data.append("myPath", path);      //entrega no controller via Ajax o caminho completo de onde veio o arquivo (se eu fosse passar para o controller).
+                    //
+                    //Atribui os valores para as variáveis JQuery dos inputs, alimentando os campos hidden da "vm"
+                    $("#nomeLogomarca").val(fileName);
+                    $("#caminhoLogomarca").val(path);
+                    //
+                    //mostra a imagem no formulário
+                    $("#imgsL").fadeIn("fast").html("<img src='" + objURL + "' style='width:670px; height:120px;' />");
+                }
+            }
+        });
+
+    </script>
+}

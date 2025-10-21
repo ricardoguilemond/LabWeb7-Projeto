@@ -1,0 +1,85 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using BLL
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Interfaces
+@using LabWebMvc.MVC.ViewModel
+@model vmInstituicao
+<partial name='Partials/_PartialMenuInstituicoes' />
+<div class="table-responsive">
+    <table id="modeloTable" name="datatable" data-order='[[ 0, "desc" ]]' class="display compact order-column stripe table-hover nowrap">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Sigla</th>
+                <th>Nome</th>
+                <th>CNPJ</th>
+                <th>e-mail</th>
+                <th>Telefone</th>
+                <th>Celular</th>
+                <th>Opções</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in ViewBag.ListaDados)
+            {
+                @Html.Raw(
+                         "<tr>" +
+                         "<td style='width: 03%;'>" + item.Id + "</td>" +
+                         "<td style='width: 5%;'>" + item.Sigla + "</td>" +
+                         "<td style='width: 15%;'>" + item.Nome + "</td>" +
+                         "<td style='width: 7%;'>" + item.CNPJ + "</td>" +
+                         "<td style='width: 10%;'>" + item.Email + "</td>" +
+                         "<td style='width: 7%;'>" + item.Telefone + "</td>" +
+                         "<td style='width: 7%;'>" + item.Celular + "</td>")
+                ;
+                @Html.Raw(
+                         "<td class='grid_fundo_opcoes'>" +
+                         "<a id=" + item.Id + " class='grid_itens' onclick=clickConsulta(this) title='Consultar'><i class='fa-sharp fa-solid fa-display'></i> </a>" +
+                         "<a id=" + item.Id + " class='grid_itens' onclick=clickPostos(this) title='Postos e Anexos'><i class='fa-sharp fa-solid fa-file-medical'></i> </a>" +
+                         "<a id=" + item.Id + " class='grid_itens' onclick=clickAlterar(this) title='Alterar'><i class='fa-sharp fa-solid fa-file-pen'></i> </a>" +
+                         "<a id=" + item.Id + " class='grid_itens' onclick=clickDelete(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>" +
+                         "</td>" +
+                         "</tr>")
+                ;
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Id</th>
+                <th>Sigla</th>
+                <th>Nome</th>
+                <th>CNPJ</th>
+                <th>e-mail</th>
+                <th>Telefone</th>
+                <th>Celular</th>
+                <th id="op">Opções</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+@section Scripts {
+    <div class="toolbar"><partial name='_PartialDatatables' /></div>
+    <partial name="_ValidationScriptsPartial" />
+}
+<script>
+    //ACTIONS ICONS
+    function clickConsulta(x) {
+        var url = "ConsultarInstituicao?id=" + x.id;
+        window.open(url, "_self")
+        //window.location.href = '@Url.Action("ConsultarInstituicao", "Instituicoes")?id=' + x.id;
+    }
+    function clickPostos(x) {
+        alert("Em desenvolvimento - Postos e Anexos: " + x.id);
+        //window.location.href = '@Url.Action("Postos", "Postos")?id=' + x.id;
+    }
+    function clickAlterar(x) { //OK
+        window.location.href = '@Url.Action("AlterarInstituicao", "Instituicoes")?id=' + x.id;
+    }
+    function clickDelete(x) {
+        //"x" é a linha toda da tag (tem que passar a linha TODA de "x")
+        //x.id é somente o "id" na tag da linha
+        return clickConfirm(x, null, "Excluir instituição?", null, "ExcluirInstituicao");
+    };
+</script>

@@ -1,0 +1,62 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Interfaces.Collections
+@using LabWebMvc.MVC.ViewModel
+@model vmRequisitar
+<style>
+    .tb-cupom {
+        width: 100%;
+    }
+
+    .tr-todo {
+        width: 100%;
+    }
+
+    .td-descricao {
+        width: 90%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .td-valor {
+        width: 10%;
+        text-align: right;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .td-negrito {
+        font-weight: bold;  
+    }
+
+    .tr-foot-fundo {
+        background-color: #c4d7b3 !important;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        // Verifica se já foi executada anteriormente
+        if (!localStorage.getItem("configTableCupomExecuted")) {
+
+            configTableCupom(); // Por prevenção, executa a função somente uma única vez no primeiro carregamento da página!
+
+            // Marca como executada no localStorage, para depois evitar que carregue de novo ao atualizar a página!
+            localStorage.setItem("configTableCupomExecuted", true);
+        } 
+    }); //FIM do $(document).ready
+</script>
+<div class="table-responsive">
+    <table id="modeloTableCupom" name="datatable" data-order='[[ 0, "asc" ]]' class="display compact order-column table-striped table-hover nowrap tb-cupom" style="margin-top: 4px;">
+        <thead>
+            <tr>
+                <th><span style="font-size: 12px !important;">Exame</span></th>
+                <th><span style="font-size: 12px !important;">Valor</span></th>
+            </tr>
+        </thead>
+        <tbody id="conteudoItensCupomCaixa"><partial name='Partials/_PartialMontarItensCupom'></partial></tbody> <!-- monta apenas os registros dentro do grid do cupom -->
+    </table>
+</div>

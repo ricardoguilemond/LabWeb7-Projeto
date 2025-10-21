@@ -1,0 +1,79 @@
+﻿@page
+@using LabWebMvc.MVC.ViewModel
+@model vmSenhas
+<script>
+    $(document).ready(function () {
+        $('#clickSubmit').click(function (event) {
+            //event.preventDefault() : permite que a função "CallMethodJson" no Javascript possa ser modificada no caminho, desviando uma rota por exemplo.
+            event.preventDefault();  //OBRIGATÓRIO AQUI! Cancela o evento se ele for cancelável, ou seja, que a ação padrão que pertence ao evento não ocorrerá.
+            var dados = $('#dados').val();
+            var dadosForm = [];
+            dadosForm.push('SenhaUsuario:' + $('#SenhaUsuario').val());
+            dadosForm.push('SenhaRepete:' + $('#SenhaRepete').val());
+            dadosForm.push('BoxGerarSenhaAutomatica:' + $('#BoxGerarSenhaAutomatica').val());
+            dadosForm.push('BoxEnviarEmail:' + $('#BoxEnviarEmail').val());
+            CallMethodJson('UsuarioSalvarSenha', dados, dadosForm);
+        })
+    });
+</script>
+<div class="col-md-12">
+    <section id="LoginForm">
+        <div class="row d-flex justify-content-center col-12">
+            <div class="col-4 border border-primary rounded m-20">
+                <div class="d-flex justify-content-left mt-2">
+                    <div class="form-group">
+                        Você está cadastrando/alterando uma nova senha para este usuário: <br />
+                        Email/Login: <b>@ViewBag.Itens.Email</b><br />
+                        Nome do Usuário: <b>@ViewBag.Itens.NomeCompleto</b><br />
+                    </div>
+                </div>
+                @using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal" }))
+                {
+                    @Html.Hidden("dados", new { @ViewBag.Itens.Email, @ViewBag.Itens.NomeCompleto })
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                    <div class="d-flex justify-content-center">
+                        <div class="form-group">
+                            @Html.TextBoxFor(m => m.SenhaUsuario, new { @class = "form-control", @type = "password", @placeholder = "Entre com a nova senha", @required = "required", @autofocus = "autofocus", @title = "Entre com a nova senha" })
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <div class="form-group">
+                            @Html.TextBoxFor(m => m.SenhaRepete, new { @class = "form-control", @type = "password", @placeholder = "Repita a senha", @title = "Repita a senha" })
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-left ms-3">
+                        <div class="form-group">
+                            @Html.CheckBoxFor(m => m.BoxGerarSenhaAutomatica, new { @class = "form-check-input", @id = "BoxGerarSenhaAutomatica" })
+                            <label class="form-check-label">Ou se preferir, gerar uma senha automática pelo sistema</label>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-left ms-3">
+                        <div class="form-group">
+                            @Html.CheckBoxFor(m => m.BoxEnviarEmail, new { @class = "form-check-input", @id = "BoxEnviarEmail", @checked = "checked", @disabled = "disabled" })
+                            <label class="form-check-label">Enviar a nova senha para Email</label>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-left">
+                        <div class="form-group">
+                            Se desejar ver o perfil do usuário vá para: "<b>Perfil e Permissões</b>"
+                        </div>
+                    </div>
+                    <!--
+                    Submeter Formulário
+                    -->
+                    <div class="form-group botao-centralizado">
+                        <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                            Salvar
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

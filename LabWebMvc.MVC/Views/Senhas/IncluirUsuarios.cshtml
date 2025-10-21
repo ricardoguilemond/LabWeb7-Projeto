@@ -1,0 +1,173 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using LabWebMvc.MVC.Areas.Utils
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmSenhas
+@{
+    Layout = "_Layout";
+}
+<script>
+    $(document).ready(function () {
+        $('#clickSubmit').click(function (event) {
+            event.preventDefault();
+            $.ajax({
+                //url: '@Url.Action("IncluirUsuarios", "Senhas")',
+                type: "POST",
+                async: true,
+                dataType: "json",
+                data: $('#form').serialize(),
+                success: function (data) {
+                    var titulo = data['titulo'] || 'Atenção';
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var tipo = data['sucesso'] ? 'sucesso' : 'falha';
+                    clickAviso(titulo, mensagem, tipo, actionPos);
+                },
+                error: function () {
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', actionPos);
+                }
+            });
+            $('#form')[0].reset();
+        });
+    });
+</script>
+@using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))
+{
+    <div class="row">
+        <div class="col-md-6">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="form-group">
+                @Html.Label("*Nome de Usuário (ate 15 caracteres)")
+                @Html.TextBoxFor(p => p.NomeUsuario, new { @class = "form-control", @maxlength = "15", @required = "required" })
+            </div>
+
+            <div class="form-group">
+                @Html.Label("*Nome Completo")
+                @Html.TextBoxFor(p => p.NomeCompleto, new { @class = "form-control", @maxlength = "100", @required = "required" })
+            </div>
+
+            <div class="form-group">
+                @Html.Label("*Data de Nascimento")
+                @Html.TextBoxFor(p => p.DataNascimento, new { @class = "form-control", @placeholder = "dd/MM/yyyy", @required = "required", @type = "date" })
+            </div>
+
+            <div class="form-group">
+                @Html.Label("*CPF")
+                @Html.TextBoxFor(p => p.CPF, new { @class = "form-control", @maxlength = "11", @required = "required" })
+            </div>
+
+            <!--
+                Carregamento das imagens
+            -->
+            <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
+                <div class="form-group">
+                    @Html.Label("Assinatura/Carimbo - Somente se o usuário for profissional credenciado para assinar Laudos")
+                    @Html.TextBoxFor(p => p.Assinatura, new { @type = "file", @id = "fileAssinatura", @name = "fileAssinatura", @value = @ViewBag.PathImages, @accept = "image/png, image/jpeg" })
+                    @Html.Raw("<div id='imgsAssinatura'></div>")
+                </div>
+            </fieldset>
+            <!--
+                Fim do carregamento das imagens
+            -->
+            <div class="form-group">
+            </div>
+
+            <div class="form-group">
+                @Html.Label("*Usa assinatura nos laudos? S/N (S=Sim, vai usar a imagem da Assinatura)")
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int assIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string assSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string assDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (assIndex == 0);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("UsarAssinatura", assIndex, check)
+                        @Html.Label(assDescricao)
+                    </div>
+                }
+            </div>
+
+            <div class="form-group">
+            </div>
+
+            <div class="form-group">
+                @Html.Label("*Usuário será administrador do sistema (acesso total e irrestrito)? S/N")
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int admIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string admSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string admDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (admIndex == 0);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("Administrador", admIndex, check)
+                        @Html.Label(admDescricao)
+                    </div>
+                }
+            </div>
+
+            @*  //PODERÁ SER DESENVOLVIDO AINDA UMA TABELA CONTENDO FUNÇÕES GENÉRICAS DA LEI TRABALHISTA
+        <div class="form-group">
+        @Html.Label("*Função")
+        @Html.DropDownListFor(p => p.Funcao, new SelectList(ViewBag.Funcoes, "Value", "Text"), "Selecione...", new { @class = "form-control" })
+        </div>
+        *@
+
+            <div class="form-group">
+                @Html.Raw("A senha será gerada pelo Sistema e enviada para o Email cadastrado aqui.")
+                @Html.Raw("As permissões deste usuário no Sistema devem ser feitas pela opção do menu ''Perfil e Permissões''")
+            </div>
+
+            <div class="form-group">
+                @Html.Label("*E-mail/login")
+                @Html.TextBoxFor(p => p.Email, new { @class = "form-control", @type = "email", @maxlength = "500", @required = "required" })
+            </div>
+
+            <div class="form-group">
+                @Html.Label("Data de Expiração da Senha")
+                @Html.TextBoxFor(p => p.DataExpira, new { @class = "form-control", @type = "date" })
+            </div>
+
+            <div class="form-group botao-centralizado">
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        /*
+            Arquivo de Imagem (Upload) Faz a entrega das imagens que serão salvas na tabela de dados
+         */
+        $('#fileAssinatura').on('change', function (e) {
+            //OK: pegando apenas o nome do arquivo que veio após o click no input
+            var files = e.target.files;   //pega todos os possíveis arquivos do upload, mas aqui só virá um único arquivo selecionado.
+            var fileName = files[0].name; //pega o nome do arquivo selecionado.
+            //OK: cria objeto URL temporário para exibição em tela, porque o path original vem como "fakepath" por segurança imposta pelos navegadores
+            var objURL = URL.createObjectURL(e.target.files[0]);
+            //OK: pegando apenas o caminho correto que veio do controller via ViewBag.PathImages
+            var path = $(this).val();
+            //OK: pega as propriedades do arquivo que será enviado ao controller para ser salva na tabela...
+            if (files.length > 0) {
+                if (window.FormData !== undefined) {
+                    var data = new FormData();
+                    data.append("myFile", files[0]);  //entrega no controller via Ajax o nome do arquivo e propriedades (se eu fosse passar para o controller).
+                    data.append("myPath", path);      //entrega o controler via Ajax o caminho completo de onde veio o arquivo (se eu fosse passar para o controller).
+                    //alimenta os campos hidden da "vm" em runtime da query
+                    $("#nomeAssinatura").val(fileName);
+                    $("#caminhoAssinatura").val(path);
+                    //mostra a imagem no formulário
+                    $("#imgsAssinatura").fadeIn("fast").html("<img src='" + objURL + "' style='width:235px; height:215px;' />");
+                }
+            }
+        });
+    </script>
+}

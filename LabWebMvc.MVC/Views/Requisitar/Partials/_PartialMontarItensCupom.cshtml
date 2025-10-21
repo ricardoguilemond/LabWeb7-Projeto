@@ -1,0 +1,35 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Interfaces.Collections
+@using LabWebMvc.MVC.ViewModel
+@model vmRequisitar
+
+@if (ViewBag.ListaCupom == null)
+{
+    <tr id='0' class="tr-todo" name="itemLancarCupom" title='Selecionar'>
+        <td class="td-descricao"></td>
+        <td id='0' class="td-valor">Aguardando itens...</td>
+    </tr>
+}
+else
+{
+    @foreach (var item in ViewBag.ListaCupom)
+    {
+        <tr id="@item.Id.ToString()" class="tr-todo" name='itemLancarCupom' title='Selecionar'>
+            <td id="@item.Id.ToString()" class="td-descricao"> @item.Descricao </td>
+            <td class="td-valor"> @item.ValorItem.ToString("N2") </td>
+        </tr>
+    }
+    
+    <!-- Sumário -->
+    <tr class="tr-todo" name="itemLancarCupom"> <!-- pula linha -->
+        <td class="td-descricao td-negrito">&nbsp;</td>
+        <td class="td-valor td-negrito"><span style="font-size: 0.7em;">TOTAL À PAGAR</span></td>
+    </tr>
+    <tr class="tr-todo tr-foot-fundo" name="itemLancarCupom">
+        <td class="td-descricao td-negrito">R$</td>
+        <td class="td-valor td-negrito">@ViewBag.TotalCupom</td>
+    </tr>
+}

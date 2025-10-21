@@ -1,0 +1,87 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@using LabWebMvc.MVC.Areas.Utils
+@model vmPlanoExames
+<thead>
+    <tr>
+        <th>Id</th>
+        <th>Conta</th>
+        <th>Folha</th>
+        <th>Descrição da Conta</th>
+        <th>Tipo Conta</th>
+        <th>Quant.Etiq</th>
+        <th>Lab.Externo</th>
+        <th>Mostrar Recepção?</th>
+        <th>É Rotina?</th>
+        <th>Prazo Result.Dias</th>
+        <th>Opções</th>
+    </tr>
+</thead>
+<tbody id="linhasDetalhe">
+
+    @foreach (var item in ViewBag.ListaDados)
+    {
+        string strFundo = "<tr class='getColorBackNormal'>";
+        //
+        string TipoConta = string.Empty;
+        @if (Convert.ToInt32(item.ContaExame.Substring(7, 4)) > 0)  //item
+            TipoConta = "Item";
+        @if ((Convert.ToInt32(item.ContaExame.Substring(4, 3)) > 0) && (item.ContaExame.Substring(7, 4) == "0000"))  //conta principal
+        {
+            TipoConta = "Principal";
+            strFundo = "<tr class='getColorBackPrincipal'>";
+        }
+        @if (item.ContaExame.Substring(4, 7) == "0000000")  //conta folha
+            TipoConta = "Folha";
+        //
+        string naoMostrar = "N";     //S = não mostrar este item na recepção
+        @if (item.NaoMostrar == 1)
+            naoMostrar = "S";
+        //
+        string seleciona = "N";      //se é um item de rotina (acelera a escolha na recepção)
+        @if (item.Seleciona == 1)
+            seleciona = "S";
+
+        @Html.Raw(
+                strFundo +
+                "<td style='width: 03%;'>" + item.Id + "</td>" +
+                "<td style='width: 07%;'>" + Utils.FormataConta(item.ContaExame) + "</td>" +  //ContaExame com destaque de cor
+                "<td style='width: 10%;'>" + item.RefExame + "</td>" +         //Folha de Exame
+                "<td style='width: 15%;'>" + item.Descricao + "</td>" +        //Item de Exame
+                "<td style='width: 03%;'>" + TipoConta + "</td>" +
+                "<td style='width: 02%;'>" + item.Etiquetas + "</td>" +
+                "<td style='width: 10%;'>" + item.LaboratorioExterno + "</td>" +
+                "<td style='width: 02%;'>" + naoMostrar + "</td>" +
+                "<td style='width: 02%;'>" + seleciona + "</td>" +
+                "<td style='width: 02%;'>" + item.PrazoResultadoDias + "</td>"
+        )
+        
+        @Html.Raw(
+                "<td class='grid_fundo_opcoes'>" +
+                "<a id=" + item.Id + " class='grid_itens' onclick=clickModelo(this) title='Consulta o Modelo da Folha'><i class='fa-regular fa-rectangle-list'></i> </a>" +
+                "<a id=" + item.Id + " class='grid_itens' onclick=clickConsulta(this) title='Consultar'><i class='fa-sharp fa-solid fa-display'></i> </a>" +
+                "<a id=" + item.Id + " class='grid_itens' onclick=clickAlterar(this) title='Alterar'><i class='fa-sharp fa-solid fa-file-pen'></i> </a>" +
+                "<a id=" + item.Id + " class='grid_itens' onclick=clickDelete(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>" +
+                "</td>" +
+                "</tr>"
+        )
+    }
+</tbody>
+<tfoot>
+    <tr>
+        <th>Id</th>
+        <th>Conta</th>
+        <th>Folha</th>
+        <th>Descrição da Conta</th>
+        <th>Tipo Conta</th>
+        <th>Quant.Etiq</th>
+        <th>Lab.Externo</th>
+        <th>Mostrar na Recepção?</th>
+        <th>É Rotina?</th>
+        <th>Prazo Result.Dias</th>
+        <th id="op">Opções</th>
+    </tr>
+</tfoot>

@@ -1,0 +1,235 @@
+﻿@*@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+*@
+@using BLL
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Interfaces
+@using LabWebMvc.MVC.ViewModel
+
+@*USO/EXEMPLOS: https://datatables.net/examples/basic_init/alt_pagination.html*@
+@*Estilo/Style = display (refere-se ao estilo "Base" do componente datatables) que eu achei mais elegante*@
+<style>
+    /* Base for label styling */
+    [type="checkbox"]:not(:checked),
+    [type="checkbox"]:checked {
+        position: absolute;
+        left: 0;
+        opacity: 0.01;
+    }
+
+        [type="checkbox"]:not(:checked) + label,
+        [type="checkbox"]:checked + label {
+            position: relative;
+            padding-left: 2.3em;
+            font-size: 1.05em;
+            line-height: 1.7;
+            cursor: pointer;
+        }
+
+            /* checkbox aspect */
+            [type="checkbox"]:not(:checked) + label:before,
+            [type="checkbox"]:checked + label:before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 1.2em;
+                height: 1.2em;
+                border: 1px solid #aaa;
+                background: #FFF;
+                border-radius: .2em;
+                box-shadow: inset 0 1px 2px rgba(0,0,0, .1), 0 0 0 rgba(203, 34, 237, .2);
+                -webkit-transition: all .275s;
+                transition: all .275s;
+            }
+
+            /* checked mark aspect */
+            [type="checkbox"]:not(:checked) + label:after,
+            [type="checkbox"]:checked + label:after {
+                content: ' \2714';
+                position: absolute;
+                top: .525em;
+                left: .18em;
+                font-size: 1.375em;
+                color: black;
+                line-height: 0;
+                -webkit-transition: all .2s;
+                transition: all .2s;
+            }
+
+            /* checked mark aspect changes */
+            [type="checkbox"]:not(:checked) + label:after {
+                opacity: 0;
+                -webkit-transform: scale(0) rotate(45deg);
+                transform: scale(0) rotate(45deg);
+            }
+
+            [type="checkbox"]:checked + label:after {
+                opacity: 1;
+                -webkit-transform: scale(1) rotate(0);
+                transform: scale(1) rotate(0);
+            }
+
+    /* Disabled checkbox */
+    [type="checkbox"]:disabled:not(:checked) + label:before,
+    [type="checkbox"]:disabled:checked + label:before {
+        box-shadow: none;
+        border-color: #bbb;
+        background-color: #e9e9e9;
+    }
+
+    [type="checkbox"]:disabled:checked + label:after {
+        color: #777;
+    }
+
+    [type="checkbox"]:disabled + label {
+        color: #aaa;
+    }
+
+    /* Accessibility */
+    [type="checkbox"]:checked:focus + label:before,
+    [type="checkbox"]:not(:checked):focus + label:before {
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, .1), 0 0 0 6px rgba(33, 28, 28, .2);
+    }
+
+</style>
+<partial name='Partials/_PartialMenuSenhas' />
+<div class="table-responsive">
+    <table id="modeloTable" name="datatable" class="display compact order-column stripe table-hover nowrap">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Email</th>
+                <th>Nick</th>
+                <th>Nome Completo</th>
+                <th>DT Cadastro</th>
+                <th>DT Expira</th>
+                <th>Usar Assinatura?</th>
+                <th>Bloqueado?</th>
+                <th>Adm?</th>
+                <th>Email Confirmado?</th>
+                <th>Opções</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in ViewBag.ListaDados)
+            {
+                @Html.Raw(
+                         "<tr>" +
+                         "<td style='width: 03%;'>" + item.Id + "</td>" +
+                         "<td style='width: 10%;'>" + item.Email + "</td>" +
+                         "<td style='width: 07%;'>" + item.NomeUsuario + "</td>" +
+                         "<td style='width: 15%;'>" + item.NomeCompleto + "</td>" +
+                         "<td style='width: 05%;'>" + item.DataCadastro + "</td>" +
+                         "<td style='width: 05%;'>" + item.DataExpiraStr + "</td>" +
+                         "<td style='width: 03%; text-align: center;'>" + item.UsarAssinaturaStr + "</td>" +
+                         "<td style='width: 03%; text-align: center;'>" + item.BloqueadoStr + "</td>" +
+                         "<td style='width: 03%; text-align: center;'>" + UtilBLL.RetornaSN(item.Administrador) + "</td>" +
+                         "<td style='width: 03%; text-align: center;'>" + UtilBLL.RetornaSN(item.EmailConfirmado) + "</td>" +
+                         "<td class='grid_fundo_opcoes'>" +
+                         "<a id='" + item.Email + "' name='senha' data-toggle='tooltip' title='Incluir Usuário' onclick='clickIncluir(this)'><i class='fa fa-add'></i>&nbsp;&nbsp;</a>" +
+                         "<a id='" + item.Email + "' name='senha' data-toggle='tooltip' title='Alterar Senha' onclick='clickSenha(this)'><i class='fa-solid fa-lock-open'></i>&nbsp;&nbsp;</a>" +
+                         "<a id='" + item.Email + "' name='senha' data-toggle='tooltip' title='Excluir Usuário' onclick='clickDelete(this)'><i class='fa fa-trash'></i>&nbsp;&nbsp;</a>" +
+                         // "♥ " +
+                         "</td>" +
+                         "</tr>")
+                ;
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Id</th>
+                <th></th><!-- Não colocar texto para evitar que emails automáticos desformatem o campo -->
+                <th>Nick</th>
+                <th>Nome Completo</th>
+                <th>DT Cadastro</th>
+                <th>DT Expira</th>
+                <th>Usar Assinatura?</th>
+                <th>Bloqueado?</th>
+                <th>Adm?</th>
+                <th></th><!-- Não colocar texto para evitar que emails automáticos desformatem o campo -->
+                <th id="op">Opções</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+@section Scripts {
+    <div class="toolbar"><partial name='_PartialDatatables' /></div>
+    <partial name="_ValidationScriptsPartial" />
+}
+<script>
+    $(document).ready(function () {
+        //HABILITAR SOMENTE PARA TESTES: Troca os valores do campo de checked para unchecked e vice-versa
+        //document.querySelectorAll('[name="hosp"]').forEach(function (checkbox) {
+        //    checkbox.addEventListener('change', function (event) {
+        //        //check para hosp
+        //        let checkboxLabel = document.querySelector('label[for="hosp' + checkbox.id + '"]');
+        //        if (checkboxLabel) checkboxLabel.textContent = checkbox.checked ? "checked" : "unchecked";
+        //        //check para orto
+        //        let checkboxLabelOrto = document.querySelector('label[for="orto' + checkbox.id + '"]');
+        //        if (checkboxLabelOrto) checkboxLabelOrto.textContent = checkbox.checked ? "checked" : "unchecked";
+        //    });
+        //});
+
+        //FUNCIONANDO: Diz o que fazer quando o valor é trocado para Hosp
+        const checkbox = $('[name="hosp"]');
+        checkbox.change(function (event) {
+            //OK
+            var checkbox = event.target;
+            if (checkbox.checked) {
+                //alert("Marcado: " + checkbox.id);
+            } else {
+                //alert("Desmarcado: " + checkbox.id);
+            }
+        });
+        //FUNCIONANDO: Diz o que fazer quando o valor true/false para Orto
+        const checkboxOrto = $('[name="orto"]');
+        checkboxOrto.change(function (event) {
+            //OK
+            var checkboxOrto = event.target;
+            if (checkboxOrto.checked) {
+                alert("Marcado: " + checkboxOrto.id);
+            } else {
+                alert("Desmarcado: " + checkboxOrto.id);
+            }
+        });
+    });
+
+
+    //exemplo para alguma coisa depois
+    // function EditaProduto(pid) {
+    //     var ph = $("#DivToAppendPartialView");
+    //     ph.load("/Produtos/edit?id=" + pid, function () {
+    //         ph.dialog({
+    //             modal: true,
+    //             width: 500,
+    //             height: 438,
+    //             title: "Edita Produto",
+    //             resizable: false
+    //         });
+    //     });
+    // }
+
+
+
+    //ACTIONS ICONS
+    function clickSenha(x) {
+        //alert("Alterar Senha: " + x.id); //este parâmetro é o "id" da tag e não o id do item!
+        //window.location.href = '@Url.Action(@PartialFiltro.ActionButton, @PartialFiltro.ControllerButton)/' + x.id;
+        window.location.href = '@Url.Action("AlterarSenha", "Senhas")?Email=' + x.id;     //funciona, mas os parâmetros precisam ficar ocultos ou criptografados!
+    }
+    function clickIncluir(x) {
+        //alert("IncluirRegistro: " + x.id);
+        //window.location.href = '@Url.Action(@PartialFiltro.ActionButton, @PartialFiltro.ControllerButton)/' + x.id;
+        window.location.href = '@Url.Action("IncluirUsuarios", "Senhas")'; 
+    }
+    function clickEdit(x) {
+        alert("Editar: " + x.id);
+        //window.location.href = '@Url.Action(@PartialFiltro.ActionButton, @PartialFiltro.ControllerButton)/' + x.id;
+    }
+    function clickDelete(x) {
+        //função em site.js
+        return clickConfirm(x, null, "Excluir usuário?", null, "ExcluirUsuario", "Email");
+    };
+
+</script>

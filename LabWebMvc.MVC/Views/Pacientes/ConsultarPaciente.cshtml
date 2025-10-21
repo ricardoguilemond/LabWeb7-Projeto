@@ -1,0 +1,172 @@
+﻿@page
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Areas.Utils
+@using LabWebMvc.MVC.ViewModel
+@using static ExtensionsMethods.Genericos.Enumeradores
+@model vmPacientes
+@{
+    Layout = "_Layout";
+}
+<style>
+    label {
+        color: gray;
+    }
+
+    .wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr; /* até 7 colunas em cada wrapper */
+    }
+
+    .campo {
+        display: flex;
+        border: none;
+        background-color: inherit;
+        color: black;
+        font-size: small;
+    }
+
+    .border0 {
+        border: none;
+        appearance: none; /* retira qualquer símbolo e formatação do drop down */
+        -webkit-appearance: none;
+        background-color: inherit;
+    }
+
+    .email {
+        width: 200px;
+        color: blue;
+    }
+
+    .obs {
+        width: 600px;
+    }
+
+    .width300 {
+        width: 300px;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        $(".close").click(function (event) {
+            event.preventDefault();
+            window.location.href = 'Pacientes';
+        });
+    });
+</script>
+<!-- Trigger/Open The Modal -->
+<div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">@ViewBag.TextoMenu[0]</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <!-- Linha 1 -->
+            <div class="wrapper">
+                <div>
+                    @Html.Label(null, "Nome Paciente", new { @class = "" })
+                    @Html.TextBoxFor(p => p.NomePaciente, new { @class = "campo width300", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Data Nascimento")
+                    @Html.TextBoxFor(p => p.Nascimento, new { @id = "data", @class = "campo" })
+                </div>
+                <div>
+                    @Html.DropDownListFor(p => p.TipoDocumento, new SelectList(Utils.ListaDocumento(), "Index", "Nome"), new { @class = "border0", @disabled = "disabled" })
+                    @if (ViewBag.TipoDocumento == (int)TipoDocumento.CPF)
+                        @Html.TextBoxFor(p => p.CPF, new { @id = "cpf", @class = "campo", @disabled = "disabled", @style = "display-inline;" })
+                    else
+                    if (ViewBag.TipoDocumento == (int)TipoDocumento.SUS)
+                        @Html.TextBoxFor(p => p.Identidade, new { @id = "sus", @class = "campo", @disabled = "disabled", @style = "display-inline;" })
+                    else
+                        @Html.TextBoxFor(p => p.Identidade, new { @class = "campo", @disabled = "disabled", @style = "display-inline;" })
+                </div>
+                <div>
+                    @Html.Label(null, "Emissor", new { @class = "" })
+                    @Html.DropDownListFor(p => p.vmGeral.TipoOrgaoEmissor, new SelectList(Utils.ListaOrgaoEmissor(), "Index", "Nome"), new { @class = "campo border0", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Sexo")
+                    @Html.TextBoxFor(p => p.Sexo, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Estado Civil")
+                    @Html.DropDownListFor(p => p.EstadoCivil, new SelectList(Utils.ListaEstadoCivil(), "Index", "Nome"), new { @class = "campo border0", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Profissão")
+                    @Html.TextBoxFor(p => p.Profissao, new { @class = "campo", @disabled = "disabled" })
+                </div>
+            </div>
+            <!-- Linha 2 -->
+            <div class="wrapper">
+                <div>
+                    @Html.Label("Naturalidade")
+                    @Html.TextBoxFor(p => p.Naturalidade, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Nacionalidade")
+                    @Html.TextBoxFor(p => p.Nacionalidade, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("CEP")
+                    @Html.TextBoxFor(p => p.CEP, new { @id = "cep", @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Logradouro")
+                    @Html.TextBoxFor(p => p.Endereco, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Número")
+                    @Html.TextBoxFor(p => p.Numero, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Complemento")
+                    @Html.TextBoxFor(p => p.Complemento, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Bairro")
+                    @Html.TextBoxFor(p => p.Bairro, new { @class = "campo", @disabled = "disabled" })
+                </div>
+            </div>
+            <!-- Linha 3 -->
+            <div class="wrapper">
+                <div>
+                    @Html.Label("Município/Cidade")
+                    @Html.TextBoxFor(p => p.Cidade, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("UF")
+                    @Html.DropDownListFor(p => p.UF, new SelectList(Utils.ListaUF(), "UF", "Nome"), new { @class = "campo border0", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Telefone")
+                    @Html.TextBoxFor(p => p.Telefone, new { @id = "telefone", @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("e-mail")
+                    @Html.TextBoxFor(p => p.Email, new { @class = "campo email", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("DUM")
+                    @Html.TextBoxFor(p => p.DUM, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Tempo Gestação")
+                    @Html.DropDownListFor(p => p.vmGeral.TipoTempoGestacao, new SelectList(Utils.ListaTempoGestacao(), "Index", "Nome"), new { @class = "campo border0", @disabled = "disabled" })
+                </div>
+            </div>
+            <!-- Linha 4 -->
+            <div class="wrapper">
+                <div>
+                    @Html.Label("Observação")
+                    @Html.TextAreaFor(p => p.Observacao, new { @class = "campo obs", @disabled = "disabled" })
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Meu JS (sempre no final) para poder renderizar junto com a página -->
+<script src="@Url.Content("~/js/site.js")" type="text/javascript"></script>
+<!-- Fim da página do Modal -->

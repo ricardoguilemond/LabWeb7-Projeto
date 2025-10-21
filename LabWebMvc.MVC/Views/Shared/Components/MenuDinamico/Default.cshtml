@@ -1,0 +1,59 @@
+﻿@using LabWebMvc.MVC.Areas.Utils
+@model List<ControleDePerfilMenu>
+
+@{
+    bool montou000 = false;
+}
+
+@if (Model != null && Model.Any())
+{
+    @foreach (var item in Model!)
+    {
+        //início do novo grupo
+        @if (montou000 && item.Nivel == "000")
+        {
+            @Html.Raw("</nav>")
+            @Html.Raw("</div>")
+            montou000 = false;
+        }
+
+        //verifica se é o primeiro item do grupo
+        @if (!montou000 && item.Nivel == "000")
+        {
+            var menuId = Utils.GeraMenuIdSeguro(item.Menu, item.Id);
+
+            @Html.Raw($"<a class='nav-link collapsed' href='#' data-bs-toggle='collapse' data-bs-target='#{menuId}' aria-expanded='false' aria-controls='{menuId}'>")
+            @Html.Raw("<div class='sb-nav-link-icon'><i class='fas fa-columns'></i></div>")
+            @item.Menu
+            @Html.Raw("<div class='sb-sidenav-collapse-arrow'><i class='fas fa-angle-down'></i></div>")
+            @Html.Raw("</a>")
+            @Html.Raw($"<div class='collapse' id='{menuId}' aria-labelledby='headingOne' data-bs-parent='#sidenavAccordion'>")
+            @Html.Raw("<nav class='sb-sidenav-menu-nested nav'>")
+            montou000 = true;
+        }
+
+        //verifica se é um item de menu (subnível do grupo)
+        @if (item.Nivel != "000")
+        {
+            @if (!string.IsNullOrEmpty(item.Controller) && !string.IsNullOrEmpty(item.Action))
+            {
+                <a class="nav-link" href="@Url.Action(item.Action, item.Controller)">
+                    @item.Menu
+                </a>
+            }
+            else
+            {
+                <span class="nav-link text-muted">@item.Menu (sem rota)</span>
+            }
+        }
+    }
+    @if (montou000)
+    {
+        @Html.Raw("</nav>")
+        @Html.Raw("</div>")
+    }
+}
+else
+{
+    <div class="alert alert-warning">Menu não disponível.</div>
+}

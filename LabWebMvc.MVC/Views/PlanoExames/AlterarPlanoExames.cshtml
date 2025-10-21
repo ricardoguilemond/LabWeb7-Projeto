@@ -1,0 +1,158 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@using LabWebMvc.MVC.Areas.Utils
+@model vmPlanoExames
+@{
+    Layout = "_Layout";
+}
+<script>
+    $(document).ready(function () {
+        $('#clickSubmit').click(function (event) {
+            event.preventDefault();
+            $.ajax({
+                //url: '@Url.Action("AlterarPlanoExames", "PlanoExames")',
+                type: "POST",
+                async: true,
+                dataType: "json",
+                data: $('#form').serialize(),
+                success: function (data) {
+                    //console.log("data: ", data);
+                    var titulo = data['titulo'];
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var sucesso = data['sucesso'];
+                    titulo = (titulo == null) ? 'Atenção' : data['titulo'];
+                    var tipo = 'falha';
+                    if (sucesso == true) tipo = 'sucesso';
+                    //success: Javascript ::: aqui acontece todas as mensagens de sucesso e não sucesso
+                    clickAviso(titulo, mensagem, tipo, actionPos);  //mensagem normal com desvio para outra action (site.js)
+                },
+                error: function (request, status, error) {
+                    //aqui somente acontece no caso de exception/erro do javascript
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', actionPos);  //mensagem crítica e com desvio para outra action (site.js)
+                }
+            });
+        })
+    });
+</script>
+
+@using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))  //@id="form" é obrigatório para campos chegarem do outro lado
+{
+    <div class="row">
+        <div class="col-md-4">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="form-group">
+                @Html.Label("Descrição do Exame:")
+                <div style="display: inline-block; font-weight: 500;">@TempData["Descricao"]</div>
+                @{
+                    var geral = new vmGeral();
+                    geral.Aviso = Utils.AvisoHtml("Aviso", "A alteração irá atualizar a descrição <b>" + @TempData["Descricao"] + "</b>, em todas as instituições do plano.");
+                    @Html.Raw(geral.Aviso)
+                }
+            </div>
+            <div class="form-group">
+                @if (ViewBag.TipoContaExame == 0)
+                {
+                    @Html.Label("Descrição conta principal")
+                }
+                else
+                {
+                    @Html.Label("Descrição conta item")
+                }
+                @Html.TextBoxFor(p => p.Descricao, new { @class = "form-control" })
+            </div>
+            <div class="form-group">
+                <fieldset class="borda_redonda" style="padding: 6px;">
+                    @{
+                        ICollection<int> listaEtiquetas = new HashSet<int>();
+                    }
+                    @for (int i = 0; i <= 10; i++)
+                    {
+                        listaEtiquetas.Add(i);
+                    }
+                    @Html.Label("Quantidade de Etiquetas (Máximo de 10)")
+                    @Html.DropDownListFor(p => p.Etiquetas, new SelectList(listaEtiquetas, "Value"), new { style = "width:50px", size = "1" })
+                </fieldset>
+            </div>
+            <div class="form-group">
+                @Html.Label("Colocar na lista de itens de rotina?")
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int rotinaIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string rotinaSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string rotinaDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (rotinaIndex == 0);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("Seleciona", rotinaIndex, check)
+                        @Html.Label(rotinaDescricao)
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                @Html.Label("Mostrar este item na recepção?")
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int recepcaoIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string recepcaoSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string recepcaoDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (recepcaoIndex == 0);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("NaoMostrar", recepcaoIndex, check)
+                        @Html.Label(recepcaoDescricao)
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                @Html.Label("Prazo Entrega em Dias")
+                @Html.TextBoxFor(p => p.PrazoResultadoDias, new { @class = "form-control" })
+            </div>
+
+
+            @*          planoExames.CitoInstituicao = vm.CitoInstituicao;  //tem default 0 (não nulo)  na tabela
+        planoExames.CitoTituloExame = vm.CitoTituloExame;  //tem default 0 (não nulo)  na tabela
+        planoExames.CitoTituloFolha = vm.CitoTituloFolha;
+        planoExames.CitoDescricao = vm.CitoDescricao;
+        planoExames.CitoParteDescricao = vm.CitoParteDescricao;
+
+        *@
+            @*
+        planoExames.QCH = string.IsNullOrEmpty(vm.QCH.ToString()) ? 0 : vm.QCH;
+        planoExames.Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta;
+        planoExames.AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo;
+
+        //Aceitam nulo
+        planoExames.TABELACH = vm.TABELACH;
+        planoExames.ICH = vm.ICH;
+        planoExames.UnidadeMedida = vm.UnidadeMedida;
+        planoExames.Referencia = vm.Referencia;
+        planoExames.Laudo = vm.Laudo;
+        planoExames.MapaHorizontal = string.IsNullOrEmpty(vm.MapaHorizontal) ? string.Empty : vm.MapaHorizontal.ToUpper();    //Sinonímia SEMPRE maiúscula
+        planoExames.ResultadoMinimo = vm.ResultadoMinimo;
+        planoExames.ResultadoMaximo = vm.ResultadoMaximo;
+        planoExames.LaboratorioExterno = vm.LaboratorioExterno;
+        *@
+
+
+
+
+            <!--
+            Submeter Formulário
+            -->
+            <div class="form-group botao-centralizado">
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

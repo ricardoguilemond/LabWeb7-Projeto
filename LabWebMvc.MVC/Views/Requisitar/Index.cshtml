@@ -1,0 +1,304 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Interfaces
+@using LabWebMvc.MVC.ViewModel
+@model vmRequisitar
+<style>
+    .getColorBackNormal {
+        color: inherit;
+        font-weight: normal;
+        background-color: inherit !important;
+    }
+
+    .getColorBackPrincipal {
+        color: blue;
+        font-weight: bold;
+        background-color: #add2fd !important;
+    }
+
+    .moeda {
+        color: darkblue;
+        background-color: white !important;
+        border: 2px solid #cccad0 !important;
+        border-radius: 2px;
+        font-weight: 500;
+        height: 21px;
+    }
+
+    /* CSS EXCLUSIVO DESTA PÁGINA COM OS TABS */
+    .nav-link-tabs { /* nav-link-tabs herda de nav-link para evitar alterações no nav-link em outras partes do sistema */
+        font-weight: 300;
+        background-color: white;
+        border: 1px solid white;
+        border-bottom-color: #55c57a;
+        border-radius: 0.7em 0.7em 0 0;
+        min-width: 220px !important;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+        .nav-link-tabs:hover { /* altera a cor da fonte no hover do tab */
+            color: black;
+        }
+
+    .nav-pills .nav-link-tabs.active { /* intensidade da cor da fonte no tab ativo */
+        font-weight: 400;
+    }
+
+    .nav-link-tabs.active { /* formata as bordas dos tabs */
+        color: white;
+        background-color: #55c57a;
+        border-radius: 0.7em 0.7em 0 0;
+    }
+
+    .nav-item .nav-item-tabs {
+    }
+
+    .tab-content {
+        padding-bottom: 1.3rem;
+        position: relative;
+    }
+
+    ul {
+        list-style: none;
+        margin-top: 1rem;
+        padding-inline-start: 0;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        /**************************************************************************************** */
+        // OK:SUBMIT NO ÚNICO FORM COM VÁRIOS EVENTOS EM OUTRAS "PARTIAL TELAS" DISTRIBUÍDAS
+        /**************************************************************************************** */
+        $('#clickSubmit').on("click", function (event) {
+            event.preventDefault();
+            var listaCupom = [];
+
+            $('tr[name="itemLancarCupom"]').each(function(){
+                var id = $(this).attr('id');
+                var descricao = $(this).find('.td-descricao').text();
+                var valor = $(this).find('.td-valor').text();
+                listaCupom.push({ Id: id, Descricao: descricao, ValorItem: valor });
+            });
+
+            $.ajax({
+                url: '@Url.Action("SalvarRequisicao", "Requisitar")',
+                type: "POST",
+                async: true,
+                data: $('#formRequisitar').serialize(),
+                success: function (data) {
+                    var titulo = data['titulo'] ?? 'Atenção';
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var sucesso = data['sucesso'];
+                    var tipo = sucesso ? 'sucesso' : 'falha';
+            
+                    //Se salvou com sucesso, imprime o cupom
+                    if (sucesso === true && data.pacienteId) {
+                        const idPaciente = data.pacienteId;
+                        const urlCupom = `/Requisitar/CupomRequisicao?idPaciente=${idPaciente}`;
+            
+                        $.ajax({
+                            url: urlCupom,
+                            type: "GET",
+                            success: function (conteudo) {
+                                // Exibe mensagem antes de imprimir
+                                clickAviso('Impressão', 'Cupom gerado, enviando para impressora...', 'sucesso', null);
+
+                                const frame = document.createElement("iframe");
+                                frame.style.display = "none";
+                                document.body.appendChild(frame);
+            
+                                const doc = frame.contentWindow.document;
+                                doc.open();
+                                doc.write(`<pre style="font-family:monospace;">${conteudo}</pre>`);
+                                doc.close();
+            
+                                frame.contentWindow.focus();
+                                frame.contentWindow.print();
+
+                                frame.contentWindow.onafterprint = function () {
+                                    document.body.removeChild(frame);
+                                };
+
+                            },
+                            error: function (request, status, error) {
+                                clickAviso('Erro', 'Falha na impressão', 'critica', actionPos);  
+                            }
+                        });
+                    }
+            
+                    //Atualiza a grid e exibe mensagem
+                    $('#modeloTableRequisitar').DataTable().ajax.reload();
+                    //clickAviso(titulo, mensagem, tipo, actionPos);
+                },
+                error: function (request, status, error) {
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', null);
+                }
+            });
+        });
+        //..
+
+    });  //Fim do $(document).ready
+</script>
+<!-- Só para indicar que este FORM está englobando TODAS as partials e também as "partials aninhadas" -->
+<form id="formRequisitar" name="formRequisitar" asp-action="SalvarRequisicao" asp-controller="Requisitar" method="post">
+    <!-- TRIGGER DO MODAL para todos os eventos de tela que são acionados por esta tela ou outras que são chamadas a partir desta -->
+    <!-- QUALQUER MODAL ACIONADO APARECE AQUI NESTA POSIÇÃO -->
+    <div id="modalTriggerPaciente"></div>
+    <div id="modalTriggerInstituicao"></div>
+    <div id="modalTriggerPosto"></div>
+    <div id="modalTriggerMedico"></div>
+    <div id="modalTriggerTabela"></div>
+    <!-- Fim da trigger -->
+    @{
+        int i = 0;
+    }
+    @if (ViewBag.ListaCupom == null)
+    {
+        <input type="hidden" name="ListaCupom[0].Id" value="0" />
+        <input type="hidden" name="ListaCupom[0].Descricao" value="" />
+        <input type="hidden" name="ListaCupom[0].ValorItem" value="0.00" />
+    }
+    else
+    {
+        i = ViewBag.ListaCupom.Count;
+
+        @foreach (var item in ViewBag.ListaCupom)
+        {
+            <input type="hidden" name="ListaCupom[@i].Id" value="@item.Id" />
+            <input type="hidden" name="ListaCupom[@i].Descricao" value="@item.Descricao" />
+            <input type="hidden" name="ListaCupom[@i].ValorItem" value="@item.ValorItem" />
+            i++;
+        }
+    }
+
+    <div class="row">
+        <div class="col-xl-5">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-chart-bar me-1"></i>Dados do Paciente</div>
+                <div class="card-body">
+                    <div class="tab-content" id="pills-tabContent">
+                        <!-- opções das abas: -->
+                        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                            <li class="nav-item-tabs" role="presentation">
+                                <button class="nav-link-tabs active" id="pills-simples-ttab" data-bs-toggle="pill" type="button">Formulário Simples</button>
+                            </li>
+                            <li class="nav-item-tabs" role="presentation">
+                                <button class="nav-link-tabs" id="pills-completo-ttab" data-bs-toggle="pill" type="button">Formulário Completo</button>
+                            </li>
+                        </ul>
+                        <div id="conteudoPartialFormulario"><partial name='Partials/_PartialFormulario'></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-7">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-chart-bar me-1"></i>Dados dos Serviços</div>
+                <div class="card-body">
+                    <div id="conteudoPartialExames"><partial name='Partials/_PartialExames'></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--
+    Submeter Formulário
+    -->
+    <div class="botao-centralizado">
+        <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+            Salvar Requisição de Exames
+        </button>
+    </div>
+</form>
+<div class="row">
+    <div id="conteudo"><partial name='Partials/_PartialRequisitar'></div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/jquery.maskMoney.min.js"></script>
+
+    @*     <script type="text/javascript">
+        $(document).ready(function () {
+            //Declara os dois boxes com o default, e vamos sempre atualizar os dois Ids.
+            var TabelaId = 1;
+            var FolhaId = 1;
+            //Atualiza os dois Combobox do DropDownList
+            function atualizaBoxFolha(id) {//recebe o valor e atualiza os combobox da folha de exame
+                FolhaId = id.value;
+                $("#id_folha").val(FolhaId);
+                $("#nome_folha").val(FolhaId);
+                $("#id_tabela").val(TabelaId);
+                $("#nome_tabela").val(TabelaId);
+            }
+            //
+            function atualizaBoxTabela(id) {//recebe o valor e atualiza os combobox da tabela de preços
+                TabelaId = id.value;
+                $("#id_tabela").val(TabelaId);
+                $("#nome_tabela").val(TabelaId);
+                $("#id_folha").val(FolhaId);
+                $("#nome_folha").val(FolhaId);
+            }
+            //
+            function clickModelo(x) {
+                //"x" é a linha toda da tag (tem que passar a linha TODA de "x")
+                //x.id é somente o "id" na tag da linha
+                window.location.href = '@Url.Action("ModeloPlanoExamesItens", "PlanoExamesItens")?registroID=' + x.id;
+            };
+            function clickConsulta(x) {
+                var url = "ConsultarPlanoExamesItens?id=" + x.id;
+                window.open(url, "_self")
+            }
+            //
+            //_PartialPlanoContaItem.cshtml
+            function clickSalva(x) {
+                var id = x.id;
+                var valorCusto = $('#valorCusto' + id).val().replace(".", "").replace(",", ".");
+                var valorItem = $('#valorItem' + id).val().replace(".", "").replace(",", ".");
+                var idTabela = $("#id_tabela").val();
+                var idFolha = $("#id_folha").val();
+
+                //Todos os dados que vamos enviar da linha do grid para o controller
+                var parameters = [
+                    id,
+                    valorCusto,
+                    valorItem,
+                    idTabela,
+                    idFolha
+                ];
+                $.ajax({
+                    url: '@Url.Action("SalvarAFazerAinda")?parameters=' + parameters,
+                    type: "GET",
+                    async: true,
+                    data: { parameters: parameters },
+                    dataType: "json",
+                    success: function (data) {
+                        //console.log("data: ", data);
+                        var titulo = data['titulo'];
+                        var mensagem = data['mensagem'];
+                        var actionPos = data['action'];
+                        var sucesso = data['sucesso'];
+                        titulo = (titulo == null) ? 'Atenção' : data['titulo'];
+                        var tipo = 'falha';
+
+                        //Json: Substitui certo na posição do summary
+                        $('#summary').html(data['sumario']);   //atualiza o sumário pelo tbody
+                        $('#' + data['id']).html(data['linhaLucroVariante']);  //atualiza o valor de uma única linha do grid que está num "<td>"
+
+                        if (sucesso == true) tipo = 'sucesso';
+                        //success: Javascript ::: aqui acontece todas as mensagens de sucesso e não sucesso
+                        clickAviso(titulo, mensagem, tipo, actionPos);  //mensagem normal com desvio para outra action (site.js)
+                    },
+                    error: function (request, status, error) {
+                        //aqui somente acontece no caso de exception/erro do javascript
+                        clickAviso('Interrompido', 'Falha na execução', 'critica', actionPos);  //mensagem crítica e com desvio para outra action (site.js)
+                    },
+                    failure: function () { alert("Falhou carregamento do Grid"); }
+                });
+            }
+        });
+    </script>
+ *@
+}
+

@@ -1,0 +1,95 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, MyAssembly
+@using static BLL.UtilBLL
+@using ExtensionsMethods.Genericos
+@using LabWebMvc.MVC.ViewModel
+@using LabWebMvc.MVC.Areas.Utils
+@model vmPlanoExames
+
+@Html.Raw("<thead>" +
+          "<tr>" +
+          "<th>Tabela</th>" +
+          "<th>Tipo Conta</th>" +
+          "<th>Principal</th>" +
+          "<th>Conta Exame</th>" +
+          "<th>Descrição do item</th>" +
+          "<th>Valor Custo R$</th>" +
+          "<th>Valor Cobrar/Paciente R$</th>" +
+          "<th>Lucro Variante por Item (%)</th>" +
+          "<th>Opções</th>" +
+          "</tr>" +
+          "</thead>" +
+          "<tbody id='contaDiv'>")
+
+@foreach (var item in ViewBag.ListaDados)
+{
+    /* Lucro Variante para cada linha do grid! */
+    string? lucroVariante = UtilsMath.CalcLucroVariante(item.ValorCusto, item.ValorItem, 4, "%");
+    TempData["linhaLucroVariante"] = lucroVariante;
+
+    /* armazena para serem salvos os valores alterados */
+    vmPlanoExames plano = new vmPlanoExames()
+                {
+                    Id = item.Id,
+                    ContaExame = item.ContaExame,
+                    TabelaExamesId = item.TabelaExamesId,
+                    RefItem = item.RefItem,
+                    Descricao = item.Descricao,
+                    ValorCusto = item.ValorCusto,
+                    ValorItem = item.ValorItem
+                };
+
+    string strFundo = "<tr class='getColorBackNormal'>";
+
+    string TipoConta = string.Empty;
+
+    @if (Convert.ToInt32(plano.ContaExame.Substring(7, 4)) > 0)  //item
+        TipoConta = "Item";
+
+    @if ((Convert.ToInt32(plano.ContaExame.Substring(4, 3)) > 0) && (plano.ContaExame.Substring(7, 4) == "0000"))  //conta principal
+    {
+        TipoConta = "Principal";
+        strFundo = "<tr class='getColorBackPrincipal'>";
+    }
+    @if (plano.ContaExame.Substring(4, 7) == "0000000")  //conta folha
+        TipoConta = "Folha";
+
+    @Html.Raw(strFundo +
+              "<td style='width: 5%;'>" + plano.TabelaExamesId + "</td>" +
+              "<td style='width: 10%;'>" + TipoConta + "</td>" +
+              "<td style='width: 07%;'>" + plano.RefItem + "</td>" +
+              "<td style='width: 07%;'>" + Utils.FormataConta(plano.ContaExame) + "</td>" +
+              "<td style='width: 10%;'>" + plano.Descricao + "</td>")
+
+    @Html.Raw("<td style='width: 10%;'>")
+    @Html.TextBox("ValorCusto", plano.ValorCusto, new { @value = plano.ValorCusto, @onclick = "this.value=''", @onkeypress = "formatarMoedaDecimal(this, ',', event)", @class = "moeda", @id = "valorCusto" + Convert.ToString(plano.Id), @style = "width: 100px; " })
+    @Html.Raw("</td>")
+    @Html.Raw("<td style='width: 10%;'>")
+    @Html.TextBox("ValorItem", plano.ValorItem, new { @value = plano.ValorItem, @onclick = "this.value=''", @onkeypress = "formatarMoedaDecimal(this, ',', event)", @class = "moeda", @id = "valorItem" + Convert.ToString(plano.Id), @style = "width: 100px; " })
+    @Html.Raw("</td>")
+    @Html.Raw("<td id=" + plano.Id + " class='linhaLucroVariante' style='width: 15%;'>" + @TempData["linhaLucroVariante"] + "&nbsp;</td>")
+    @Html.Raw("<td class='grid_fundo_opcoes'>" +
+              "<a id=" + plano.Id + " class='grid_itens' onclick=clickSalva(this) title='Salvar os valores da linha'><i class='fa-solid fa-check'></i></a>" +
+              "<a id=" + plano.Id + " class='grid_itens' onclick=clickModelo(this) title='Consulta o modelo da folha'><i class='fa-regular fa-rectangle-list'></i></a>" +
+              "<a id=" + plano.Id + " class='grid_itens' onclick=clickConsulta(this) title='Consultar item'><i class='fa-sharp fa-solid fa-display'></i></a>" +
+              "</td>" +
+              "</tr>")
+}
+@Html.Raw("</tbody>")
+@Html.Raw("<tfoot>" +
+          "<tr>" +
+          "<th>Tabela</th>" +
+          "<th>Tipo Conta</th>" +
+          "<th>Principal</th>" +
+          "<th>Conta Exame</th>" +
+          "<th>Descrição do item</th>" +
+          "<th>Valor Custo R$</th>" +
+          "<th>Valor Cobrar/Paciente R$</th>" +
+          "<th>Lucro Variante por Item (%)</th>" +
+          "<th id='op'>Opções</th>" +
+          "</tr>" +
+          "</tfoot>")
+@Html.Raw("<tbody id='summary'>")
+@Html.Raw(TempData["Summary"])
+@Html.Raw("</tbody>")

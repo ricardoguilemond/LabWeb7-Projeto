@@ -1,0 +1,177 @@
+﻿@page
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmInstituicao
+@{
+    Layout = "_Layout";
+}
+<style>
+    label {
+        color: gray;
+    }
+
+    .wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr; /* até 3 colunas em cada wrapper */
+    }
+
+    .campo {
+        display: inline-flex;
+        border: none;
+        background-color: inherit;
+        color: black;
+        font-size: small;
+    }
+
+    .border0 {
+        border: none;
+        appearance: none; /* retira qualquer símbolo e formatação do drop down */
+        -webkit-appearance: none;
+        background-color: inherit;
+    }
+
+    .email {
+        width: 200px;
+        color: blue;
+    }
+
+    .width300 {
+        width: 300px;
+    }
+
+    img {
+        opacity: 0.4;
+    }
+
+    .container {
+        position: relative;
+        text-align: center;
+        color: red;
+    }
+    /* Centered text */
+    .textoRotaciona {
+        position: absolute;
+        top: 20%;
+        left: 30%;
+        transform: translate(-20%, -30%);
+        font-size: 3.2em;
+        font-weight: 500;
+        display: block;
+        -webkit-transform: rotate(-45deg);
+        -moz-transform: rotate(-45deg);
+        /*filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);*/
+    }
+
+</style>
+<script>
+    $(document).ready(function () {
+        $(".close").click(function (event) {
+            event.preventDefault();
+            window.location.href = 'Instituicoes';
+        });
+    });
+</script>
+<!-- Trigger/Open The Modal -->
+<div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">@ViewBag.TextoMenu[0]</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <!-- Linha 1 -->
+            <div class="wrapper">
+                <div>
+                    @Html.Label("Sigla")
+                    @Html.TextBoxFor(p => p.Sigla, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label(null, "Nome Instituição", new { @class = "" })
+                    @Html.TextBoxFor(p => p.Nome, new { @class = "campo width300", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("CNPJ")
+                    @Html.TextBoxFor(p => p.CNPJ, new { @id = "cnpj", @class = "campo", @disabled = "disabled" })
+                </div>
+            </div>
+            <!-- Linha 2 -->
+            <div class="wrapper">
+                <div>
+                    @Html.Label("Telefone")
+                    @Html.TextBoxFor(p => p.Telefone, new { @id = "telefone", @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("e-mail")
+                    @Html.TextBoxFor(p => p.Email, new { @class = "campo email", @disabled = "disabled" })
+                </div>
+            </div>
+            <!-- Linha 3 -->
+            <div class="wrapper">
+                <div>
+                    @Html.Label("Título nos Relatórios")
+                    @Html.TextBoxFor(p => p.TituloTimbre, new { @class = "campo", @disabled = "disabled" })
+                </div>
+                <div>
+                    @Html.Label("Subtítulo nos Relatórios")
+                    @Html.TextBoxFor(p => p.SubTituloTimbre, new { @class = "campo", @disabled = "disabled" })
+                </div>
+            </div>
+            <div class="wrapper">
+                <!-- Salto de linha -->
+            </div>
+            <hr class="new1" />
+            <!-- Linha 4 -->
+            <div class="wrapper">
+                @if (ViewBag.NomeTimbre != null)
+                {
+                    <div class="container">
+                        @Html.Label("Imagem Timbre 215x235 (esta acompanha Títulos em relatórios)")
+                        @Html.Raw("<div id='imgsT'></div>")
+                        @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
+                        @Html.HiddenFor(p => p.Timbre, new { @id = "bytesTimbre" })
+                        <div class="form-inline">
+                            @Html.Label("Nome da imagem: ", null, new { @class = "campo" })
+                            @Html.TextBoxFor(p => p.NomeTimbre, new { @class = "campo", @disabled = "disabled" })
+                        </div>
+                    </div>
+                }
+                <div class="container">
+                </div>
+                @if (ViewBag.NomeLogomarca != null)
+                {
+                    <div class="container">
+                        @Html.Label("Imagem Logomarca 670x120 (esta sobrepõe Timbre e Títulos em relatórios)")
+                        @Html.Raw("<div id='imgsL'></div>")
+                        @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
+                        @Html.HiddenFor(p => p.Logomarca, new { @id = "bytesLogomarca" })
+                        <div class="form-inline">
+                            @Html.Label("Nome da imagem: ", null, new { @class = "campo" })
+                            @Html.TextBoxFor(p => p.NomeLogomarca, new { @class = "campo", @disabled = "disabled" })
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="wrapper">
+                <!-- Salto de Linha -->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Meu JS (sempre no final) para poder renderizar junto com a página -->
+<script src="@Url.Content("~/js/site.js")" type="text/javascript"></script>
+<!-- Fim da página do Modal -->
+<Script>
+
+    //Carrega a imagem do Timbre que vem da base de dados em bytes[]
+    //Válido para PNG, JPG, BMP, o gif salva na tabela, mas não mostra aqui
+    var arrayTimbre = "data:image/png;base64," + $("#bytesTimbre").val();
+    if (arrayTimbre != null && arrayTimbre != "data:image/png;base64,")
+        $("#imgsT").fadeIn("fast").html("<img src='" + arrayTimbre + "' style='width:235px; height:215px;' onContextMenu = 'return false;' />");
+
+    //Carrega a imagem da Logomarca que vem da base de dados em bytes[]
+    var arrayLogomarca = "data:image/png;base64," + $("#bytesLogomarca").val();
+    if (arrayLogomarca != null && arrayLogomarca != "data:image/png;base64,")
+        $("#imgsL").fadeIn("fast").html("<img src='" + arrayLogomarca + "' style='width:670px; height:120px;' onContextMenu = 'return false;' />");
+
+</Script>

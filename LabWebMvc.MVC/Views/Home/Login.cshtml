@@ -1,0 +1,137 @@
+﻿@page
+@using LabWebMvc.MVC.ViewModel
+@model vmLogin
+<style>
+    input {
+        min-width: 300px;
+        font-size: 16px; /* Mantém o tamanho do texto confortável */
+    }
+
+    label {
+        font-size: 16px; /* Mantém o texto legível */
+        min-width: 100px;
+    }
+</style>
+<!-- Não deixo carregar o Loading na página de Login, porque fica feio carregar na primeira página -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var modalLoading = document.getElementById("modalLoading");
+        if (modalLoading) {
+            document.body.removeChild(modalLoading);
+            loading.style.display = "none";
+        }
+    });
+</script>
+<div class="col-md-12">
+    <section id="LoginForm">
+        <div class="row d-flex justify-content-center col-12">
+            <div class="col-4 border border-primary rounded m-20">
+                <div class="d-flex justify-content-center mt-2">
+                    <i class="fa-solid fa-user fa-2x"></i>
+                </div>
+                @using (Html.BeginForm("Login", "Home", new { @class = "form-horizontal", @id = "form-login", @name = "form-login", role = "form" }, FormMethod.Post))
+                {
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                    <div class="d-flex justify-content-center">
+                        <h4 class="mb-3 font-weight-normal">@ViewBag.TitleLogin</h4>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <div class="form-group">
+                            @Html.TextBoxFor(m => m.LoginUsuario, new { @class = "form-control", @type = "email", @placeholder = "Entre com seu email", @aria_label = "Entre com seu email", @required = "required" })
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <div class="form-group">
+                            @Html.TextBoxFor(m => m.SenhaUsuario, new { @class = "form-control", @id = "idSenha", @type = "password", @placeholder = "Entre com sua senha", @data_Val = "false", @required = "required", @aria_label = "Entre com sua senha", @style = "width: 92%;" })
+                            <img class="olho" id="spnMostrarSenha" src=@ViewBag.OlhoEmail />
+                            @if (ViewBag.MensagemErroLogin != null)
+                            {
+                                <div id="mensagemErroLogin" class="text-danger mt-2" style="font-size: 14px; text-align: center;">
+                                    @ViewBag.MensagemErroLogin
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <!--
+                    Captura do ReCaptcha
+                    -->
+                    <div class="g-recaptcha" data-sitekey=@ViewBag.KeySecretPublic data-action="login" data-size="invisible"></div>
+                    @Html.HiddenFor(m => m.GoogleCaptchaToken, new { @id = "GoogleCaptchaToken", @name = "GoogleCaptchaToken", @action = "login" })
+                    <!--
+                    Submeter Formulário
+                    -->
+                    <div class="d-flex justify-content-center">
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-lg btn-success btn-block btn-altura">@ViewBag.Entrar</button>
+                        </div>
+                    </div>
+                }
+                @using (Html.BeginForm("SenhaEsquecida", "Home", new { @class = "form-horizontal", role = "form" }, FormMethod.Post))
+                {
+                    <div class="d-flex justify-content-center">
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-link font-weight-normal btn-altura">@ViewBag.EsqueceuSuaSenha</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+</div>
+<style>
+    .form-group.glyphicon-eye-open {
+        pointer-events: auto;
+    }
+
+        .form-group.glyphicon-eye-open:hover {
+            cursor: pointer;
+        }
+
+    .olho {
+        float: right;
+        margin-top: -30px;
+        width: 20px;
+        cursor: pointer;
+    }
+</style>
+<script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function () {
+        var spnMostrarSenha = document.getElementById("spnMostrarSenha");
+        var idSenha = document.getElementById("idSenha");
+
+        spnMostrarSenha.addEventListener("mousedown", function () {
+            idSenha.type = "text";
+        });
+
+        spnMostrarSenha.addEventListener("mouseup", function () {
+            idSenha.type = "password";
+        });
+
+        spnMostrarSenha.addEventListener("mouseleave", function () {
+            idSenha.type = "password";
+        });
+
+        // Esconder mensagem de erro após 7 segundos
+        const mensagem = document.getElementById("mensagemErroLogin");
+        if (mensagem) {
+            setTimeout(() => {
+                mensagem.style.transition = "opacity 1s ease";
+                mensagem.style.opacity = "0";
+                setTimeout(() => {
+                    mensagem.style.display = "none";
+                }, 1000); // espera o fade-out terminar
+            }, 7000); // espera 7 segundos antes de iniciar o fade-out
+        }
+    });
+</script>
+<script src=@ViewBag.UrlGoogleAPI></script>
+<script>
+    grecaptcha.ready(function () {
+        grecaptcha.execute('@ViewBag.KeySecretPublic', { action: 'login' }).then(function (token) {
+            $("#GoogleCaptchaToken").val(token);
+        });
+    });
+</script>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

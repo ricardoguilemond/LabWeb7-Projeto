@@ -1,0 +1,95 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Interfaces
+@using LabWebMvc.MVC.ViewModel
+@model vmPlanoExames
+<partial name='Partials/_PartialMenuPlanoExames' />
+<style>
+    .getColorBackNormal {
+        color: inherit;
+        font-weight: normal;
+        background-color: inherit !important;
+    }
+
+    .getColorBackPrincipal {
+        color: blue;
+        font-weight: bold;
+        background-color: #add2fd !important;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        var numeroItemFolha = $(".itemFolhaExame").val(1);   //declara no carregamento da página, o número da folha que está DEFAULT no ComboBox!
+
+        //Carrega novo grid de acordo com os boxes
+        $('.itemFolhaExame').change(function (event) {//class from RadioButton
+            event.preventDefault();
+            numeroItemFolha = $(".itemFolhaExame").val();  //obrigatório porque aqui pega em realtime o número da folha que ESTÁ selecionado no ComboBox!
+
+            //Vamos atualizar o número da folha e chamar depois a partial view que vai atualizar AJAX somente a DIV chamada "contaDiv"
+            $.ajax({
+                url: '/PlanoExames?numeroItemFolha=' + numeroItemFolha + "&partial=true",
+                type: "GET",
+                async: true,
+                dataType: "html",
+                success: function (data) {
+                    $('#modeloTable').DataTable().destroy();  //destrói o DataTables para conseguir atualizar o "data" paginando corretamente!
+                    $("#modeloTable").html(data);             //a tabela construída/remontada/atualizada
+
+                    configTable();                            //reconstrói o DataTable com "draw()" com as configurações determinadas
+
+                },
+                failure: function () { alert("Falhou carregamento do Grid"); }
+            });
+            numeroItemFolha = $(".itemFolhaExame").val(); //atualiza em realtime o número da folha que FOI selecionado no ComboBox!
+
+        });
+    });
+</script>
+<div class="form-group">
+    @Html.Label("Folha de Exame?")
+    <div style="display: inline-block;">
+        @Html.DropDownListFor(x => x.ExameId, Model.FolhaIdList, new { @id = "id_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
+        @Html.DropDownListFor(x => x.ExameId, Model.FolhaNomeList, new { @id = "nome_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
+    </div>
+</div>
+<div class="table-responsive">
+    <table id="modeloTable" name="datatable" data-order='[[ 1, "asc" ]]' class="display compact order-column stripe table-hover nowrap">
+        @{
+            await Html.RenderPartialAsync("Partials/_PartialPlanoConta");
+        }
+    </table>
+</div>
+@section Scripts {
+    <div class="toolbar"><partial name='_PartialDatatables' /></div>
+    <partial name="_ValidationScriptsPartial" />
+
+    <script type="text/javascript">
+        //Declara os dois boxes com o default, e vamos sempre atualizar os dois Ids.
+        var FolhaId = 1;
+        //Atualiza os dois Combobox do DropDownList
+        function atualizaBoxFolha(id) {//recebe o valor e atualiza os combobox da folha de exame
+            FolhaId = id.value;
+            $("#id_folha").val(FolhaId);
+            $("#nome_folha").val(FolhaId);
+        }
+        //
+        function clickModelo(x) {
+            //"x" é a linha toda da tag (tem que passar a linha TODA de "x")
+            //x.id é somente o "id" na tag da linha
+            window.location.href = '@Url.Action("ModeloPlanoExames", "PlanoExames")?registroID=' + x.id;
+        };
+        function clickConsulta(x) {
+            var url = "ConsultarPlanoExames?id=" + x.id;
+            window.open(url, "_self")
+        }
+        function clickAlterar(x) { //OK
+            window.location.href = '@Url.Action("AlterarPlanoExames", "PlanoExames")?id=' + x.id;
+        }
+        function clickDelete(x) {
+            return clickConfirm(x, null, "Excluir item de exame do Plano?", null, "ExcluirPlanoExames");
+        };
+    </script>
+}
