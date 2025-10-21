@@ -1,0 +1,23 @@
+         var sgop = "Server=BZDDEVDB01.brazildental.local; Database=SGOP_MAPFRE; User Id=user_bdconnect_dev01; Password=5JMDMCJQS2;Application Name=  ;MultipleActiveResultSets=true;";
+
+         IntegracaoDadosLayoutPO layout = null;
+
+         using (var db = new DBContext(sgop))
+         {
+            layout = db.IntegracaoDadosLayouts.FirstOrDefault(f => f.Tipo == (int)type);
+         }
+
+         if (layout != null)
+         {
+            var attrType = type.GetAttribute<AttributeEnumType>();
+            if (attrType != null)
+            {
+               if (attrType.type.IsSubclassOf(typeof(ServicoIntegracao)))
+               {
+                  var servico = (ServicoIntegracao)Activator.CreateInstance(attrType.type);
+                  servico.ExecutaServico(layout, sgop);
+               }
+            }
+         }
+
+
