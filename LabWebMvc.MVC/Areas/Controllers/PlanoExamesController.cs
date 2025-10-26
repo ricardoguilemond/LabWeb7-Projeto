@@ -2,8 +2,6 @@
 using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
-using LabWebMvc.MVC.Areas.ControleDeImagens;
-using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Mensagens;
 using LabWebMvc.MVC.Models;
@@ -18,16 +16,19 @@ using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace LabWebMvc.MVC.Areas.Controllers
 {
-    public class PlanoExamesController : BaseController
+    public class PlanoExamesController : Controller
     {
-        public PlanoExamesController(
-            IDbFactory dbFactory,
-            IValidadorDeSessao validador,
-            GeralController geralController,
-            IEventLogHelper eventLogHelper,
-            Imagem imagem)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+        private readonly Db _db;
+        private readonly IValidadorDeSessao _validador;
+        private readonly GeralController _geralController;
+        private readonly IEventLogHelper _eventLogHelper;
+
+        public PlanoExamesController(Db db, IValidadorDeSessao validador, GeralController geralController, IEventLogHelper eventLogHelper)
         {
+            _db = db;
+            _validador = validador;
+            _geralController = geralController;
+            _eventLogHelper = eventLogHelper;
         }
 
         private void MontaControllers(string action, string controller, string parametros = "")
@@ -56,48 +57,32 @@ namespace LabWebMvc.MVC.Areas.Controllers
             MontaControllers("IncluirPlanoExames", "PlanoExames");
             if (Conteudo == null) Conteudo = string.Empty; else Conteudo = Conteudo.Trim();
 
-            ICollection<PlanoExames> dados = [];
-            int totalTabela = 0;
-            string? descricaoFolha = string.Empty;
+            //Troca dinâmica de folhas de exames
+            var folhas = _db.ClasseExames.OrderBy(o => o.RefExame).ToList();
+            vm.FolhaIdList = folhas.Select(l => new SelectListItem { Text = l.Id.ToString(), Value = l.Id.ToString() }).ToList();
+            vm.FolhaNomeList = folhas.Select(l => new SelectListItem { Text = l.RefExame, Value = l.Id.ToString() }).ToList();
+            //..
 
             /* 0000000 = não serão mostrados aqueles que são o header a Folha de Exames  */
-            totalTabela = _db.PlanoExames.Where(s => s.ContaExame != null && !s.ContaExame.EndsWith("0000000")).AsNoTracking().Count();
+            int totalTabela = _db.PlanoExames.Where(s => s.ContaExame != null && !s.ContaExame.EndsWith("0000000")).Count();
+            string? descricaoFolha = _db.ClasseExames.Where(s => s.Id == numeroItemFolha).Single().RefExame ?? string.Empty;
 
-            descricaoFolha = _db.ClasseExames.Where(s => s.Id == numeroItemFolha).Single().RefExame;
-            descricaoFolha = !string.IsNullOrEmpty(descricaoFolha) ? descricaoFolha : string.Empty;
-
-            dados = await _db.PlanoExames.Where(s => !s.ContaExame.EndsWith("0000000") && 
-                                                s.TabelaExamesId == (int)IdPadrao.SUS && 
-                                                s.ExameId == numeroItemFolha).OrderByDescending(o => o.Id).Take(registros).ToListAsync();
+            ICollection<PlanoExames> dados = await _db.PlanoExames
+                .Where(s => !s.ContaExame.EndsWith("0000000") && s.TabelaExamesId == (int)IdPadrao.SUS && s.ExameId == numeroItemFolha)
+                .OrderByDescending(o => o.Id)
+                .Take(registros)
+                .ToListAsync();
 
             int totalRegistros = dados.Count();
-
-
-
-
-            var folhas = _db.ClasseExames.OrderBy(o => o.RefExame).ToList();
-
 
             //preenche com a parte obrigatória e ÚNICA/ESPECÍFICA DA INCLUSÃO da vm, com os valores de filtro para aparecer na IncluirPlanoExames.cshtml
             vm = new vmPlanoExames()
             {
-                FolhaIdList = folhas.Select(l => new SelectListItem
-                {
-                    Text = l.Id.ToString(),
-                    Value = l.Id.ToString()
-                }).ToList(),
-
-                FolhaNomeList = folhas.Select(l => new SelectListItem
-                {
-                    Text = l.RefExame,
-                    Value = l.Id.ToString()
-                }).ToList(),
-
-
-
-                ExameId = numeroItemFolha,     //número da folha selecionada
-                RefExame = descricaoFolha,     //descrição da folha selecionada
-                ContaExame = totalRegistros == 0 ? Utils.Utils.RetornaCodigoFolhaExame(_db, numeroItemFolha) : dados.First().ContaExame  //conta exame da folha selecionada
+                ExameId = numeroItemFolha,   //número da folha selecionada
+                RefExame = descricaoFolha,    //descrição da folha selecionada
+                ContaExame = totalRegistros == 0 ? Utils.Utils.RetornaCodigoFolhaExame(_db, numeroItemFolha) : dados.First().ContaExame,  //conta exame da folha selecionada
+                FolhaIdList = _db.ClasseExames.Select(l => new SelectListItem { Text = l.Id.ToString(), Value = l.Id.ToString() }).ToList(),
+                FolhaNomeList = _db.ClasseExames.Select(l => new SelectListItem { Text = l.RefExame, Value = l.Id.ToString() }).ToList()
             };
 
             TempData.Clear();
@@ -115,6 +100,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     TotalRegistros = totalRegistros,
                     TotalTabela = totalTabela,
                     ListaDados = dados.Cast<dynamic>().ToList(),
+                    PlanoExames = vm,
                     PartialView = "Partials/_PartialPlanoConta"
                 };
                 return _geralController.ValidacaoGenerica(vmResposta);
@@ -127,7 +113,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     Titulo = "Tabela de Plano de Exames",
                     TotalRegistros = totalRegistros,
                     TotalTabela = totalTabela,
-                    ListaDados = dados.Cast<dynamic>().ToList()
+                    ListaDados = dados.Cast<dynamic>().ToList(),
+                    PlanoExames = vm
                 };
                 return _geralController.ValidacaoGenerica(vmResposta);
             }
@@ -138,24 +125,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("IncluirPlanoExames")]
         public IActionResult IncluirPlanoExames()
         {
-            int itemFolha = Convert.ToInt32(TempData["NumeroFolha"]);
-
-            var refItem = _db.PlanoExames
-                .Where(l => !l.ContaExame.EndsWith("0000000") &&
-                            l.ContaExame.EndsWith("0000") &&
-                            l.ExameId == itemFolha &&
-                            l.TabelaExamesId == (int)IdPadrao.SUS)
-                .OrderBy(o => o.RefExame)
-                .ToList();
-
-            var vm = new vmPlanoExames
-            {
-                Item1 = refItem.Select(l => new SelectListItem { Text = l.Id.ToString(), Value = l.Id.ToString() }).ToList(),
-                Item2 = refItem.Select(l => new SelectListItem { Text = l.ContaExame, Value = l.Id.ToString() }).ToList(),
-                Item3 = refItem.Select(l => new SelectListItem { Text = l.Descricao, Value = l.Id.ToString() }).ToList(),
-                // outros campos...
-            };
-
             //Finalização da View
             return _geralController.Validacao("IncluirPlanoExames", "Cadastro de Plano de Exames");
         }
@@ -553,21 +522,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     {
                         //Significa que é uma conta principal, vai ter que excluir ela e todos os seus itens, para que não fiquem órfãos!
                         contaExame = contaExame.Substring(0, 7);
-                        var registros = await _db.PlanoExames
-                            .Where(d => d.ContaExame.StartsWith(contaExame.Substring(0, 7)) && !d.ContaExame.Substring(5, 3).Equals("000"))
-                            .ToListAsync();
-
-                        _db.PlanoExames.RemoveRange(registros);
-                        await _db.SaveChangesAsync();
+                        exclusao = await _db.PlanoExames.Where(d => d.ContaExame.Substring(0, 7) == contaExame && d.ContaExame.Substring(5, 3) != "000").ExecuteDeleteAsync();  //a partir do Core 7 apenas!
                     }
                     else
                     {
                         //método deleção em massa a partir do Core 7 = ExecuteDelete()
-                        //exclusao = await _db.PlanoExames.Where(d => d.ContaExame == contaExame).ExecuteDeleteAsync();
-                        var registros = await _db.PlanoExames.Where(d => d.ContaExame == contaExame).ToListAsync();
-
-                        _db.PlanoExames.RemoveRange(registros);
-                        await _db.SaveChangesAsync();
+                        exclusao = await _db.PlanoExames.Where(d => d.ContaExame == contaExame).ExecuteDeleteAsync();
                     }
                 }
             }

@@ -95,4 +95,7 @@ namespace LabWebMvc.MVC.ViewModel
         public List<SelectListItem> TabelaNomeList { get; set; } = new();
 
     }
+
+
+
 }

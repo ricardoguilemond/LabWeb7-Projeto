@@ -1,10 +1,9 @@
-﻿@page
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using BLL
 @using static BLL.UtilBLL
 @using LabWebMvc.MVC.Interfaces
 @using LabWebMvc.MVC.ViewModel
-@model vmPlanoExames
+@model vmListaValidacao<dynamic>
 <style>
     .getColorBackNormal {
         color: inherit;
@@ -98,22 +97,20 @@
 <div class="form-group">
     @Html.Label("Tabela de Preço?")
     <div style="display: inline-block;">
-        @Html.DropDownListFor(x => x.TabelaExamesId, Model.TabelaIdList, new { @id = "id_tabela", @class = "itemTabelaExame", onchange = "atualizaBoxTabela(this);" })
-        @Html.DropDownListFor(x => x.TabelaExamesId, Model.TabelaNomeList, new { @id = "nome_tabela", @class = "itemTabelaExame", onchange = "atualizaBoxTabela(this);" })
+        @Html.DropDownListFor(x => x.PlanoExames.TabelaExamesId, Model.PlanoExames.TabelaIdList, new { @id = "id_tabela", @class = "itemTabelaExame", onchange = "atualizaBoxTabela(this);" })
+        @Html.DropDownListFor(x => x.PlanoExames.TabelaExamesId, Model.PlanoExames.TabelaNomeList, new { @id = "nome_tabela", @class = "itemTabelaExame", onchange = "atualizaBoxTabela(this);" })
     </div>
 </div>
 <div class="form-group">
     @Html.Label("Folha de Exame?")
     <div style="display: inline-block;">
-        @Html.DropDownListFor(x => x.ExameId, Model.FolhaIdList, new { @id = "id_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
-        @Html.DropDownListFor(x => x.ExameId, Model.FolhaNomeList, new { @id = "nome_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
+        @Html.DropDownListFor(x => x.PlanoExames.ExameId, Model.PlanoExames.FolhaIdList, new { @id = "id_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
+        @Html.DropDownListFor(x => x.PlanoExames.ExameId, Model.PlanoExames.FolhaNomeList, new { @id = "nome_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
     </div>
 </div>
 <div class="table-responsive">
     <table id="modeloTable" name="datatable" data-order='[[ 3, "asc" ]]' class="display compact order-column table-striped table-hover nowrap">
-        @{
-            await Html.RenderPartialAsync("Partials/_PartialPlanoContaItem");
-        }
+        @await Html.PartialAsync("Partials/_PartialPlanoContaItem", Model)
     </table>
 </div>
 @section Scripts {

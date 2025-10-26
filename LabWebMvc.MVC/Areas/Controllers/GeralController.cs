@@ -163,7 +163,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         [HttpGet]
         [TypeFilter(typeof(SessionFilter))]
-        public IActionResult ValidacaoGenerica(vmListaValidacao<dynamic> vm)
+        public IActionResult ValidacaoGenerica<T>(vmListaValidacao<T> vm)
         {
             ViewBag.TextoMenu = new object[] { vm.Titulo, false };
             ViewBag.TotalRegistros = vm.TotalRegistros.ToString();
@@ -171,30 +171,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
             ViewBag.ListaDados = vm.ListaDados;
             ViewBag.SessionUF = Convert.ToString(_httpContext!.Session.GetString("SessionUF"));
 
-            return string.IsNullOrEmpty(vm.PartialView) ? View() : PartialView(vm.PartialView);
+            return string.IsNullOrEmpty(vm.PartialView) 
+                ? View(vm.RetornoDeRota, vm) 
+                : PartialView(vm.PartialView, vm);
         }
-        //public IActionResult ValidacaoGenerica(vmListaValidacao<dynamic> vm)
-        //{
-        //    // Informações auxiliares continuam no ViewBag
-        //    ViewBag.TextoMenu = new object[] { vm.Titulo, false };
-        //    ViewBag.TotalRegistros = vm.TotalRegistros.ToString();
-        //    ViewBag.TotalTabela = vm.TotalTabela.ToString();
-        //    ViewBag.SessionUF = Convert.ToString(_httpContext!.Session.GetString("SessionUF"));
-
-        //    // Se for PartialView, passa diretamente a lista fortemente tipada como Model
-        //    if (!string.IsNullOrEmpty(vm.PartialView))
-        //    {
-        //        // Converte a lista dinâmica para Lista de PlanoExames
-        //        var listaPlanoExames = vm.ListaDados!.Cast<PlanoExames>().ToList();
-        //        return PartialView(vm.PartialView, listaPlanoExames);
-        //    }
-
-        //    // Para View normal, você pode continuar passando a ViewModel principal
-        //    return View(vm);
-        //}
-
 
         /* FIM DOS MÉTODOS DE VALIDAÇÃO E CHAMAMENTO DAS VIEWS  */
+
 
         /* Métodos Genéricos de Pesquisas dinâmicas em consultas  */
         /*

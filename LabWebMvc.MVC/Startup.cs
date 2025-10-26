@@ -36,6 +36,18 @@ namespace LabWebMvc.MVC
             //Lembrando que o Db não será injetado diretamente, mas sim via Repositórios genéricos.
             services.AddScoped<IConnectionService, ConnectionService>();
             services.AddScoped<IDbFactory, DbFactory>(); //Fábrica para criar instâncias do DbContext para troca de banco de dados dinamicamente.
+
+            services.AddScoped<Db>(sp =>
+            {
+                var connectionService = sp.GetRequiredService<IConnectionService>();
+                var eventLogHelper = sp.GetRequiredService<IEventLogHelper>();
+
+                var optionsBuilder = new DbContextOptionsBuilder<Db>()
+                    .UseNpgsql(connectionService.GetConnectionString());
+
+                return new Db(optionsBuilder.Options, connectionService, eventLogHelper);
+            });
+
             services.AddScoped<ExportacaoFactory>();
             services.AddScoped(typeof(IRepositorio<>), typeof(Repositorio<>));
             //..
