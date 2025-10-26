@@ -1091,7 +1091,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("Requisitar/GetLancamentosHoje")]
         public IActionResult GetLancamentosHoje()
         {
-            var hoje = DateTime.Today;
+            var hoje = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
 
             var requisicoesHoje = _db.Requisitar
                 .Include(r => r.Pacientes)

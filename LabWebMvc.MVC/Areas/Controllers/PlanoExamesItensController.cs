@@ -2,8 +2,6 @@
 using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
-using LabWebMvc.MVC.Areas.ControleDeImagens;
-using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Mensagens;
 using LabWebMvc.MVC.Models;
@@ -18,16 +16,19 @@ using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace LabWebMvc.MVC.Areas.Controllers
 {
-    public class PlanoExamesItensController : BaseController
+    public class PlanoExamesItensController : Controller
     {
-        public PlanoExamesItensController(
-            IDbFactory dbFactory,
-            IValidadorDeSessao validador,
-            GeralController geralController,
-            IEventLogHelper eventLogHelper,
-            Imagem imagem)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+        private readonly Db _db;
+        private readonly IValidadorDeSessao _validador;
+        private readonly GeralController _geralController;
+        private readonly IEventLogHelper _eventLog;
+
+        public PlanoExamesItensController(Db db, IValidadorDeSessao validador, GeralController geralController, IEventLogHelper eventLogHelper)
         {
+            _db = db;
+            _validador = validador;
+            _geralController = geralController;
+            _eventLog = eventLogHelper;
         }
 
         private void MontaControllers(string action, string controller, string parametros = "")
@@ -70,107 +71,62 @@ namespace LabWebMvc.MVC.Areas.Controllers
         public async Task<IActionResult> Index(vmPlanoExames vm, int numeroItemFolha = 1, int numeroTabela = 1, bool partial = false, string? Conteudo = "", int registros = 100)
         {
             MontaControllers("IncluirPlanoExamesItens", "PlanoExamesItens");
-            if (Conteudo == null) Conteudo = string.Empty; else Conteudo = Conteudo.Trim();
+            Conteudo = Conteudo?.Trim() ?? string.Empty;
 
+            // Carrega listas de folhas e tabelas
+            var folhas = _db.ClasseExames.OrderBy(o => o.RefExame).AsNoTracking().ToList();
+            var tabelas = _db.TabelaExames.OrderBy(o => o.NomeTabela).AsNoTracking().ToList();
 
-
-
-
-            var tabelas = _db.TabelaExames
-                    .Where(l => l.Bloqueado == 0)
-                    .OrderBy(o => o.NomeTabela)
-                    .ToList();
-
-            var folhas = _db.ClasseExames
-                .OrderBy(o => o.RefExame)
-                .ToList();
-
+            // Preenche o ViewModel base
             vm = new vmPlanoExames
             {
-                TabelaIdList = tabelas.Select(l => new SelectListItem
-                {
-                    Text = l.Id.ToString(),
-                    Value = l.Id.ToString()
-                }).ToList(),
-
-                TabelaNomeList = tabelas.Select(l => new SelectListItem
-                {
-                    Text = l.SiglaTabela + " | " + l.NomeTabela,
-                    Value = l.Id.ToString()
-                }).ToList(),
-
-                FolhaIdList = folhas.Select(l => new SelectListItem
-                {
-                    Text = l.Id.ToString(),
-                    Value = l.Id.ToString()
-                }).ToList(),
-
-                FolhaNomeList = folhas.Select(l => new SelectListItem
-                {
-                    Text = l.RefExame,
-                    Value = l.Id.ToString()
-                }).ToList()
+                ExameId = numeroItemFolha,
+                TabelaExamesId = numeroTabela,
+                FolhaIdList = folhas.Select(f => new SelectListItem { Text = f.Id.ToString(), Value = f.Id.ToString() }).ToList(),
+                FolhaNomeList = folhas.Select(f => new SelectListItem { Text = f.RefExame, Value = f.Id.ToString() }).ToList(),
+                TabelaIdList = tabelas.Select(t => new SelectListItem { Text = t.Id.ToString(), Value = t.Id.ToString() }).ToList(),
+                TabelaNomeList = tabelas.Select(t => new SelectListItem { Text = t.NomeTabela, Value = t.Id.ToString() }).ToList()
             };
 
+            // Carrega os dados da tabela
+            var dados = await _db.PlanoExames
+                .Where(s => !s.ContaExame.EndsWith("0000000") && s.ExameId == numeroItemFolha && s.TabelaExamesId == numeroTabela)
+                .OrderByDescending(o => o.Id)
+                .Take(registros)
+                .AsNoTracking()
+                .ToListAsync();
 
+            int totalTabela = await _db.PlanoExames
+                .Where(s => !s.ContaExame.EndsWith("0000000"))
+                .AsNoTracking()
+                .CountAsync();
 
-
-
-
-
-
-
-
-
-
-
-
-            ICollection<PlanoExames> dados = [];
-
-            /* 0000000 = não serão mostrados aqueles que são o header da Folha de Exames  */
-            int totalTabela = _db.PlanoExames.Where(s => !s.ContaExame.EndsWith("0000000")).AsNoTracking().Count();
-
-            dados = await _db.PlanoExames.Where(s => !s.ContaExame.EndsWith("0000000") && s.ExameId == numeroItemFolha && s.TabelaExamesId == numeroTabela).AsNoTracking().OrderByDescending(o => o.Id).Take(registros).ToListAsync();
-            int totalRegistros = dados.Count();
+            int totalRegistros = dados.Count;
 
             ViewBag.TotalRegistros = totalRegistros.ToString();
             ViewBag.TotalTabela = totalTabela.ToString();
             ViewBag.ListaDados = dados;
 
-            /*
-             * dados financeiros sobre lucro variante
-             */
+            // Calcula lucro variante
             CalculaLucroVariante(dados);
 
-            //Finalização da View
-            if (partial || (totalRegistros == 0 && string.IsNullOrEmpty(vm.Descricao)))
+            // Prepara resposta
+            var vmResposta = new vmListaValidacao<dynamic>
             {
-                var vmResposta = new vmListaValidacao<dynamic>
-                {   //quando ainda não houver dados da Folha no Plano de Exames ou for uma partialView
-                    RetornoDeRota = "Index",
-                    Titulo = "Tabela de Preços dos Itens do Plano de Exames",
-                    TotalRegistros = totalRegistros,
-                    TotalTabela = totalTabela,
-                    ListaDados = dados.Cast<dynamic>().ToList(),
-                    PartialView = "Partials/_PartialPlanoContaItem"
-                };
+                RetornoDeRota = "Index",
+                Titulo = "Tabela de Preços dos Itens do Plano de Exames",
+                TotalRegistros = totalRegistros,
+                TotalTabela = totalTabela,
+                ListaDados = dados.Cast<dynamic>().ToList(),
+                PlanoExames = vm,
+                PartialView = partial || (totalRegistros == 0 && string.IsNullOrEmpty(vm.Descricao))
+                    ? "Partials/_PartialPlanoContaItem"
+                    : null
+            };
 
-                return _geralController.ValidacaoGenerica(vmResposta);
-            }
-            else
-            {   //quando monta o grid pela primeira vez ou reconstrói tudo!
-                var vmResposta = new vmListaValidacao<dynamic>
-                {
-                    RetornoDeRota = "Index",
-                    Titulo = "Tabela de Preços dos Itens do Plano de Exames",
-                    TotalRegistros = totalRegistros,
-                    TotalTabela = totalTabela,
-                    ListaDados = dados.Cast<dynamic>().ToList()
-                };
-
-                return _geralController.ValidacaoGenerica(vmResposta);
-            }
+            return _geralController.ValidacaoGenerica(vmResposta);
         }
+
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
@@ -264,7 +220,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 catch (Exception ex)
                 {
                     //LoggerFile.Write("Erro ao gerar PDF do Plano - Message: {0}", ex.Message);
-                    _eventLogHelper.LogEventViewer("[PlanoExamesItens] Erro ao gerar PDF do Plano - Message: " + ex.Message, "wError");
+                    _eventLog.LogEventViewer("[PlanoExamesItens] Erro ao gerar PDF do Plano - Message: " + ex.Message, "wError");
                 }
                 finally { }
             }
@@ -351,7 +307,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             catch (TransactionAbortedException ex)
             {
                 //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLogHelper.LogEventViewer("[PlanoExamesItens] Alterar - TransactionAbortedException Message: " + ex.Message, "wError");
+                _eventLog.LogEventViewer("[PlanoExamesItens] Alterar - TransactionAbortedException Message: " + ex.Message, "wError");
             }
             //Parâmetros auxiliares em ViewBag
             ViewBag.TextoMenu = new object[] { "Alterar Item do Plano de Exames", false };
@@ -435,7 +391,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             catch (TransactionAbortedException ex)
             {
                 //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLogHelper.LogEventViewer("[PlanoExamesItens] Alteracao - TransactionAbortedException Message: " + ex.Message, "wError");
+                _eventLog.LogEventViewer("[PlanoExamesItens] Alteracao - TransactionAbortedException Message: " + ex.Message, "wError");
             }
             return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Item do Plano de Exames foi atualizado", action = "", sucesso = true });
         }
@@ -505,7 +461,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             catch (TransactionAbortedException ex)
             {
                 //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLogHelper.LogEventViewer("[PlanoExamesItens] Salvar Item Grid - TransactionAbortedException Message: " + ex.Message, "wError");
+                _eventLog.LogEventViewer("[PlanoExamesItens] Salvar Item Grid - TransactionAbortedException Message: " + ex.Message, "wError");
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Falhou a gravação na linha do registro", id = id, sumario = TempData["Summary"], linhaLucroVariante = TempData["linhaLucroVariante"] });
             }
             finally { }
