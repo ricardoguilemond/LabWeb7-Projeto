@@ -49,7 +49,6 @@ namespace LabWebMvc.MVC.Areas.Validations
             if (string.IsNullOrEmpty(cpf))
             {
                 objLogin = new vmSenhas();
-                //LoggerFile.Write("[ValidacoesDeSenhas] RECUPERACAO DE LOGIN/FALHOU: este usuário está sem CPF no cadastro de senhas: " + objLogin.LoginUsuario);
                 _eventLog.LogEventViewer("[ValidacoesDeSenhas] RECUPERACAO DE LOGIN/FALHOU: este usuário está sem CPF no cadastro de senhas: " + objLogin.LoginUsuario, "wWarning");
                 return;
             }
@@ -61,7 +60,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                     //Agora verifica se o usuário possui um registro de senha
                     Senhas? login = _db.Senhas.FirstOrDefault(l => l.LoginUsuario == loginUsuario && l.Id == usuWeb.SenhaId);
 
-                    if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.Now))
+                    if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.UtcNow))
                     {//SEM RESTRIÇÃO pode recuperar, mas tem que retornar com os dados de login
                         objLogin.RecuperacaoDeSenha = true;
                         objLogin.SituacaoLogin = (int)TipoSituacaoLogin.SemRestricao;
@@ -446,7 +445,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                 senhasLogin.CNPJEmpresa = _db.Empresa.Single().CNPJ ?? "";
             }
             //Validações importantes do Login
-            if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.Now))
+            if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.UtcNow))
             {
                 senhasLogin.SituacaoLogin = (int)TipoSituacaoLogin.SemRestricao;
                 return senhasLogin;
@@ -487,7 +486,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                 senhasLogin.Senhas = login;
 
             //Validações importantes do Login
-            if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.Now))
+            if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.UtcNow))
             {
                 senhasLogin.SituacaoLogin = (int)TipoSituacaoLogin.SemRestricao;
                 senhasLogin.LoginUsuario = login.LoginUsuario;
@@ -531,7 +530,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                     UsuariosWeb? usuWeb = _db.UsuariosWeb.Where(u => u.SenhaId == login.Id && u.CPFUsuario == cpf && u.DataNascimentoUsuario == nascimento).SingleOrDefault();
                     if (usuWeb != null)
                     {
-                        if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.Now))
+                        if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.UtcNow))
                         {//SEM RESTRIÇÃO pode recuperar
                             senhasLogin.SituacaoLogin = (int)TipoSituacaoLogin.SemVerificacao;
                             senhasLogin.RecuperacaoDeSenha = true;

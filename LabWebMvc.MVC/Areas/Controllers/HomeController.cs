@@ -43,8 +43,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                               IEventLogHelper eventLogHelper,
                               Imagem imagem,
                               IConnectionService connectionService,
-                              ReCaptchaService reCaptchaService) 
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+                              ReCaptchaService reCaptchaService,
+                              ExclusaoService exclusaoService) 
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
         {
             _captchaSettings = captchaSettings.Value;
             _captchaValidator = captchaValidator;
@@ -234,7 +235,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 if (listaErros.Count > 0)
                 {
                     string mensagem = "\nERRO(s) RETORNADO(s) APÓS VALIDAR RECAPTCHA:\n" + string.Join("\n", listaErros);
-                    _eventLogHelper.LogEventViewer($"{mensagem}, tentativa no login: {vm?.LoginUsuario} em {DateTime.Now}", "wWarning");
+                    _eventLogHelper.LogEventViewer($"{mensagem}, tentativa no login: {vm?.LoginUsuario} em {DateTime.UtcNow}", "wWarning");
                 }
             }
             if (listaAvaliacao.Count > 0)
@@ -244,7 +245,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 {
                     mensagem = string.Format("{0}\n{1}", mensagem, item);
                 }
-                _eventLogHelper.LogEventViewer(mensagem + "\n* * *, avaliação do login: " + vm?.LoginUsuario + " em " + DateTime.Now.ToString(), "wInfo");
+                _eventLogHelper.LogEventViewer(mensagem + "\n* * *, avaliação do login: " + vm?.LoginUsuario + " em " + DateTime.UtcNow.ToString(), "wInfo");
             }
 
             // Se não retornou o Token do Google ReCaptcha, não prossegue com o Login

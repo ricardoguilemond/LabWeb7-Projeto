@@ -1,4 +1,6 @@
-﻿using ExtensionsMethods.EventViewerHelper;
+﻿using BLL;
+using ExtensionsMethods.EventViewerHelper;
+using LabWebMvc.MVC.Areas.Controllers;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +13,17 @@ namespace LabWebMvc.MVC.Areas.Concorrencias
     {
         private readonly Db _db;
         private readonly IEventLogHelper _eventLog;
+        //private object _tempoService;
+        private ITempoServidorService _tempoService;
 
-        public ConcorrenciaService(IConnectionService connectionService, IEventLogHelper eventLogHelper)
+        public ConcorrenciaService(IConnectionService connectionService, IEventLogHelper eventLogHelper, ITempoServidorService tempoService)
         {
             var optionsBuilder = new DbContextOptionsBuilder<Db>()
                 .UseNpgsql(connectionService.GetConnectionString());
 
             _db = new Db(optionsBuilder.Options, connectionService, eventLogHelper);
             _eventLog = eventLogHelper;
+            _tempoService = tempoService;
         }
 
         // Verifica e atualiza a concorrência se necessário
@@ -29,12 +34,14 @@ namespace LabWebMvc.MVC.Areas.Concorrencias
         {
             ControleConcorrencia? concorrencia = await _db.ControleConcorrencia.FirstOrDefaultAsync(c => c.Processo == processo);
 
+            var dataHoraServidor = await _tempoService.ObterDataHoraServidorAsync();
+
             if (concorrencia != null)
             {
                 // Se o registro tem mais de 10 minutos, atualizamos e permitimos prosseguir
-                if (concorrencia.DataHora.AddMinutes(tempoRetidoMinutos) < DateTime.Now)
+                if (concorrencia.DataHora.AddMinutes(tempoRetidoMinutos) < dataHoraServidor.Value)
                 {
-                    concorrencia.DataHora = DateTime.Now;
+                    concorrencia.DataHora = dataHoraServidor.Value;
                     _db.ControleConcorrencia.Update(concorrencia);
                     await _db.SaveChangesAsync();
                     return true; // Permite a continuação da operação
@@ -43,7 +50,7 @@ namespace LabWebMvc.MVC.Areas.Concorrencias
             }
 
             // Se não existir concorrência, cria um novo registro
-            ControleConcorrencia novoControle = new() { Processo = processo, DataHora = DateTime.Now };
+            ControleConcorrencia novoControle = new() { Processo = processo, DataHora = dataHoraServidor.Value };
             await _db.ControleConcorrencia.AddAsync(novoControle);
             await _db.SaveChangesAsync();
 
@@ -66,142 +73,87 @@ namespace LabWebMvc.MVC.Areas.Concorrencias
         //Refine o Id de uma Tabela para continuar na sequência incremental da primary key, sem pular o Id
         //É extremamente anti performance o uso em código, mas pode ser bem utilizado em tabelas que sofrem muito pouca concorrência.
         //Se foi o último registro que foi excluído, então vamos recuperar o auto incremento, para evitar perder sequência Id.
-        /*
-         *  Se optar pela Trigger, dispense o uso deste método!
-         *  Seria ideal colocar uma Trigger no Banco de Dados, pois isso evita possíveis concorrências (semáforos) com queda de performance por código:
-         *
-         *          CREATE TRIGGER ResetarAutoIncrementoClasseExames
-         *          ON ClasseExames
-         *          AFTER DELETE
-         *          AS
-         *          BEGIN
-         *              DECLARE @UltimoId INT;
-         *              SELECT @UltimoId = ISNULL(MAX(Id), 0) FROM ClasseExames;
-         *
-         *              IF @UltimoId > 0
-         *                  DBCC CHECKIDENT ('ClasseExames', RESEED, @UltimoId);
-         *              ELSE
-         *                  DBCC CHECKIDENT ('ClasseExames', RESEED, 0);
-         *          END;
-         */
 
-        public async Task RedefinirIncremento(string nomeTabela, Db db, IDbContextTransaction transaction)
+        public async Task RedefinirIncrementoPostgres(string nomeTabela, Db db)
         {
-            nomeTabela = nomeTabela.Alltrim();
+            nomeTabela = nomeTabela.Trim();
 
             try
             {
-                string sql = $"SELECT TOP 1 Id FROM {nomeTabela} WITH (TABLOCK, HOLDLOCK)";
-                int result = await db.Database.ExecuteSqlRawAsync(sql);
-
-                // Buscar a entidade dentro do Db Context
-                System.Reflection.PropertyInfo? dbSetProperty = db.GetType().GetProperties()
+                var dbSetProperty = db.GetType().GetProperties()
                     .FirstOrDefault(p => p.PropertyType.IsGenericType &&
                                          p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>) &&
                                          p.Name.Equals(nomeTabela, StringComparison.OrdinalIgnoreCase));
 
                 if (dbSetProperty == null)
-                {
-                    _eventLog.LogEventViewer("Tabela '" + nomeTabela + "' não encontrada no contexto.", "wError");
                     throw new InvalidOperationException($"Tabela '{nomeTabela}' não encontrada no contexto.");
-                }
 
-                Type? entityType = dbSetProperty.PropertyType.GetGenericArguments().FirstOrDefault();
+                var entityType = dbSetProperty.PropertyType.GetGenericArguments().FirstOrDefault();
                 if (entityType == null)
-                {
-                    _eventLog.LogEventViewer("Não foi possível identificar o tipo da entidade para '" + nomeTabela + ".", "wError");
-                    throw new InvalidOperationException($"Não foi possível identificar o tipo da entidade para '{nomeTabela}'.");
-                }
+                    throw new InvalidOperationException($"Tipo da entidade '{nomeTabela}' não identificado.");
 
-                // Obter o DbSet correto
-                object? dbSet = dbSetProperty.GetValue(db);
+                var dbSet = dbSetProperty.GetValue(db) as IQueryable;
                 if (dbSet == null)
-                {
-                    _eventLog.LogEventViewer("O DbSet para '" + nomeTabela + "' não pode ser acessado", "wError");
-                    throw new InvalidOperationException($"O DbSet para '{nomeTabela}' não pode ser acessado.");
-                }
+                    throw new InvalidOperationException($"DbSet para '{nomeTabela}' não acessível.");
 
-                // Criar consulta filtrada para a tabela correta
-                sql = $"SELECT TOP 1 * FROM {nomeTabela} ORDER BY Id DESC";
+                var query = dbSet.Cast<object>().OrderByDescending(e => EF.Property<int>(e, "Id"));
+                var ultimo = await query.FirstOrDefaultAsync();
 
-                System.Reflection.MethodInfo? fromSqlMethod = typeof(RelationalQueryableExtensions)
-                    .GetMethods()
-                    .Where(m => m.Name == "FromSqlRaw" && m.IsGenericMethod)
-                    .FirstOrDefault(m => m.GetParameters().Length == 3)
-                    ?.MakeGenericMethod(entityType);
+                int reseedValue = ultimo != null ? EF.Property<int>(ultimo, "Id") : 0;
 
-                if (fromSqlMethod == null)
-                {
-                    _eventLog.LogEventViewer("O método fromSqlRaw correto não foi encontrado.", "wError");
-                    throw new InvalidOperationException("O método FromSqlRaw correto não foi encontrado.");
-                }
+                string sql = $"SELECT SETVAL(pg_get_serial_sequence('{nomeTabela}', 'Id'), {reseedValue})";
+                await db.Database.ExecuteSqlRawAsync(sql);
 
-                object? queryable = fromSqlMethod.Invoke(null, new object[] { dbSet, sql, new object[] { } });
-
-                if (queryable == null)
-                {
-                    _eventLog.LogEventViewer("Erro ao executar FromSqlRaw (queryable).", "wError");
-                    throw new InvalidOperationException("Erro ao executar FromSqlRaw.");
-                }
-
-                System.Reflection.MethodInfo? firstOrDefaultMethod = typeof(EntityFrameworkQueryableExtensions)
-                    .GetMethods()
-                    .FirstOrDefault(m =>
-                        m.Name == "FirstOrDefaultAsync" &&
-                        m.GetParameters().Length == 2 &&
-                        m.GetParameters()[1].ParameterType == typeof(CancellationToken))
-                    ?.MakeGenericMethod(entityType);
-
-                if (firstOrDefaultMethod == null)
-                {
-                    _eventLog.LogEventViewer("O método firstOrDefaultAsync correto não foi encontrado.", "wError");
-                    throw new InvalidOperationException("O método FirstOrDefaultAsync correto não foi encontrado.");
-                }
-                /*
-                 * "ultimoTask" recebe o código que foi gerado para uma instância do Task assíncrono. Cada tarefa assíncrona criada ou
-                 * acionada, recebe um código Task para sua identificação. As tarefas são identificadas por um ´codigo para conseguirem
-                 * ser executadas com todas as suas propriedades até que a tarefa seja cumprida.
-                 * Mesmo que reexecutemos o mesmo método Task ára pegarmos a mesma informação ou executarmos o mesmo processo, esse
-                 * código Task seja novo, pois cada processo recebe sua identificação Task.
-                 */
-                Task? ultimoTask = firstOrDefaultMethod.Invoke(null, new object[] { queryable, CancellationToken.None }) as Task;
-                if (ultimoTask == null)
-                {
-                    _eventLog.LogEventViewer("Erro ao executar FirstOrDefaultAsync.", "wError");
-                    throw new InvalidOperationException("Erro ao executar FirstOrDefaultAsync.");
-                }
-                await ultimoTask;
-
-                object? ultimo = ultimoTask.GetType().GetProperty("Result")?.GetValue(ultimoTask);
-
-                // Pegando o valor do Id corretamente após garantir a tabela correta
-                if (ultimo != null)
-                {
-                    System.Reflection.PropertyInfo? idProperty = entityType.GetProperty("Id");
-                    if (idProperty == null)
-                    {
-                        _eventLog.LogEventViewer("A entidade '" + nomeTabela + "' não possui um campo 'Id' para 'RedefinirIncremento'", "wError");
-                        throw new InvalidOperationException($"A entidade '{nomeTabela}' não possui um campo 'Id'.");
-                    }
-                    int? ultimoId = idProperty?.GetValue(ultimo) as int?;
-
-                    if (ultimoId == null)
-                    {
-                        _eventLog.LogEventViewer("O campo 'Id' não pôde ser obtido.", "wError");
-                        throw new InvalidOperationException("O campo 'Id' não pode ser obtido.");
-                    }
-
-                    // Executar redefinição do incremento
-                    sql = $"DBCC CHECKIDENT ('{nomeTabela}', RESEED, {ultimoId})";
-                    await db.Database.ExecuteSqlRawAsync(sql);
-
-                    _eventLog.LogEventViewer($"Redefiniu o 'Id' para a tabela: {nomeTabela} para o último Id: {ultimoId}", "wInfo");
-                }
+                _eventLog.LogEventViewer($"Redefiniu o 'Id' da tabela '{nomeTabela}' para {reseedValue}.", "wInfo");
             }
             catch (Exception ex)
             {
-                _eventLog.LogEventViewer($"Falhou a redefinição de Id para a tabela {nomeTabela}.\n\nMessage: {ex.Message}", "wWarning");
+                _eventLog.LogEventViewer($"Falha ao redefinir Id da tabela '{nomeTabela}': {ex.Message}", "wWarning");
             }
         }
+
+
+        public async Task RedefinirIncrementoPostgres2(string nomeTabela, Db db)
+        {
+            nomeTabela = nomeTabela.Trim();
+
+            try
+            {
+                // Localiza o DbSet correspondente à tabela
+                var dbSetProperty = db.GetType().GetProperties()
+                    .FirstOrDefault(p => p.PropertyType.IsGenericType &&
+                                         p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>) &&
+                                         p.Name.Equals(nomeTabela, StringComparison.OrdinalIgnoreCase));
+
+                if (dbSetProperty == null)
+                    throw new InvalidOperationException($"Tabela '{nomeTabela}' não encontrada no contexto.");
+
+                var entityType = dbSetProperty.PropertyType.GetGenericArguments().FirstOrDefault();
+                if (entityType == null)
+                    throw new InvalidOperationException($"Tipo da entidade '{nomeTabela}' não identificado.");
+
+                var dbSet = dbSetProperty.GetValue(db) as IQueryable;
+                if (dbSet == null)
+                    throw new InvalidOperationException($"DbSet para '{nomeTabela}' não acessível.");
+
+                // Obtém o último Id existente
+                var query = dbSet.Cast<object>().OrderByDescending(e => EF.Property<int>(e, "Id"));
+                var ultimo = await query.FirstOrDefaultAsync();
+
+                int reseedValue = ultimo != null ? EF.Property<int>(ultimo, "Id") : 0;
+
+                // Comando PostgreSQL para redefinir o valor da sequência
+                string sql = $"SELECT SETVAL(pg_get_serial_sequence('{nomeTabela}', 'Id'), {reseedValue})";
+                await db.Database.ExecuteSqlRawAsync(sql);
+
+                _eventLog.LogEventViewer($"Redefiniu o 'Id' da tabela '{nomeTabela}' para {reseedValue}.", "wInfo");
+            }
+            catch (Exception ex)
+            {
+                _eventLog.LogEventViewer($"Falhou a redefinição de Id para a tabela '{nomeTabela}': {ex.Message}", "wWarning");
+            }
+        }
+
+
     }//Fim
 }

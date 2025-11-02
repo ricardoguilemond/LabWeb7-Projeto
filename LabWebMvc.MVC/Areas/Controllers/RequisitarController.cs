@@ -3,6 +3,7 @@ using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
 using Google.Api;
+using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.Impressoras;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
@@ -32,8 +33,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             GeralController geralController,
             IEventLogHelper eventLogHelper,
             Imagem imagem,
+            ExclusaoService exclusaoService,
             IServiceProvider serviceProvider)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
         {
             _serviceProvider = serviceProvider;
         }
@@ -1006,9 +1008,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                          _db.Empresa.FirstOrDefault()?.UF?.TrimEnd() + " - CEP: " +
                                          _db.Empresa.FirstOrDefault()?.CEP?.FormatarCEP();
 
-            string dataHoje = DateTime.Now.ToString("dd/MM/yyyy");
-            string horaHoje = DateTime.Now.ToString("HH:mm");
-            string dataPrevista = DateTime.Now.AddDays(7).ToString("dd/MM/yyyy"); //padrão 7 dias para entrega inicial 
+            string dataHoje = DateTime.UtcNow.ToString("dd/MM/yyyy");
+            string horaHoje = DateTime.UtcNow.ToString("HH:mm");
+            string dataPrevista = DateTime.UtcNow.AddDays(7).ToString("dd/MM/yyyy"); //padrão 7 dias para entrega inicial 
 
             //Impressão do Cupom
             var sb = new StringBuilder();

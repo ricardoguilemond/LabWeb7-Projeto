@@ -1,5 +1,6 @@
 ﻿using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.ValidadorDeSessao;
+using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.Controllers;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
@@ -15,8 +16,9 @@ public class GraficosController : BaseController
         IValidadorDeSessao validador,
         GeralController geralController,
         IEventLogHelper eventLogHelper,
-        Imagem imagem)
-        : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+        Imagem imagem,
+        ExclusaoService exclusaoService)
+        : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
     {
     }
 
@@ -38,7 +40,7 @@ public class GraficosController : BaseController
         }
         ViewBag.TextoMenu = new List<string> { "Gráfico ReCaptcha" };
 
-        var agora = DateTime.Now;
+        var agora = DateTime.UtcNow;
 
         var graficoModel = new GraficoModel
         {
@@ -49,7 +51,7 @@ public class GraficosController : BaseController
             Valores = model.Valores,
             TipoGrafico = "line",
             RodapeTextoPrincipal = "Fonte: Dados internos",
-            RodapeSubtexto = "Atualizado em " + DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
+            RodapeSubtexto = "Atualizado em " + DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm"),
             RodapeIconeCss = "fa fa-info-circle",
             RodapeLinkTexto = "Ver detalhes sobre custos para ReCaptcha Enterprise",
             RodapeLinkUrl = @"https://cloud.google.com/recaptcha/docs/compare-tiers?hl=pt-br",
