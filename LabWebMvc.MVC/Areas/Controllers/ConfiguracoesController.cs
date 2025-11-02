@@ -1,5 +1,6 @@
 ﻿using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.ValidadorDeSessao;
+using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Models;
@@ -16,8 +17,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IValidadorDeSessao validador,
             GeralController geralController,
             IEventLogHelper eventLogHelper,
-            Imagem imagem)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+            Imagem imagem, 
+            ExclusaoService exclusaoService)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
         {
         }
 

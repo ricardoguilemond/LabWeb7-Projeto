@@ -45,7 +45,7 @@ namespace ServicoExportacao
             }
             catch (Exception)
             {
-                LoggerFile.Write(string.Format("Windows Service '{0}' com falha na leitura da conexão Json ::: {1} ", "Lab7ServiceIntegracao", DateTime.Now));
+                LoggerFile.Write(string.Format("Windows Service '{0}' com falha na leitura da conexão Json ::: {1} ", "Lab7ServiceIntegracao", DateTime.UtcNow));
                 throw;
             }
 

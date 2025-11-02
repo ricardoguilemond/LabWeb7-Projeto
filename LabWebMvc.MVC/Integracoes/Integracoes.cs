@@ -154,7 +154,7 @@ namespace LabWebMvc.MVC.Integracoes
                     dadosExecucao.Resumo = parameter.Resumo;
                     dadosExecucao.Summary = parameter.Summary;
                     dadosExecucao.Sucesso = parameter.Sucesso;
-                    dadosExecucao.Termino = DateTime.Now;
+                    dadosExecucao.Termino = DateTime.UtcNow;
 
                     if (parameter != null && (parameter.NomeServico != null))
                     {
@@ -260,7 +260,7 @@ namespace LabWebMvc.MVC.Integracoes
                                             string minuto = s.Length > 1 ? s[1] : "0";
                                             string segundo = s.Length > 2 ? s[2] : "0";
                                             TimeSpan horaConfigurada = new(Convert.ToInt32(hora), Convert.ToInt32(minuto), Convert.ToInt32(segundo));
-                                            if (new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0) < horaConfigurada)
+                                            if (new TimeSpan(DateTime.UtcNow.Hour, DateTime.UtcNow.Minute, 0) < horaConfigurada)
                                             {
                                                 //ainda não deu o horario para executar
                                                 continue;
@@ -277,14 +277,14 @@ namespace LabWebMvc.MVC.Integracoes
                                             string minuto = s.Length > 1 ? s[1] : "0";
                                             string segundo = s.Length > 2 ? s[2] : "0";
                                             TimeSpan horaConfigurada = new(Convert.ToInt32(hora), Convert.ToInt32(minuto), Convert.ToInt32(segundo));
-                                            if (new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0) > horaConfigurada)
+                                            if (new TimeSpan(DateTime.UtcNow.Hour, DateTime.UtcNow.Minute, 0) > horaConfigurada)
                                             {
                                                 //já passou do horário de executar o serviço
                                                 continue;
                                             }
                                         }
                                     }
-                                    DateTime dataHoje = DateTime.Now.Date;
+                                    DateTime dataHoje = DateTime.UtcNow.Date;
                                     if (configuracao.Periodicidade == (int)TipoPeriodoExtracao.Diario)//diario=1
                                     {
                                         //verifica se ja rodou anteriormente
@@ -296,7 +296,7 @@ namespace LabWebMvc.MVC.Integracoes
                                     }
                                     if (configuracao.Periodicidade == (int)TipoPeriodoExtracao.Mensal)//mensal=3
                                     {
-                                        if (configuracao.DiaExecucao == DateTime.Now.Day)
+                                        if (configuracao.DiaExecucao == DateTime.UtcNow.Day)
                                         {
                                             if (db.IntegracaoDadosExecucao.Any(a => a.IntegracaoDadosLayoutId == layout.Id && (DateTime.Compare(a.Inicio, dataHoje) == 0) && (a.Termino > DateTime.MinValue) && a.Sucesso))
                                             {
@@ -384,7 +384,7 @@ namespace LabWebMvc.MVC.Integracoes
         //    integracoes = integracoes.Where(w => w.exec.Inicio >= parameter.DataInicio);
         //    if (parameter.DataFim != null)
         //    {
-        //        var data = (parameter.DataFim ?? DateTime.Now);
+        //        var data = (parameter.DataFim ?? DateTime.UtcNow);
         //        data = new DateTime(data.Year, data.Month, data.Day, 23, 59, 59);
         //        integracoes = integracoes.Where(w => w.exec.Inicio <= data);
         //    }
@@ -412,7 +412,7 @@ namespace LabWebMvc.MVC.Integracoes
         //            DiretorioSaida = s.conf.DiretorioSaida,
         //            Inicio = s.exec.Inicio.ToString("dd/MM/yyyy HH:mm:ss"),
         //            Resumo = s.exec.Resumo,
-        //            Termino = s.exec.Termino != null ? (s.exec.Termino ?? DateTime.Now).ToString("dd/MM/yyyy HH:mm:ss") : "",
+        //            Termino = s.exec.Termino != null ? (s.exec.Termino ?? DateTime.UtcNow).ToString("dd/MM/yyyy HH:mm:ss") : "",
         //            Tipo = Enum.GetValues(typeof(LayoutExecucao)).Cast<int>()
         //                    .Contains<int>(s.layout.Tipo) ? ((LayoutExecucao)s.layout.Tipo).Description() : "",
         //            Periodicidade = ((PeriodicidadeExecucao)s.conf.Periodicidade).ToString(),

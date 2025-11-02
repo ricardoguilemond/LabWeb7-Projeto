@@ -2,6 +2,7 @@
 using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
+using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.ExpressionCombiner;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
@@ -33,9 +34,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
             GeralController geralController,
             IEventLogHelper eventLogHelper,
             Imagem imagem,
+            ExclusaoService exclusaoService,
             IPathHelper pathHelper,
             IValidacoesDeSenhas validacoesDeSenhas)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
         {
             _pathHelper = pathHelper;
             _validacoesDeSenhas = validacoesDeSenhas;

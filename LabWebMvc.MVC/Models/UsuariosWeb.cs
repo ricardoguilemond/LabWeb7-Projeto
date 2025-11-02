@@ -6,7 +6,7 @@ public partial class UsuariosWeb
 {
     public int Id { get; set; }
 
-    [ForeignKey("Senhas")]
+    //[ForeignKey("Senhas")]
     public int SenhaId { get; set; }
 
     public string CPFUsuario { get; set; } = null!;

@@ -67,10 +67,10 @@ namespace LabWebMvc.MVC
 #else
             services.AddScoped<ITempoServidorService, TempoServidorMSSQL>();
 #endif
-            //services.AddScoped<IGeralService, GeralService>();  //para injeção de dependência do controller GeralController que é usado em várias partes do sistema.
             services.AddScoped<GeralController>();  //para injeção de dependência do serviço de métodos gerais de controller
             services.AddScoped<IValidacoesDeSenhas, ValidacoesDeSenhas>();  //para injeção de dependência do serviço de validações de senhas
             services.AddSingleton<IEventLogHelper, EventLogHelper>();   //para injeção de uma única instância do Log Helper por toda a aplicação.
+            services.AddScoped<ExclusaoService>(); //para injeção de dependência do serviço de exclusões com concorrência
             //..
 
             //Para injetar serviço de impressoras

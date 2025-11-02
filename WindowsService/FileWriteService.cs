@@ -61,7 +61,7 @@ namespace WindowsService
         {
             if (Worker != null && Worker.IsAlive)
             {
-                EventLog.WriteEntry($"Windows Service '{ServiceName}' parado em {DateTime.Now}", EventLogEntryType.Information);
+                EventLog.WriteEntry($"Windows Service '{ServiceName}' parado em {DateTime.UtcNow}", EventLogEntryType.Information);
             }
         }
 
@@ -71,14 +71,14 @@ namespace WindowsService
 
             while (true)
             {
-                EventLog.WriteEntry($"Ciclo do Windows Service '{ServiceName}' iniciado em {DateTime.Now}", EventLogEntryType.Information);
+                EventLog.WriteEntry($"Ciclo do Windows Service '{ServiceName}' iniciado em {DateTime.UtcNow}", EventLogEntryType.Information);
 
                 Thread.Sleep(nsleep);
-                EventLog.WriteEntry($"Serviço fez uma pausa esperada de {_intSleepTime} minuto(s) em {DateTime.Now}", EventLogEntryType.Information);
+                EventLog.WriteEntry($"Serviço fez uma pausa esperada de {_intSleepTime} minuto(s) em {DateTime.UtcNow}", EventLogEntryType.Information);
 
                 try
                 {
-                    EventLog.WriteEntry($"Serviço '{ServiceName}' vai iniciar processo de integração agendado em {DateTime.Now}", EventLogEntryType.Information);
+                    EventLog.WriteEntry($"Serviço '{ServiceName}' vai iniciar processo de integração agendado em {DateTime.UtcNow}", EventLogEntryType.Information);
 
                     var db = _dbFactory.Create();
                     using var srv = new IntegracaoService(db);
@@ -88,7 +88,7 @@ namespace WindowsService
                     {
                         foreach (string item in response.Log)
                         {
-                            EventLog.WriteEntry($"{item} ::: {DateTime.Now}", EventLogEntryType.Information);
+                            EventLog.WriteEntry($"{item} ::: {DateTime.UtcNow}", EventLogEntryType.Information);
                         }
                     }
                 }
@@ -100,19 +100,19 @@ namespace WindowsService
                     var response = new RodarIntegracaoAgendadaResponse();
                     response.Errors?.Add(ex.Message);
 
-                    EventLog.WriteEntry($"*** SERVIÇO '{ServiceName}' COM FALHAS GRAVES ::: {DateTime.Now}", EventLogEntryType.Error);
+                    EventLog.WriteEntry($"*** SERVIÇO '{ServiceName}' COM FALHAS GRAVES ::: {DateTime.UtcNow}", EventLogEntryType.Error);
 
                     if (response.Errors != null)
                     {
                         foreach (var item in response.Errors)
                         {
-                            EventLog.WriteEntry($"{item?.ToString() ?? "Erro desconhecido"} ::: {DateTime.Now}", EventLogEntryType.Error);
+                            EventLog.WriteEntry($"{item?.ToString() ?? "Erro desconhecido"} ::: {DateTime.UtcNow}", EventLogEntryType.Error);
                         }
                     }
                 }
                 finally
                 {
-                    EventLog.WriteEntry($"Ciclo do serviço '{ServiceName}' terminou em {DateTime.Now}", EventLogEntryType.Information);
+                    EventLog.WriteEntry($"Ciclo do serviço '{ServiceName}' terminou em {DateTime.UtcNow}", EventLogEntryType.Information);
                 }
             }
         }

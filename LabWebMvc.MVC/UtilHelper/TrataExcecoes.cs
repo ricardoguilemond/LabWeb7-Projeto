@@ -27,12 +27,12 @@ namespace LabWebMvc.MVC.UtilHelper
                     chavePrimaria = id ?? chavePrimaria;
                 }
 
-                erro.AppendLine($"Erro na persistência [{DateTime.Now}]");
+                erro.AppendLine($"Erro na persistência [{DateTime.UtcNow}]");
                 erro.AppendLine($"Entidade: {nomeTabela}, ID: {chavePrimaria}");
             }
             else
             {
-                erro.AppendLine($"Erro geral [{DateTime.Now}]");
+                erro.AppendLine($"Erro geral [{DateTime.UtcNow}]");
             }
 
             erro.AppendLine($"Mensagem: {ex.Message}");

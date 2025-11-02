@@ -44,7 +44,7 @@ namespace LabWebMvc.MVC.Integracoes
                         {
                             foreach (string termo in listaValidacao)
                             {
-                                if (item.Contains(termo) && item.Contains(DateTime.Now.ToString("yyyyMMdd")))
+                                if (item.Contains(termo) && item.Contains(DateTime.UtcNow.ToString("yyyyMMdd")))
                                 {
                                     return;
                                 }
@@ -58,7 +58,7 @@ namespace LabWebMvc.MVC.Integracoes
                     execucao = new IntegracaoDadosExecucao
                     {
                         IntegracaoDadosLayoutId = layout.Id,
-                        Inicio = DateTime.Now,
+                        Inicio = DateTime.UtcNow,
                         Sucesso = false,
                         Resumo = ""
                     };
@@ -91,7 +91,7 @@ namespace LabWebMvc.MVC.Integracoes
                     {
                         if (execucao.NomeArquivo != null)
                         {
-                            execucao.Termino = DateTime.Now;
+                            execucao.Termino = DateTime.UtcNow;
 
                             //Limita o tamanho do resumo
                             string resumo = execucao.Resumo;
