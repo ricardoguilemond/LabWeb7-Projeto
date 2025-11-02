@@ -1154,25 +1154,25 @@ namespace BLL
 
         public static string CalcularIdade(DateTime DataDeNascimento)
         {
-            int Anos = DateTime.Now.Year - DataDeNascimento.Year;
+            int Anos = DateTime.UtcNow.Year - DataDeNascimento.Year;
             int Meses = 0, Dias = 0;
-            if (DataDeNascimento.Month > DateTime.Now.Month)
+            if (DataDeNascimento.Month > DateTime.UtcNow.Month)
             {
                 Anos--;
-                Meses = 12 - DateTime.Now.Month;
+                Meses = 12 - DateTime.UtcNow.Month;
             }
-            else if (DateTime.Now.Month == DataDeNascimento.Month && DateTime.Now.Day < DataDeNascimento.Day)
+            else if (DateTime.UtcNow.Month == DataDeNascimento.Month && DateTime.UtcNow.Day < DataDeNascimento.Day)
             {
                 Anos--;
             }
             else
             {
-                Meses = DateTime.Now.Month - DataDeNascimento.Month;
+                Meses = DateTime.UtcNow.Month - DataDeNascimento.Month;
             }
-            if (DateTime.Now.Day < DataDeNascimento.Day)
-                Dias = 30 - (DataDeNascimento.Day - DateTime.Now.Day);
+            if (DateTime.UtcNow.Day < DataDeNascimento.Day)
+                Dias = 30 - (DataDeNascimento.Day - DateTime.UtcNow.Day);
             else
-                Dias = DateTime.Now.Day - DataDeNascimento.Day;
+                Dias = DateTime.UtcNow.Day - DataDeNascimento.Day;
 
             string Idade = Anos > 0 ? (Anos + " anos") : "";
             if (Meses > 0 && Dias > 0)

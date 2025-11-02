@@ -36,12 +36,12 @@ namespace ExtensionsMethods.Genericos
                 if (!string.IsNullOrEmpty(nomeServico))
                 {
                     folderPath = DefaultDirPath + nomeServico + "\\";
-                    filename = string.Format("Log_{0}_{1}.txt", nomeServico, DateTime.Now.ToString("yyyy-MM-dd"));
+                    filename = string.Format("Log_{0}_{1}.txt", nomeServico, DateTime.UtcNow.ToString("yyyy-MM-dd"));
                 }
                 else
                 {
                     folderPath = DefaultDirPath + "\\";
-                    filename = string.Format("Log_{0}.txt", DateTime.Now.ToString("yyyy-MM-dd"));
+                    filename = string.Format("Log_{0}.txt", DateTime.UtcNow.ToString("yyyy-MM-dd"));
                 }
                 if (!string.IsNullOrEmpty(folderPath) && !string.IsNullOrEmpty(filename))
                 {
@@ -53,7 +53,7 @@ namespace ExtensionsMethods.Genericos
                     string path = Path.Combine(folderPath, filename);
                     FileStream fw = File.Open(path, FileMode.Append, FileAccess.Write);
                     StreamWriter sw = new(fw, Encoding.UTF8);
-                    string format = string.Format("{0} {1} -> {2}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.ffffttzzz"), className,
+                    string format = string.Format("{0} {1} -> {2}", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.ffffttzzz"), className,
                                  string.IsNullOrEmpty(methodName) ? "" : string.Format("{0}({1}) -> ", methodName, lineNumber));
                     sw.WriteLine(format + line);
                     sw.Flush();

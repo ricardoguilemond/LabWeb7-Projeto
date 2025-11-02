@@ -132,7 +132,7 @@ namespace LabWebMvc.MVC.Interfaces.Criptografias
         {
             //Valida a data e hora em que o Captcha fica disponível, mas se vier data nula, então vamos considerar a data now-1dia para forçar data expirada.
             DateTimeOffset dataExpira = conteudo != null && conteudo.Headers.Date != null ? conteudo.Headers.Date.Value : DateTimeOffset.Now.AddDays(-1);
-            if (dataExpira.DateTime <= DateTime.Now)
+            if (dataExpira.DateTime <= DateTime.UtcNow)
                 listaErros.Add("Data do ReCaptcha expirada (" + dataExpira.DateTime.ToString() + ")");
 
             /* Estamos com pontuação 0.9 (que significa baixo risco = ótimo)

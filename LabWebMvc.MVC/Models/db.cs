@@ -1,8 +1,12 @@
 ﻿using ExtensionsMethods.EventViewerHelper;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Collections;
 using System.Diagnostics;
+using System.Linq.Expressions;
+using System.Threading;
 
 namespace LabWebMvc.MVC.Models;
 
@@ -124,14 +128,22 @@ public class Db : DbContext
     }
     #endregion Configuração da Conexão
 
+
     #region SaveChanges
     public override int SaveChanges()
+    {
+        return SaveChanges(false); // Chama o método auxiliar
+    }
+
+    public override int SaveChanges(bool sincroniza = false)
     {
         try
         {
             if (ChangeTracker.Entries().Count() > 0)
             {
-                DeleteOrphans();
+                if (sincroniza)
+                    DeleteOrphans();
+
                 return base.SaveChanges();
             }
             else return 0;
@@ -147,151 +159,301 @@ public class Db : DbContext
             // Combine the original exception message with the new one.
             string exceptionMessage = string.Concat(ex.Message, " Os erros validados são: ", fullErrorMessage);
 
-            var eventLog2 = new ExtensionsMethods.EventViewerHelper.EventLogHelper();
-            eventLog2.LogEventViewer("db: " + errorMessages + " ::: " + fullErrorMessage + " ::: " + exceptionMessage, "wError");
+            _eventLog.LogEventViewer("db: " + errorMessages + " ::: " + fullErrorMessage + " ::: " + exceptionMessage, "wError");
 
             return 0;
         }
     }
 
+    // Método sobrescrito obrigatório — não pode ter parâmetros extras
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Chama o auxiliar com sincroniza = false e sem limite de quantidade
+        return await SaveChangesIfChangedAsync(sincroniza: false, cancellationToken);
+    }
+
+    // Método auxiliar com parâmetro adicional, apenas para sincronizar registros (reorganizar os Ids da tabela)
+    public async Task<int> SaveChangesIfChangedAsync(bool sincroniza = false, CancellationToken cancellationToken = default)
     {
         try
         {
-            // Verifica se há alterações no ChangeTracker antes de prosseguir
-            if (ChangeTracker.HasChanges())
-            {
-                // Método que trata órfãos
+            if (sincroniza)
                 DeleteOrphans();
 
-                // Salva as alterações e retorna o número de registros afetados
+            if (ChangeTracker.HasChanges())
+            {
                 return await base.SaveChangesAsync(cancellationToken);
             }
 
-            // Caso não haja alterações, retorna 0
             return 0;
         }
         catch (Exception ex)
         {
-            // Log detalhado da exceção
             string exceptionMessage = $"Erro ao salvar alterações: {ex.Message}";
-            string innerExceptionMessage = ex.InnerException != null ? $" Inner Exception: {ex.InnerException.Message.ToString()}" : string.Empty;
+            string innerExceptionMessage = ex.InnerException != null
+                ? $" Inner Exception: {ex.InnerException.Message}"
+                : string.Empty;
 
-            // Inclui os detalhes da pilha de chamadas (stack trace) para depuração
-            var eventLog2 = new ExtensionsMethods.EventViewerHelper.EventLogHelper();
-            eventLog2.LogEventViewer($"{innerExceptionMessage}, db: {ex.Message}; StackTrace: {ex.StackTrace}", "wError");
+            _eventLog.LogEventViewer($"{innerExceptionMessage}, db: {ex.Message}; StackTrace: {ex.StackTrace}", "wError");
 
-            // Opcional: Re-throw da exceção caso você queira lidar com ela em um nível superior
             throw new Exception(exceptionMessage, ex);
         }
     }
 
+    //Este método faz o controle de transações para evitar conflitos de concorrência ao salvar novos registros
+    //recuperando Id excluídos, para serem reutilizados, dentro do limite de 99 IDs (ou "n" Ids).
+    public async Task<int> SaveChangesWithSyncAsync(bool sincroniza = false, int? quantidadeRegistrosMaximo = null, CancellationToken cancellationToken = default)
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(10));
+
+        try
+        {
+            var addedEntries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added && e.Properties.Any(p => p.Metadata.Name == "Id"))
+                .ToList();
+
+            if (addedEntries.Count > 0)
+            {
+                var entityType = addedEntries.First().Metadata.ClrType;
+                var idProperty = entityType.GetProperty("Id");
+
+                if (idProperty == null || idProperty.PropertyType != typeof(int))
+                    throw new InvalidOperationException($"A entidade {entityType.Name} não possui uma propriedade 'Id' do tipo int.");
+
+                // Usa reflexão para obter o DbSet<TEntity>
+                var setMethod = typeof(DbContext).GetMethod(nameof(Set), Type.EmptyTypes);
+                var genericSetMethod = setMethod.MakeGenericMethod(entityType);
+                var dbSet = genericSetMethod.Invoke(this, null);
+
+                // Executa ToListAsync via reflexão
+                var toListAsyncMethod = typeof(EntityFrameworkQueryableExtensions)
+                    .GetMethods()
+                    .First(m => m.Name == "ToListAsync" && m.GetParameters().Length == 2);
+                var genericToListAsync = toListAsyncMethod.MakeGenericMethod(entityType);
+                var task = (Task)genericToListAsync.Invoke(null, new object[] { dbSet, cts.Token });
+                await task.ConfigureAwait(false);
+                var resultProperty = task.GetType().GetProperty("Result");
+                var entityList = (IList)resultProperty.GetValue(task);
+
+                var usedIds = entityList
+                    .Cast<object>()
+                    .Select(e => (int)idProperty.GetValue(e))
+                    .ToList();
+
+                var tableName = Model.FindEntityType(entityType)?.GetTableName();
+                if (!string.IsNullOrEmpty(tableName))
+                    await Database.ExecuteSqlRawAsync($@"LOCK TABLE ""{tableName}"" IN EXCLUSIVE MODE", cts.Token);
+
+                foreach (var entry in addedEntries)
+                {
+                    int limite = quantidadeRegistrosMaximo ?? int.MaxValue;
+
+                    int? availableId = Enumerable.Range(1, limite)
+                        .FirstOrDefault(i => !usedIds.Contains(i));
+
+                    if (availableId == null)
+                    {
+                        int nextId = usedIds.Max() + 1;
+                        if (quantidadeRegistrosMaximo.HasValue && nextId > quantidadeRegistrosMaximo.Value)
+                            throw new InvalidOperationException($"Limite de {quantidadeRegistrosMaximo.Value} registros atingido para a entidade {entityType.Name}.");
+
+                        availableId = nextId;
+                    }
+
+                    idProperty.SetValue(entry.Entity, availableId.Value);
+                    entry.Property("Id").IsTemporary = false;
+                    usedIds.Add(availableId.Value);
+                }
+            }
+
+            if (sincroniza)
+                DeleteOrphans();
+
+            return await base.SaveChangesAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            _eventLog.LogEventViewer("Tempo excedido. Operação cancelada.", "wError");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            string exceptionMessage = $"Erro ao salvar alterações: {ex.Message}";
+            string innerExceptionMessage = ex.InnerException != null
+                ? $" Inner Exception: {ex.InnerException.Message}"
+                : string.Empty;
+
+            _eventLog.LogEventViewer($"{innerExceptionMessage}, db: {ex.Message}; StackTrace: {ex.StackTrace}", "wError");
+            throw new Exception(exceptionMessage, ex);
+        }
+    }
+
+
     /*
      *  Deleta órfãos que foram perdidos de forma não registrada por suas Entidades principais
      *  USO:
-     *  DeleteOrphans<Senhas, UsuariosWeb>(db.Senhas, db.UsuariosWeb, child => child.SenhaId);
+     *  DeleteOrphans();
      *
      */
-
-    public void DeleteOrphans()  //se o método abaixo tiver dando algum erro não solucionável, então voltar a usar este constructor vazio até uma solução!
-    { }
-
-    public void DeleteOrphans2()
+    public int DeleteOrphans()
     {
-        var eventLog2 = new ExtensionsMethods.EventViewerHelper.EventLogHelper();
+        int totalRemovidos = 0;
+        var model = this.Model;
 
-        //Obtém as entidades monitoradas pelo ChangeTracker e que estão
-        //no estado de Deleted ou Modified
-        List<Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry> trackedEntries = ChangeTracker.Entries()
-            .Where(e => e.State == EntityState.Deleted || e.State == EntityState.Modified)
-            .ToList();
+        var dbSets = this.GetType().GetProperties()
+            .Where(p => p.PropertyType.IsGenericType &&
+                        p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>));
 
-        foreach (Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry? entry in trackedEntries)
+        foreach (var dbSetProp in dbSets)
         {
-            //Obtém o tipo da entidade pai e cria uma coleção
-            Type entityType = entry.Entity.GetType();
-            IEnumerable<Microsoft.EntityFrameworkCore.Metadata.INavigation> navigationProperties = Model.FindEntityType(entityType)!.GetNavigations();
+            var entityType = dbSetProp.PropertyType.GetGenericArguments().First();
+            var entityTypeModel = model.FindEntityType(entityType);
+            if (entityTypeModel == null) continue;
 
-            foreach (Microsoft.EntityFrameworkCore.Metadata.INavigation navigation in navigationProperties)
+            var dbSet = dbSetProp.GetValue(this);
+            if (dbSet is not IQueryable entityQueryable) continue;
+
+            var entityList = entityQueryable.Cast<object>().ToList();
+
+            //Sincronizar sequência PostgreSQL se a entidade tiver campo Id do tipo int
+            var idProp = entityType.GetProperty("Id");
+            if (idProp != null && idProp.PropertyType == typeof(int))
             {
-                //Verifica se a propriedade é uma coleção (IENumerable)
-                //Mas exclui "string" que é um tipo especial que também implementa IENumerable.
-                if (typeof(IEnumerable).IsAssignableFrom(navigation.ClrType) && navigation.ClrType != typeof(string))
+                var tableName = entityTypeModel.GetTableName();
+                var sequenceName = $"{tableName}_id_seq";
+
+                var maxId = entityList
+                    .Select(e => (int?)idProp.GetValue(e))
+                    .Where(id => id.HasValue)
+                    .Max();
+
+                if (maxId.HasValue)
                 {
-                    Type relatedType = navigation.ClrType; //Identifica o tipo da entidade filha
-                    Microsoft.EntityFrameworkCore.Metadata.IProperty foreignKey = navigation.ForeignKey.Properties.First(); //Chave estrangeira na entidade filha
-
-                    //Usa reflection para acessar o DbSet da entidade filha
-                    object? dbSet = typeof(DbContext).GetMethod("Set")
-                        ?.MakeGenericMethod(relatedType)
-                        .Invoke(this, null);
-
-                    //Converte dbSet para dynamic para acessar o Local
-                    dynamic? localSet = dbSet;
-
-                    if (localSet == null)
+                    try
                     {
-                        eventLog2.LogEventViewer("Não foi possível acessar o DbSet para o tipo relacionado ::: " + entry.ToString() ?? "", "wWarning");
-                        //throw new InvalidOperationException("Não foi possível acessar o DbSet para o tipo relacionado.");
-                        return;  //apenas sai fora
+                        var sql = $"SELECT setval(pg_get_serial_sequence('\"{tableName}\"', 'Id'), {maxId.Value})";
+                        this.Database.ExecuteSqlRaw(sql);
                     }
-                    // Identifica registros órfãos rastreados no contexto
-                    List<object> orphans = ((IEnumerable<object>)localSet.Local)
-                    .Where(child =>
+                    catch (Exception ex)
                     {
-                        System.Reflection.PropertyInfo? childProperty = child.GetType().GetProperty(foreignKey.Name);
-                        if (childProperty == null)
-                            return false; //Ignora se a propriedade não for encontrada
+                        _eventLog.LogEventViewer($"Erro ao sincronizar sequência '{sequenceName}': {ex.Message}", "wError");
+                    }
+                }
+            }
 
-                        object? propertyValue = childProperty.GetValue(child); //Valor na entidade filha
-                        object? parentValue = entry.CurrentValues[foreignKey.Name]; //Valor na entidade pai
+            var fkProps = entityTypeModel.GetProperties()
+                .Where(p => p.Name != "Id" &&
+                            p.Name.EndsWith("Id", StringComparison.OrdinalIgnoreCase) &&
+                            IsPrimitiveOrNullable(p.ClrType))
+                .ToList();
 
-                        //Retorna se o registro é órfão, montando uma lista "ToList()"
-                        return propertyValue == null || !propertyValue.Equals(parentValue);
+            foreach (var fkPropModel in fkProps)
+            {
+                var fkName = fkPropModel.Name;
+                var fkProp = entityType.GetProperty(fkName);
+                if (fkProp == null) continue;
+
+                string refTableName = fkName.Replace("Id", "", StringComparison.OrdinalIgnoreCase);
+                var refDbSetProp = dbSets.FirstOrDefault(p =>
+                    p.Name.Equals(refTableName, StringComparison.OrdinalIgnoreCase));
+                if (refDbSetProp == null) continue;
+
+                var refEntityType = refDbSetProp.PropertyType.GetGenericArguments().First();
+                var refEntityTypeModel = model.FindEntityType(refEntityType);
+                if (refEntityTypeModel == null) continue;
+
+                var refDbSet = refDbSetProp.GetValue(this);
+                if (refDbSet is not IQueryable refQueryable) continue;
+
+                var refIdProp = refEntityType.GetProperty("Id");
+                if (refIdProp == null) continue;
+
+                var refList = refQueryable.Cast<object>().ToList();
+
+                var refIds = new HashSet<object>();
+
+                foreach (var r in refList)
+                {
+                    var id = refIdProp.GetValue(r);
+                    if (id != null)
+                    {
+                        refIds.Add(id);
+                    }
+                }
+
+                var orfaos = entityList
+                    .Where(e =>
+                    {
+                        var fkValue = fkProp.GetValue(e);
+                        var isOrfao = fkValue != null && !refIds.Contains(fkValue);
+
+                        if (!isOrfao) return false;
+
+                        var entry = this.Entry(e);
+                        return entry.State == EntityState.Added ||
+                               entry.State == EntityState.Unchanged ||
+                               entry.State == EntityState.Modified;
                     })
                     .ToList();
 
-                    // Remove os registros órfãos
-                    if (orphans.Any())
+                if (orfaos.Any())
+                {
+                    _eventLog.LogEventViewer($"Removendo {orfaos.Count} órfãos de {entityType.Name} via {fkName}", "wInfo");
+
+                    totalRemovidos += orfaos.Count;
+
+                    foreach (var orfao in orfaos)
                     {
-                        localSet.RemoveRange(orphans);
+                        this.Entry(orfao).State = EntityState.Deleted;
                     }
                 }
             }
         }
+        return totalRemovidos;
     }
 
+    private static bool IsPrimitiveOrNullable(Type type)
+    {
+        if (type.IsPrimitive || type == typeof(string) || type == typeof(Guid)) return true;
+
+        var underlying = Nullable.GetUnderlyingType(type);
+        return underlying != null && (underlying.IsPrimitive || underlying == typeof(Guid));
+    }
+
+
     /* Exemplo de uso do método abaixo (passando parâmetros obrigatórios):
-     * DeleteOrphans(db.Senhas,                // DbSet da entidade pai
-                     db.UsuariosWeb,           // DbSet da entidade filha
+     * DeleteOrphans(Senhas,                   // DbSet da entidade pai
+                     UsuariosWeb,              // DbSet da entidade filha
                      child => child.SenhaId    // Selecionador da chave estrangeira na entidade filha
                      );
+       __OU__
+
+       DeleteOrphans<Pedido, ItemPedido, int>(pedido => pedido.Id, item => item.PedidoId);
      *
      */
-
-    public void DeleteOrphans<TParent, TChild>(DbSet<TParent> parentSet,
-                                               DbSet<TChild> childSet,
-                                               Func<TChild, object> parentKeySelector)
-                                               where TParent : class
-                                               where TChild : class
+    public void DeleteOrphans<TParent, TChild, TKey>(
+                              Func<TParent, TKey> parentKeySelector,
+                              Func<TChild, TKey> childForeignKeySelector)
+                              where TParent : class
+                              where TChild : class
     {
-        // Obter todas as chaves dos registros pais existentes
-        HashSet<object> parentKeys = parentSet
-            .Select(e => EF.Property<object>(e, "Id")) // Assume "Id" como chave primária
+        var parentSet = Set<TParent>();
+        var childSet = Set<TChild>();
+
+        var parentKeys = parentSet
+            .Select(parentKeySelector)
             .ToHashSet();
 
-        // Identificar os registros órfãos nos filhos
-        List<TChild> orphans = childSet
-            .Where(child => !parentKeys.Contains(parentKeySelector(child)))
+        var orphans = childSet
+            .Where(child => !parentKeys.Contains(childForeignKeySelector(child)))
             .ToList();
 
-        // Excluir os registros órfãos
         if (orphans.Any())
         {
             childSet.RemoveRange(orphans);
         }
     }
-
     #endregion SaveChanges
 
     /*
@@ -406,6 +568,8 @@ public class Db : DbContext
         {
             entity.ToTable("Assinaturas");
             entity.HasKey(e => e.Id).HasName("iAssinaturas1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Crbio1)
                 .HasMaxLength(12)
@@ -430,6 +594,9 @@ public class Db : DbContext
         {
             entity.ToTable("ClasseExames");
             entity.HasKey(e => e.Id).HasName("iClasseExames1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
+
 
             entity.Property(e => e.LaboratorioExterno)
                 .HasMaxLength(20)
@@ -470,6 +637,8 @@ public class Db : DbContext
         {
             entity.ToTable("ControleDeAcesso");
             entity.HasKey(e => e.Id).HasName("iControleDeAcesso1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.HasIndex(e => e.SenhaId, "iControleDeAcesso2").IsUnique();
         });
@@ -478,6 +647,8 @@ public class Db : DbContext
         {
             entity.ToTable("ControleDePerfil");
             entity.HasKey(e => e.Id).HasName("iControleDePerfil1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.HasIndex(e => new { e.MenuNivelMenu, e.MenuNivel1, e.MenuNivel2, e.MenuNivel3, e.MenuNivel4 }, "iControleDePerfil3");
 
@@ -508,6 +679,9 @@ public class Db : DbContext
             entity.ToTable("ControleDePerfilMenu");
 
             entity.Property(e => e.Id).HasColumnName("Id");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
+
             entity.Property(e => e.Coluna).HasColumnName("Coluna");
             entity.Property(e => e.Menu).HasColumnName("Menu");
             entity.Property(e => e.Area).HasColumnName("Area");
@@ -541,6 +715,8 @@ public class Db : DbContext
         {
             entity.ToTable("ControleDePerfilModelo");
             entity.HasKey(e => e.Id).HasName("iControleDePerfilModelo1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.HasIndex(e => new { e.MenuNivel1, e.MenuNivel2, e.MenuNivel3, e.MenuNivel4, e.MenuNivel5 }, "iControleDePerfilModelo2");
 
@@ -565,6 +741,8 @@ public class Db : DbContext
         {
             entity.ToTable("ControleDePerfilTipo");
             entity.HasKey(e => e.Id).HasName("iControleDePerfilTipo1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Tipo)
                 .HasMaxLength(10)
@@ -575,6 +753,8 @@ public class Db : DbContext
         {
             entity.ToTable("Cor");
             entity.HasKey(e => e.Id).HasName("iCor1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.HasIndex(e => e.Cor1, "iCor2").IsUnique();
 
@@ -588,6 +768,8 @@ public class Db : DbContext
         {
             entity.ToTable("Empresa");
             entity.HasKey(e => e.Id).HasName("iEmpresa1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.HasIndex(e => new { e.Sigla, e.Matriz, e.Filial }, "iEmpresa2").IsUnique();
 
@@ -706,6 +888,8 @@ public class Db : DbContext
         {
             entity.ToTable("ERTemporario");
             entity.HasKey(e => e.Id).HasName("iERTemporario1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.DataEntrega).HasColumnType("datetime");
             entity.Property(e => e.DataExame).HasColumnType("datetime");
@@ -720,6 +904,8 @@ public class Db : DbContext
         {
             entity.ToTable("EstadoCivil");
             entity.HasKey(e => e.Id).HasName("iEstadoCivil1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Descricao)
                 .HasMaxLength(10)
@@ -730,6 +916,8 @@ public class Db : DbContext
         {
             entity.ToTable("ExamesExportados");
             entity.HasKey(e => e.Id).HasName("iExamesExportados1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
@@ -771,6 +959,8 @@ public class Db : DbContext
         {
             entity.ToTable("ExamesImpressos");
             entity.HasKey(e => e.Id).HasName("iExamesImpressos1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.DataExame).HasColumnType("datetime");
             entity.Property(e => e.DataImpresso).HasColumnType("datetime");
@@ -795,6 +985,8 @@ public class Db : DbContext
         {
             entity.ToTable("ExamesPendentes");
             entity.HasKey(e => e.Id).HasName("iExamesPendentes1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.ContaExame)
                 .HasMaxLength(11)
@@ -846,6 +1038,8 @@ public class Db : DbContext
         {
             entity.ToTable("ExamesRealizados");
             entity.HasKey(e => e.Id).HasName("iExamesRealizados1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
@@ -900,6 +1094,8 @@ public class Db : DbContext
         {
             entity.ToTable("ExamesRealizadosAM");
             entity.HasKey(e => e.Id).HasName("iExamesRealizadosAM1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
@@ -954,6 +1150,8 @@ public class Db : DbContext
         {
             entity.ToTable("FichasInternas");
             entity.HasKey(e => e.Id).HasName("iFichasInternas1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Coluna1)
                 .HasMaxLength(6)
@@ -1059,6 +1257,8 @@ public class Db : DbContext
         {
             entity.ToTable("FichasLotes");
             entity.HasKey(e => e.Id).HasName("iFichasLotes1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.ContaExame)
                 .HasMaxLength(11)
@@ -1118,6 +1318,8 @@ public class Db : DbContext
         {
             entity.ToTable("FichasPlanilhas");
             entity.HasKey(e => e.Id).HasName("iFichasPlanilhas1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.ContaExame)
                 .HasMaxLength(11)
@@ -1177,6 +1379,8 @@ public class Db : DbContext
         {
             entity.ToTable("Instituicao");
             entity.HasKey(e => e.Id).HasName("iInstituicao1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.HasIndex(e => e.Sigla, "iInstituicao2").IsUnique();
 
@@ -1269,6 +1473,8 @@ public class Db : DbContext
         {
             entity.ToTable("IntegracaoDadosArmazenamento");
             entity.HasKey(e => e.Id).HasName("iIntegracaoDadosArmazenamento1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Host)
                 .HasMaxLength(500)
@@ -1285,6 +1491,8 @@ public class Db : DbContext
         {
             entity.ToTable("IntegracaoDadosConfiguracao");
             entity.HasKey(e => e.Id).HasName("iIntegracaoDadosConfiguracao1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.HoraEncerramento)
                 .HasMaxLength(5)
@@ -1323,6 +1531,8 @@ public class Db : DbContext
         {
             entity.ToTable("IntegracaoDadosExecucao");
             entity.HasKey(e => e.Id).HasName("iIntegracaoDadosExecucao1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Header)
                 .HasMaxLength(1000)
@@ -1351,6 +1561,8 @@ public class Db : DbContext
         {
             entity.ToTable("IntegracaoDadosExecucaoArquivo");
             entity.HasKey(e => e.Id).HasName("iIntegracaoDadosExecucaoArquivo1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.NomeArquivo)
                 .HasMaxLength(200)
@@ -1374,6 +1586,8 @@ public class Db : DbContext
         {
             entity.ToTable("IntegracaoDadosLayout");
             entity.HasKey(e => e.Id).HasName("iIntegracaoDadosLayout1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.DataFinal).HasColumnType("datetime");
             entity.Property(e => e.DataInicial).HasColumnType("datetime");
@@ -1390,6 +1604,8 @@ public class Db : DbContext
         {
             entity.ToTable("IntegracaoDadosPeriodicidade");
             entity.HasKey(e => e.Id).HasName("iIntegracaoDadosPeriodicidade1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.TipoPeriodoExtracao)
                 .HasMaxLength(12)
@@ -1400,6 +1616,8 @@ public class Db : DbContext
         {
             entity.ToTable("ItensExamesRealizados");
             entity.HasKey(e => e.Id).HasName("iItensExamesRealizados1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.CitoDescricao)
                 .HasMaxLength(2000)
@@ -1475,6 +1693,8 @@ public class Db : DbContext
         {
             entity.ToTable("ItensExamesRealizadosAM");
             entity.HasKey(e => e.Id).HasName("iItensExamesRealizadosAM1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.CitoDescricao)
                 .HasMaxLength(2000)
@@ -1552,6 +1772,8 @@ public class Db : DbContext
         {
             entity.ToTable("LogArquivos");
             entity.HasKey(e => e.Id).HasName("iLogArquivos1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Data).HasColumnType("datetime");
             entity.Property(e => e.DataPeriodoFinal).HasColumnType("datetime");
@@ -1573,6 +1795,8 @@ public class Db : DbContext
         {
             entity.ToTable("Logradouro");
             entity.HasKey(e => e.Id).HasName("iLogradouro1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Descricao)
                 .HasMaxLength(8)
@@ -1583,6 +1807,8 @@ public class Db : DbContext
         {
             entity.ToTable("Medicos");
             entity.HasKey(e => e.Id).HasName("iMedicos1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.CRM)
                 .HasMaxLength(15)
@@ -1606,6 +1832,8 @@ public class Db : DbContext
         {
             entity.ToTable("MemoAuxiliar");
             entity.HasKey(e => e.Id).HasName("iMemoAuxiliar1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Linha1)
                 .HasMaxLength(250)
@@ -1634,6 +1862,8 @@ public class Db : DbContext
         {
             entity.ToTable("Pacientes");
             entity.HasKey(e => e.Id).HasName("iPacientes1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Bairro)
                 .HasMaxLength(45)
@@ -1732,6 +1962,8 @@ public class Db : DbContext
         {
             entity.ToTable("PlanoExames");
             entity.HasKey(e => e.Id).HasName("iPlanoExames1");
+            entity.Property(e => e.Id)
+                  .ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.CitoParteDescricao)
                 .HasMaxLength(100)
@@ -1748,7 +1980,6 @@ public class Db : DbContext
             entity.Property(e => e.ICH)
                 .HasColumnType("decimal(18, 2)")
                 .HasColumnName("ICH");
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.LaboratorioExterno)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -1782,6 +2013,7 @@ public class Db : DbContext
         {
             entity.ToTable("Postos");
             entity.HasKey(e => e.Id).HasName("iPostos1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.Property(e => e.Bairro)
                 .HasMaxLength(45)
@@ -1824,6 +2056,7 @@ public class Db : DbContext
         {
             entity.ToTable("Rastreamentos");
             entity.HasKey(e => e.Id).HasName("iRastreamentos1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.Property(e => e.DataOcorrencia).HasColumnType("datetime");
             entity.Property(e => e.Exception)
@@ -1864,7 +2097,6 @@ public class Db : DbContext
         {
             entity.ToTable("ReCaptchaMonitoramento");
             entity.HasKey(e => e.Id).HasName("iReCaptchaMonitoramento1");
-
             entity.Property(e => e.Id)
                 .ValueGeneratedOnAdd(); // Importante: Identity (auto incremento)
 
@@ -1886,6 +2118,7 @@ public class Db : DbContext
         {
             entity.ToTable("Requisitar");
             entity.HasKey(e => e.Id).HasName("iRequisitar1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.Property(e => e.ClasseExamesNome)
                 .HasMaxLength(50)
@@ -1960,6 +2193,7 @@ public class Db : DbContext
         {
             entity.ToTable("Senhas");
             entity.HasKey(e => e.Id).HasName("iSenhas1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.HasIndex(e => e.LoginUsuario, "iSenhas2").IsUnique();
 
@@ -1993,7 +2227,6 @@ public class Db : DbContext
 
             entity.HasKey(e => e.Id)
                   .HasName("iConfiguracoes1");
-
             entity.Property(e => e.Id)
                   .ValueGeneratedNever(); // <<< importante: desativa o IDENTITY
 
@@ -2031,6 +2264,7 @@ public class Db : DbContext
         {
             entity.ToTable("Sexo");
             entity.HasKey(e => e.Id).HasName("iSexo1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.HasIndex(e => e.Sigla, "iSexo2").IsUnique();
 
@@ -2046,6 +2280,7 @@ public class Db : DbContext
         {
             entity.ToTable("SituacaoExames");
             entity.HasKey(e => e.Id).HasName("iSituacaoExames1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.Property(e => e.Descricao)
                 .HasMaxLength(40)
@@ -2056,6 +2291,7 @@ public class Db : DbContext
         {
             entity.ToTable("TabelaExames");
             entity.HasKey(e => e.Id).HasName("iTabelaExames1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.HasIndex(e => e.SiglaTabela, "iTabelaExames2").IsUnique();
 
@@ -2071,6 +2307,7 @@ public class Db : DbContext
         {
             entity.ToTable("TextosProntos");
             entity.HasKey(e => e.Id).HasName("iTextosProntos1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.HasIndex(e => e.Texto, "iTextosProntos2").IsUnique();
 
@@ -2083,6 +2320,7 @@ public class Db : DbContext
         {
             entity.ToTable("TipoSanguineo");
             entity.HasKey(e => e.Id).HasName("iTipoSanguineo1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.Property(e => e.DoaPara)
                 .HasMaxLength(40)
@@ -2103,6 +2341,7 @@ public class Db : DbContext
         {
             entity.ToTable("TituloExames");
             entity.HasKey(e => e.Id).HasName("iTituloExames1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.Property(e => e.TituloExame)
                 .HasMaxLength(60)
@@ -2114,6 +2353,7 @@ public class Db : DbContext
         {
             entity.ToTable("UF");
             entity.HasKey(e => e.Id).HasName("iUF1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.HasIndex(e => e.Sigla, "iUF2").IsUnique();
 
@@ -2129,6 +2369,7 @@ public class Db : DbContext
         {
             entity.ToTable("UsuariosWeb");
             entity.HasKey(e => e.Id).HasName("iUsuariosWeb1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.Property(e => e.CNPJEmpresa)
                 .HasMaxLength(14)

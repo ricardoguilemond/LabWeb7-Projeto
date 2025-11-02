@@ -4,7 +4,7 @@
     {
         private static void Embaralhar(ref char[] array, int vezes)
         {
-            Random rand = new(DateTime.Now.Millisecond);
+            Random rand = new(DateTime.UtcNow.Millisecond);
 
             for (int i = 1; i <= vezes; i++)
             {

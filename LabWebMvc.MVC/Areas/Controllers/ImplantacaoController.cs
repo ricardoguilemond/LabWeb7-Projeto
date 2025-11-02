@@ -1,6 +1,7 @@
 ﻿using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
+using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
@@ -23,9 +24,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
             GeralController geralController,
             IEventLogHelper eventLogHelper,
             Imagem imagem,
+            ExclusaoService exclusaoService,
             IHttpContextAccessor httpContextAccessor,
             MovimentacaoImportacao movimentacaoImportacao)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
         {
             _httpContextAccessor = httpContextAccessor;
             _movimentacaoImportacao = movimentacaoImportacao;

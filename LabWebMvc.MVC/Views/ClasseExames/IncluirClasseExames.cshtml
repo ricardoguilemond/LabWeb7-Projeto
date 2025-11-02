@@ -84,8 +84,8 @@
                     @Html.TextBoxFor(p => p.RefExame, new { @class = "form-control", @placeholder = "Entre com o nome da Folha de Exame", @required = "required", @style = "text-transform:uppercase" } )
                 </div>
                 <div class="form-group">
-                    @Html.Label("Sigla ou parte nome do Laboratório Externo/Apoio (20 caracteres) ou VAZIO se não existir", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.LaboratorioExterno, new { @class = "form-control capitalize", @placeholder = "Entre com a Instituição/Laboratório Externo", @required = "required" })
+                    @Html.Label("Sigla do Laboratório Externo/Apoio ou deixe vazio!", null, new { @class = "" })
+                    @Html.TextBoxFor(p => p.LaboratorioExterno, new { @class = "form-control capitalize", @placeholder = "Entre com a Instituição/Laboratório Externo" })
                 </div>
                 <div class="form-group">
                     @{

@@ -95,7 +95,7 @@ namespace LabWebMvc.MVC.Integracoes.Exportacao
                         HashSet<string> objRegistrosArquivo = [];   // importantíssimo para não ter linhas iguais
 
                         bool primeiraLinha = true;
-                        string DataHoraExportacao = DateTime.Now.ToString("yyyyMMdd HH:mm:ss");
+                        string DataHoraExportacao = DateTime.UtcNow.ToString("yyyyMMdd HH:mm:ss");
 
                         foreach (var dado in dados)
                         {
@@ -152,7 +152,7 @@ namespace LabWebMvc.MVC.Integracoes.Exportacao
                             _db.LogArquivos.Add(new LogArquivos
                             {
                                 StrRef = string.Format("Id Paciente: {0} Nome: {1}", dado.Id.ToString(), dado.p.NomePaciente),
-                                Data = DateTime.Now,
+                                Data = DateTime.UtcNow,
                                 DataPeriodoInicial = primeiraData,
                                 DataPeriodoFinal = ultimaData,
                                 IntegracaoDadosLayoutId = layout.Id,

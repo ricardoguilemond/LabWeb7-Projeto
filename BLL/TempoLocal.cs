@@ -5,7 +5,7 @@
         // Método síncrono
         public string ObterDataHoraServidor(string? formato = null)
         {
-            DateTime agora = DateTime.Now;
+            DateTime agora = DateTime.UtcNow;
 
             return formato?.ToLower() switch
             {
@@ -17,7 +17,7 @@
         // Método assíncrono sem dependência externa
         public Task<DateTime?> ObterDataHoraServidorAsync()
         {
-            return Task.FromResult<DateTime?>(DateTime.Now);
+            return Task.FromResult<DateTime?>(DateTime.UtcNow);
         }
 
         // Método assíncrono com formatação

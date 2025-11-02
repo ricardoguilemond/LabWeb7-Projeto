@@ -1,6 +1,7 @@
 ﻿using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
+using Google.Api;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.ExpressionCombiner;
@@ -27,8 +28,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                       GeralController geralController, 
                                       IEventLogHelper eventLogHelper, 
                                       Imagem imagem,
-                                      IConcorrenciaService concorrenciaService)
-               : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+                                      IConcorrenciaService concorrenciaService,
+                                      ExclusaoService exclusaoService)
+               : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
         { 
            _concorrenciaService = concorrenciaService;  
         }
@@ -47,135 +49,95 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         private async void AtualizaFolhaNoPlanoDeExames(vmClasseExames vm)
         {
-            //vm.Id é o código da Conta Folha em "ClasseExames"
             string contaFolha = Utils.Utils.RetornaCodigoFolhaExame(_db, vm.Id);
 
-            //ATUALIZAÇÃO DO MHI NA FOLHA DE EXAMES COM O ID DA FOLHA CRIADO
-            ClasseExames? folha = await _db.ClasseExames.Where(s => s.Id == vm.Id).FirstOrDefaultAsync();
+            // Atualiza MHI na folha de exames
+            var folha = await _db.ClasseExames.FirstOrDefaultAsync(s => s.Id == vm.Id);
             if (folha != null)
             {
-                Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+                var strategy = _db.Database.CreateExecutionStrategy();
                 await strategy.ExecuteAsync(async () =>
                 {
-                    using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
+                    try
                     {
-                        try
-                        {
-                            folha.MHI = vm.Id;
-
-                            await _db.SaveChangesAsync();  //só atualização do registro
-
-                            await transaction.CommitAsync();
-                        }
-                        catch (Exception ex)
-                        {
-                            await transaction.RollbackAsync();
-
-                            _eventLogHelper.LogEventViewer("ERRO: Tentando salvar Folha de Exame padrão em PlanoExames", "wWarning");
-
-                            TrataExceptionViewer(ex, _db);
-                        }
-                        finally
-                        { }
+                        folha.MHI = vm.Id;
+                        await _db.SaveChangesAsync(); // apenas atualização
+                    }
+                    catch (Exception ex)
+                    {
+                        _eventLogHelper.LogEventViewer("ERRO: Tentando salvar Folha de Exame padrão em PlanoExames", "wWarning");
+                        TrataExceptionViewer(ex, _db);
                     }
                 });
             }
 
-            //ATUALIZAÇÃO DO PLANO DE EXAMES
-            List<TabelaExames> listaTabelaExames = await _db.TabelaExames.Where(s => s.Bloqueado == 0).OrderBy(o => o.Id).ToListAsync();  //Tabela de Exames, Header/Identificadores das Tabelas de Preços dos Exames.
-            foreach (TabelaExames? item in listaTabelaExames)
+            // Atualiza ou cria registros no plano de exames
+            var listaTabelaExames = await _db.TabelaExames
+                .Where(s => s.Bloqueado == 0)
+                .OrderBy(o => o.Id)
+                .ToListAsync();
+
+            foreach (var item in listaTabelaExames)
             {
-                string idTabela = item.Id.ToString().PadLeft(2, '0');   //Código que identifica a Tabela de Preço
+                string idTabela = item.Id.ToString().PadLeft(2, '0');
 
-                PlanoExames? planoExames = await _db.PlanoExames.Where(s => s.ContaExame == contaFolha && s.ExameId == vm.Id && s.TabelaExamesId == item.Id).FirstOrDefaultAsync();
-                if (planoExames == null && vm.RefExame != null)
+                var planoExames = await _db.PlanoExames
+                    .FirstOrDefaultAsync(s => s.ContaExame == contaFolha && s.ExameId == vm.Id && s.TabelaExamesId == item.Id);
+
+                var strategy = _db.Database.CreateExecutionStrategy();
+                await strategy.ExecuteAsync(async () =>
                 {
-                    //Caso não exista, cria o registro com nome relativo ao FOLHA DE EXAME (e este registro deverá ser único agora)
-                    //E se já existir não vai fazer nada...
-
-                    Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
-                    await strategy.ExecuteAsync(async () =>
+                    try
                     {
-                        using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
+                        if (planoExames == null && vm.RefExame != null)
                         {
-                            try
+                            var plano = new PlanoExames
                             {
-                                PlanoExames plano = new()
-                                {
-                                    ExameId = vm.Id,
-                                    RefExame = vm.RefExame.ToUpper(),
-                                    RefItem = vm.RefExame.ToUpper(),
-                                    Descricao = vm.RefExame.ToUpper(),
-                                    TabelaExamesId = item.Id,   //identifica a unidade de saúde na TabelaExames
-                                    ContaExame = contaFolha,
-                                    QCH = 0,
-                                    Etiqueta = 0,
-                                    Etiquetas = 0,
-                                    AlinhaLaudo = 0,
-                                    Seleciona = 0,
-                                    NaoMostrar = 0
-                                };
+                                ExameId = vm.Id,
+                                RefExame = vm.RefExame.ToUpper(),
+                                RefItem = vm.RefExame.ToUpper(),
+                                Descricao = vm.RefExame.ToUpper(),
+                                TabelaExamesId = item.Id,
+                                ContaExame = contaFolha,
+                                QCH = 0,
+                                Etiqueta = 0,
+                                Etiquetas = 0,
+                                AlinhaLaudo = 0,
+                                Seleciona = 0,
+                                NaoMostrar = 0
+                            };
 
-                                await _db.PlanoExames.AddAsync(plano);
-
-                                await _db.SaveChangesAsync();
-
-                                await transaction.CommitAsync();
-                            }
-                            catch (Exception ex)
-                            {
-                                await transaction.RollbackAsync();
-
-                                _eventLogHelper.LogEventViewer("ERRO: Tentando salvar Folha de Exame padrão em PlanoExames, mas parece que já existia uma.", "wWarning");
-
-                                TrataExceptionViewer(ex, _db);
-                            }
-                            finally
-                            { }
+                            await _db.PlanoExames.AddAsync(plano);
+                            await _db.SaveChangesAsync();
                         }
-                    });
-                }
-                else  //Alteração do registro existente no plano de exames
-                {
-                    Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
-                    await strategy.ExecuteAsync(async () =>
+                        else if (planoExames != null && vm.RefExame != null)
+                        {
+                            planoExames.RefExame = vm.RefExame.ToUpper();
+                            planoExames.RefItem = vm.RefExame.ToUpper();
+                            planoExames.Descricao = vm.RefExame.ToUpper();
+                            planoExames.QCH = 0;
+                            planoExames.Etiqueta = 0;
+                            planoExames.Etiquetas = 0;
+                            planoExames.AlinhaLaudo = 0;
+                            planoExames.Seleciona = 0;
+                            planoExames.NaoMostrar = 0;
+
+                            await _db.SaveChangesAsync();
+                        }
+                    }
+                    catch (Exception ex)
                     {
-                        using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
-                        {
-                            try
-                            {
-                                if (planoExames != null)
-                                {
-                                    planoExames.RefExame = (vm.RefExame ?? throw new ArgumentNullException(nameof(vm.RefExame))).ToUpper();   //não pode vir nulo!
-                                    planoExames.RefItem = vm.RefExame.ToUpper();    //tratado acima, pois não pode vir nulo
-                                    planoExames.Descricao = vm.RefExame.ToUpper();  //tratado acima, pois não pode vir nulo
-                                    planoExames.QCH = 0;
-                                    planoExames.Etiqueta = 0;
-                                    planoExames.Etiquetas = 0;
-                                    planoExames.AlinhaLaudo = 0;
-                                    planoExames.Seleciona = 0;
-                                    planoExames.NaoMostrar = 0;
+                        string msg = planoExames == null
+                            ? "ERRO: Tentando salvar Folha de Exame padrão em PlanoExames, mas parece que já existia uma."
+                            : "Falhou ao tentar salvar Folha de Exame padrão em PlanoExames.";
 
-                                    await _db.SaveChangesAsync();
-
-                                    await transaction.CommitAsync();
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                await transaction.RollbackAsync();
-
-                                _eventLogHelper.LogEventViewer("Falhou ao tentar salvar Folha de Exame padrão em PlanoExames.", "wWarning");
-
-                                TrataExceptionViewer(ex, _db);
-                            }
-                            finally
-                            { }
-                        }
-                    });
-                }
+                        _eventLogHelper.LogEventViewer(msg, "wWarning");
+                        TrataExceptionViewer(ex, _db);
+                    }
+                });
             }
         }
+
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
@@ -254,96 +216,104 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("IncluirClasseExames")]
         public async Task<IActionResult> SalvarClasseExames(vmClasseExames vm)
         {
-            string redirecionaUrl = "ClasseExames".MontaUrl(base.HttpContext.Request);
+            string redirecionaUrl = "ClasseExames".MontaUrl(HttpContext.Request);
 
             if (string.IsNullOrEmpty(vm.RefExame))
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Formulário possui campos obrigatórios vazios" });
+                return Json(new
+                {
+                    titulo = MensagensError_pt_BR.ErroFalhou,
+                    mensagem = "Formulário possui campos obrigatórios vazios",
+                    sucesso = false
+                });
 
-            /* ATENÇÃO:
-             * Como os navegadores atuais possuem segurança que impossibilitam pegar o path completo, o nome do path será sempre "fakepath",
-             * ENTÃO, SOMENTE AQUI (GetImagem...) CAPTURAMOS O ARQUIVO E GUARDAMOS A PASTA COMPLETA E CORRETA DE ONDE FOI FEITO O UPLOAD, E TAMBÉM GUARDANOS OS bytes[] do arquivo.
-             */
+            // Captura e prepara as imagens de assinatura
             GetImagemAss1(vm);
             GetImagemAss2(vm);
             GetImagemAss3(vm);
             GetImagemAss4(vm);
 
-            ClasseExames? ClasseExames = await _db.ClasseExames.Where(s => s.RefExame == vm.RefExame && s.LaboratorioExterno == vm.LaboratorioExterno).SingleOrDefaultAsync();
-            if (ClasseExames != null)
+            // Verifica duplicidade
+            var registroExistente = await _db.ClasseExames
+                .SingleOrDefaultAsync(s => s.RefExame == vm.RefExame && s.LaboratorioExterno == vm.LaboratorioExterno);
+
+            if (registroExistente != null)
             {
-                if (ClasseExames.RefExame == vm.RefExame && ClasseExames.LaboratorioExterno == vm.LaboratorioExterno)
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Já existe Folha de Exame nesta Instituição cadastrada com este nome", action = "", sucesso = false });
-                else
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Já existe esta Folha de Exame cadastrada", action = "", sucesso = false });
+                return Json(new
+                {
+                    titulo = MensagensError_pt_BR.ErroFalhou,
+                    mensagem = "Já existe Folha de Exame nesta Instituição cadastrada com este nome",
+                    action = "",
+                    sucesso = false
+                });
             }
 
             int novoId = 0;
+            var res = new
+            {
+                titulo = Mensagens_pt_BR.Sucesso,
+                mensagem = "Folha de Exame foi salva",
+                action = "",
+                sucesso = true
+            };
 
-            var res = new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Folha de Exame foi salva", action = "", sucesso = true };
-
-            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            var strategy = _db.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {
-                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
+                await using var transaction = await _db.Database.BeginTransactionAsync();
+                try
                 {
-                    try
+                    var folha = new ClasseExames
                     {
-                        ClasseExames folha = new()
-                        {
-                            //Colunas NÃO nulas:
-                            RefExame = vm.RefExame.ToUpper(),
-                            Marcado = vm.Marcado,
-                            Etiquetas = vm.Etiquetas,
-                            Planilha = vm.Planilha,
-                            MHI = vm.MHI,
+                        RefExame = vm.RefExame.ToUpper(),
+                        Marcado = vm.Marcado,
+                        Etiquetas = vm.Etiquetas,
+                        Planilha = vm.Planilha,
+                        MHI = vm.MHI,
+                        LaboratorioExterno = vm.LaboratorioExterno?.ToUpper(),
+                        TipoMapa = string.IsNullOrEmpty(vm.TipoMapa) ? "C" : vm.TipoMapa,
+                        Assinatura1 = vm.Assinatura1,
+                        Assinatura2 = vm.Assinatura2,
+                        Assinatura3 = vm.Assinatura3,
+                        Assinatura4 = vm.Assinatura4,
+                        ImgAss1 = vm.ImgAss1,
+                        ImgAss2 = vm.ImgAss2,
+                        ImgAss3 = vm.ImgAss3,
+                        ImgAss4 = vm.ImgAss4,
+                        NomeAss1 = vm.NomeAss1,
+                        NomeAss2 = vm.NomeAss2,
+                        NomeAss3 = vm.NomeAss3,
+                        NomeAss4 = vm.NomeAss4
+                    };
 
-                            //Colunas que aceitam nulas:
-                            LaboratorioExterno = vm.LaboratorioExterno?.ToUpper(),
-                            TipoMapa = string.IsNullOrEmpty(vm.TipoMapa) ? "C" : vm.TipoMapa,
-                            //Se mostra ou não as imagens das assinaturas nos exames (S/N)
-                            Assinatura1 = vm.Assinatura1,
-                            Assinatura2 = vm.Assinatura2,
-                            Assinatura3 = vm.Assinatura3,
-                            Assinatura4 = vm.Assinatura4,
-                            /*
-                             * Gravando as Imagens
-                             */
-                            ImgAss1 = vm.ImgAss1,
-                            ImgAss2 = vm.ImgAss2,
-                            ImgAss3 = vm.ImgAss3,
-                            ImgAss4 = vm.ImgAss4,
-                            //Nome das imagens
-                            NomeAss1 = vm.NomeAss1,
-                            NomeAss2 = vm.NomeAss2,
-                            NomeAss3 = vm.NomeAss3,
-                            NomeAss4 = vm.NomeAss4
-                        };
+                    await _db.ClasseExames.AddAsync(folha);
 
-                        await _db.ClasseExames.AddAsync(folha);
+                    //aqui na inclusão de Folha é obrigatório o true para sincronizar o Id gerado, reorganizando os Ids na tabela.
+                    await _db.SaveChangesWithSyncAsync(sincroniza: true, quantidadeRegistrosMaximo: 99); // executa DeleteOrphans
 
-                        await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
 
-                        await transaction.CommitAsync();
+                    novoId = folha.Id;
+                    vm.Id = novoId;
+                    vm.MHI = novoId;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
 
-                        novoId = folha.Id;   //obtém o Id recém-gerado
+                    _eventLogHelper.LogEventViewer($"ERRO: Falha ao salvar folha de exame. {ex.Message}", "wWarning");
+                    TrataExceptionViewer(ex, _db);
 
-                        vm.Id = novoId;
-                        vm.MHI = novoId;
-                    }
-                    catch (Exception ex)
+                    res = new
                     {
-                        await transaction.RollbackAsync();
-
-                        _eventLogHelper.LogEventViewer("ERRO: Folha de exame não foi salva", "wWarning");
-
-                        TrataExceptionViewer(ex, _db);
-
-                        res = new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de exame não foi salva", action = "", sucesso = false };
-                    }
+                        titulo = MensagensError_pt_BR.ErroFalhou,
+                        mensagem = "Folha de exame não foi salva",
+                        action = "",
+                        sucesso = false
+                    };
                 }
             });
 
-            if (novoId > 0) //Se gerou a folha, vamos atualizar a Folha no Plano de Exames (Header da Folha)
+            if (novoId > 0)
             {
                 AtualizaFolhaNoPlanoDeExames(vm);
             }
@@ -482,71 +452,106 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirClasseExames")]
         public async Task<IActionResult> ExcluirClasseExames(int id)
         {
-            await using Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync();
-            var consultaExames = await
-            (from ple in _db.PlanoExames
-
-             join era in _db.ItensExamesRealizados on ple.ExameId equals era.ClasseExamesId into groupItensExames
-             from subgroup1 in groupItensExames.DefaultIfEmpty() //left join
-
-             join eram in _db.ItensExamesRealizadosAM on ple.ExameId equals eram.ClasseExamesId into groupItensExamesAM
-             from subgroup2 in groupItensExamesAM.DefaultIfEmpty() //left join
-
-                 //não vale as contas de Folha de Exame, pois elas serão excluídas mais adiante.
-             where ple.ExameId == id && ple.ContaExame.Substring(4, 7) != "0000000"
-
-             select new
-             {
-                 id = ple.Id,
-                 descricao = ple.Descricao
-             }
-                ).FirstOrDefaultAsync();
-
-            if (consultaExames != null)
-                return Json(new { titulo = "Erro", mensagem = $"Não posso excluir a Folha Nº {id}, pois há exames em uso.", sucesso = false });
-
-            //Controle de concorrências para a exclusão
-            bool podeExcluir = await _concorrenciaService.ValidarOuAtualizarConcorrenciaAsync("Exclusao_De_Folha_De_Exame");
-
-            if (!podeExcluir)
-            {
-                await transaction.RollbackAsync();
-                return Json(new { titulo = "Erro", mensagem = "Existe uma operação concorrente em andamento. Aguarde!", sucesso = false });
-            }
-
-            try
-            {
-                // Excluir registros
-                int exclusaoPlanoExames = await _db.PlanoExames.Where(pe => pe.ExameId == id).ExecuteDeleteAsync();
-
-                if (exclusaoPlanoExames > 0)
+            return await _exclusaoService.ExcluirEntidadeComConcorrenciaAsync<ClasseExames>(
+                _db,
+                id,
+                "Exclusao_De_Folha_De_Exame",
+                ce => ce.Id == id,
+                async () =>
                 {
-                    await _db.ClasseExames.Where(ce => ce.Id == id).ExecuteDeleteAsync();
+                    var existeVinculo = await (
+                        from ple in _db.PlanoExames
+                        join era in _db.ItensExamesRealizados on ple.ExameId equals era.ClasseExamesId into groupItensExames
+                        from subgroup1 in groupItensExames.DefaultIfEmpty()
+                        join eram in _db.ItensExamesRealizadosAM on ple.ExameId equals eram.ClasseExamesId into groupItensExamesAM
+                        from subgroup2 in groupItensExamesAM.DefaultIfEmpty()
+                        where ple.ExameId == id && ple.ContaExame.Substring(4, 7) != "0000000"
+                        select ple.Id
+                    ).AnyAsync();
+
+                    return !existeVinculo;
                 }
-
-                await _concorrenciaService.RedefinirIncremento("ClasseExames", _db, transaction); // Agora usa a mesma transação
-
-                await transaction.CommitAsync();
-
-                await _concorrenciaService.RedefinirIncremento("ClasseExames", _db, transaction); // Agora usa a mesma transação
-
-                await transaction.CommitAsync();
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return Json(new { titulo = "Erro", mensagem = "Erro ao excluir registro: " + ex.Message, sucesso = false });
-            }
-            finally
-            {
-                await _concorrenciaService.RemoverConcorrenciaAsync("Exclusao_De_Folha_De_Exame");
-
-                //Desta tabela, se for o último registro que foi excluído, então vamos recuperar o auto incremento, para evitar perder sequência até 99.
-                //await _concorrenciaService.RedefinirIncremento("ClasseExames");
-            }
-
-            return Json(new { titulo = "Sucesso", mensagem = $"Folha Nº {id} excluída!", sucesso = true });
+            );
         }
+
+        //public async Task<IActionResult> ExcluirClasseExames(int id)
+        //{
+        //    await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        //    // Verifica se há exames vinculados à folha
+        //    var consultaExames = await
+        //        (from ple in _db.PlanoExames
+        //         join era in _db.ItensExamesRealizados on ple.ExameId equals era.ClasseExamesId into groupItensExames
+        //         from subgroup1 in groupItensExames.DefaultIfEmpty()
+        //         join eram in _db.ItensExamesRealizadosAM on ple.ExameId equals eram.ClasseExamesId into groupItensExamesAM
+        //         from subgroup2 in groupItensExamesAM.DefaultIfEmpty()
+        //         where ple.ExameId == id && ple.ContaExame.Substring(4, 7) != "0000000"
+        //         select new { ple.Id, ple.Descricao }
+        //        ).FirstOrDefaultAsync();
+
+        //    if (consultaExames != null)
+        //    {
+        //        return Json(new
+        //        {
+        //            titulo = "Erro",
+        //            mensagem = $"Não posso excluir a Folha Nº {id}, pois há exames em uso.",
+        //            sucesso = false
+        //        });
+        //    }
+
+        //    // Valida concorrência
+        //    bool podeExcluir = await _concorrenciaService.ValidarOuAtualizarConcorrenciaAsync("Exclusao_De_Folha_De_Exame");
+
+        //    if (!podeExcluir)
+        //    {
+        //        await transaction.RollbackAsync();
+        //        return Json(new
+        //        {
+        //            titulo = "Erro",
+        //            mensagem = "Existe uma operação concorrente em andamento. Aguarde!",
+        //            sucesso = false
+        //        });
+        //    }
+
+        //    try
+        //    {
+        //        // Exclui os registros vinculados
+        //        int exclusaoPlanoExames = await _db.PlanoExames
+        //            .Where(pe => pe.ExameId == id)
+        //            .ExecuteDeleteAsync();
+
+        //        if (exclusaoPlanoExames > 0)
+        //        {
+        //            await _db.ClasseExames
+        //                .Where(ce => ce.Id == id)
+        //                .ExecuteDeleteAsync();
+        //        }
+
+        //        await transaction.CommitAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await transaction.RollbackAsync();
+        //        return Json(new
+        //        {
+        //            titulo = "Erro",
+        //            mensagem = "Erro ao excluir registro: " + ex.Message,
+        //            sucesso = false
+        //        });
+        //    }
+        //    finally
+        //    {
+        //        await _concorrenciaService.RemoverConcorrenciaAsync("Exclusao_De_Folha_De_Exame");
+        //    }
+
+        //    return Json(new
+        //    {
+        //        titulo = "Sucesso",
+        //        mensagem = $"Folha Nº {id} excluída!",
+        //        sucesso = true
+        //    });
+        //}
+
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]

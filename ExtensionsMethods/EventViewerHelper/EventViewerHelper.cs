@@ -41,7 +41,7 @@ namespace ExtensionsMethods.EventViewerHelper
         private void RegistraLogEventViewer(string mensagem, string tipoEvento = "wInfo", string origem = "LabWebMvc")
         {
             string identificacao = "[" + (ObterCNPJ?.Invoke() ?? "") + " - " + (ObterNomeEmpresa?.Invoke() ?? "") + "]";
-            string mensagemFinal = $"{identificacao}[LabWebMvc - Sistema Laboratorial] ::: {mensagem}, em {DateTime.Now}";
+            string mensagemFinal = $"{identificacao}[LabWebMvc - Sistema Laboratorial] ::: {mensagem}, em {DateTime.UtcNow}";
 
             if (!CustomEventTypeMapping.TryGetValue(tipoEvento, out CustomLogEntryType tipo))
             {
@@ -96,7 +96,7 @@ namespace ExtensionsMethods.EventViewerHelper
         {
             try
             {
-                string linha = $"[{DateTime.Now}] Origem: {origem}, Tipo: {tipo}, Mensagem: {mensagem}{Environment.NewLine}";
+                string linha = $"[{DateTime.UtcNow}] Origem: {origem}, Tipo: {tipo}, Mensagem: {mensagem}{Environment.NewLine}";
                 string? diretorio = Path.GetDirectoryName(LinuxLogPath);
 
                 if (!Directory.Exists(diretorio))
@@ -165,7 +165,7 @@ namespace ExtensionsMethods.EventViewerHelper
         private async Task RegistraLogEventViewerAsync(string mensagem, string tipoEvento = "wInfo", string origem = "LabWebMvc")
         {
             string identificacao = "[" + (ObterCNPJ?.Invoke() ?? "") + " - " + (ObterNomeEmpresa?.Invoke() ?? "") + "]";
-            string mensagemFinal = $"{identificacao}[LabWebMvc - Sistema Laboratorial] ::: {mensagem}, em {DateTime.Now}";
+            string mensagemFinal = $"{identificacao}[LabWebMvc - Sistema Laboratorial] ::: {mensagem}, em {DateTime.UtcNow}";
 
             if (!CustomEventTypeMapping.TryGetValue(tipoEvento, out CustomLogEntryType tipo))
             {
@@ -187,7 +187,7 @@ namespace ExtensionsMethods.EventViewerHelper
         {
             try
             {
-                string linha = $"[{DateTime.Now}] Origem: {origem}, Tipo: {tipo}, Mensagem: {mensagem}{Environment.NewLine}";
+                string linha = $"[{DateTime.UtcNow}] Origem: {origem}, Tipo: {tipo}, Mensagem: {mensagem}{Environment.NewLine}";
                 string? diretorio = Path.GetDirectoryName(LinuxLogPath);
 
                 if (!string.IsNullOrWhiteSpace(diretorio) && !Directory.Exists(diretorio))

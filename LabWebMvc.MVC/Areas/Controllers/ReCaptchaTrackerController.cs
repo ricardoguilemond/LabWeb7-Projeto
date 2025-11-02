@@ -1,5 +1,6 @@
 ﻿using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.ValidadorDeSessao;
+using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Interfaces.Criptografias;
@@ -18,8 +19,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             GeralController geralController,
             IEventLogHelper eventLogHelper,
             Imagem imagem,
+            ExclusaoService exclusaoService,
             CreateAssessmentSample captchaService)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
         {
             _captchaService = captchaService;
         }
