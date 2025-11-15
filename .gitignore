@@ -379,6 +379,7 @@ LabWebMvc.MVC/desktop.ini
 # Arquivos de configuração sensíveis
 LabWebMvc.MVC/appsettings.json
 LabWebMvc.MVC/appsettings.*.json
+LabWebMvc.MVC/appsettings.*
 LabWebMvc.MVC/Settings.cs
 ServicoExportacao/appsettings2.json
 LabWebMvc.MVC/Interfaces/Criptografias/CriptoDecripto.cs
