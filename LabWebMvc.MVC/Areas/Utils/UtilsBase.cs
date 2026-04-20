@@ -389,7 +389,7 @@ namespace LabWebMvc.MVC.Areas.Utils
         {
             try
             {
-                DateTime agora = DateTime.UtcNow;
+                DateTime agora = DateTime.Now;
                 ReCaptchaMonitoramento? totalReCaptcha = db.ReCaptchaMonitoramento.Where(r => r.MesReferencia == agora.Month && r.AnoReferencia == agora.Year).FirstOrDefault();
 
                 if (totalReCaptcha != null)

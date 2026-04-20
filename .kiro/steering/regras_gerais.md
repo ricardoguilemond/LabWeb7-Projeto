@@ -51,6 +51,18 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
 - Connection strings devem apontar para `ConexaoPostgreSQL` / `PSQLConnectionString`
 - Funções de data/hora: usar `NOW()` do PostgreSQL (não `GETDATE()` ou `SYSDATETIME()`)
 
+## Data e Hora
+
+- Nunca usar `DateTime.UtcNow`, `DateTime.Now` ou `DateTime.Today` para gravar no banco
+- Sempre obter data/hora do servidor via `_geralController.ObterDataHoraServidor()`
+  ou via query `SELECT NOW()` no PostgreSQL
+- Para colunas `timestamp without time zone`: usar `DateTime` com `Kind=Unspecified`
+  ou `Kind=Local` (nunca `Kind=UTC`)
+- Para colunas `timestamp with time zone`: usar `DateTime` com `Kind=UTC`
+  ou `DateTimeOffset`
+- Nunca confiar na data/hora do computador cliente
+- Em logs e EventLog, `DateTime.UtcNow` é aceitável (não grava no banco)
+
 ## Controllers e Views
 
 - `ValidacaoGenerica` deve retornar `View()` sem model (dados via ViewBag)
@@ -69,6 +81,17 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
   o médico e o paciente devem continuar salvos no banco.
 - Nunca envolver o cadastro de Médico/Paciente dentro da mesma
   transação que processa os itens de exame na Requisição.
+
+## Regras de Negócio — Exclusão de Registros
+
+- Antes de excluir qualquer registro, verificar se existem
+  dados relacionados em tabelas filhas (FKs).
+- Se houver vínculos, retornar mensagem assertiva informando
+  o motivo (ex: "Paciente possui exames vinculados e não pode
+  ser excluído").
+- Nunca deixar a exceção de FK do PostgreSQL ser a única
+  proteção — sempre validar no controller antes do DELETE.
+- Documentos de análise devem ser criados em `Documentos do Kiro/`.
 
 ## Encoding
 

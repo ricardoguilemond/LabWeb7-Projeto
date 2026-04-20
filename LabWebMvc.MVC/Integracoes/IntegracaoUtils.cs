@@ -99,7 +99,7 @@ namespace LabWebMvc.MVC.Integracoes
         {
             if (TipoPeriodo == TipoPeriodoExtracao.Diario) //pega todos os registros de onten e de hoje até um momento qualquer
             {
-                DateTime dataInicio = new(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day);
+                DateTime dataInicio = DateTime.Today;
                 DateTime dataFim = dataInicio;
                 dataInicio = dataFim.AddDays(-1);
                 return new DateTime[] { dataInicio, dataFim };

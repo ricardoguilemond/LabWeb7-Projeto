@@ -40,7 +40,7 @@ public class GraficosController : BaseController
         }
         ViewBag.TextoMenu = new List<string> { "Gráfico ReCaptcha" };
 
-        var agora = DateTime.UtcNow;
+        var agora = DateTime.Now;
 
         var graficoModel = new GraficoModel
         {
@@ -51,7 +51,7 @@ public class GraficosController : BaseController
             Valores = model.Valores,
             TipoGrafico = "line",
             RodapeTextoPrincipal = "Fonte: Dados internos",
-            RodapeSubtexto = "Atualizado em " + DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm"),
+            RodapeSubtexto = "Atualizado em " + DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
             RodapeIconeCss = "fa fa-info-circle",
             RodapeLinkTexto = "Ver detalhes sobre custos para ReCaptcha Enterprise",
             RodapeLinkUrl = @"https://cloud.google.com/recaptcha/docs/compare-tiers?hl=pt-br",

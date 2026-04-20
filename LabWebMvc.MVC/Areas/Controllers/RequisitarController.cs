@@ -1008,9 +1008,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                          _db.Empresa.FirstOrDefault()?.UF?.TrimEnd() + " - CEP: " +
                                          _db.Empresa.FirstOrDefault()?.CEP?.FormatarCEP();
 
-            string dataHoje = DateTime.UtcNow.ToString("dd/MM/yyyy");
-            string horaHoje = DateTime.UtcNow.ToString("HH:mm");
-            string dataPrevista = DateTime.UtcNow.AddDays(7).ToString("dd/MM/yyyy"); //padrão 7 dias para entrega inicial 
+            string dataHoje = DateTime.Now.ToString("dd/MM/yyyy");
+            string horaHoje = DateTime.Now.ToString("HH:mm");
+            string dataPrevista = DateTime.Now.AddDays(7).ToString("dd/MM/yyyy"); //padrão 7 dias para entrega inicial 
 
             //Impressão do Cupom
             var sb = new StringBuilder();
@@ -1093,7 +1093,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("Requisitar/GetLancamentosHoje")]
         public IActionResult GetLancamentosHoje()
         {
-            var hoje = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
+            var hoje = DateTime.Today; // Kind=Local, compatível com timestamp without time zone
 
             var requisicoesHoje = _db.Requisitar
                 .Include(r => r.Pacientes)

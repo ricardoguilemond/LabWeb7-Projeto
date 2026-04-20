@@ -452,6 +452,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirClasseExames")]
         public async Task<IActionResult> ExcluirClasseExames(int id)
         {
+            // Verificação adicional: ExamesPendentes e Requisitar que possuem FK para ClasseExames
+            bool possuiVinculosDiretos = await _db.ExamesPendentes.AnyAsync(e => e.ClasseExamesId == id)
+                                      || await _db.Requisitar.AnyAsync(r => r.ClasseExamesId == id);
+
+            if (possuiVinculosDiretos)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de Exames possui exames pendentes ou requisições vinculadas e não pode ser excluída", action = "", sucesso = false });
+
             return await _exclusaoService.ExcluirEntidadeComConcorrenciaAsync<ClasseExames>(
                 _db,
                 id,

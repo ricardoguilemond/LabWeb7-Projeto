@@ -154,7 +154,7 @@ namespace LabWebMvc.MVC.Integracoes
                     dadosExecucao.Resumo = parameter.Resumo;
                     dadosExecucao.Summary = parameter.Summary;
                     dadosExecucao.Sucesso = parameter.Sucesso;
-                    dadosExecucao.Termino = DateTime.UtcNow;
+                    dadosExecucao.Termino = DateTime.Now;
 
                     if (parameter != null && (parameter.NomeServico != null))
                     {
@@ -260,7 +260,7 @@ namespace LabWebMvc.MVC.Integracoes
                                             string minuto = s.Length > 1 ? s[1] : "0";
                                             string segundo = s.Length > 2 ? s[2] : "0";
                                             TimeSpan horaConfigurada = new(Convert.ToInt32(hora), Convert.ToInt32(minuto), Convert.ToInt32(segundo));
-                                            if (new TimeSpan(DateTime.UtcNow.Hour, DateTime.UtcNow.Minute, 0) < horaConfigurada)
+                                            if (new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0) < horaConfigurada)
                                             {
                                                 //ainda não deu o horario para executar
                                                 continue;
@@ -277,14 +277,14 @@ namespace LabWebMvc.MVC.Integracoes
                                             string minuto = s.Length > 1 ? s[1] : "0";
                                             string segundo = s.Length > 2 ? s[2] : "0";
                                             TimeSpan horaConfigurada = new(Convert.ToInt32(hora), Convert.ToInt32(minuto), Convert.ToInt32(segundo));
-                                            if (new TimeSpan(DateTime.UtcNow.Hour, DateTime.UtcNow.Minute, 0) > horaConfigurada)
+                                            if (new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0) > horaConfigurada)
                                             {
                                                 //já passou do horário de executar o serviço
                                                 continue;
                                             }
                                         }
                                     }
-                                    DateTime dataHoje = DateTime.UtcNow.Date;
+                                    DateTime dataHoje = DateTime.Today;
                                     if (configuracao.Periodicidade == (int)TipoPeriodoExtracao.Diario)//diario=1
                                     {
                                         //verifica se ja rodou anteriormente
@@ -296,7 +296,7 @@ namespace LabWebMvc.MVC.Integracoes
                                     }
                                     if (configuracao.Periodicidade == (int)TipoPeriodoExtracao.Mensal)//mensal=3
                                     {
-                                        if (configuracao.DiaExecucao == DateTime.UtcNow.Day)
+                                        if (configuracao.DiaExecucao == DateTime.Now.Day)
                                         {
                                             if (db.IntegracaoDadosExecucao.Any(a => a.IntegracaoDadosLayoutId == layout.Id && (DateTime.Compare(a.Inicio, dataHoje) == 0) && (a.Termino > DateTime.MinValue) && a.Sucesso))
                                             {

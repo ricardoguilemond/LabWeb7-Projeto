@@ -1,4 +1,4 @@
-﻿using ExtensionsMethods.EventViewerHelper;
+﻿﻿using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
@@ -36,7 +36,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         public ReCaptchaLimiteResult RegistrarSolicitacaoReCaptcha(string nomeProjeto)
         {
-            DateTime agora = DateTime.UtcNow;
+            DateTime agora = DateTime.Now;
 
             // Sempre registra a tentativa, independentemente do sucesso da verificação de limite, pois o Google registra todas as tentativas!
             try
@@ -93,7 +93,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             try
             {
-                DateTime agora = DateTime.UtcNow;
+                DateTime agora = DateTime.Now;
                 ReCaptchaMonitoramento? monitor = _db.ReCaptchaMonitoramento
                     .FirstOrDefault(x => x.NomeProjeto == nomeProjeto &&
                                          x.MesReferencia == agora.Month &&

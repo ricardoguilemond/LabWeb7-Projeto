@@ -235,6 +235,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirMedico")]
         public async Task<IActionResult> ExcluirMedico(int id)
         {
+            // Verifica se o médico possui vínculos antes de excluir
+            bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.MedicoId == id)
+                               || await _db.ExamesRealizados.AnyAsync(e => e.MedicoId == id)
+                               || await _db.ExamesPendentes.AnyAsync(e => e.MedicoId == id);
+
+            if (possuiVinculos)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Médico possui requisições ou exames vinculados e não pode ser excluído", action = "", sucesso = false });
+
             Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(async () =>
             {

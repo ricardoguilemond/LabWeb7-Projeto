@@ -9,7 +9,6 @@ using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Transactions;
 using static BLL.UtilBLL;
 using static ExtensionsMethods.Genericos.Enumeradores;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
@@ -103,7 +102,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     PlanoExames = vm,
                     PartialView = "Partials/_PartialPlanoConta"
                 };
-                return _geralController.ValidacaoGenerica(vmResposta);
+                //Dados auxiliares em ViewBag para o GeralController
+                ViewBag.TextoMenu = new object[] { "Tabela de Plano de Exames", false };
+                ViewBag.TotalRegistros = totalRegistros.ToString();
+                ViewBag.TotalTabela = totalTabela.ToString();
+                ViewBag.ListaDados = dados;
+                return PartialView("Partials/_PartialPlanoConta", vmResposta);
             }
             else
             {   //quando monta o grid pela primeira vez ou reconstrói tudo!
@@ -116,7 +120,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     ListaDados = dados.Cast<dynamic>().ToList(),
                     PlanoExames = vm
                 };
-                return _geralController.ValidacaoGenerica(vmResposta);
+                //Dados auxiliares em ViewBag para o _Layout
+                ViewBag.TextoMenu = new object[] { "Tabela de Plano de Exames", false };
+                ViewBag.TotalRegistros = totalRegistros.ToString();
+                ViewBag.TotalTabela = totalTabela.ToString();
+                ViewBag.ListaDados = dados;
+                return View(vmResposta);
             }
         }
 
@@ -125,8 +134,45 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("IncluirPlanoExames")]
         public IActionResult IncluirPlanoExames()
         {
-            //Finalização da View
-            return _geralController.Validacao("IncluirPlanoExames", "Cadastro de Plano de Exames");
+            // Recupera o número da folha do TempData (definido no Index)
+            int numeroFolha = 1;
+            if (TempData.ContainsKey("NumeroFolha"))
+            {
+                int.TryParse(TempData["NumeroFolha"]?.ToString(), out numeroFolha);
+                TempData.Keep();
+            }
+
+            // Carrega as contas principais da folha para os dropdowns
+            var contasPrincipais = _db.PlanoExames
+                .Where(p => p.ExameId == numeroFolha
+                         && p.ContaExame.Substring(7, 4) == "0000"
+                         && p.ContaExame.Substring(4, 3) != "000"
+                         && p.TabelaExamesId == (int)IdPadrao.SUS)
+                .OrderBy(o => o.ContaExame)
+                .ToList();
+
+            var vm = new vmPlanoExames
+            {
+                ExameId = numeroFolha,
+                Item1 = contasPrincipais.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Text = c.Id.ToString(),
+                    Value = c.Id.ToString()
+                }).ToList(),
+                Item2 = contasPrincipais.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Text = c.ContaExame,
+                    Value = c.Id.ToString()
+                }).ToList(),
+                Item3 = contasPrincipais.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Text = c.Descricao,
+                    Value = c.Id.ToString()
+                }).ToList()
+            };
+
+            ViewBag.TextoMenu = new object[] { "Cadastro de Plano de Exames", false };
+            return View(vm);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -191,60 +237,71 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //Cria a conta igual para todas as instituições existentes, como modelo do SUS.
             try
             {
-                List<TabelaExames> tabelaExames = await _db.TabelaExames.OrderBy(o => o.Id).ToListAsync();  //Todos os nomes das tabelas das instituições existentes (tabelas de plano).
-                                                                                                            //Cadastrar o plano de exame para cada uma das instituições de plano, sendo o SUS um padrão (SUS é uma conta espelho)!
-                using (TransactionScope trans = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
-                {
-                    foreach (TabelaExames? tabela in tabelaExames)
-                    {
-                        await _db.PlanoExames.AddAsync(new PlanoExames()
-                        {
-                            //Colunas NÃO nulas:
-                            ExameId = vm.ExameId,  //relativo a Folha
-                            CitoInstituicao = vm.CitoInstituicao,  //tem default 0 (não nulo)  na tabela
-                            CitoTituloExame = vm.CitoTituloExame,  //tem default 0 (não nulo)  na tabela
-                            RefExame = vm.RefExame,
-                            RefItem = vm.RefItem,
-                            Descricao = vm.Descricao,
-                            TabelaExamesId = tabela.Id,  //relativo a instituição do plano, sendo 1 = SUS = padrão = espelho.
-                            ContaExame = vm.ContaExame,
-                            QCH = string.IsNullOrEmpty(vm.QCH.ToString()) ? 0 : vm.QCH,
-                            Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta,
-                            Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas,
-                            AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo,
-                            Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona,
-                            NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar,
+                List<TabelaExames> tabelaExames = await _db.TabelaExames.OrderBy(o => o.Id).ToListAsync();
 
-                            //Aceitam nulo
-                            CitoTituloFolha = vm.CitoTituloFolha,
-                            CitoDescricao = vm.CitoDescricao,
-                            CitoParteDescricao = vm.CitoParteDescricao,
-                            TABELACH = vm.TABELACH,
-                            ICH = vm.ICH,
-                            UnidadeMedida = vm.UnidadeMedida,
-                            Referencia = vm.Referencia,
-                            Laudo = vm.Laudo,
-                            MapaHorizontal = string.IsNullOrEmpty(vm.MapaHorizontal) ? string.Empty : vm.MapaHorizontal.ToUpper(),    //Sinonímia SEMPRE maiúscula
-                            ResultadoMinimo = vm.ResultadoMinimo,
-                            ResultadoMaximo = vm.ResultadoMaximo,
-                            LaboratorioExterno = vm.LaboratorioExterno,
-                            PrazoResultadoDias = string.IsNullOrEmpty(vm.PrazoResultadoDias.ToString()) ? 15 : vm.PrazoResultadoDias   //prazo de 15 dias para segurança
-                        });
-                    }
-                    if (_db.SaveChanges() <= 0)
+                Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () =>
+                {
+                    using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                     {
-                        LoggerFile.Write("ERRO: Plano de Exames não foi salvo: " + vm.ContaExame.ToString());
-                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = MensagensError_pt_BR.ErroSemDadoAtualizado, action = "", sucesso = false });
+                        try
+                        {
+                            foreach (TabelaExames? tabela in tabelaExames)
+                            {
+                                await _db.PlanoExames.AddAsync(new PlanoExames()
+                                {
+                                    //Colunas NÃO nulas:
+                                    ExameId = vm.ExameId,
+                                    CitoInstituicao = vm.CitoInstituicao,
+                                    CitoTituloExame = vm.CitoTituloExame,
+                                    RefExame = vm.RefExame,
+                                    RefItem = vm.RefItem,
+                                    Descricao = vm.Descricao,
+                                    TabelaExamesId = tabela.Id,
+                                    ContaExame = vm.ContaExame,
+                                    QCH = string.IsNullOrEmpty(vm.QCH.ToString()) ? 0 : vm.QCH,
+                                    Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta,
+                                    Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas,
+                                    AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo,
+                                    Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona,
+                                    NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar,
+
+                                    //Aceitam nulo
+                                    CitoTituloFolha = vm.CitoTituloFolha,
+                                    CitoDescricao = vm.CitoDescricao,
+                                    CitoParteDescricao = vm.CitoParteDescricao,
+                                    TABELACH = vm.TABELACH,
+                                    ICH = vm.ICH,
+                                    UnidadeMedida = vm.UnidadeMedida,
+                                    Referencia = vm.Referencia,
+                                    Laudo = vm.Laudo,
+                                    MapaHorizontal = string.IsNullOrEmpty(vm.MapaHorizontal) ? string.Empty : vm.MapaHorizontal.ToUpper(),
+                                    ResultadoMinimo = vm.ResultadoMinimo,
+                                    ResultadoMaximo = vm.ResultadoMaximo,
+                                    LaboratorioExterno = vm.LaboratorioExterno,
+                                    PrazoResultadoDias = string.IsNullOrEmpty(vm.PrazoResultadoDias.ToString()) ? 15 : vm.PrazoResultadoDias
+                                });
+                            }
+
+                            await _db.SaveChangesAsync();
+                            await transaction.CommitAsync();
+
+                            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Plano de Exames foi salvo", action = "", sucesso = true });
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync();
+                            _eventLogHelper.LogEventViewer("[PlanoExames] Salvar - Erro: " + ex.Message, "wError");
+                            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Plano de Exames NÃO foi salvo", action = "", sucesso = false });
+                        }
                     }
-                    trans.Complete();
-                }
+                });
             }
-            catch (TransactionAbortedException ex)
+            catch (Exception ex)
             {
-                //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLogHelper.LogEventViewer("[PlanoExames] Salvar - TransactionAbortedException Message: " + ex.Message, "wError");
+                _eventLogHelper.LogEventViewer("[PlanoExames] Salvar - Erro geral: " + ex.Message, "wError");
             }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Plano de Exames foi salvo", action = "", sucesso = true });
+            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Plano de Exames NÃO foi salvo", action = "", sucesso = false });
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -402,10 +459,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 ViewBag.TipoContaExame = planoExames.ContaExame.Substring(7, 4) == "0000" ? TipoContaExame.Principal : TipoContaExame.Item;
             }
-            catch (TransactionAbortedException ex)
+            catch (Exception ex)
             {
-                //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLogHelper.LogEventViewer("[PlanoExames] Alterar - TransactionAbortedException Message: " + ex.Message, "wError");
+                _eventLogHelper.LogEventViewer("[PlanoExames] Alterar - Erro: " + ex.Message, "wError");
             }
 
             TempData.Clear();
@@ -445,58 +501,51 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //Altera os registros igualmente para todas as instituições existentes, pelo modelo que veio alterado!
             try
             {
-                List<TabelaExames> tabelaExames = await _db.TabelaExames.OrderBy(o => o.Id).ToListAsync();  //Todos os nomes das tabelas das instituições existentes (tabelas de plano).
-                                                                                                            //Alterar a conta em todas as instituições (inclusive o próprio SUS)
-                using (TransactionScope trans = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                List<TabelaExames> tabelaExames = await _db.TabelaExames.OrderBy(o => o.Id).ToListAsync();
+
+                Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () =>
                 {
-                    foreach (TabelaExames? tabela in tabelaExames)
+                    using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                     {
-                        PlanoExames? plano = planoExames.Where(s => s.TabelaExamesId == tabela.Id).First();
+                        try
+                        {
+                            foreach (TabelaExames? tabela in tabelaExames)
+                            {
+                                PlanoExames? plano = planoExames.Where(s => s.TabelaExamesId == tabela.Id).First();
 
-                        //Não aceitam nulos
-                        plano.CitoInstituicao = string.IsNullOrEmpty(vm.CitoInstituicao.ToString()) ? 0 : vm.CitoInstituicao;  //tem default 0 (não nulo)  na tabela
-                        plano.CitoTituloExame = string.IsNullOrEmpty(vm.CitoTituloExame.ToString()) ? 0 : vm.CitoTituloExame;  //tem default 0 (não nulo)  na tabela
-                        //plano.RefExame = vm.RefExame.ToUpper();
-                        //plano.RefItem = vm.RefItem;
+                                plano.CitoInstituicao = string.IsNullOrEmpty(vm.CitoInstituicao.ToString()) ? 0 : vm.CitoInstituicao;
+                                plano.CitoTituloExame = string.IsNullOrEmpty(vm.CitoTituloExame.ToString()) ? 0 : vm.CitoTituloExame;
+                                plano.Descricao = contaExame.Substring(7, 4) == "0000" ? vm.Descricao.ToUpper() : vm.Descricao;
+                                plano.Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta;
+                                plano.Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas;
+                                plano.AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo;
+                                plano.Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona;
+                                plano.NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar;
+                                plano.PrazoResultadoDias = string.IsNullOrEmpty(vm.PrazoResultadoDias.ToString()) ? 15 : vm.PrazoResultadoDias;
+                                plano.CitoTituloFolha = vm.CitoTituloFolha;
+                                plano.CitoDescricao = vm.CitoDescricao;
+                            }
 
-                        plano.Descricao = contaExame.Substring(7, 4) == "0000" ? vm.Descricao.ToUpper() : vm.Descricao;
+                            await _db.SaveChangesAsync();
+                            await transaction.CommitAsync();
 
-                        //plano.QCH = string.IsNullOrEmpty(vm.QCH.ToString()) ? 0 : vm.QCH;
-                        plano.Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta;
-                        plano.Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas;
-                        plano.AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo;
-                        plano.Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona;
-                        plano.NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar;
-                        plano.PrazoResultadoDias = string.IsNullOrEmpty(vm.PrazoResultadoDias.ToString()) ? 15 : vm.PrazoResultadoDias;   //prazo de 15 dias para segurança
-
-                        //Aceitam nulo
-                        plano.CitoTituloFolha = vm.CitoTituloFolha;
-                        plano.CitoDescricao = vm.CitoDescricao;
-                        //plano.CitoParteDescricao = vm.CitoParteDescricao;
-                        //plano.TABELACH = vm.TABELACH;
-                        //plano.ICH = vm.ICH;
-                        //plano.UnidadeMedida = vm.UnidadeMedida;
-                        //plano.Referencia = vm.Referencia;
-                        //plano.Laudo = vm.Laudo;
-                        //plano.MapaHorizontal = string.IsNullOrEmpty(vm.MapaHorizontal) ? string.Empty : vm.MapaHorizontal.ToUpper();    //Sinonímia SEMPRE maiúscula
-                        //plano.ResultadoMinimo = vm.ResultadoMinimo;
-                        //plano.ResultadoMaximo = vm.ResultadoMaximo;
-                        //plano.LaboratorioExterno = vm.LaboratorioExterno;
+                            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Plano de Exames foi atualizado", action = "", sucesso = true });
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync();
+                            _eventLogHelper.LogEventViewer("[PlanoExames] Alteração - Erro: " + ex.Message, "wError");
+                            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Plano de Exames NÃO foi atualizado", action = "", sucesso = false });
+                        }
                     }
-                    if (_db.SaveChanges() <= 0)
-                    {
-                        _eventLogHelper.LogEventViewer("[PlanoExames] SalvarAlteracao - Plano de Exames não foi salvo: " + vm.ContaExame.ToString(), "wError"); 
-                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = MensagensError_pt_BR.ErroSemDadoAtualizado, action = "", sucesso = false });
-                    }
-                    trans.Complete();
-                }
+                });
             }
-            catch (TransactionAbortedException ex)
+            catch (Exception ex)
             {
-                //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLogHelper.LogEventViewer("[PlanoExames] Alteracao - TransactionAbortedException Message: " + ex.Message, "wError");
+                _eventLogHelper.LogEventViewer("[PlanoExames] Alteração - Erro geral: " + ex.Message, "wError");
             }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Plano de Exames foi atualizado", action = "", sucesso = true });
+            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Plano de Exames NÃO foi atualizado", action = "", sucesso = false });
         }
 
         /* Atenção: a excusão com "ExecuteDeleteAsync" não pode ter um TransactionScope, porque ela fica executando async mas o método é imediatamente liberado  */
@@ -506,37 +555,54 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirPlanoExames")]
         public async Task<IActionResult> ExcluirPlanoExames(int id)
         {
-            bool erro = false;
-            int exclusao = 0;  //change delete multiple records
+            // Busca o registro para identificar a ContaExame e TabelaExamesId
+            PlanoExames? registro = await _db.PlanoExames.Where(x => x.Id == id).AsNoTracking().FirstOrDefaultAsync();
+            if (registro == null)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Registro não foi encontrado", action = "", sucesso = false });
 
-            ///TODO/// PRECISA BLOQUEAR A DELEÇÃO QUANDO A CONTA JÁ ESTIVER SENDO UTILIZADA EM ALGUM PACIENTE.
+            string contaExame = registro.ContaExame;
+
+            // Verifica se a ContaExame está sendo utilizada em exames realizados, AM ou requisições
+            bool possuiVinculos = await _db.ItensExamesRealizados.AnyAsync(i => i.ContaExame == contaExame)
+                               || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ContaExame == contaExame)
+                               || await _db.Requisitar.AnyAsync(r => r.ContaExame == contaExame);
+
+            // Se for conta principal (termina em 0000), verificar também os itens filhos
+            if (!possuiVinculos && contaExame.Substring(7, 4) == "0000")
+            {
+                string prefixoConta = contaExame.Substring(0, 7);
+                possuiVinculos = await _db.ItensExamesRealizados.AnyAsync(i => i.ContaExame.StartsWith(prefixoConta))
+                              || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ContaExame.StartsWith(prefixoConta))
+                              || await _db.Requisitar.AnyAsync(r => r.ContaExame.StartsWith(prefixoConta));
+            }
+
+            if (possuiVinculos)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Esta conta do Plano de Exames possui itens de exames realizados ou requisições vinculadas e não pode ser excluída", action = "", sucesso = false });
+
+            // Exclusão
+            bool erro = false;
+            int exclusao = 0;
 
             try
             {
-                PlanoExames? registro = await _db.PlanoExames.Where(x => x.Id == id).FirstOrDefaultAsync();
-                if (registro != null && registro.Id == id)
+                if (contaExame.Substring(7, 4) == "0000")
                 {
-                    string contaExame = registro.ContaExame;
-
-                    if (contaExame.Substring(7, 4) == "0000")
-                    {
-                        //Significa que é uma conta principal, vai ter que excluir ela e todos os seus itens, para que não fiquem órfãos!
-                        contaExame = contaExame.Substring(0, 7);
-                        exclusao = await _db.PlanoExames.Where(d => d.ContaExame.Substring(0, 7) == contaExame && d.ContaExame.Substring(5, 3) != "000").ExecuteDeleteAsync();  //a partir do Core 7 apenas!
-                    }
-                    else
-                    {
-                        //método deleção em massa a partir do Core 7 = ExecuteDelete()
-                        exclusao = await _db.PlanoExames.Where(d => d.ContaExame == contaExame).ExecuteDeleteAsync();
-                    }
+                    // Conta principal: exclui ela e todos os seus itens
+                    string prefixoConta = contaExame.Substring(0, 7);
+                    exclusao = await _db.PlanoExames.Where(d => d.ContaExame.StartsWith(prefixoConta) && d.ContaExame.Substring(5, 3) != "000").ExecuteDeleteAsync();
+                }
+                else
+                {
+                    // Item: exclui em todas as tabelas de exames
+                    exclusao = await _db.PlanoExames.Where(d => d.ContaExame == contaExame).ExecuteDeleteAsync();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _eventLogHelper.LogEventViewer("[PlanoExames] Excluir - Erro: " + ex.Message, "wError");
                 erro = true;
             }
-            finally
-            { }
+
             if (erro || exclusao < 1)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Registro não foi excluído", action = "", sucesso = false });
 

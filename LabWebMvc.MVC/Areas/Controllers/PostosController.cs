@@ -267,6 +267,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirPostos")]
         public async Task<IActionResult> ExcluirPostos(int id)
         {
+            // Verifica se o posto possui vínculos antes de excluir
+            bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.PostoId == id)
+                               || await _db.ExamesRealizados.AnyAsync(e => e.PostoId == id);
+
+            if (possuiVinculos)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto possui requisições ou exames vinculados e não pode ser excluído", action = "", sucesso = false });
+
             Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(async () =>
             {

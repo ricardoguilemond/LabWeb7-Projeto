@@ -413,6 +413,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirInstituicao")]
         public async Task<IActionResult> ExcluirInstituicao(int id)
         {
+            // Verifica se a instituição possui vínculos antes de excluir
+            bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.InstituicaoId == id)
+                               || await _db.ExamesRealizados.AnyAsync(e => e.InstituicaoId == id)
+                               || await _db.ExamesPendentes.AnyAsync(e => e.InstituicaoId == id);
+
+            if (possuiVinculos)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Instituição possui exames, requisições ou fichas vinculadas e não pode ser excluída", action = "", sucesso = false });
+
             // Excluindo um registro da tabela
             DeleteContext<Instituicao> context = new DeleteContext<Instituicao>(new DeleteStrategy<Instituicao>(_db));
             JsonResult result = await context.DeleteRecordAsync(id, "Instituicao");

@@ -9,7 +9,6 @@ using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Transactions;
 using static BLL.UtilBLL;
 using static ExtensionsMethods.Genericos.Enumeradores;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
@@ -124,7 +123,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     : null
             };
 
-            return _geralController.ValidacaoGenerica(vmResposta);
+            //Dados auxiliares em ViewBag para o _Layout
+            ViewBag.TextoMenu = new object[] { "Tabela de Preços dos Itens do Plano de Exames", false };
+
+            if (!string.IsNullOrEmpty(vmResposta.PartialView))
+                return PartialView(vmResposta.PartialView, vmResposta);
+            else
+                return View(vmResposta);
         }
 
 
@@ -304,10 +309,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 ViewBag.TipoContaExame = planoExames.ContaExame.Substring(7, 4) == "0000" ? TipoContaExame.Principal : TipoContaExame.Item;
             }
-            catch (TransactionAbortedException ex)
+            catch (Exception ex)
             {
-                //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLog.LogEventViewer("[PlanoExamesItens] Alterar - TransactionAbortedException Message: " + ex.Message, "wError");
+                _eventLog.LogEventViewer("[PlanoExamesItens] Alterar - Erro: " + ex.Message, "wError");
             }
             //Parâmetros auxiliares em ViewBag
             ViewBag.TextoMenu = new object[] { "Alterar Item do Plano de Exames", false };
@@ -341,59 +345,47 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //Altera os registros igualmente para todas as instituições existentes, pelo modelo que veio alterado!
             try
             {
-                List<TabelaExames> tabelaExames = await _db.TabelaExames.OrderBy(o => o.Id).ToListAsync();  //Todos os nomes das tabelas das instituições existentes (tabelas de plano).
-                                                                                                            //Alterar a conta em todas as instituições (inclusive o próprio SUS)
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                List<TabelaExames> tabelaExames = await _db.TabelaExames.OrderBy(o => o.Id).ToListAsync();
+
+                Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () =>
                 {
-                    foreach (TabelaExames? tabela in tabelaExames)
+                    using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                     {
-                        PlanoExames? plano = planoExames.Where(s => s.TabelaExamesId == tabela.Id).First();
+                        try
+                        {
+                            foreach (TabelaExames? tabela in tabelaExames)
+                            {
+                                PlanoExames? plano = planoExames.Where(s => s.TabelaExamesId == tabela.Id).First();
 
-                        //Não aceitam nulos
-                        //plano.CitoInstituicao = vm.CitoInstituicao;  //tem default 0 (não nulo)  na tabela
-                        //plano.CitoTituloExame = vm.CitoTituloExame;  //tem default 0 (não nulo)  na tabela
-                        //plano.RefExame = vm.RefExame.ToUpper();
-                        //plano.RefItem = vm.RefItem;
+                                plano.Descricao = contaExame.Substring(7, 4) == "0000" ? vm.Descricao.ToUpper() : vm.Descricao;
+                                plano.Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta;
+                                plano.Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas;
+                                plano.Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona;
+                                plano.NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar;
+                                plano.ValorCusto = vm.ValorCusto;
+                                plano.ValorItem = vm.ValorItem;
+                            }
 
-                        plano.Descricao = contaExame.Substring(7, 4) == "0000" ? vm.Descricao.ToUpper() : vm.Descricao;
+                            await _db.SaveChangesAsync();
+                            await transaction.CommitAsync();
 
-                        //plano.QCH = string.IsNullOrEmpty(vm.QCH.ToString()) ? 0 : vm.QCH;
-                        plano.Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta;
-                        plano.Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas;
-                        //plano.AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo;
-                        plano.Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona;
-                        plano.NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar;
-
-                        //Aceitam nulo
-                        //plano.CitoTituloFolha = vm.CitoTituloFolha;
-                        //plano.CitoDescricao = vm.CitoDescricao;
-                        //plano.CitoParteDescricao = vm.CitoParteDescricao;
-                        plano.ValorCusto = vm.ValorCusto;
-                        plano.ValorItem = vm.ValorItem;
-                        //plano.TABELACH = vm.TABELACH;
-                        //plano.ICH = vm.ICH;
-                        //plano.UnidadeMedida = vm.UnidadeMedida;
-                        //plano.Referencia = vm.Referencia;
-                        //plano.Laudo = vm.Laudo;
-                        //plano.MapaHorizontal = string.IsNullOrEmpty(vm.MapaHorizontal) ? string.Empty : vm.MapaHorizontal.ToUpper();    //Sinonímia SEMPRE maiúscula
-                        //plano.ResultadoMinimo = vm.ResultadoMinimo;
-                        //plano.ResultadoMaximo = vm.ResultadoMaximo;
-                        //plano.LaboratorioExterno = vm.LaboratorioExterno;
+                            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Item do Plano de Exames foi atualizado", action = "", sucesso = true });
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync();
+                            _eventLog.LogEventViewer("[PlanoExamesItens] Alteração - Erro: " + ex.Message, "wError");
+                            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Item do Plano NÃO foi atualizado", action = "", sucesso = false });
+                        }
                     }
-                    if (_db.SaveChanges() <= 0)
-                    {
-                        LoggerFile.Write("ERRO: Plano de Exames não foi salvo: " + vm.ContaExame.ToString());
-                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = MensagensError_pt_BR.ErroSemDadoAtualizado, action = "", sucesso = false });
-                    }
-                    trans.Complete();
-                }
+                });
             }
-            catch (TransactionAbortedException ex)
+            catch (Exception ex)
             {
-                //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLog.LogEventViewer("[PlanoExamesItens] Alteracao - TransactionAbortedException Message: " + ex.Message, "wError");
+                _eventLog.LogEventViewer("[PlanoExamesItens] Alteração - Erro geral: " + ex.Message, "wError");
             }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Item do Plano de Exames foi atualizado", action = "", sucesso = true });
+            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Item do Plano NÃO foi atualizado", action = "", sucesso = false });
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -422,51 +414,42 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //Altera os registros igualmente para todas as instituições existentes, pelo modelo que veio alterado!
             try
             {
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () =>
                 {
-                    //planoExames.QCH = string.IsNullOrEmpty(vm.QCH.ToString()) ? 0 : vm.QCH;
-                    //planoExames.Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta;
-                    //planoExames.Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas;
-                    //planoExames.AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo;
-                    //planoExames.Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona;
-                    //planoExames.NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar;
+                    using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
+                    {
+                        try
+                        {
+                            planoExames.ValorCusto = valorCustoSalvar == 0 ? null : valorCustoSalvar;
+                            planoExames.ValorItem = valorItemSalvar == 0 ? null : valorItemSalvar;
 
-                    //Aceitam nulo
-                    //planoExames.CitoTituloFolha = vm.CitoTituloFolha;
-                    //planoExames.CitoDescricao = vm.CitoDescricao;
-                    //planoExames.CitoParteDescricao = vm.CitoParteDescricao;
-                    planoExames.ValorCusto = valorCustoSalvar == 0 ? null : valorCustoSalvar;
-                    planoExames.ValorItem = valorItemSalvar == 0 ? null : valorItemSalvar;
-                    //planoExames.TABELACH = vm.TABELACH;
-                    //planoExames.ICH = vm.ICH;
-                    //planoExames.UnidadeMedida = vm.UnidadeMedida;
-                    //planoExames.Referencia = vm.Referencia;
-                    //planoExames.Laudo = vm.Laudo;
-                    //planoExames.MapaHorizontal = string.IsNullOrEmpty(vm.MapaHorizontal) ? string.Empty : vm.MapaHorizontal.ToUpper();    //Sinonímia SEMPRE maiúscula
-                    //planoExames.ResultadoMinimo = vm.ResultadoMinimo;
-                    //planoExames.ResultadoMaximo = vm.ResultadoMaximo;
-                    //planoExames.LaboratorioExterno = vm.LaboratorioExterno;
+                            await _db.SaveChangesAsync();
+                            await transaction.CommitAsync();
 
-                    _db.SaveChanges();
-                    trans.Complete();
-                }
+                            //Para conseguir atualizar o sumário no Grid após salvar o item
+                            ICollection<PlanoExames> dados = await _db.PlanoExames.Where(s => !s.ContaExame.EndsWith("0000000") && s.ExameId == idFolha && s.TabelaExamesId == idTabela).AsNoTracking().OrderByDescending(o => o.Id).ToListAsync();
+                            CalculaLucroVariante(dados);
 
-                //Para conseguir atualizar o sumário no Grid após salvar o item
-                ICollection<PlanoExames> dados = await _db.PlanoExames.Where(s => !s.ContaExame.EndsWith("0000000") && s.ExameId == idFolha && s.TabelaExamesId == idTabela).AsNoTracking().OrderByDescending(o => o.Id).ToListAsync();
-                CalculaLucroVariante(dados);
+                            TempData["linhaLucroVariante"] = linhaLucroVariante;
+                            TempData.Keep();
 
-                TempData["linhaLucroVariante"] = linhaLucroVariante;  //para atualizar uma única linha do grid no campo lucro variante do item
-                TempData.Keep();  //precisa manter o TempData ativo até o término da sessão
+                            return Json(new { titulo = Mensagens_pt_BR.Salvou, mensagem = "A linha do registro foi salva", id = id, sumario = TempData["Summary"], linhaLucroVariante = linhaLucroVariante });
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync();
+                            _eventLog.LogEventViewer("[PlanoExamesItens] Salvar Item Grid - Erro: " + ex.Message, "wError");
+                            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Falhou a gravação na linha do registro", id = id, sumario = TempData["Summary"], linhaLucroVariante = TempData["linhaLucroVariante"] });
+                        }
+                    }
+                });
             }
-            catch (TransactionAbortedException ex)
+            catch (Exception ex)
             {
-                //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLog.LogEventViewer("[PlanoExamesItens] Salvar Item Grid - TransactionAbortedException Message: " + ex.Message, "wError");
+                _eventLog.LogEventViewer("[PlanoExamesItens] Salvar Item Grid - Erro geral: " + ex.Message, "wError");
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Falhou a gravação na linha do registro", id = id, sumario = TempData["Summary"], linhaLucroVariante = TempData["linhaLucroVariante"] });
             }
-            finally { }
-
-            return Json(new { titulo = Mensagens_pt_BR.Salvou, mensagem = "A linha do registro foi salva", id = id, sumario = TempData["Summary"], linhaLucroVariante = linhaLucroVariante });
         }
 
         //[TypeFilter(typeof(SessionFilter))]

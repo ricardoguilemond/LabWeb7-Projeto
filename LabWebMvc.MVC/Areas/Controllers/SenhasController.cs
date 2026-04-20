@@ -195,28 +195,59 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ExcluirUsuario")]
-        public async Task<JsonResult> ExcluirUsuario(string? Email) //OK
+        public async Task<JsonResult> ExcluirUsuario(string? Email)
         {
-            Senhas dados = new();
+            if (string.IsNullOrEmpty(Email))
+                return Json(new { titulo = "Atenção!", mensagem = "E-mail do usuário não foi informado", sucesso = false });
 
-            bool deletou = false;
+            Senhas? dados = await _db.Senhas.Where(c => c.Email == Email).AsNoTracking().FirstOrDefaultAsync();
 
-            dados = await _db.Senhas.Where(c => c.Email == Email).AsNoTracking().FirstAsync();   //espera-se um único registro, pois Email é campo chave único!
+            if (dados == null)
+                return Json(new { titulo = "Atenção!", mensagem = "Usuário não encontrado", sucesso = false });
 
-            if (dados != null)
+            // Administrador nunca pode ser excluído
+            if (dados.Administrador == 1)
+                return Json(new { titulo = "Atenção!", mensagem = "Usuário proprietário/administrador não pode ser excluído do Sistema", sucesso = false });
+
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                if (dados.Administrador == 1)
-                    return Json(new { titulo = "Atenção!", mensagem = "Usuário proprietário não pode ser excluído do Sistema", sucesso = deletou });
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        // Busca o registro rastreável (sem AsNoTracking)
+                        Senhas senha = await _db.Senhas.Where(c => c.Email == Email).FirstAsync();
 
-                //TODO ::: Deletar tudo do perfil deste usuário
-                //TODO ::: Deletar usuario
-                deletou = true;
-            }
+                        // 1) Excluir ControleDePerfil vinculado ao ControleDeAcesso do usuário
+                        ControleDeAcesso? acesso = await _db.ControleDeAcesso.Where(a => a.SenhaId == senha.Id).FirstOrDefaultAsync();
+                        if (acesso != null)
+                        {
+                            var perfis = await _db.ControleDePerfil.Where(p => p.ControleDeAcessoId == acesso.Id).ToListAsync();
+                            if (perfis.Any())
+                                _db.ControleDePerfil.RemoveRange(perfis);
 
-            if (deletou) //Retorna o Json para a mesma função javascript que chamou esta action "ExcluirUsuario".
-                return Json(new { titulo = "Ok", mensagem = "Usuário excluído com sucesso", sucesso = deletou });
-            else
-                return Json(new { titulo = "Atenção!", mensagem = "Usuário não foi excluído", sucesso = deletou });
+                            _db.ControleDeAcesso.Remove(acesso);
+                        }
+
+                        // 2) Excluir Senhas (UsuariosWeb será excluído automaticamente via CASCADE)
+                        _db.Senhas.Remove(senha);
+
+                        await _db.SaveChangesAsync();
+                        await transaction.CommitAsync();
+
+                        return Json(new { titulo = "Ok", mensagem = "Usuário excluído com sucesso", sucesso = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Senhas] ExcluirUsuario - Erro: " + ex.Message, "wError");
+
+                        return Json(new { titulo = "Atenção!", mensagem = "Usuário não foi excluído", sucesso = false });
+                    }
+                }
+            });
         }
 
         /* REFERENTE A MANUTENÇÃO DE SENHAS DOS LOGINS DOS USUÁRIOS PELO ADMINISTRADOR
