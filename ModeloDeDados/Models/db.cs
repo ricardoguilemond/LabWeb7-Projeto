@@ -78,7 +78,7 @@ public class Db : DbContext
     private static DbContextOptions GetOptions()
     {
         return new DbContextOptionsBuilder<Db>()
-            .UseSqlServer(GlobalConnectionString.GetConnectionString())
+            .UseNpgsql(GlobalConnectionString.GetConnectionString())
             .Options;
     }
 
@@ -96,7 +96,7 @@ public class Db : DbContext
 
             if (!string.IsNullOrEmpty(stringConnection))
             {
-                optionsBuilder.UseSqlServer(stringConnection);
+                optionsBuilder.UseNpgsql(stringConnection);
             }
             else
             {
@@ -1564,7 +1564,7 @@ public class Db : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false);
             entity.Property(e => e.Especialidade)
-                .HasMaxLength(20)
+                .HasMaxLength(100)
                 .IsUnicode(false);
             entity.Property(e => e.NomeMedico)
                 .HasMaxLength(100)

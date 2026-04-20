@@ -13,6 +13,7 @@ namespace LabWebMvc.MVC.ViewModel
         [Display(Name = "Nome Médico")]
         public string NomeMedico { get; set; } = null!;
 
+        [StringLength(100)]
         [Display(Name = "Especialidade")]
         public string? Especialidade { get; set; }
 

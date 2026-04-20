@@ -1,6 +1,5 @@
 ﻿using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Models;
-using Microsoft.Data.SqlClient;
 using Npgsql;
 using System.Data;
 
@@ -21,10 +20,10 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
         private List<string> ObterColunasBanco(string tabela)
         {
             var colunas = new List<string>();
-            using var conn = new NpgsqlConnection (_connectionString);
+            using var conn = new NpgsqlConnection(_connectionString);
             conn.Open();
 
-            using var cmd = new NpgsqlCommand(@"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @Tabela", conn);
+            using var cmd = new NpgsqlCommand(@"SELECT column_name FROM information_schema.columns WHERE table_name = @Tabela", conn);
             cmd.Parameters.AddWithValue("@Tabela", tabela);
 
             using var reader = cmd.ExecuteReader();
@@ -43,49 +42,52 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
             if (string.IsNullOrEmpty(headerLine))
                 throw new Exception("Arquivo CSV sem cabeçalho.");
 
-            string[] colunasCsv = headerLine.Split(';'); // ajuste o separador se necessário
+            string[] colunasCsv = headerLine.Split(';');
 
-            // Descobre colunas reais da tabela no SQL Server
+            // Descobre colunas reais da tabela no PostgreSQL
             var colunasBanco = ObterColunasBanco(tabela);
 
-            // Cria DataTable somente com colunas que existem no banco
-            DataTable dt = new DataTable();
-            foreach (var coluna in colunasCsv)
-            {
-                if (colunasBanco.Contains(coluna.Trim(), StringComparer.OrdinalIgnoreCase))
-                    dt.Columns.Add(coluna.Trim());
-            }
+            // Filtra apenas colunas que existem no banco
+            var colunasValidas = colunasCsv
+                .Select(c => c.Trim())
+                .Where(c => colunasBanco.Contains(c, StringComparer.OrdinalIgnoreCase))
+                .ToList();
 
-            // Lê dados
+            if (colunasValidas.Count == 0)
+                throw new Exception("Nenhuma coluna do CSV corresponde às colunas da tabela no banco.");
+
+            // Monta os índices das colunas válidas no CSV
+            var indicesColunas = colunasValidas
+                .Select(c => Array.FindIndex(colunasCsv, col => col.Trim().Equals(c, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            // Lê todas as linhas de dados
+            var linhas = new List<string[]>();
             while (!reader.EndOfStream)
             {
                 var linha = reader.ReadLine();
                 if (string.IsNullOrWhiteSpace(linha)) continue;
-
-                string[] valores = linha.Split(';');
-
-                // Cria linha respeitando apenas colunas do banco
-                DataRow row = dt.NewRow();
-                for (int i = 0; i < colunasCsv.Length && i < valores.Length; i++)
-                {
-                    var coluna = colunasCsv[i].Trim();
-                    if (dt.Columns.Contains(coluna))
-                        row[coluna] = valores[i].Trim();
-                }
-                dt.Rows.Add(row);
+                linhas.Add(linha.Split(';'));
             }
 
-            // Bulk insert
-            using var bulkCopy = new SqlBulkCopy(_connectionString)
-            {
-                DestinationTableName = tabela
-            };
+            if (linhas.Count == 0) return;
 
-            foreach (DataColumn coluna in dt.Columns)
+            // Insere via COPY (bulk insert nativo do PostgreSQL)
+            using var conn = new NpgsqlConnection(_connectionString);
+            conn.Open();
+
+            var colunasFormatadas = string.Join(", ", colunasValidas.Select(c => $"\"{c}\""));
+
+            using var writer = conn.BeginTextImport($"COPY \"{tabela}\" ({colunasFormatadas}) FROM STDIN WITH (FORMAT csv, DELIMITER ';', NULL '')");
+
+            foreach (var valores in linhas)
             {
-                bulkCopy.ColumnMappings.Add(coluna.ColumnName, coluna.ColumnName);
+                var valoresFiltrados = indicesColunas
+                    .Select(i => i < valores.Length ? valores[i].Trim() : "")
+                    .ToArray();
+
+                writer.WriteLine(string.Join(";", valoresFiltrados));
             }
-            bulkCopy.WriteToServer(dt);
         }
 
         public void ProcessaMovimentacao(MovimentacaoImportacaoParameter parameter)
@@ -105,7 +107,6 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
                 throw new FileNotFoundException("Arquivo não encontrado para importação", full);
             }
         }
-
 
     } //fim
 }

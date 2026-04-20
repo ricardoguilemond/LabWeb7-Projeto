@@ -6,7 +6,6 @@ using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Interfaces.Criptografias;
 using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using static ExtensionsMethods.Genericos.Enumeradores;
@@ -278,7 +277,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                         // Inicia a transação como DbTransaction
                         using (System.Data.Common.DbTransaction transacao = await conexao.BeginTransactionAsync())
                         {
-                            if (transacao is SqlTransaction sqlTransacao)
+                            if (transacao is NpgsqlTransaction npgsqlTransacao)
                             {
                                 try
                                 {
@@ -319,7 +318,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                             }
                             else
                             {
-                                eventLog2.LogEventViewer("[ValidacoesDeSenhas] A transação não é do tipo SqlTransaction no método: CriaCacheEmailAsync.", "wErro");
+                                eventLog2.LogEventViewer("[ValidacoesDeSenhas] A transação não é do tipo NpgsqlTransaction no método: CriaCacheEmailAsync.", "wErro");
                                 admStringConexao = "erro";
                             }
                         }

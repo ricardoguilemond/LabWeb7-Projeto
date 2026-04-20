@@ -1,6 +1,5 @@
 ﻿namespace BLL
 {
-    using Microsoft.Data.SqlClient;
     using Microsoft.Extensions.Configuration;
     using Npgsql;
 
@@ -13,7 +12,7 @@
             public TempoServidorMSSQL(IConfiguration config)
             {
                 _connectionString = config.GetSection("ConexaoPostgreSQL")["PSQLConnectionString"]
-                    ?? throw new InvalidOperationException("Connection string 'MSNpgsqlConnection String' not found.");
+                    ?? throw new InvalidOperationException("Connection string 'PSQLConnectionString' not found.");
             }
 
             /*
@@ -22,15 +21,15 @@
                 string dataIso = _tempoService.ObterDataHoraServidor("iso");  // formato ISO 8601
             */
 
-            // Método síncrono para obter a data e hora do servidor SQL Server
+            // Método síncrono para obter a data e hora do servidor PostgreSQL
             public string ObterDataHoraServidor(string? formato = null)
             {
                 try
                 {
-                    using NpgsqlConnection  connection = new(_connectionString);
+                    using NpgsqlConnection connection = new(_connectionString);
                     connection.Open();
 
-                    using NpgsqlCommand command = new("SELECT SYSDATETIME()", connection);
+                    using NpgsqlCommand command = new("SELECT NOW()", connection);
                     object resultado = command.ExecuteScalar();
 
                     if (resultado is DateTime dataHora)
@@ -50,13 +49,13 @@
                 }
             }
 
-            // Método assíncrono para obter a data e hora do servidor SQL Server
+            // Método assíncrono para obter a data e hora do servidor PostgreSQL
             public async Task<DateTime?> ObterDataHoraServidorAsync()
             {
                 try
                 {
-                    using NpgsqlConnection  conn = new(_connectionString);
-                    using NpgsqlCommand cmd = new("SELECT GETDATE()", conn);
+                    using NpgsqlConnection conn = new(_connectionString);
+                    using NpgsqlCommand cmd = new("SELECT NOW()", conn);
 
                     await conn.OpenAsync();
                     object? result = await cmd.ExecuteScalarAsync();

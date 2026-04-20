@@ -11,7 +11,6 @@ using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Transactions;
 using static BLL.UtilBLL;
 
 namespace LabWebMvc.MVC.Areas.Controllers
@@ -123,43 +122,48 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 else
                     return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto/anexo já cadastrada", action = "", sucesso = false });
             }
-            try
+
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    await _db.Postos.AddAsync(new Postos()
+                    try
                     {
-                        //Colunas NÃO nulas:
-                        NomePosto = vm.NomePosto.ToUpper(),
-                        Responsavel = vm.Responsavel,
+                        await _db.Postos.AddAsync(new Postos()
+                        {
+                            //Colunas NÃO nulas:
+                            NomePosto = vm.NomePosto.ToUpper(),
+                            Responsavel = vm.Responsavel,
 
-                        //Colunas que aceitam nulas:
-                        Telefone = vm.Telefone,
-                        Endereco = vm.Endereco.ToCapitalize(),
-                        Logradouro = vm.Logradouro.ToCapitalize(),
-                        Numero = vm.Numero,
-                        Bairro = vm.Bairro.ToCapitalize(),
-                        Complemento = vm.Complemento,
-                        Cidade = vm.Cidade.ToCapitalize(),
-                        UF = vm.vmGeral.TipoUF,
-                        CEP = vm.CEP
-                    });
+                            //Colunas que aceitam nulas:
+                            Telefone = vm.Telefone,
+                            Endereco = vm.Endereco.ToCapitalize(),
+                            Logradouro = vm.Logradouro.ToCapitalize(),
+                            Numero = vm.Numero,
+                            Bairro = vm.Bairro.ToCapitalize(),
+                            Complemento = vm.Complemento,
+                            Cidade = vm.Cidade.ToCapitalize(),
+                            UF = vm.vmGeral.TipoUF,
+                            CEP = vm.CEP
+                        });
 
-                    int salvo = _db.SaveChanges();
-                    if (salvo <= 0)
+                        await _db.SaveChangesAsync();
+
+                        await transaction.CommitAsync();
+
+                        return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Posto foi salvo", action = "", sucesso = true });
+                    }
+                    catch (Exception ex)
                     {
-                        LoggerFile.Write("ERRO: Posto de coleta/anexo não foi salvo na inclusão - Nome:" + vm.NomePosto);
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Postos] Erro ao salvar Posto/anexo: " + ex.Message, "wError");
+
                         return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto NÃO foi salvo", action = "", sucesso = false });
                     }
-                    trans.Complete();
                 }
-            }
-            catch (TransactionAbortedException ex)
-            {
-                //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLogHelper.LogEventViewer("[Postos] Erro ao salvar Posto/anexo: " + ex.Message, "wError");
-            }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Posto foi salva", action = "", sucesso = true });
+            });
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -218,46 +222,44 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (Postos == null)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Não foi possível salvar o registro neste momento", action = "", sucesso = false });
 
-            try
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    //Colunas NÃO nulas:
-                    Postos.NomePosto = vm.NomePosto.ToUpper();
-                    Postos.Responsavel = vm.Responsavel.ToCapitalizeNotNull();
-
-                    //Colunas que aceitam nulo:
-                    Postos.Telefone = vm.Telefone;
-                    Postos.Logradouro = vm.Logradouro.ToCapitalize();
-                    Postos.Endereco = vm.Endereco.ToCapitalize();
-                    Postos.Numero = vm.Numero;
-                    Postos.Complemento = vm.Complemento;
-                    Postos.Bairro = vm.Bairro.ToCapitalize();
-                    Postos.Cidade = vm.Cidade.ToCapitalize();
-                    Postos.UF = vm.vmGeral.TipoUF;
-                    Postos.CEP = vm.CEP;
-
-                    int salvo = _db.SaveChanges();
-                    if (salvo == 0)
+                    try
                     {
-                        LoggerFile.Write("Posto/anexo não foi atualizado por possível falha - Id:" + id.ToString());
-                        return Json(new { titulo = Mensagens_pt_BR.Ok, mensagem = "Posto/anexo não foi atualizado", action = "", sucesso = false });
+                        //Colunas NÃO nulas:
+                        Postos.NomePosto = vm.NomePosto.ToUpper();
+                        Postos.Responsavel = vm.Responsavel.ToCapitalizeNotNull();
+
+                        //Colunas que aceitam nulo:
+                        Postos.Telefone = vm.Telefone;
+                        Postos.Logradouro = vm.Logradouro.ToCapitalize();
+                        Postos.Endereco = vm.Endereco.ToCapitalize();
+                        Postos.Numero = vm.Numero;
+                        Postos.Complemento = vm.Complemento;
+                        Postos.Bairro = vm.Bairro.ToCapitalize();
+                        Postos.Cidade = vm.Cidade.ToCapitalize();
+                        Postos.UF = vm.vmGeral.TipoUF;
+                        Postos.CEP = vm.CEP;
+
+                        await _db.SaveChangesAsync();
+
+                        await transaction.CommitAsync();
+
+                        return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Posto/anexo foi atualizado", action = "", sucesso = true });
                     }
-                    else if (salvo < 0)
+                    catch (Exception ex)
                     {
-                        LoggerFile.Write("ERRO: Posto não foi atualizado - Id:" + id.ToString());
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Postos] Erro ao atualizar/alterar: " + ex.Message, "wError");
+
                         return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto/anexo NÃO foi atualizado", action = "", sucesso = false });
                     }
-                    trans.Complete();
                 }
-            }
-            catch (TransactionAbortedException ex)
-            {
-                //LoggerFile.Write("TransactionAbortedException Message: {0}", ex.Message);
-                _eventLogHelper.LogEventViewer("[Postos] Erro ao atualizar/alterar: " + ex.Message, "wError");
-            }
-
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Posto/anexo foi atualizado", action = "", sucesso = true });
+            });
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -265,31 +267,35 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirPostos")]
         public async Task<IActionResult> ExcluirPostos(int id)
         {
-            using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                bool erro = false;
-                int change = 0;
-                try
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    Postos registro = await _db.Postos.FirstAsync(s => s.Id == id);
-                    if (registro != null && registro.Id == id)
+                    try
                     {
-                        _db.Remove(registro);
-                        change = _db.SaveChanges();
+                        Postos registro = await _db.Postos.FirstAsync(s => s.Id == id);
+                        if (registro != null && registro.Id == id)
+                        {
+                            _db.Remove(registro);
+                            await _db.SaveChangesAsync();
+                            await transaction.CommitAsync();
+
+                            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Registro foi excluído", action = "", sucesso = true });
+                        }
+
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Registro não foi encontrado", action = "", sucesso = false });
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Postos] Excluir - Erro: " + ex.Message, "wError");
+
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Registro não foi excluído", action = "", sucesso = false });
                     }
                 }
-                catch
-                {
-                    erro = true;
-                }
-                finally
-                {
-                    trans.Complete();
-                }
-                if (erro || change < 1)
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Registro não foi excluído", action = "", sucesso = false });
-            }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Registro foi excluído", action = "", sucesso = true });
+            });
         }
 
         [TypeFilter(typeof(SessionFilter))]

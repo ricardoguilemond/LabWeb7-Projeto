@@ -12,7 +12,6 @@ using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Transactions;
 using static BLL.UtilBLL;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
@@ -123,35 +122,42 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 else
                     return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Já existe Médico cadastrado com este Nome ou CRM/Registro", action = "", sucesso = false });
             }
-            try
+
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    await _db.Medicos.AddAsync(new Medicos()
+                    try
                     {
-                        //Colunas NÃO nulas:
-                        NomeMedico = obj.NomeMedico.ToUpper(),
+                        await _db.Medicos.AddAsync(new Medicos()
+                        {
+                            //Colunas NÃO nulas:
+                            NomeMedico = obj.NomeMedico.ToUpper(),
 
-                        //Colunas que aceitam nulas:
-                        CRM = obj.CRM,
-                        Telefone = obj.Telefone,
-                        Email = obj.Email,
-                        Especialidade = obj.Especialidade
-                    });
+                            //Colunas que aceitam nulas:
+                            CRM = obj.CRM,
+                            Telefone = obj.Telefone,
+                            Email = obj.Email,
+                            Especialidade = obj.Especialidade
+                        });
 
-                    if (_db.SaveChanges() <= 0)
+                        await _db.SaveChangesAsync();
+
+                        await transaction.CommitAsync();
+
+                        return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Médico foi salvo", action = "", sucesso = true });
+                    }
+                    catch (Exception ex)
                     {
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Medicos] Salvar - Erro: " + ex.Message, "wError");
+
                         return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Médico NÃO foi salvo", action = "", sucesso = false });
                     }
-                    trans.Complete();
                 }
-            }
-            catch (TransactionAbortedException ex)
-            {
-                _eventLogHelper.LogEventViewer("[Medicos] Salvar - TransactionAbortedException Message: " + ex.Message, "wError");
-            }
-
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Médico foi salvo", action = "", sucesso = true });
+            });
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -192,30 +198,36 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (Medicos == null)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Não foi possível salvar o registro neste momento", action = "", sucesso = false });
 
-            try
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    //Colunas NÃO nulas:
-                    Medicos.NomeMedico = vm.NomeMedico.ToUpper();
-                    Medicos.CRM = vm.CRM;
-                    Medicos.Especialidade = vm.Especialidade != null ? vm.Especialidade.ToUpper() : string.Empty;
-                    Medicos.Telefone = vm.Telefone;
-                    Medicos.Email = vm.Email != null ? vm.Email.ToLower() : string.Empty;
-
-                    if (_db.SaveChanges() <= 0)
+                    try
                     {
-                        LoggerFile.Write("ERRO: Médico não foi atualizado - Id:" + id.ToString());
+                        //Colunas NÃO nulas:
+                        Medicos.NomeMedico = vm.NomeMedico.ToUpper();
+                        Medicos.CRM = vm.CRM;
+                        Medicos.Especialidade = vm.Especialidade != null ? vm.Especialidade.ToUpper() : string.Empty;
+                        Medicos.Telefone = vm.Telefone;
+                        Medicos.Email = vm.Email != null ? vm.Email.ToLower() : string.Empty;
+
+                        await _db.SaveChangesAsync();
+
+                        await transaction.CommitAsync();
+
+                        return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Médico foi atualizado", action = "", sucesso = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Medicos] Atualizar - Erro: " + ex.Message, "wError");
+
                         return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Médico NÃO foi atualizado", action = "", sucesso = false });
                     }
-                    trans.Complete();
                 }
-            }
-            catch (TransactionAbortedException ex)
-            {
-                _eventLogHelper.LogEventViewer("[Medicos] Atualizar - TransactionAbortedException Message: " + ex.Message, "wError");
-            }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Médico foi atualizado", action = "", sucesso = true });
+            });
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -223,31 +235,35 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirMedico")]
         public async Task<IActionResult> ExcluirMedico(int id)
         {
-            using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                bool erro = false;
-                int change = 0;
-                try
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    Medicos registro = await _db.Medicos.FirstAsync(s => s.Id == id);
-                    if (registro != null && registro.Id == id)
+                    try
                     {
-                        _db.Remove(registro);
-                        change = _db.SaveChanges();
+                        Medicos registro = await _db.Medicos.FirstAsync(s => s.Id == id);
+                        if (registro != null && registro.Id == id)
+                        {
+                            _db.Remove(registro);
+                            await _db.SaveChangesAsync();
+                            await transaction.CommitAsync();
+
+                            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Registro foi excluído", action = "", sucesso = true });
+                        }
+
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Registro não foi encontrado", action = "", sucesso = false });
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Medicos] Excluir - Erro: " + ex.Message, "wError");
+
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Registro não foi excluído", action = "", sucesso = false });
                     }
                 }
-                catch
-                {
-                    erro = true;
-                }
-                finally
-                {
-                    trans.Complete();
-                }
-                if (erro || change < 1)
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Registro não foi excluído", action = "", sucesso = false });
-            }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Registro foi excluído", action = "", sucesso = true });
+            });
         }
 
         [TypeFilter(typeof(SessionFilter))]

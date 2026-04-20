@@ -1,7 +1,6 @@
 ﻿using ExtensionsMethods.EventViewerHelper;
 using LabWebMvc.MVC.Areas.Controllers;
 using LabWebMvc.MVC.Areas.Utils;
-using Microsoft.Data.SqlClient;
 using Npgsql;
 
 namespace LabWebMvc.MVC.Areas.ServicosDatabase

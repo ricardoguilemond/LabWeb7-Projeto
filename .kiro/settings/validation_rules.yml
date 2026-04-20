@@ -1,0 +1,6 @@
+rules:
+  - name: "Campos obrigatórios"
+    type: "not_null"
+  - name: "Formato de email"
+    type: "regex"
+    pattern: "^[^@]+@[^@]+\\.[^@]+$"

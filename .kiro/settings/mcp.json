@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://localhost:5432/LABWEB7"
+      ],
+      "env": {},
+      "disabled": true,
+      "autoApprove": ["query"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "f:/Projetos dotNet/Web-Project/LabWeb7-Projeto"
+      ],
+      "env": {},
+      "disabled": true,
+      "autoApprove": []
+    }
+  }
+}

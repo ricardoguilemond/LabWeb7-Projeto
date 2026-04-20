@@ -171,9 +171,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
             ViewBag.ListaDados = vm.ListaDados;
             ViewBag.SessionUF = Convert.ToString(_httpContext!.Session.GetString("SessionUF"));
 
-            return string.IsNullOrEmpty(vm.PartialView) 
-                ? View(vm.RetornoDeRota, vm) 
-                : PartialView(vm.PartialView, vm);
+            if (_validador.SessaoValida())
+            {
+                if (!string.IsNullOrEmpty(vm.PartialView))
+                    return View(vm.PartialView);  //nos casos em que temos uma partial view num grid/table
+                else
+                    return View();
+            }
+            return RedirectToAction("AcessoValidado", "Mensagem", new { retornoDeRota = vm.RetornoDeRota });
         }
 
         /* FIM DOS MÉTODOS DE VALIDAÇÃO E CHAMAMENTO DAS VIEWS  */

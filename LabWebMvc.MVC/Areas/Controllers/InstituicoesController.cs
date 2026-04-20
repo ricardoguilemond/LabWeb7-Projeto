@@ -13,8 +13,6 @@ using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Transactions;
 using static BLL.UtilBLL;
 using static LabWebMvc.MVC.Areas.Utils.Utils;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
@@ -164,61 +162,74 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 GetImagemTimbre(vm);
                 GetImagemLogomarca(vm);
 
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () =>
                 {
-                    await _db.Instituicao.AddAsync(new Instituicao()
+                    using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                     {
-                        //Colunas NÃO nulas:
-                        Nome = vm.Nome.ToUpper(),
-                        Sigla = vm.Sigla.ToUpper(),
-                        CNPJ = vm.CNPJ.CNPJSemFormatacao(),
-                        Email = vm.Email.ToLower(),
-                        Telefone = vm.Telefone,
-                        Contato = vm.Contato,
-                        CarimboSN = vm.CarimboSN,
-                        TimbreSN = vm.TimbreSN,
+                        try
+                        {
+                            await _db.Instituicao.AddAsync(new Instituicao()
+                            {
+                                //Colunas NÃO nulas:
+                                Nome = vm.Nome.ToUpper(),
+                                Sigla = vm.Sigla.ToUpper(),
+                                CNPJ = vm.CNPJ.CNPJSemFormatacao(),
+                                Email = vm.Email.ToLower(),
+                                Telefone = vm.Telefone,
+                                Contato = vm.Contato,
+                                CarimboSN = vm.CarimboSN,
+                                TimbreSN = vm.TimbreSN,
 
-                        //Colunas que aceitam nulas:
-                        Endereco = vm.Endereco.ToCapitalize(),
-                        Logradouro = vm.Logradouro.ToCapitalize(),
-                        Numero = vm.Numero,
-                        Bairro = vm.Bairro.ToCapitalize(),
-                        Complemento = vm.Complemento,
-                        Cidade = vm.Cidade.ToCapitalize(),
-                        UF = vm.vmGeral.TipoUF,
-                        CEP = vm.CEP,
-                        Celular = vm.Celular,
-                        Sequencial = vm.Sequencial,
-                        TituloTimbre = vm.TituloTimbre != null ? vm.TituloTimbre.ToUpper() : string.Empty,
-                        SubTituloTimbre = vm.SubTituloTimbre.ToCapitalize(),
-                        UsuarioCaminhoFTP = vm.UsuarioCaminhoFTP,
-                        UsuarioEmailFTP = vm.UsuarioEmailFTP,
-                        UsuarioPortaFTP = vm.UsuarioPortaFTP,
-                        UsuarioSenhaFTP = vm.UsuarioSenhaFTP,
-                        ValorExameCitologia = vm.ValorExameCitologia,
-                        Propaganda = vm.Propaganda,
-                        AvisoRodape1 = vm.AvisoRodape1,
-                        AvisoRodape2 = vm.AvisoRodape2,
+                                //Colunas que aceitam nulas:
+                                Endereco = vm.Endereco.ToCapitalize(),
+                                Logradouro = vm.Logradouro.ToCapitalize(),
+                                Numero = vm.Numero,
+                                Bairro = vm.Bairro.ToCapitalize(),
+                                Complemento = vm.Complemento,
+                                Cidade = vm.Cidade.ToCapitalize(),
+                                UF = vm.vmGeral.TipoUF,
+                                CEP = vm.CEP,
+                                Celular = vm.Celular,
+                                Sequencial = vm.Sequencial,
+                                TituloTimbre = vm.TituloTimbre != null ? vm.TituloTimbre.ToUpper() : string.Empty,
+                                SubTituloTimbre = vm.SubTituloTimbre.ToCapitalize(),
+                                UsuarioCaminhoFTP = vm.UsuarioCaminhoFTP,
+                                UsuarioEmailFTP = vm.UsuarioEmailFTP,
+                                UsuarioPortaFTP = vm.UsuarioPortaFTP,
+                                UsuarioSenhaFTP = vm.UsuarioSenhaFTP,
+                                ValorExameCitologia = vm.ValorExameCitologia,
+                                Propaganda = vm.Propaganda,
+                                AvisoRodape1 = vm.AvisoRodape1,
+                                AvisoRodape2 = vm.AvisoRodape2,
 
-                        /*
-                         * Gravando as imagens em bytes[] e nomes das imagens
-                         */
-                        Timbre = vm.Timbre,
-                        Logomarca = vm.Logomarca,
-                        NomeTimbre = vm.NomeTimbre,
-                        NomeLogomarca = vm.NomeLogomarca
-                    });
+                                /*
+                                 * Gravando as imagens em bytes[] e nomes das imagens
+                                 */
+                                Timbre = vm.Timbre,
+                                Logomarca = vm.Logomarca,
+                                NomeTimbre = vm.NomeTimbre,
+                                NomeLogomarca = vm.NomeLogomarca
+                            });
 
-                    int salvo = _db.SaveChanges();
-                    if (salvo <= 0)
-                    {
-                        LoggerFile.Write("ERRO: Instituição não foi salva na inclusão - CNPJ:" + vm.CNPJ);
-                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Instituição NÃO foi salva", action = "", sucesso = false });
+                            await _db.SaveChangesAsync();
+
+                            await transaction.CommitAsync();
+
+                            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Instituição foi salva", action = "", sucesso = true });
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync();
+
+                            _eventLogHelper.LogEventViewer("[Instituicoes] Inclusão - Erro: " + ex.Message, "wError");
+
+                            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Instituição NÃO foi salva", action = "", sucesso = false });
+                        }
                     }
-                    trans.Complete();
-                }
+                });
             }
-            catch (TransactionAbortedException ex)
+            catch (Exception ex)
             {
                 _eventLogHelper.LogEventViewer("[Instituicoes] Inclusão - TransactionAbortedException Message: {0} ::: " + ex.Message, "wError");
             }
@@ -324,77 +335,77 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (Instituicoes == null)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Não foi possível salvar o registro neste momento", action = "", sucesso = false });
 
-            try
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    //Colunas NÃO nulas:
-                    Instituicoes.Nome = vm.Nome.ToUpper();
-                    Instituicoes.Sigla = vm.Sigla.ToUpper();
-                    Instituicoes.CNPJ = vm.CNPJ.CNPJSemFormatacao();
-                    Instituicoes.Email = vm.Email;
-                    Instituicoes.Telefone = vm.Telefone;
-                    Instituicoes.Contato = vm.Contato;
-                    Instituicoes.CarimboSN = vm.CarimboSN;
-                    Instituicoes.TimbreSN = vm.TimbreSN;
-
-                    //Colunas que aceitam nulo:
-                    Instituicoes.Logradouro = vm.Logradouro.ToCapitalize();
-                    Instituicoes.Endereco = vm.Endereco.ToCapitalize();
-                    Instituicoes.Numero = vm.Numero;
-                    Instituicoes.Complemento = vm.Complemento;
-                    Instituicoes.Bairro = vm.Bairro.ToCapitalize();
-                    Instituicoes.Cidade = vm.Cidade.ToCapitalize();
-                    Instituicoes.UF = vm.vmGeral.TipoUF;
-                    Instituicoes.CEP = vm.CEP;
-                    Instituicoes.Celular = vm.Celular;
-                    Instituicoes.Sequencial = vm.Sequencial;
-                    Instituicoes.TituloTimbre = vm.TituloTimbre;
-                    Instituicoes.SubTituloTimbre = vm.SubTituloTimbre;
-                    Instituicoes.UsuarioCaminhoFTP = vm.UsuarioCaminhoFTP;
-                    Instituicoes.UsuarioEmailFTP = vm.UsuarioEmailFTP;
-                    Instituicoes.UsuarioPortaFTP = vm.UsuarioPortaFTP;
-                    Instituicoes.UsuarioSenhaFTP = vm.UsuarioSenhaFTP;
-                    Instituicoes.ValorExameCitologia = vm.ValorExameCitologia;
-                    Instituicoes.Propaganda = vm.Propaganda;
-                    Instituicoes.AvisoRodape1 = vm.AvisoRodape1;
-                    Instituicoes.AvisoRodape2 = vm.AvisoRodape2;
-
-                    /*
-                     * Gravando as imagens em bytes[]
-                     * Obs: o caminho de origem da imagem não é salvo, por questões de privacidade.
-                     */
-                    if (vm.Timbre != null)  //se for nulo, nada faz e evita de apagar o que já pode estar na base
-                        Instituicoes.Timbre = vm.Timbre;
-
-                    if (vm.NomeTimbre != null)
-                        Instituicoes.NomeTimbre = vm.NomeTimbre;
-
-                    if (vm.Logomarca != null)   //se for nulo, nada faz e evita de apagar o que já pode estar na base
-                        Instituicoes.Logomarca = vm.Logomarca;
-
-                    if (vm.NomeLogomarca != null)
-                        Instituicoes.NomeLogomarca = vm.NomeLogomarca;
-
-                    int salvo = _db.SaveChanges();
-                    if (salvo == 0)
+                    try
                     {
-                        LoggerFile.Write("Instituição não foi atualizada por possível falha - Id:" + id.ToString());
-                        return Json(new { titulo = Mensagens_pt_BR.Ok, mensagem = "Instituição não foi atualizada ou não havia nada para ser atualizado", action = "", sucesso = false });
+                        //Colunas NÃO nulas:
+                        Instituicoes.Nome = vm.Nome.ToUpper();
+                        Instituicoes.Sigla = vm.Sigla.ToUpper();
+                        Instituicoes.CNPJ = vm.CNPJ.CNPJSemFormatacao();
+                        Instituicoes.Email = vm.Email;
+                        Instituicoes.Telefone = vm.Telefone;
+                        Instituicoes.Contato = vm.Contato;
+                        Instituicoes.CarimboSN = vm.CarimboSN;
+                        Instituicoes.TimbreSN = vm.TimbreSN;
+
+                        //Colunas que aceitam nulo:
+                        Instituicoes.Logradouro = vm.Logradouro.ToCapitalize();
+                        Instituicoes.Endereco = vm.Endereco.ToCapitalize();
+                        Instituicoes.Numero = vm.Numero;
+                        Instituicoes.Complemento = vm.Complemento;
+                        Instituicoes.Bairro = vm.Bairro.ToCapitalize();
+                        Instituicoes.Cidade = vm.Cidade.ToCapitalize();
+                        Instituicoes.UF = vm.vmGeral.TipoUF;
+                        Instituicoes.CEP = vm.CEP;
+                        Instituicoes.Celular = vm.Celular;
+                        Instituicoes.Sequencial = vm.Sequencial;
+                        Instituicoes.TituloTimbre = vm.TituloTimbre;
+                        Instituicoes.SubTituloTimbre = vm.SubTituloTimbre;
+                        Instituicoes.UsuarioCaminhoFTP = vm.UsuarioCaminhoFTP;
+                        Instituicoes.UsuarioEmailFTP = vm.UsuarioEmailFTP;
+                        Instituicoes.UsuarioPortaFTP = vm.UsuarioPortaFTP;
+                        Instituicoes.UsuarioSenhaFTP = vm.UsuarioSenhaFTP;
+                        Instituicoes.ValorExameCitologia = vm.ValorExameCitologia;
+                        Instituicoes.Propaganda = vm.Propaganda;
+                        Instituicoes.AvisoRodape1 = vm.AvisoRodape1;
+                        Instituicoes.AvisoRodape2 = vm.AvisoRodape2;
+
+                        /*
+                         * Gravando as imagens em bytes[]
+                         * Obs: o caminho de origem da imagem não é salvo, por questões de privacidade.
+                         */
+                        if (vm.Timbre != null)
+                            Instituicoes.Timbre = vm.Timbre;
+
+                        if (vm.NomeTimbre != null)
+                            Instituicoes.NomeTimbre = vm.NomeTimbre;
+
+                        if (vm.Logomarca != null)
+                            Instituicoes.Logomarca = vm.Logomarca;
+
+                        if (vm.NomeLogomarca != null)
+                            Instituicoes.NomeLogomarca = vm.NomeLogomarca;
+
+                        await _db.SaveChangesAsync();
+
+                        await transaction.CommitAsync();
+
+                        return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Instituição foi atualizada", action = "", sucesso = true });
                     }
-                    else if (salvo < 0)
+                    catch (Exception ex)
                     {
-                        LoggerFile.Write("ERRO: Instituição não foi atualizada - Id:" + id.ToString());
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Instituicoes] Não foi atualizada - Erro: " + ex.Message, "wError");
+
                         return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Instituição NÃO foi atualizada", action = "", sucesso = false });
                     }
-                    trans.Complete();
                 }
-            }
-            catch (TransactionAbortedException ex)
-            {
-                _eventLogHelper.LogEventViewer("[Instituicoes] Não foi atualizada - TransactionAbortedException Message: " + ex.Message, "wError");
-            }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Instituição foi atualizada", action = "", sucesso = true });
+            });
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -481,44 +492,37 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirImagemTimbre")]
         public async Task<IActionResult> ExcluirImagemTimbre(string sigla)
         {
-            using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                bool erro = false;
-                int salvo = 0;
-
-                try
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    Instituicao registro = await _db.Instituicao.FirstAsync(s => s.Sigla == sigla);
-                    if (registro != null && registro.Sigla == sigla)
+                    try
                     {
-                        registro.NomeTimbre = "";  //limpa o nome da imagem
-                        registro.Timbre = null;    //limpa o byte[] da imagem
+                        Instituicao registro = await _db.Instituicao.FirstAsync(s => s.Sigla == sigla);
+                        if (registro != null && registro.Sigla == sigla)
+                        {
+                            registro.NomeTimbre = "";
+                            registro.Timbre = null;
 
-                        salvo = _db.SaveChanges();
-                        if (salvo == 0)
-                        {
-                            LoggerFile.Write("Imagem Timbre da Instituição não foi atualizada por possível falha - Sigla: " + sigla);
-                            return Json(new { titulo = Mensagens_pt_BR.Ok, mensagem = "Imagem não foi excluída", action = "", sucesso = false });
+                            await _db.SaveChangesAsync();
+                            await transaction.CommitAsync();
+
+                            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Imagem foi excluída da instituição", action = "", sucesso = true });
                         }
-                        else if (salvo < 0)
-                        {
-                            LoggerFile.Write("ERRO: Imagem da Instituição não foi excluída - Sigla: " + sigla);
-                            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Imagem não foi excluida", action = "", sucesso = false });
-                        }
+
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Imagem não foi excluída", action = "", sucesso = false });
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Instituicoes] ExcluirImagemTimbre - Erro: " + ex.Message, "wError");
+
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Imagem não foi excluída", action = "", sucesso = false });
                     }
                 }
-                catch
-                {
-                    erro = true;
-                }
-                finally
-                {
-                    trans.Complete();
-                }
-                if (erro || salvo < 1)
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Imagem não foi excluída", action = "", sucesso = false });
-            }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Imagem foi excluída da instituição", action = "", sucesso = true });
+            });
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -527,43 +531,37 @@ namespace LabWebMvc.MVC.Areas.Controllers
         public async Task<IActionResult> ExcluirImagemLogomarca(string sigla)
         {
             //Na verdade, não é uma exclusão de registro e sim LIMPEZA do campo!
-            using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                bool erro = false;
-                int salvo = 0;
-                try
+                using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync())
                 {
-                    Instituicao registro = await _db.Instituicao.FirstAsync(s => s.Sigla == sigla);
-                    if (registro != null && registro.Sigla == sigla)
+                    try
                     {
-                        registro.NomeLogomarca = "";   //limpa o nome da imagem
-                        registro.Logomarca = null;     //limpa o byte[] da imagem
+                        Instituicao registro = await _db.Instituicao.FirstAsync(s => s.Sigla == sigla);
+                        if (registro != null && registro.Sigla == sigla)
+                        {
+                            registro.NomeLogomarca = "";
+                            registro.Logomarca = null;
 
-                        salvo = _db.SaveChanges();
-                        if (salvo == 0)
-                        {
-                            LoggerFile.Write("Imagem Logomarca da Instituição não foi atualizada por possível falha - Sigla: " + sigla);
-                            return Json(new { titulo = Mensagens_pt_BR.Ok, mensagem = "Imagem não foi excluída", action = "", sucesso = false });
+                            await _db.SaveChangesAsync();
+                            await transaction.CommitAsync();
+
+                            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Imagem foi excluída da instituição", action = "", sucesso = true });
                         }
-                        else if (salvo < 0)
-                        {
-                            LoggerFile.Write("ERRO: Imagem da Instituição não foi excluída - Sigla: " + sigla);
-                            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Imagem não foi excluida", action = "", sucesso = false });
-                        }
+
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Imagem não foi excluída", action = "", sucesso = false });
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+
+                        _eventLogHelper.LogEventViewer("[Instituicoes] ExcluirImagemLogomarca - Erro: " + ex.Message, "wError");
+
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Imagem não foi excluída", action = "", sucesso = false });
                     }
                 }
-                catch
-                {
-                    erro = true;
-                }
-                finally
-                {
-                    trans.Complete();
-                }
-                if (erro || salvo < 1)
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Imagem não foi excluída", action = "", sucesso = false });
-            }
-            return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Imagem foi excluída da instituição", action = "", sucesso = true });
+            });
         }
 
         [TypeFilter(typeof(SessionFilter))]
