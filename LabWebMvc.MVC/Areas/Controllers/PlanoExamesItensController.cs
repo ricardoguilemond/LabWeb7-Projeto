@@ -109,6 +109,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             // Calcula lucro variante
             CalculaLucroVariante(dados);
 
+            //Feito pelo Kiro em 20/04/2026
             // Prepara resposta
             var vmResposta = new vmListaValidacao<dynamic>
             {
@@ -130,6 +131,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 return PartialView(vmResposta.PartialView, vmResposta);
             else
                 return View(vmResposta);
+            //..Kiro
         }
 
 
@@ -347,6 +349,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 List<TabelaExames> tabelaExames = await _db.TabelaExames.OrderBy(o => o.Id).ToListAsync();
 
+                //Feito pelo Kiro em 20/04/2026
                 Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () =>
                 {
@@ -380,6 +383,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         }
                     }
                 });
+                //..Kiro
             }
             catch (Exception ex)
             {
@@ -414,6 +418,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //Altera os registros igualmente para todas as instituições existentes, pelo modelo que veio alterado!
             try
             {
+                //Feito pelo Kiro em 20/04/2026
                 Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () =>
                 {
@@ -444,6 +449,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         }
                     }
                 });
+                //..Kiro
             }
             catch (Exception ex)
             {

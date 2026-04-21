@@ -450,36 +450,81 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ExcluirClasseExames")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> ExcluirClasseExames(int id)
         {
-            // Verificação adicional: ExamesPendentes e Requisitar que possuem FK para ClasseExames
+            // 1) Verificação de vínculos diretos: ExamesPendentes e Requisitar
             bool possuiVinculosDiretos = await _db.ExamesPendentes.AnyAsync(e => e.ClasseExamesId == id)
                                       || await _db.Requisitar.AnyAsync(r => r.ClasseExamesId == id);
 
             if (possuiVinculosDiretos)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de Exames possui exames pendentes ou requisições vinculadas e não pode ser excluída", action = "", sucesso = false });
 
-            return await _exclusaoService.ExcluirEntidadeComConcorrenciaAsync<ClasseExames>(
-                _db,
-                id,
-                "Exclusao_De_Folha_De_Exame",
-                ce => ce.Id == id,
-                async () =>
-                {
-                    var existeVinculo = await (
-                        from ple in _db.PlanoExames
-                        join era in _db.ItensExamesRealizados on ple.ExameId equals era.ClasseExamesId into groupItensExames
-                        from subgroup1 in groupItensExames.DefaultIfEmpty()
-                        join eram in _db.ItensExamesRealizadosAM on ple.ExameId equals eram.ClasseExamesId into groupItensExamesAM
-                        from subgroup2 in groupItensExamesAM.DefaultIfEmpty()
-                        where ple.ExameId == id && ple.ContaExame.Substring(4, 7) != "0000000"
-                        select ple.Id
-                    ).AnyAsync();
+            // 2) Verificação de vínculos indiretos: ItensExamesRealizados e ItensExamesRealizadosAM
+            bool possuiExamesRealizados = await _db.ItensExamesRealizados.AnyAsync(i => i.ClasseExamesId == id)
+                                       || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ClasseExamesId == id);
 
-                    return !existeVinculo;
+            if (possuiExamesRealizados)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de Exames possui itens de exames realizados vinculados e não pode ser excluída", action = "", sucesso = false });
+
+            // 3) Exclusão em cascata com lock pessimista (semáforo dentro da transação)
+            Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _db.Database.BeginTransactionAsync();
+                try
+                {
+                    // Lock pessimista: trava o registro da ClasseExames para evitar exclusão concorrente
+                    var folha = await _db.ClasseExames
+                        .FromSqlRaw(@"SELECT * FROM ""ClasseExames"" WHERE ""Id"" = {0} FOR UPDATE NOWAIT", id)
+                        .FirstOrDefaultAsync();
+
+                    if (folha == null)
+                    {
+                        await transaction.RollbackAsync();
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de Exames não foi encontrada ou já foi excluída", action = "", sucesso = false });
+                    }
+
+                    // Re-verificação dentro da transação (outro usuário pode ter vinculado dados entre a verificação e o lock)
+                    bool vinculosCriados = await _db.ItensExamesRealizados.AnyAsync(i => i.ClasseExamesId == id)
+                                        || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ClasseExamesId == id)
+                                        || await _db.ExamesPendentes.AnyAsync(e => e.ClasseExamesId == id)
+                                        || await _db.Requisitar.AnyAsync(r => r.ClasseExamesId == id);
+
+                    if (vinculosCriados)
+                    {
+                        await transaction.RollbackAsync();
+                        return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de Exames adquiriu vínculos durante a operação e não pode ser excluída", action = "", sucesso = false });
+                    }
+
+                    // Exclui todos os registros do PlanoExames vinculados à folha
+                    await _db.PlanoExames
+                        .Where(pe => pe.ExameId == id)
+                        .ExecuteDeleteAsync();
+
+                    // Exclui a folha de exames
+                    _db.ClasseExames.Remove(folha);
+                    await _db.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+
+                    return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Folha de Exames foi excluída com sucesso", action = "", sucesso = true });
                 }
-            );
+                catch (Npgsql.PostgresException pgEx) when (pgEx.SqlState == "55P03")
+                {
+                    // 55P03 = lock_not_available (NOWAIT falhou — outro usuário está excluindo)
+                    await transaction.RollbackAsync();
+                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Existe uma operação concorrente em andamento. Aguarde!", action = "", sucesso = false });
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _eventLogHelper.LogEventViewer("[ClasseExames] Excluir - Erro: " + ex.Message, "wError");
+                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Erro ao excluir Folha de Exames", action = "", sucesso = false });
+                }
+            });
         }
+        //..Kiro
 
         //public async Task<IActionResult> ExcluirClasseExames(int id)
         //{

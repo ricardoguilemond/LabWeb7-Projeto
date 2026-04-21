@@ -107,6 +107,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpPost]
         [Route("IncluirPostos")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> SalvarPostos(vmPostos vm)
         {
             string redirecionaUrl = "Postos".MontaUrl(base.HttpContext.Request);
@@ -165,6 +166,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             });
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
@@ -211,6 +213,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpPost]
         [Route("AlterarPostos")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> SalvarAlteracaoPostos(vmPostos vm, int id)
         {
             string redirecionaUrl = "Postos".MontaUrl(base.HttpContext.Request);
@@ -261,18 +264,22 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             });
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ExcluirPostos")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> ExcluirPostos(int id)
         {
+            //Feito pelo Kiro em 20/04/2026
             // Verifica se o posto possui vínculos antes de excluir
             bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.PostoId == id)
                                || await _db.ExamesRealizados.AnyAsync(e => e.PostoId == id);
 
             if (possuiVinculos)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto possui requisições ou exames vinculados e não pode ser excluído", action = "", sucesso = false });
+            //..Kiro
 
             Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(async () =>
@@ -304,6 +311,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             });
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]

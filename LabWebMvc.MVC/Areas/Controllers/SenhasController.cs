@@ -195,6 +195,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ExcluirUsuario")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<JsonResult> ExcluirUsuario(string? Email)
         {
             if (string.IsNullOrEmpty(Email))
@@ -249,6 +250,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             });
         }
+        //..Kiro
 
         /* REFERENTE A MANUTENÇÃO DE SENHAS DOS LOGINS DOS USUÁRIOS PELO ADMINISTRADOR
          * aqui neste HttPost não resolve com vm (View Model),

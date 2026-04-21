@@ -1008,9 +1008,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                          _db.Empresa.FirstOrDefault()?.UF?.TrimEnd() + " - CEP: " +
                                          _db.Empresa.FirstOrDefault()?.CEP?.FormatarCEP();
 
+            //Feito pelo Kiro em 20/04/2026
             string dataHoje = DateTime.Now.ToString("dd/MM/yyyy");
             string horaHoje = DateTime.Now.ToString("HH:mm");
             string dataPrevista = DateTime.Now.AddDays(7).ToString("dd/MM/yyyy"); //padrão 7 dias para entrega inicial 
+            //..Kiro
 
             //Impressão do Cupom
             var sb = new StringBuilder();
@@ -1093,7 +1095,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("Requisitar/GetLancamentosHoje")]
         public IActionResult GetLancamentosHoje()
         {
-            var hoje = DateTime.Today; // Kind=Local, compatível com timestamp without time zone
+            var hoje = DateTime.Today; //Feito pelo Kiro em 20/04/2026 — corrigido de DateTime.SpecifyKind UTC //..Kiro
 
             var requisicoesHoje = _db.Requisitar
                 .Include(r => r.Pacientes)

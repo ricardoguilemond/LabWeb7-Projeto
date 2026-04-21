@@ -17,7 +17,7 @@
 | Tabelas no DDL                     | 37      | 37             |
 | Tabelas nos modelos C# (entidades) | 42      | 42             |
 | Tabelas com correspondência direta | 37      | 37             |
-| Tabelas só no modelo C# (sem DDL) | 5       | 5 (esperado)   |
+| Tabelas só no modelo C# (sem DDL)  | 5       | 5 (esperado)   |
 | Divergências de tipo               | 8       | 8 (mantidas)   |
 | Divergências de tamanho            | 6       | **2**          |
 | Divergências de nullability        | 5       | 5 (pendente)   |
@@ -46,13 +46,13 @@
 As seguintes entidades existem como modelos C# e DbSets no `db.cs`,
 mas **não possuem CREATE TABLE** no script `Tabelas_Vazias.sql`:
 
-| Modelo C#              | Arquivo                        | Observação                          |
-|------------------------|--------------------------------|-------------------------------------|
-| `ControleDeAcesso`     | Controledeacesso.cs            | Criada em script separado           |
-| `ControleDePerfil`     | ControleDePerfil.cs            | Criada em script separado           |
-| `ControleDePerfilMenu` | ControleDePerfilMenu.cs        | Criada em script separado           |
-| `ControleDePerfilModelo`| ControleDePerfilModelo.cs     | Criada em script separado           |
-| `ControleDePerfilTipo` | ControleDePerfilTipo.cs        | Criada em script separado           |
+| Modelo C#               | Arquivo                        | Observação                          |
+|-------------------------|--------------------------------|-------------------------------------|
+| `ControleDeAcesso`      | Controledeacesso.cs            | Criada em script separado           |
+| `ControleDePerfil`      | ControleDePerfil.cs            | Criada em script separado           |
+| `ControleDePerfilMenu`  | ControleDePerfilMenu.cs        | Criada em script separado           |
+| `ControleDePerfilModelo`| ControleDePerfilModelo.cs      | Criada em script separado           |
+| `ControleDePerfilTipo`  | ControleDePerfilTipo.cs        | Criada em script separado           |
 
 > **Nota:** Estas tabelas são criadas nos scripts separados
 > `Cria Tabelas de Controle de Acesso.sql` e

@@ -89,6 +89,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             TempData["NumeroFolha"] = numeroItemFolha.ToString();
             TempData.Keep();
 
+            //Feito pelo Kiro em 20/04/2026
             //Finalização da View
             if (partial || (totalRegistros == 0 && string.IsNullOrEmpty(vm.Descricao)))
             {
@@ -127,11 +128,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 ViewBag.ListaDados = dados;
                 return View(vmResposta);
             }
+            //..Kiro
         }
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("IncluirPlanoExames")]
+        //Feito pelo Kiro em 20/04/2026
         public IActionResult IncluirPlanoExames()
         {
             // Recupera o número da folha do TempData (definido no Index)
@@ -174,6 +177,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             ViewBag.TextoMenu = new object[] { "Cadastro de Plano de Exames", false };
             return View(vm);
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpPost]
@@ -239,6 +243,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 List<TabelaExames> tabelaExames = await _db.TabelaExames.OrderBy(o => o.Id).ToListAsync();
 
+                //Feito pelo Kiro em 20/04/2026
                 Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () =>
                 {
@@ -296,6 +301,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         }
                     }
                 });
+                //..Kiro
             }
             catch (Exception ex)
             {
@@ -503,6 +509,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 List<TabelaExames> tabelaExames = await _db.TabelaExames.OrderBy(o => o.Id).ToListAsync();
 
+                //Feito pelo Kiro em 20/04/2026
                 Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () =>
                 {
@@ -540,6 +547,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         }
                     }
                 });
+                //..Kiro
             }
             catch (Exception ex)
             {
@@ -562,6 +570,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             string contaExame = registro.ContaExame;
 
+            //Feito pelo Kiro em 20/04/2026
             // Verifica se a ContaExame está sendo utilizada em exames realizados, AM ou requisições
             bool possuiVinculos = await _db.ItensExamesRealizados.AnyAsync(i => i.ContaExame == contaExame)
                                || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ContaExame == contaExame)
@@ -578,6 +587,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             if (possuiVinculos)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Esta conta do Plano de Exames possui itens de exames realizados ou requisições vinculadas e não pode ser excluída", action = "", sucesso = false });
+            //..Kiro
 
             // Exclusão
             bool erro = false;

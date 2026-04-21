@@ -1051,44 +1051,147 @@ namespace LabWebMvc.MVC.Areas.Utils
 
         /* Gerador/Sequenciador do Código de CONTA PRINCIPAL (Sequencial) */
 
+        //Feito pelo Kiro em 20/04/2026
+        /// <summary>
+        /// Gera o próximo código de conta principal disponível na folha,
+        /// reutilizando gaps na sequência (001 a 999).
+        /// </summary>
         public static string[] SequenciadorContaPrincipal(Db db, int contaFolha, int tipoConta = 11)
         {
-            string conta = tipoConta.ToString() + contaFolha.ToString().PadLeft(2, '0');
-
-            PlanoExames? sequencia = db.PlanoExames.Where(l => l.ContaExame.StartsWith(conta) && l.ContaExame.EndsWith("0000") && l.TabelaExamesId == (int)IdPadrao.SUS).OrderByDescending(o => o.ContaExame).FirstOrDefault();
-            if (sequencia != null)
+            try
             {
-                //11.01.000 -> 1101001..1101999
-                int seq = sequencia.ContaExame.Substring(0, 7).ToInt32() + 1;
-                string[] ret = { seq.ToString() + string.Empty.PadLeft(4, '0'),
-                                     sequencia.RefExame.ToUpper(),
-                                     sequencia.RefItem.ToUpper()
-                    };
+                string prefixoFolha = tipoConta.ToString() + contaFolha.ToString().PadLeft(2, '0');
 
+                // Busca todas as contas principais existentes na folha (modelo SUS)
+                // O Substring é traduzido pelo Npgsql para SUBSTRING no PostgreSQL
+                var contasUsadas = db.PlanoExames
+                    .Where(l => l.ContaExame.StartsWith(prefixoFolha)
+                              && l.ContaExame.EndsWith("0000")
+                              && l.ContaExame.Substring(4, 3) != "000"
+                              && l.TabelaExamesId == (int)IdPadrao.SUS)
+                    .Select(l => l.ContaExame.Substring(4, 3))
+                    .ToList();
+
+                // Parse seguro para int, ignorando valores inválidos
+                var codigosUsados = new HashSet<int>();
+                foreach (var codigo in contasUsadas)
+                {
+                    if (int.TryParse(codigo, out int valor) && valor > 0)
+                        codigosUsados.Add(valor);
+                }
+
+                // Verifica se a folha existe no plano (registro com 0000000)
+                var folha = db.PlanoExames
+                    .Where(l => l.ContaExame.StartsWith(prefixoFolha)
+                              && l.ContaExame.EndsWith("0000000")
+                              && l.TabelaExamesId == (int)IdPadrao.SUS)
+                    .FirstOrDefault();
+
+                if (folha == null)
+                    return ["ERRO"];
+
+                // Busca o primeiro gap na sequência (001 a 999)
+                int? proximoCodigo = null;
+                for (int i = 1; i <= 999; i++)
+                {
+                    if (!codigosUsados.Contains(i))
+                    {
+                        proximoCodigo = i;
+                        break;
+                    }
+                }
+
+                if (!proximoCodigo.HasValue)
+                    return ["ERRO"]; // Todas as 999 posições estão ocupadas
+
+                string[] ret = {
+                    prefixoFolha + proximoCodigo.Value.ToString().PadLeft(3, '0') + "0000",
+                    folha.RefExame?.ToUpper() ?? "",
+                    folha.RefExame?.ToUpper() ?? ""
+                };
                 return ret;
-            } // se não conseguiu criar a sequência acima que inicia de 001 e vai até 999, então a conta folha nem existe.
-            return ["ERRO"];
+            }
+            catch (Exception ex)
+            {
+                var eventLog = new ExtensionsMethods.EventViewerHelper.EventLogHelper();
+                eventLog.LogEventViewer($"[SequenciadorContaPrincipal] Erro ao gerar código para folha {contaFolha}: {ex.Message}", "wError");
+                return ["ERRO"];
+            }
         }
+        //..Kiro
 
         /* Gerador/Sequenciador do Código de CONTA ITEM (Sequencial) */
 
+        //Feito pelo Kiro em 20/04/2026
+        /// <summary>
+        /// Gera o próximo código de item disponível dentro de uma conta principal,
+        /// reutilizando gaps na sequência (0001 a 9999).
+        /// </summary>
         public static string[] SequenciadorContaItem(Db db, int contaFolha, ulong contaPrincipal, int tipoConta = 11)
         {
-            string conta = contaPrincipal.ToString().Substring(0, 7);  /// tipoConta.ToString() + contaFolha.ToString().PadLeft(2, '0') + contaPrincipal.ToString().PadLeft(3, '0');
-
-            PlanoExames? sequencia = db.PlanoExames.Where(l => l.ContaExame.StartsWith(conta) && l.TabelaExamesId == (int)IdPadrao.SUS).OrderByDescending(o => o.ContaExame).FirstOrDefault();
-            if (sequencia != null)
+            try
             {
-                //11.01.001.0000 -> 11.01.001.0001..11.01.999.9999
-                ulong seq = sequencia.ContaExame.Substring(0, 11).ToULong() + 1;
-                string[] ret = { seq.ToString(),
-                                     sequencia.RefExame.ToUpper(),
-                                     sequencia.RefItem.ToUpper()
-                    };
+                string contaPrincipalStr = contaPrincipal.ToString();
+                if (contaPrincipalStr.Length < 7)
+                    return ["ERRO"];
+
+                string prefixoConta = contaPrincipalStr.Substring(0, 7);
+
+                // Busca a conta principal para obter RefExame e RefItem
+                var contaPrincipalReg = db.PlanoExames
+                    .Where(l => l.ContaExame.StartsWith(prefixoConta)
+                              && l.ContaExame.EndsWith("0000")
+                              && l.TabelaExamesId == (int)IdPadrao.SUS)
+                    .FirstOrDefault();
+
+                if (contaPrincipalReg == null)
+                    return ["ERRO"];
+
+                // Busca todos os itens existentes dentro da conta principal (modelo SUS)
+                var itensUsados = db.PlanoExames
+                    .Where(l => l.ContaExame.StartsWith(prefixoConta)
+                              && l.ContaExame.Substring(7, 4) != "0000"
+                              && l.TabelaExamesId == (int)IdPadrao.SUS)
+                    .Select(l => l.ContaExame.Substring(7, 4))
+                    .ToList();
+
+                // Parse seguro para int, ignorando valores inválidos
+                var codigosUsados = new HashSet<int>();
+                foreach (var codigo in itensUsados)
+                {
+                    if (int.TryParse(codigo, out int valor) && valor > 0)
+                        codigosUsados.Add(valor);
+                }
+
+                // Busca o primeiro gap na sequência (0001 a 9999)
+                int? proximoItem = null;
+                for (int i = 1; i <= 9999; i++)
+                {
+                    if (!codigosUsados.Contains(i))
+                    {
+                        proximoItem = i;
+                        break;
+                    }
+                }
+
+                if (!proximoItem.HasValue)
+                    return ["ERRO"]; // Todas as 9999 posições estão ocupadas
+
+                string[] ret = {
+                    prefixoConta + proximoItem.Value.ToString().PadLeft(4, '0'),
+                    contaPrincipalReg.RefExame?.ToUpper() ?? "",
+                    contaPrincipalReg.RefItem?.ToUpper() ?? ""
+                };
                 return ret;
-            } // se não conseguiu criar a sequência do item acima que inicia de 001 então a conta principal ou folha nem existe.
-            return ["ERRO"];
+            }
+            catch (Exception ex)
+            {
+                var eventLog = new ExtensionsMethods.EventViewerHelper.EventLogHelper();
+                eventLog.LogEventViewer($"[SequenciadorContaItem] Erro ao gerar código para conta {contaPrincipal}: {ex.Message}", "wError");
+                return ["ERRO"];
+            }
         }
+        //..Kiro
 
         /* Retorna uma mensagem de aviso contendo título e texto em HTML */
 

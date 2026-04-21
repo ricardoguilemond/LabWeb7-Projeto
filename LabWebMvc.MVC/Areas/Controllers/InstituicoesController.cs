@@ -162,6 +162,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 GetImagemTimbre(vm);
                 GetImagemLogomarca(vm);
 
+                //Feito pelo Kiro em 20/04/2026
                 Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () =>
                 {
@@ -228,6 +229,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         }
                     }
                 });
+                //..Kiro
             }
             catch (Exception ex)
             {
@@ -335,6 +337,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (Instituicoes == null)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Não foi possível salvar o registro neste momento", action = "", sucesso = false });
 
+            //Feito pelo Kiro em 20/04/2026
             Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(async () =>
             {
@@ -406,6 +409,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     }
                 }
             });
+            //..Kiro
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -413,6 +417,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirInstituicao")]
         public async Task<IActionResult> ExcluirInstituicao(int id)
         {
+            //Feito pelo Kiro em 20/04/2026
             // Verifica se a instituição possui vínculos antes de excluir
             bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.InstituicaoId == id)
                                || await _db.ExamesRealizados.AnyAsync(e => e.InstituicaoId == id)
@@ -420,6 +425,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             if (possuiVinculos)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Instituição possui exames, requisições ou fichas vinculadas e não pode ser excluída", action = "", sucesso = false });
+            //..Kiro
 
             // Excluindo um registro da tabela
             DeleteContext<Instituicao> context = new DeleteContext<Instituicao>(new DeleteStrategy<Instituicao>(_db));
@@ -498,6 +504,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ExcluirImagemTimbre")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> ExcluirImagemTimbre(string sigla)
         {
             Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
@@ -532,10 +539,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             });
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ExcluirImagemLogomarca")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> ExcluirImagemLogomarca(string sigla)
         {
             //Na verdade, não é uma exclusão de registro e sim LIMPEZA do campo!
@@ -571,6 +580,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             });
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]

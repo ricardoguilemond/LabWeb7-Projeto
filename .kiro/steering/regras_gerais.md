@@ -98,3 +98,27 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
 - Seguir integralmente o steering `encoding-acentuacao-ptbr.md`
 - Todos os textos em Português-Brasil com acentuação correta
 - Não usar scripts PowerShell em lote sem validar encoding depois
+
+## Marcação de Código
+
+- Sempre que implementar ou alterar um bloco de código, adicionar
+  no início do bloco: `//Feito pelo Kiro em dd/MM/yyyy`
+  (substituir dd/MM/yyyy pela data atual)
+- Ao final do bloco adicionar: `//..Kiro`
+- Exemplo:
+  ```csharp
+  //Feito pelo Kiro em 20/04/2026
+  public void CalcularTotal(int[] valores)
+  {
+      int soma = 0;
+      foreach (int v in valores)
+      {
+          soma += v;
+      }
+      Console.WriteLine("Total: " + soma);
+  }
+  //..Kiro
+  ```
+- Não marcar alterações triviais (ex: apenas remover um `using`)
+- Marcar blocos significativos: métodos novos, verificações de FK,
+  migrações de transação, correções de lógica

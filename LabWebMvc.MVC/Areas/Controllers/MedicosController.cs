@@ -102,6 +102,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpPost]
         [Route("IncluirMedico")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> SalvarMedico(vmMedicos obj)
         {
             string redirecionaUrl = "Medicos".MontaUrl(base.HttpContext.Request);
@@ -159,6 +160,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             });
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
@@ -187,6 +189,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpPost]
         [Route("AlterarMedico")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> SalvarAlteracaoMedico(vmMedicos vm, int id)
         {
             string redirecionaUrl = "Medicos".MontaUrl(base.HttpContext.Request);
@@ -229,12 +232,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             });
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ExcluirMedico")]
+        //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> ExcluirMedico(int id)
         {
+            //Feito pelo Kiro em 20/04/2026
             // Verifica se o médico possui vínculos antes de excluir
             bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.MedicoId == id)
                                || await _db.ExamesRealizados.AnyAsync(e => e.MedicoId == id)
@@ -242,6 +248,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             if (possuiVinculos)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Médico possui requisições ou exames vinculados e não pode ser excluído", action = "", sucesso = false });
+            //..Kiro
 
             Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(async () =>
@@ -273,6 +280,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             });
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]

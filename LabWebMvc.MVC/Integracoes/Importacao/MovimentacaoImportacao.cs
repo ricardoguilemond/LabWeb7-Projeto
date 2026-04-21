@@ -33,6 +33,7 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
             return colunas;
         }
 
+        //Feito pelo Kiro em 20/04/2026
         private void ProcessaArquivo(string arquivo, string tabela)
         {
             using var reader = new StreamReader(arquivo);
@@ -89,6 +90,7 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
                 writer.WriteLine(string.Join(";", valoresFiltrados));
             }
         }
+        //..Kiro
 
         public void ProcessaMovimentacao(MovimentacaoImportacaoParameter parameter)
         {

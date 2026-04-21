@@ -21,6 +21,7 @@
                 string dataIso = _tempoService.ObterDataHoraServidor("iso");  // formato ISO 8601
             */
 
+            //Feito pelo Kiro em 20/04/2026
             // Método síncrono para obter a data e hora do servidor PostgreSQL
             public string ObterDataHoraServidor(string? formato = null)
             {
@@ -48,7 +49,9 @@
                     return $"Erro ao obter data do servidor: {ex.Message}";
                 }
             }
+            //..Kiro
 
+            //Feito pelo Kiro em 20/04/2026
             // Método assíncrono para obter a data e hora do servidor PostgreSQL
             public async Task<DateTime?> ObterDataHoraServidorAsync()
             {
@@ -66,6 +69,7 @@
                     return null;
                 }
             }
+            //..Kiro
 
             // Método assíncrono com formatação
             public async Task<string> ObterDataHoraServidorFormatadoAsync(string? formato = null)

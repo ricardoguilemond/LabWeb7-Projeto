@@ -391,6 +391,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ExcluirPaciente")]
         public async Task<IActionResult> ExcluirPaciente(int id)
         {
+            //Feito pelo Kiro em 20/04/2026
             // Verifica se o paciente possui exames vinculados antes de excluir
             bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.PacienteId == id)
                                || await _db.ExamesRealizados.AnyAsync(e => e.PacienteId == id)
@@ -398,6 +399,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             if (possuiVinculos)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Paciente possui exames vinculados e não pode ser excluído", action = "", sucesso = false });
+            //..Kiro
 
             // Excluindo um registro da tabela Pacientes
             DeleteContext<Pacientes> context = new DeleteContext<Pacientes>(new DeleteStrategy<Pacientes>(_db));

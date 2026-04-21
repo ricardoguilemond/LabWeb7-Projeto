@@ -277,6 +277,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                         // Inicia a transação como DbTransaction
                         using (System.Data.Common.DbTransaction transacao = await conexao.BeginTransactionAsync())
                         {
+                            //Feito pelo Kiro em 20/04/2026
                             if (transacao is NpgsqlTransaction npgsqlTransacao)
                             {
                                 try
@@ -321,6 +322,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                                 eventLog2.LogEventViewer("[ValidacoesDeSenhas] A transação não é do tipo NpgsqlTransaction no método: CriaCacheEmailAsync.", "wErro");
                                 admStringConexao = "erro";
                             }
+                            //..Kiro
                         }
                     }
                 }
