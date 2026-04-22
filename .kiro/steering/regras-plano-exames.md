@@ -98,12 +98,31 @@ replicado para os demais planos de exames de cada Instituição.
 ## Tratamento de Preços/Valores
 
 - Os campos `ValorCusto`, `ValorItem`, `TabelaCH`, `QCH`, `ICH`
-  e outros relacionados a valores são tratados **individualmente**
-  em telas específicas de tratativa de preços.
-- Nessas telas **não haverá exclusão ou alteração em massa**, pois
-  os preços são tratados de forma independente para cada Instituição.
-- A tela de Tabela de Preços (`PlanoExamesItens`) permite editar
-  valores por Instituição sem afetar o modelo SUS.
+  e outros relacionados a valores possuem **dois cenários** de
+  edição:
+
+### Cenário 1 — Preço individual por Instituição
+- Edição inline no grid da Tabela de Preços (`SalvarItemGrid`)
+- Salva apenas o registro específico (por Id)
+- Cada Instituição mantém seus próprios valores
+- Não afeta outras Instituições
+
+### Cenário 2 — Preço em massa para todas as Instituições
+- Tela de alteração completa (`AlterarPlanoExamesItens`)
+- Ao salvar (`SalvarAlteracaoPlanoExamesItens`), replica
+  `ValorCusto` e `ValorItem` para todas as Instituições
+  que possuem a mesma `ContaExame`
+- Útil para definir um preço base igual em todas as tabelas
+- Campos estruturais (Descricao, Etiqueta, etc.) também são
+  replicados neste cenário
+
+### Regra geral
+- A tela de Tabela de Preços (`PlanoExamesItens`) permite
+  ambos os cenários
+- O grid usa o Cenário 1 (individual)
+- O botão "Alterar" do grid deve usar o Cenário 2 (massa)
+- Nenhum dos cenários permite exclusão de registros — apenas
+  edição de valores
 
 ## Resumo
 

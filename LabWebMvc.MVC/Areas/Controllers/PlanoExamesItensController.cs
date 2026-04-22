@@ -269,45 +269,48 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("AlterarPlanoExamesItens")]
-        public async Task<IActionResult> AlterarPlanoExamesItens(vmPlanoExames vm, int id)
+        //Feito pelo Kiro em 20/04/2026
+        public async Task<IActionResult> AlterarPlanoExamesItens(vmPlanoExames vm, int id, string? valorCusto = null, string? valorItem = null)
         {
-            /*
-             * Carrega o registro a ser alterado
-             */
-            PlanoExames? planoExames = await _db.PlanoExames.Where(x => x.Id == id).AsNoTracking().FirstOrDefaultAsync();   //É uma lista que só vai trazer um único registro por enquanto.
+            PlanoExames? planoExames = await _db.PlanoExames.Where(x => x.Id == id).AsNoTracking().FirstOrDefaultAsync();
             if (planoExames == null)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "O sistema não conseguiu identificar o registro do plano para a alteração" });
 
             try
             {
-                //Não aceitam nulos
-                vm.CitoInstituicao = planoExames.CitoInstituicao;  //tem default 0 (não nulo)  na tabela
-                vm.CitoTituloExame = planoExames.CitoTituloExame;  //tem default 0 (não nulo)  na tabela
-                                                                   //planoExames.RefExame = planoExames.RefExame.ToUpper();    //nome da folha não vamos correr o risco de alterar
-                vm.RefItem = planoExames.RefItem;                  //principal
-                vm.Descricao = planoExames.Descricao;              //item
+                vm.CitoInstituicao = planoExames.CitoInstituicao;
+                vm.CitoTituloExame = planoExames.CitoTituloExame;
+                vm.RefItem = planoExames.RefItem;
+                vm.Descricao = planoExames.Descricao;
                 vm.QCH = planoExames.QCH;
                 vm.Etiqueta = planoExames.Etiqueta;
                 vm.Etiquetas = planoExames.Etiquetas;
                 vm.AlinhaLaudo = planoExames.AlinhaLaudo;
                 vm.Seleciona = planoExames.Seleciona;
                 vm.NaoMostrar = planoExames.NaoMostrar;
-
-                //Aceitam nulo
                 vm.CitoTituloFolha = planoExames.CitoTituloFolha;
                 vm.CitoDescricao = planoExames.CitoDescricao;
                 vm.CitoParteDescricao = planoExames.CitoParteDescricao;
-                vm.ValorCusto = planoExames.ValorCusto;
-                vm.ValorItem = planoExames.ValorItem;
                 vm.TABELACH = planoExames.TABELACH;
                 vm.ICH = planoExames.ICH;
                 vm.UnidadeMedida = planoExames.UnidadeMedida;
                 vm.Referencia = planoExames.Referencia;
                 vm.Laudo = planoExames.Laudo;
-                vm.MapaHorizontal = planoExames.MapaHorizontal;    //Sinonímia SEMPRE maiúscula
+                vm.MapaHorizontal = planoExames.MapaHorizontal;
                 vm.ResultadoMinimo = planoExames.ResultadoMinimo;
                 vm.ResultadoMaximo = planoExames.ResultadoMaximo;
                 vm.LaboratorioExterno = planoExames.LaboratorioExterno;
+
+                // Prioriza valores digitados no grid sobre os do banco
+                if (!string.IsNullOrEmpty(valorCusto))
+                    vm.ValorCusto = valorCusto.Replace(".", "").Replace(",", ".").ToDecimalInvariant();
+                else
+                    vm.ValorCusto = planoExames.ValorCusto;
+
+                if (!string.IsNullOrEmpty(valorItem))
+                    vm.ValorItem = valorItem.Replace(".", "").Replace(",", ".").ToDecimalInvariant();
+                else
+                    vm.ValorItem = planoExames.ValorItem;
 
                 ViewBag.TipoContaExame = planoExames.ContaExame.Substring(7, 4) == "0000" ? TipoContaExame.Principal : TipoContaExame.Item;
             }
@@ -315,12 +318,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 _eventLog.LogEventViewer("[PlanoExamesItens] Alterar - Erro: " + ex.Message, "wError");
             }
-            //Parâmetros auxiliares em ViewBag
+
             ViewBag.TextoMenu = new object[] { "Alterar Item do Plano de Exames", false };
-            //Finalização da View
             _geralController.Validacao("AlterarPlanoExamesItens", ViewBag.TextoMenu[0]);
-            return View(vm); //na edição a vm precisa retornar para a View
+            return View(vm);
         }
+        //..Kiro
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpPost]
