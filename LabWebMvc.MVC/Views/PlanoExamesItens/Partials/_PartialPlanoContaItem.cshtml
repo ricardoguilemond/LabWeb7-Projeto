@@ -54,6 +54,27 @@
     @if (plano.ContaExame.Substring(4, 7) == "0000000")  //conta folha
         TipoConta = "Folha";
 
+    string grupoConta = plano.ContaExame.Substring(0, 7);
+    string tipoLinha = TipoConta;
+    bool itensTemValor = false;
+    bool principalTemValor = false;
+    if (TipoConta == "Principal")
+    {
+        itensTemValor = Model.ListaDados.Any(d =>
+            ((string)d.ContaExame).StartsWith(grupoConta) &&
+            ((string)d.ContaExame).Substring(7, 4) != "0000" &&
+            (d.ValorCusto != null && d.ValorCusto > 0 || d.ValorItem != null && d.ValorItem > 0));
+    }
+    else if (TipoConta == "Item")
+    {
+        principalTemValor = Model.ListaDados.Any(d =>
+            ((string)d.ContaExame).StartsWith(grupoConta) &&
+            ((string)d.ContaExame).Substring(7, 4) == "0000" &&
+            (d.ValorCusto != null && d.ValorCusto > 0 || d.ValorItem != null && d.ValorItem > 0));
+    }
+    bool campoDesabilitado = (TipoConta == "Principal" && itensTemValor) || (TipoConta == "Item" && principalTemValor);
+    string disabledAttr = campoDesabilitado ? "disabled" : "";
+
     @Html.Raw(strFundo +
               "<td style='width: 5%;'>" + plano.TabelaExamesId + "</td>" +
               "<td style='width: 10%;'>" + TipoConta + "</td>" +
@@ -62,14 +83,15 @@
               "<td style='width: 10%;'>" + plano.Descricao + "</td>")
 
     @Html.Raw("<td style='width: 10%;'>")
-    @Html.TextBox("ValorCusto", plano.ValorCusto, new { @value = plano.ValorCusto, @onclick = "this.value=''", @onkeypress = "formatarMoedaDecimal(this, ',', event)", @class = "moeda", @id = "valorCusto" + Convert.ToString(plano.Id), @style = "width: 100px; " })
+    <input type="text" name="ValorCusto" value="@plano.ValorCusto" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorCusto@(plano.Id)" style="width: 100px;" data-grupo="@grupoConta" data-tipo="@tipoLinha" @disabledAttr />
     @Html.Raw("</td>")
     @Html.Raw("<td style='width: 10%;'>")
-    @Html.TextBox("ValorItem", plano.ValorItem, new { @value = plano.ValorItem, @onclick = "this.value=''", @onkeypress = "formatarMoedaDecimal(this, ',', event)", @class = "moeda", @id = "valorItem" + Convert.ToString(plano.Id), @style = "width: 100px; " })
+    <input type="text" name="ValorItem" value="@plano.ValorItem" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorItem@(plano.Id)" style="width: 100px;" data-grupo="@grupoConta" data-tipo="@tipoLinha" @disabledAttr />
     @Html.Raw("</td>")
     @Html.Raw("<td id=" + plano.Id + " class='linhaLucroVariante' style='width: 15%;'>" + @TempData["linhaLucroVariante"] + "&nbsp;</td>")
     @Html.Raw("<td class='grid_fundo_opcoes'>" +
               "<a id=" + plano.Id + " class='grid_itens' onclick=clickSalva(this) title='Salvar os valores da linha'><i class='fa-solid fa-check'></i></a>" +
+              "<a id=" + plano.Id + " class='grid_itens' onclick=clickAlterar(this) title='Alterar em todas as instituições'><i class='fa-sharp fa-solid fa-file-pen'></i></a>" +
               "<a id=" + plano.Id + " class='grid_itens' onclick=clickModelo(this) title='Consulta o modelo da folha'><i class='fa-regular fa-rectangle-list'></i></a>" +
               "<a id=" + plano.Id + " class='grid_itens' onclick=clickConsulta(this) title='Consultar item'><i class='fa-sharp fa-solid fa-display'></i></a>" +
               "</td>" +

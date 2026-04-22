@@ -11,6 +11,14 @@
         background-color: inherit !important;
     }
 
+    /*Feito pelo Kiro em 20/04/2026*/
+    input.moeda:disabled {
+        background-color: #d5d5d5 !important;
+        color: #999 !important;
+        cursor: not-allowed;
+    }
+    /*..Kiro*/
+
     .getColorBackPrincipal {
         color: blue;
         font-weight: bold;
@@ -147,6 +155,17 @@
             var url = "ConsultarPlanoExamesItens?id=" + x.id;
             window.open(url, "_self")
         }
+        //Feito pelo Kiro em 20/04/2026
+        function clickAlterar(x) {
+            var id = x.id;
+            var valorCusto = $('#valorCusto' + id).val();
+            var valorItem = $('#valorItem' + id).val();
+            var url = '@Url.Action("AlterarPlanoExamesItens", "PlanoExamesItens")?id=' + id;
+            if (valorCusto) url += '&valorCusto=' + encodeURIComponent(valorCusto);
+            if (valorItem) url += '&valorItem=' + encodeURIComponent(valorItem);
+            window.location.href = url;
+        }
+        //..Kiro
         //
         //_PartialPlanoContaItem.cshtml
         function clickSalva(x) {
@@ -194,5 +213,41 @@
                 failure: function () { alert("Falhou carregamento do Grid"); }
             });
         }
+
+        //Feito pelo Kiro em 20/04/2026
+        // Controle de edição: Principal vs Itens (mutuamente exclusivos para valores)
+        $(document).on('change keyup', 'input.moeda', function () {
+            var grupo = $(this).data('grupo');
+            var tipo = $(this).data('tipo');
+            if (!grupo || !tipo) return;
+
+            var valor = parseFloat($(this).val().replace('.', '').replace(',', '.')) || 0;
+
+            if (tipo === 'Principal' && valor > 0) {
+                // Principal preenchido: desabilita itens do mesmo grupo
+                $('input.moeda[data-grupo="' + grupo + '"][data-tipo="Item"]').prop('disabled', true);
+            } else if (tipo === 'Principal' && valor === 0) {
+                // Principal zerado: verifica se o outro campo da principal também está zerado
+                var outroCampoPrincipal = $('input.moeda[data-grupo="' + grupo + '"][data-tipo="Principal"]').not(this);
+                var outroValor = parseFloat(outroCampoPrincipal.val()?.replace('.', '').replace(',', '.')) || 0;
+                if (outroValor === 0) {
+                    $('input.moeda[data-grupo="' + grupo + '"][data-tipo="Item"]').prop('disabled', false);
+                }
+            } else if (tipo === 'Item' && valor > 0) {
+                // Item preenchido: desabilita principal do mesmo grupo
+                $('input.moeda[data-grupo="' + grupo + '"][data-tipo="Principal"]').prop('disabled', true);
+            } else if (tipo === 'Item' && valor === 0) {
+                // Item zerado: verifica se todos os itens do grupo estão zerados
+                var algumItemComValor = false;
+                $('input.moeda[data-grupo="' + grupo + '"][data-tipo="Item"]').each(function () {
+                    var v = parseFloat($(this).val()?.replace('.', '').replace(',', '.')) || 0;
+                    if (v > 0) algumItemComValor = true;
+                });
+                if (!algumItemComValor) {
+                    $('input.moeda[data-grupo="' + grupo + '"][data-tipo="Principal"]').prop('disabled', false);
+                }
+            }
+        });
+        //..Kiro
     </script>
 }
