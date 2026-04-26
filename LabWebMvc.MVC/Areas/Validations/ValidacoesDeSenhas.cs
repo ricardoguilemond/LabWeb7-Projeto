@@ -104,7 +104,7 @@ namespace LabWebMvc.MVC.Areas.Validations
 
                 //Repositório de dados da Empresa-Cliente
                 EmpresaClienteRepository repo = new();
-                string SQLEmpresa = repo.RetornaSelectEmpresaCliente(cnpjEmpresa, "CNPJ");  //retorna Select da Empresa em LABWEB7Empresas
+                var (SQLEmpresa, parametrosEmpresa) = repo.RetornaSelectEmpresaCliente(cnpjEmpresa, "CNPJ");  //retorna Select da Empresa em LABWEB7Empresas
                 string admStringConexao = Areas.Utils.Utils.GetValorSetupDoServico("ConexaoPostgreSQL", "PNpgsqlConnection StringEmpresas") ?? "";
                 admStringConexao = admStringConexao.ReformaTexto("usubanco", BasePadrao.UserId).ReformaTexto("ususenha", BasePadrao.Password);
 
@@ -117,6 +117,8 @@ namespace LabWebMvc.MVC.Areas.Validations
                     //Lendo o registro da Empresa-Cliente
                     using (var comando = new NpgsqlCommand(SQLEmpresa, conexao))
                     {
+                        foreach (var p in parametrosEmpresa)
+                            comando.Parameters.Add(p);
                         using (NpgsqlDataReader reader = comando.ExecuteReader())
                         {
                             if (reader.Read()) // retornando dados da EmpresaCliente
@@ -167,7 +169,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                     NomeUsuario = obj.NomeUsuario.ToUpper(),
                     NomeCompleto = obj.NomeCompleto.ToUpper(),
                     Email = obj.Email.ToLower(),
-                    SenhaUsuario = "BAHImD+dYlY+zWRFNMimXw==",  //12345 (por enquanto) Criptografias.GeraSenhaAleatoria(),
+                    SenhaUsuario = CriptoDecripto.HashSenha("12345"),  //hash BCrypt da senha padrão (por enquanto) //TODO Criptografias.GeraSenhaAleatoria(),
                     DataCadastro = _tempoService.ObterDataHoraServidor().ToFormataData(),
                     DataExpira = obj.DataExpira ?? null,
                     UsarAssinatura = obj.UsarAssinatura ?? 0,
@@ -226,7 +228,7 @@ namespace LabWebMvc.MVC.Areas.Validations
             static async Task<EmpresaCliente> LocalizaEmpresaAsync(GeralController geralController, IEventLogHelper eventLog, string admStringConexao, string? loginEmail, string empresaId = "0")
             {
                 var repo = new EmpresaClienteRepository(admStringConexao, geralController, eventLog);
-                string SQLEmpresa = !string.IsNullOrEmpty(loginEmail) && empresaId.ToInt32() == 0
+                var (SQLEmpresa, parametrosEmpresa) = !string.IsNullOrEmpty(loginEmail) && empresaId.ToInt32() == 0
                        ? repo.RetornaSelectEmpresaCliente(loginEmail, "Email")
                        : repo.RetornaSelectEmpresaCliente(empresaId, "Id");
 
@@ -236,6 +238,8 @@ namespace LabWebMvc.MVC.Areas.Validations
                     await conexao.OpenAsync();
                     using (NpgsqlCommand comando = new(SQLEmpresa, conexao))
                     {
+                        foreach (var p in parametrosEmpresa)
+                            comando.Parameters.Add(p);
                         using (NpgsqlDataReader reader = await comando.ExecuteReaderAsync())
                         {
                             if (await reader.ReadAsync())
@@ -350,6 +354,7 @@ namespace LabWebMvc.MVC.Areas.Validations
 
             string admStringConexao = Areas.Utils.Utils.GetValorSetupDoServico("ConexaoPostgreSQL", "PSQLConnectionStringEmpresas") ?? "";
             admStringConexao = admStringConexao.ReformaTexto("usubanco", BasePadrao.UserId).ReformaTexto("ususenha", BasePadrao.Password);
+            string cnpjEmpresaLogada = string.Empty;  // CNPJ da empresa do usuário autenticado (preenchido após LocalizaEmpresaAsync)
 
             //Valida se tem loginEmail na tabela de Emails (LABWEB7Empresas)
             //Atualiza com a string de conexão dinâmica
@@ -357,7 +362,7 @@ namespace LabWebMvc.MVC.Areas.Validations
 
             //Está acessando o banco de dados LABWEB7Empresas para validar o Email na tabela de Emails
             EmpresaClienteRepository repo = new(admStringConexao, _geralController, _eventLog);
-            string SQL = repo.RetornaSelectEmails(loginEmail);
+            var (SQL, parametrosEmail) = repo.RetornaSelectEmails(loginEmail);
 
             Emails emailLocalizado = new();
 
@@ -367,6 +372,8 @@ namespace LabWebMvc.MVC.Areas.Validations
 
                 using (var comando = new NpgsqlCommand(SQL, conexao))
                 {
+                    foreach (var p in parametrosEmail)
+                        comando.Parameters.Add(p);
                     using (NpgsqlDataReader reader = await comando.ExecuteReaderAsync())
                     {
                         if (await reader.ReadAsync())
@@ -389,7 +396,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                     LoginUsuario = loginEmail.ToLower(),
                     NomeUsuario = "ADMINISTRADOR",
                     NomeCompleto = "ADMINISTRADOR DO SISTEMA",
-                    SenhaUsuario = "BAHImD+dYlY+zWRFNMimXw==",  //12345 (por enquanto) //TODO Criptografias.GeraSenhaAleatoria(),
+                    SenhaUsuario = CriptoDecripto.HashSenha("12345"),  //hash BCrypt da senha padrão (por enquanto) //TODO Criptografias.GeraSenhaAleatoria(),
                     DataCadastro = _tempoService.ObterDataHoraServidor().ToFormataData(),
                     Administrador = 1,
                     CNPJEmpresa = cliente.CNPJ,
@@ -407,8 +414,12 @@ namespace LabWebMvc.MVC.Areas.Validations
             else //Prossegue com a validação de Login identificando a Empresa e pegando o script de conexão
             {
                 //Localiza dados na Empresa/Cliente
+                _eventLog.LogEventViewer($"[DEV-LOGIN] Buscando EmpresaCliente: email='{emailLocalizado.Email}' id='{emailLocalizado.EmpresaClienteId}'", "wInfo");
                 EmpresaCliente cliente = await LocalizaEmpresaAsync(_geralController, _eventLog, admStringConexao, emailLocalizado.Email, emailLocalizado.EmpresaClienteId.ToString());
+                _eventLog.LogEventViewer($"[DEV-LOGIN] EmpresaCliente encontrada: CNPJ='{cliente.CNPJ}' StringConexao='{cliente.StringConexao}'", "wInfo");
                 admStringConexao = cliente.StringConexao;  //pega o script de conexão do cliente
+                cnpjEmpresaLogada = cliente.CNPJ;           // guarda o CNPJ correto da empresa
+                _eventLog.LogEventViewer($"[DEV-LOGIN] admStringConexao após LocalizaEmpresa='{admStringConexao}'", "wInfo");
             }
             if (admStringConexao == "erro")
             {
@@ -432,18 +443,39 @@ namespace LabWebMvc.MVC.Areas.Validations
             _db = new Db(optionsBuilder.Options, _connectionService, _eventLog);
 
             //Segue fluxo normal, recebendo a senha normalmente do usuário na sua própria base, ou seja, na base do Cliente.
-            //O usuário faz login com a senha normal, então precisa criptografar em memória para achá-la coretamente no banco de dados...
-            string senhaDecripto = vm.SenhaUsuario != null ? CriptoDecripto.Criptografa_StringToString(vm.SenhaUsuario) : "SenhaErrada@@#$&NãoPodeSerVazia";
-
-            Senhas? login = _db.Senhas.Where(l => l.LoginUsuario == vm.LoginUsuario && l.SenhaUsuario == senhaDecripto).Include(l => l.UsuariosWeb).SingleOrDefault();
+            //O usuário faz login com a senha normal, então precisa comparar o hash BCrypt com a senha digitada.
+            //Se a senha ainda estiver em formato legado (AES), migra automaticamente para BCrypt.
+            Senhas? login = await _db.Senhas.Where(l => l.LoginUsuario == vm.LoginUsuario).Include(l => l.UsuariosWeb).SingleOrDefaultAsync();
             if (login != null && vm.SenhaUsuario != null)
             {
-                senhasLogin.Senhas = login;
-                senhasLogin.NomeCompleto = login.NomeCompleto;
-                senhasLogin.Email = login.Email;
-                senhasLogin.CPF = login.UsuariosWeb?.CPFUsuario;
-                senhasLogin.NomeEmpresa = _db.Empresa.Single().NomeFantasia ?? "";
-                senhasLogin.CNPJEmpresa = _db.Empresa.Single().CNPJ ?? "";
+                bool senhaValida = CriptoDecripto.VerificaSenhaComMigracao(vm.SenhaUsuario, login.SenhaUsuario, out string? novoHash);
+
+                if (senhaValida)
+                {
+                    // Se migrou de AES para BCrypt, atualiza o hash no banco
+                    if (novoHash != null)
+                    {
+                        login.SenhaUsuario = novoHash;
+                        await _db.SaveChangesAsync();
+                        _eventLog.LogEventViewer("[ValidacoesDeSenhas] MIGRAÇÃO: Senha do usuário migrada de AES para BCrypt: " + login.LoginUsuario, "wInfo");
+                    }
+
+                    senhasLogin.Senhas = login;
+                    senhasLogin.NomeCompleto = login.NomeCompleto;
+                    senhasLogin.Email = login.Email;
+                    senhasLogin.CPF = login.UsuariosWeb?.CPFUsuario;
+                    senhasLogin.StringDeConexao = admStringConexao;  // garante o roteamento correto para a empresa do usuário
+                    // Busca a Empresa pelo CNPJ correto da empresa logada (evita retornar a primeira quando há múltiplos registros)
+                    var empresa = !string.IsNullOrEmpty(cnpjEmpresaLogada)
+                        ? _db.Empresa.FirstOrDefault(e => e.CNPJ == cnpjEmpresaLogada)
+                        : _db.Empresa.FirstOrDefault();
+                    senhasLogin.NomeEmpresa = empresa?.NomeFantasia ?? "";
+                    senhasLogin.CNPJEmpresa = empresa?.CNPJ ?? "";
+                }
+                else
+                {
+                    login = null;  // Senha inválida - trata como se não tivesse encontrado
+                }
             }
             //Validações importantes do Login
             if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.UtcNow))
@@ -472,19 +504,38 @@ namespace LabWebMvc.MVC.Areas.Validations
             {
                 SituacaoLogin = (int)TipoSituacaoLogin.ComRestricao
             };
-            //Criptografa a senha que o usuário havia digitado no box de login
+            //Verifica a senha usando BCrypt com migração automática de AES legado
             if (!senhaUsuario.StartsWith("@") && !string.Equals(loginUsuario, "adm@adm", StringComparison.OrdinalIgnoreCase))
             {
-                senhaUsuario = CriptoDecripto.CriptografaSenha(senhaUsuario);    //TODO
+                //Não precisa mais criptografar para buscar - BCrypt verifica contra o hash armazenado
             }
             if (string.Equals(loginUsuario, "adm@adm", StringComparison.OrdinalIgnoreCase) && new[] { "@master105", "master105" }
                       .Any(s => string.Equals(senhaUsuario, s, StringComparison.Ordinal)))  // se veio com arroba, então ainda não criptografou
             {
-                senhaUsuario = CriptoDecripto.CriptografaSenha(senhaUsuario);    //TODO
+                //Senha master - será verificada via BCrypt abaixo
             }
-            Senhas? login = _db.Senhas.FirstOrDefault(l => l.LoginUsuario == loginUsuario && l.SenhaUsuario == senhaUsuario);
+
+            Senhas? login = _db.Senhas.FirstOrDefault(l => l.LoginUsuario == loginUsuario);
             if (login != null)
-                senhasLogin.Senhas = login;
+            {
+                bool senhaValida = CriptoDecripto.VerificaSenhaComMigracao(senhaUsuario, login.SenhaUsuario, out string? novoHash);
+
+                if (senhaValida)
+                {
+                    // Se migrou de AES para BCrypt, atualiza o hash no banco
+                    if (novoHash != null)
+                    {
+                        login.SenhaUsuario = novoHash;
+                        _db.SaveChanges();
+                        _eventLog.LogEventViewer("[ValidacoesDeSenhas] MIGRAÇÃO: Senha do usuário migrada de AES para BCrypt: " + loginUsuario, "wInfo");
+                    }
+                    senhasLogin.Senhas = login;
+                }
+                else
+                {
+                    login = null;  // Senha inválida
+                }
+            }
 
             //Validações importantes do Login
             if (login != null && login.Bloqueado == (int)TipoContaBloqueado.Nao && login.EmailConfirmado == (int)TipoEmailConfirmado.Sim && (login.DataExpira == null || login.DataExpira >= DateTime.UtcNow))

@@ -35,9 +35,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
+            IConnectionService connectionService,
             IPathHelper pathHelper,
             IValidacoesDeSenhas validacoesDeSenhas)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _pathHelper = pathHelper;
             _validacoesDeSenhas = validacoesDeSenhas;
@@ -307,8 +308,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
                 using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
                 {
-                    //Pega a nova senha definida pelo usuário e criptografa antes de salvar na tabela
-                    senhas.SenhaUsuario = CriptoDecripto.Criptografa_StringToString(senhaUsuario);
+                    //Pega a nova senha definida pelo usuário e gera hash BCrypt antes de salvar na tabela
+                    senhas.SenhaUsuario = CriptoDecripto.HashSenha(senhaUsuario);
                     if (_db.SaveChanges() < 1)
                     {
                         LoggerFile.Write("ERRO: A senha alterada não foi salva para o usuário: " + loginUsuario);
@@ -406,8 +407,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 Senhas senhas = _db.Senhas.Where(s => s.LoginUsuario == objLogin.LoginUsuario).Single();
                 using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
                 {
-                    //Pega a nova senha definida pelo usuário e criptografa antes de salvar na tabela
-                    senhas.SenhaUsuario = CriptoDecripto.Criptografa_StringToString(objLogin.SenhaUsuario);
+                    //Pega a nova senha definida pelo usuário e gera hash BCrypt antes de salvar na tabela
+                    senhas.SenhaUsuario = CriptoDecripto.HashSenha(objLogin.SenhaUsuario);
                     if (_db.SaveChanges() < 1)
                     {
                         LoggerFile.Write("ERRO: O usuário não conseguiu alterar sua senha : " + objLogin.LoginUsuario);
@@ -448,10 +449,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     Senhas senhas = _db.Senhas.Where(s => s.LoginUsuario == objLogin.LoginUsuario).Single();
                     using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
                     {
-                        //Gera uma senha aleatória para o usuário, salva na tabela e envia por Email para ser validada
+                        //Gera uma senha aleatória para o usuário, gera hash BCrypt e salva na tabela para enviar por Email
                         string senhaAleatoria = Criptografias.GeraSenhaAleatoria();
-                        //senhas.SenhaUsuario = CriptoDecripto.Criptografa_StringToString(senhaAleatoria);
-                        senhas.SenhaUsuario = senhaAleatoria;
+                        senhas.SenhaUsuario = CriptoDecripto.HashSenha(senhaAleatoria);
                         senhas.EmailConfirmado = (int)TipoSituacaoLogin.SemVerificacao;
                         if (_db.SaveChanges() < 1)
                         {

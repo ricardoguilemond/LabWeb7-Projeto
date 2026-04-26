@@ -29,8 +29,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                       IEventLogHelper eventLogHelper, 
                                       Imagem imagem,
                                       IConcorrenciaService concorrenciaService,
-                                      ExclusaoService exclusaoService)
-               : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
+                                      ExclusaoService exclusaoService,
+                                      IConnectionService connectionService)
+               : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         { 
            _concorrenciaService = concorrenciaService;  
         }

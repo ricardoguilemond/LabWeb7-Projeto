@@ -19,7 +19,7 @@ namespace LabWebMvc.MVC.Areas.Concorrencias
                                       int id,
                                       string nomeConcorrencia,
                                       Expression<Func<T, bool>> filtro,
-                                      Func<Task<bool>> validacaoExtra = null
+                                      Func<Task<bool>>? validacaoExtra = null
         ) where T : class
         {
             await using var transaction = await db.Database.BeginTransactionAsync();

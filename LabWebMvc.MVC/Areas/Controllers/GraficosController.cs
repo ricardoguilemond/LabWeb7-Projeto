@@ -17,8 +17,9 @@ public class GraficosController : BaseController
         GeralController geralController,
         IEventLogHelper eventLogHelper,
         Imagem imagem,
-        ExclusaoService exclusaoService)
-        : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
+        ExclusaoService exclusaoService,
+        IConnectionService connectionService)
+        : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
     {
     }
 

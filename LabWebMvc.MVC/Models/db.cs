@@ -222,7 +222,8 @@ public class Db : DbContext
                     throw new InvalidOperationException($"A entidade {entityType.Name} não possui uma propriedade 'Id' do tipo int.");
 
                 // Usa reflexão para obter o DbSet<TEntity>
-                var setMethod = typeof(DbContext).GetMethod(nameof(Set), Type.EmptyTypes);
+                var setMethod = typeof(DbContext).GetMethod(nameof(Set), Type.EmptyTypes)
+                    ?? throw new InvalidOperationException("Método Set não encontrado no DbContext.");
                 var genericSetMethod = setMethod.MakeGenericMethod(entityType);
                 var dbSet = genericSetMethod.Invoke(this, null);
 
@@ -231,19 +232,22 @@ public class Db : DbContext
                     .GetMethods()
                     .First(m => m.Name == "ToListAsync" && m.GetParameters().Length == 2);
                 var genericToListAsync = toListAsyncMethod.MakeGenericMethod(entityType);
-                var task = (Task)genericToListAsync.Invoke(null, new object[] { dbSet, cts.Token });
+                var task = (Task)(genericToListAsync.Invoke(null, new object[] { dbSet!, cts.Token })
+                    ?? throw new InvalidOperationException("ToListAsync retornou null."));
                 await task.ConfigureAwait(false);
-                var resultProperty = task.GetType().GetProperty("Result");
-                var entityList = (IList)resultProperty.GetValue(task);
+                var resultProperty = task.GetType().GetProperty("Result")
+                    ?? throw new InvalidOperationException("Propriedade Result não encontrada na Task.");
+                var entityList = (IList)(resultProperty.GetValue(task)
+                    ?? throw new InvalidOperationException("Result da Task retornou null."));
 
                 var usedIds = entityList
                     .Cast<object>()
-                    .Select(e => (int)idProperty.GetValue(e))
+                    .Select(e => (int)idProperty.GetValue(e)!)
                     .ToList();
 
                 var tableName = Model.FindEntityType(entityType)?.GetTableName();
                 if (!string.IsNullOrEmpty(tableName))
-                    await Database.ExecuteSqlRawAsync($@"LOCK TABLE ""{tableName}"" IN EXCLUSIVE MODE", cts.Token);
+                    await Database.ExecuteSqlAsync($@"LOCK TABLE ""{tableName}"" IN EXCLUSIVE MODE", cts.Token);
 
                 foreach (var entry in addedEntries)
                 {

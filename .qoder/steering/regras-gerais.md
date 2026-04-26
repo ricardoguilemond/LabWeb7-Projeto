@@ -103,12 +103,30 @@ public async Task<bool> ValidarExclusaoPaciente(int pacienteId)
 //..Qoder
 ```
 
-## Documentação
+## Terminologia: Critico vs Complexo vs Passivel de Revisao
 
-- Documentos de análise devem ser criados em `Documentos do Qoder/`
-- **NUNCA** criar documentação proativamente (apenas quando solicitado)
-- Manter documentação em Português-Brasil
-- Usar Markdown com tabelas formatadas (máx 120 caracteres por linha)
+Ao classificar pontos arquiteturais ou problemas em documentacao e analise, usar EXCLUSIVAMENTE esta escala:
+
+| Nivel | Definicao | Acao |
+|-------|-----------|------|
+| **CRITICO** | Bug ou quase-Bug. Inseguro, falta de performance, risco real. | PRECISA ser corrigido com urgencia |
+| **COMPLEXO** | Nao e Bug. Viavel, intencional, opcao arquitetural, mudanca nao traz grandes melhorias. | NAO precisa ser corrigido — apenas documentado e compreendido |
+| **PASSIVEL DE REVISAO** | Nao e Bug. Pode ser melhorado, mas sem urgencia e sem impacto negativo se mantido. | Revisao opcional, sem urgencia |
+
+**NUNCA** chamar algo de "critico" se e apenas "complexo" ou "passivel de revisao".
+Isso cria alarme falso e sugere urgencia onde nao ha.
+
+Exemplos:
+- CRITICO: senha sem hash, SQL injection, FK violada, dados corrompidos
+- COMPLEXO: "falso relacionamento" cross-database (intencional), relacionamentos code-only (escolha de design), ContaExame como string (legacy compativel)
+- PASSIVEL DE REVISAO: hardcoded values centralizáveis, nomenclatura inconsistente, codigo redundante mas funcional
+
+## Documentacao
+
+- Documentos de analise devem ser criados em `Documentos do Qoder/`
+- **NUNCA** criar documentacao proativamente (apenas quando solicitado)
+- Manter documentacao em Portugues-Brasil
+- Usar Markdown com tabelas formatadas (max 120 caracteres por linha)
 
 ## Referências Cruzadas
 

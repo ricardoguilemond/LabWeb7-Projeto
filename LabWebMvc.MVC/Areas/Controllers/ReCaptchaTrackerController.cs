@@ -20,8 +20,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
+            IConnectionService connectionService,
             CreateAssessmentSample captchaService)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _captchaService = captchaService;
         }

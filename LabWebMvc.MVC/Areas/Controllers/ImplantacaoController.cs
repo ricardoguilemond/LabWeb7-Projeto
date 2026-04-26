@@ -25,9 +25,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
+            IConnectionService connectionService,
             IHttpContextAccessor httpContextAccessor,
             MovimentacaoImportacao movimentacaoImportacao)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _httpContextAccessor = httpContextAccessor;
             _movimentacaoImportacao = movimentacaoImportacao;
