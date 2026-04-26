@@ -212,7 +212,12 @@ namespace LabWebMvc.MVC
 
             app.UseAuthentication();
             app.UseAuthorization();
-            //..
+            //...
+
+#if DEBUG
+            // Em desenvolvimento: reseta para BCrypt qualquer senha que ainda não foi migrada
+            DevSenhasReset(app);
+#endif
             // Antes da autenticação: configure o helper
             //var eventLog2 = app.ApplicationServices.GetRequiredService<IEventLogHelper>();
             //eventLog2.ObterCNPJ = () => Areas.Utils.Utils.LoginCNPJEmpresaLogado();
@@ -244,5 +249,91 @@ namespace LabWebMvc.MVC
                 //endpoints.MapControllerRoute("MensagemTela", "{controller=Mensagem}/{action=MensagemTela}/{id?}");
             });
         }
+
+#if DEBUG
+        /// <summary>
+        /// Apenas em DEBUG: reseta todas as senhas não-BCrypt para a senha padrão configurada em LoginPadraoSistema:Senha.
+        /// Itera por TODOS os bancos de clientes lidos de LABWEB7Empresas (StringConexao).
+        /// Garante que o desenvolvedor consiga logar após migrações de segurança.
+        /// </summary>
+        private static void DevSenhasReset(IApplicationBuilder app)
+        {
+            try
+            {
+                using var scope = app.ApplicationServices.CreateScope();
+                var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+                var eventLog = scope.ServiceProvider.GetRequiredService<IEventLogHelper>();
+                var connectionService = scope.ServiceProvider.GetRequiredService<IConnectionService>();
+
+                string senhaPadrao = config["LoginPadraoSistema:Senha"] ?? "12345";
+                string novoHash = CriptoDecripto.HashSenha(senhaPadrao);
+                int totalMigradas = 0;
+
+                // 1. Lê todos os StringConexao distintos da base LABWEB7Empresas
+                string? connEmpresas = config["ConexaoPostgreSQL:PSQLConnectionStringEmpresas"];
+                if (string.IsNullOrEmpty(connEmpresas))
+                {
+                    Console.WriteLine("[DEV] DevSenhasReset ignorado: PSQLConnectionStringEmpresas não configurada.");
+                    return;
+                }
+
+                var stringsConexao = new List<string>();
+                using (var conexao = new Npgsql.NpgsqlConnection(connEmpresas))
+                {
+                    conexao.Open();
+                    using var cmd = new Npgsql.NpgsqlCommand(@"SELECT DISTINCT ""StringConexao"" FROM ""EmpresaCliente"" WHERE ""StringConexao"" IS NOT NULL AND ""StringConexao"" <> ''", conexao);
+                    using var reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                        stringsConexao.Add(reader.GetString(0));
+                }
+
+                if (!stringsConexao.Any())
+                {
+                    Console.WriteLine("[DEV] DevSenhasReset: nenhum banco de cliente encontrado em EmpresaCliente.");
+                    return;
+                }
+
+                // 2. Para cada banco de cliente, migra senhas legadas
+                foreach (var connStr in stringsConexao)
+                {
+                    try
+                    {
+                        var optionsBuilder = new DbContextOptionsBuilder<Db>().UseNpgsql(connStr);
+                        using var db = new Db(optionsBuilder.Options, connectionService, eventLog);
+
+                        var senhasLegadas = db.Senhas
+                            .Where(s => !s.SenhaUsuario.StartsWith("$2"))
+                            .ToList();
+
+                        if (senhasLegadas.Any())
+                        {
+                            foreach (var s in senhasLegadas)
+                                s.SenhaUsuario = novoHash;
+
+                            db.SaveChanges();
+                            totalMigradas += senhasLegadas.Count;
+                            Console.WriteLine($"[DEV] DevSenhasReset: {senhasLegadas.Count} senha(s) migradas em '{connStr.Split(';')[2]}'");
+                        }
+                    }
+                    catch (Exception exDb)
+                    {
+                        Console.WriteLine($"[DEV] DevSenhasReset: banco ignorado ({exDb.Message})");
+                    }
+                }
+
+                if (totalMigradas > 0)
+                    eventLog.LogEventViewer(
+                        $"[DEV] DevSenhasReset: {totalMigradas} senha(s) migradas para BCrypt com senha padrão '{senhaPadrao}' em {stringsConexao.Count} banco(s)",
+                        "wInfo");
+                else
+                    Console.WriteLine("[DEV] DevSenhasReset: todas as senhas já estão em BCrypt.");
+            }
+            catch (Exception ex)
+            {
+                // Não bloqueia o startup se o banco não estiver disponível
+                Console.WriteLine($"[DEV] DevSenhasReset ignorado: {ex.Message}");
+            }
+        }
+#endif
     }
 }

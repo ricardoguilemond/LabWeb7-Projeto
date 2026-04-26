@@ -31,7 +31,7 @@
                     connection.Open();
 
                     using NpgsqlCommand command = new("SELECT NOW()", connection);
-                    object resultado = command.ExecuteScalar();
+                    object? resultado = command.ExecuteScalar();
 
                     if (resultado is DateTime dataHora)
                     {

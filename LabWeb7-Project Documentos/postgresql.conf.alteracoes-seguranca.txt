@@ -1,0 +1,81 @@
+# LabWeb7 — Alterações de segurança no postgresql.conf
+# Data: 25/04/2026
+#
+# INSTRUÇÕES: Abra o arquivo C:\Program Files\PostgreSQL\18\data\postgresql.conf
+# e substitua/descomente as linhas abaixo conforme indicado.
+# Após salvar, reinicie o serviço PostgreSQL.
+#
+# =======================================================================
+# AÇÃO 2: Restringir listen_addresses
+# =======================================================================
+#
+# LINHA ATUAL (linha 60 do postgresql.conf):
+#   listen_addresses = '*'
+#
+# SUBSTITUIR POR:
+#   listen_addresses = 'localhost'
+#
+# MOTIVO: '*' faz o PostgreSQL aceitar conexões de QUALQUER IP da rede.
+#         'localhost' restringe ao próprio servidor (app + DB no mesmo server).
+#         Isso impede que IPs externos alcancem o PostgreSQL mesmo que
+#         o pg_hba.conf rejeite — defesa em profundidade.
+#
+# ATENÇÃO: Se app e DB estiverem em servidores DIFERENTES no futuro,
+#          mudar para: listen_addresses = 'localhost,<IP_INTERNO_DO_SERVIDOR>'
+#
+listen_addresses = 'localhost'
+
+
+# =======================================================================
+# AÇÃO 3: Ativar SSL no PostgreSQL
+# =======================================================================
+#
+# LINHA ATUAL (linha 109 do postgresql.conf):
+#   #ssl = off
+#
+# SUBSTITUIR POR:
+#   ssl = on
+#
+# MOTIVO: O PostgreSQL 18 no Windows inclui os certificados SSL automáticos
+#         em: C:\Program Files\PostgreSQL\18\data\server.crt e server.key
+#         A connection string do LabWeb7 já usa 'SSL Mode=prefer',
+#         então ao ativar ssl=on, o Npgsql passa a usar SSL automaticamente.
+#         Em localhost, a latência extra é mínima (~0ms).
+#         O https://localhost:5001/ NÃO é afetado — são camadas distintas.
+#
+# VERIFICAR SE EXISTEM OS CERTIFICADOS ANTES DE ATIVAR:
+#   - C:\Program Files\PostgreSQL\18\data\server.crt  → deve existir
+#   - C:\Program Files\PostgreSQL\18\data\server.key  → deve existir
+#   Se não existirem, serão gerados automaticamente na inicialização
+#   do PostgreSQL com ssl=on.
+#
+ssl = on
+
+
+# =======================================================================
+# REINICIALIZAÇÃO DO SERVIÇO
+# =======================================================================
+#
+# Após salvar o postgresql.conf, execute UM dos comandos abaixo
+# como Administrador no Windows:
+#
+# Opção A — via PowerShell (Administrador):
+#   Restart-Service postgresql-x64-18
+#
+# Opção B — via Services (services.msc):
+#   Localizar "postgresql-x64-18" → Reiniciar
+#
+# Opção C — via pgAdmin:
+#   Após reiniciar, conecte ao PostgreSQL e execute:
+#   SELECT pg_reload_conf();   -- apenas para reload (pg_hba.conf)
+#   -- Nota: listen_addresses e ssl exigem restart completo, não apenas reload
+#
+# =======================================================================
+# VERIFICAÇÃO PÓS-REINICIALIZAÇÃO
+# =======================================================================
+#
+# Execute no pgAdmin (banco: LABWEB7Empresas):
+#
+--   SHOW listen_addresses;   -- deve retornar: localhost
+--   SHOW ssl;                -- deve retornar: on
+--   SELECT pg_reload_conf(); -- confirma reload do pg_hba.conf

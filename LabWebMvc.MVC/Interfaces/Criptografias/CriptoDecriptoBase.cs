@@ -7,7 +7,7 @@ namespace LabWebMvc.MVC.Interfaces.Criptografias
 {
     public class CriptoDecriptoBase
     {
-        public readonly string gatewayUrl = "http://localhost:10000";   //link de leitura do JSON recuperado de um serviço no Servidor
+        public readonly string gatewayUrl = GoogleConfig.GatewayUrl;   //lido do appsettings.json via GoogleConfig
         public readonly HttpClient cliente = new();
 
         /* Método: Executa<T>
@@ -32,7 +32,7 @@ namespace LabWebMvc.MVC.Interfaces.Criptografias
              * quando vier a correta, todos os dados salvos gerados por ela vão se perder,
              * porque a chave é o único recurso de criptografia e descriptografia possível de identificação!
              */
-            string chaveAES = "k7r@E&UHC0nn7ds0"; //ConfigurationManager.AppSettings["KeyAES"]; //Chave de criptografia AES do App.Config do Serviço
+            string chaveAES = GoogleConfig.MyVetorDeCifras; //Chave de criptografia lida do appsettings.json via GoogleConfig
             bool criptografar = Convert.ToBoolean(Utils.VariavelAppJsonSettings("LigaCriptografia"));
             if (criptografar)
             {

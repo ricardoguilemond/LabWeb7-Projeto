@@ -45,7 +45,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                               IConnectionService connectionService,
                               ReCaptchaService reCaptchaService,
                               ExclusaoService exclusaoService) 
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _captchaSettings = captchaSettings.Value;
             _captchaValidator = captchaValidator;
@@ -274,6 +274,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                     //Atualiza a connection string global
                     _connectionService.SetConnectionString(validaLogin.StringDeConexao);
+
+                    // Persiste a StringConexao na sessão para restaurar em cada requisição subsequente
+                    HttpContext.Session.SetString("SessionStringConexao", validaLogin.StringDeConexao ?? "");
+
+                    // Recria o _db apontando para o banco correto do usuário autenticado
+                    var optionsBuilder = new DbContextOptionsBuilder<Db>().UseNpgsql(_connectionService.GetConnectionString());
+                    _db = new Db(optionsBuilder.Options, _connectionService, _eventLogHelper);
 
                     //Salvando as sessions para uso GLOBAL no sistema
                     //Grava as variáveis do Usuário de Sessão/Session incluindo o token gerado pelo Google reCaptcha

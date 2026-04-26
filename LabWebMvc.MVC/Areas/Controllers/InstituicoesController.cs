@@ -30,8 +30,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
+            IConnectionService connectionService,
             IPathHelper pathHelper)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _pathHelper = pathHelper;
         }

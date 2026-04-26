@@ -34,8 +34,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
+            IConnectionService connectionService,
             IServiceProvider serviceProvider)
-            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService)
+            : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _serviceProvider = serviceProvider;
         }

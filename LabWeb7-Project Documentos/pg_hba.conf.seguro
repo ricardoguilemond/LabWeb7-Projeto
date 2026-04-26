@@ -1,0 +1,52 @@
+# PostgreSQL Client Authentication Configuration File
+# ===================================================
+# LabWeb7 — Configuração de segurança restritiva
+# Data: 25/04/2026
+# Alterações:
+#   - Adicionadas regras específicas para LABWEB7Empresas (somente localhost)
+#   - Mantidas regras existentes para bancos de clientes
+#   - Adicionado placeholder para superadmin
+#
+# IMPORTANTE: Após editar, execute: pg_ctl reload ou SELECT pg_reload_conf();
+
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# --- Conexões locais (Unix domain socket) ---
+local   all             all                                     scram-sha-256
+
+# --- Conexões IPv4 locais ---
+host    all             all             127.0.0.1/32            scram-sha-256
+
+# --- Conexões IPv6 locais ---
+host    all             all             ::1/128                 scram-sha-256
+
+# --- IPv6 local sem SSL (configuração manual original mantida temporariamente) ---
+# ATENÇÃO: 'trust' permite conexão sem senha — vulnerabilidade!
+# TODO: Substituir por scram-sha-256 quando possível
+host    all              sistema        fe80::/10               trust
+
+# --- REGRAS DE SEGURANÇA PARA LABWEB7Empresas ---
+# Somente localhost pode acessar o banco central de empresas
+# (aplicação LabWeb7 conecta de localhost durante o login)
+
+# sistema: acesso apenas de localhost para LABWEB7Empresas (SELECT only via app)
+host    LABWEB7Empresas  sistema        127.0.0.1/32            scram-sha-256
+host    LABWEB7Empresas  sistema        ::1/128                 scram-sha-256
+
+# superadmin: acesso total ao LABWEB7Empresas (para manutenção manual via pgAdmin)
+# ATENÇÃO: Descomentar e configurar IP do desenvolvedor quando criar o role superadmin
+#host    LABWEB7Empresas  superadmin     127.0.0.1/32            scram-sha-256
+#host    LABWEB7Empresas  superadmin     <IP_DO_DESENVOLVEDOR>/32 scram-sha-256
+
+# --- Bancos de clientes (LABWEB7, LABWEB7Barros, etc.) ---
+# Somente localhost pode acessar os bancos de clientes
+host    LABWEB7%         sistema        127.0.0.1/32            scram-sha-256
+host    LABWEB7%         sistema        ::1/128                 scram-sha-256
+
+# --- Replication connections (mantido original) ---
+local   replication     all                                     scram-sha-256
+host    replication     all             127.0.0.1/32            scram-sha-256
+host    replication     all             ::1/128                 scram-sha-256
+
+# --- postgres local (mantido original) ---
+local   all             postgres                                trust
