@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dois DataTables</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+    <!-- Outros estilos CSS aqui -->
+	<style>
+        .groupButton { /* colocar este na div de grupo de botões ::: botões estilizados para o topo das telas e acima dos Datatables ::: exemplo nos index.cshtml */
+            width: 80%;
+            margin: 0 auto;
+            display: inline !important;
+        }
+        
+        .myButton { /* colocar os botões dentro da div .groupButton ::: botões estilizados para o topo das telas e acima dos Datatables ::: exemplo nos index.cshtml */
+            width: 15% !important;
+            height: 32px;
+            border: solid 1px silver;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            color: black;
+            transition-duration: 0.4s;
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+            margin-right: 3px;
+            margin-left: 3px;
+            display: inline !important;
+        }
+        
+            .myButton > a {
+                text-decoration: none;
+                color: black;
+            }
+        
+            .myButton:hover, a:hover {
+                background-color: #646464;
+                color: white;
+            }
+        
+        div.lengthMenu { /* relativo ao tabela1 */
+            display: grid;
+            /*grid-gap: 40px; /* espaçamento */
+            grid-template-columns: auto auto; /* exposição na linha */
+        }
+        
+        #op { /* relativo as opções do tabela1 */
+            display: none;
+        }
+        
+        /* Cores dos icons das ações que ficam nos TRs dos tabela1 */
+        .add i {
+            color: #1F70BB;
+        }
+        
+        .edit i {
+            color: #FFC107;
+        }
+        
+        .delete i {
+            color: #E34724;
+        }
+        
+        input { /* relativo aos inputs do tabela1 */
+            border: none;
+            outline: none
+        }
+        /* Para o DataTables */
+        #tabela1 {
+            width: 100% !important; /* largura máxima de exposição da table, e depois quebra a linha dentro do <td></td> */
+            height: 100%; /* aproveita toda a altura da tela */
+            font-family: calibri, arial, sans-serif !important;
+            font-size: 0.9em !important; /* das linhas do grid, exceto títulos das colunas do grid */
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        
+        #tabela1_filter input {
+            float: right;
+            width: 500px;
+            clear: both;
+        }
+        
+        /* Caixa de Busca */
+        #tabela1_filter > label {
+            float: right;
+            margin-top: -45px;
+        }
+        
+        /* fundo do título de ações na mesma cor dos títulos, devido column fixed */
+        #tabela1 thead th {
+            background-color: #72c187;
+        }
+        
+        /* Título das colunas  */
+        #tabela1 thead tr th {
+            text-align: left !important;
+        }
+            /* Título das colunas  */
+            #tabela1 thead tr th span {
+                font-family: calibri, arial, sans-serif !important;
+                font-size: 1.1em !important;
+                font-weight: 500;
+            }
+        
+        /* Os inputs de pesquisa abaixo das colunas */
+        #tabela1 tfoot tr th span {
+            font-family: calibri, arial, sans-serif !important;
+            font-size: 1.2em !important;
+            font-weight: 400;
+        }
+        
+        #tabela1 .grid_fundo_opcoes {
+            float: left !important;
+        }
+        
+        /* Modelo de Table COMPACTA e específica dos lançamentos dos exames */
+        #tabela2 {
+            width: 100% !important; /* largura máxima de exposição da table, e depois quebra a linha dentro do <td></td> */
+            height: 400px; /* altura delimitada */
+            font-family: calibri, arial, sans-serif !important;
+            font-size: 0.9em !important; /* das linhas do grid, exceto títulos das colunas do grid */
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        
+        #tabela2_filter input {
+            float: right;
+            width: 500px;
+            clear: both;
+        }
+        
+        /* Caixa de Busca */
+        #tabela2_filter > label {
+            float: right;
+            margin-top: -45px;
+        }
+        
+        /* fundo do título de ações na mesma cor dos títulos, devido column fixed */
+        #tabela2 thead th {
+            background-color: silver;
+        }
+        
+        /* Título das colunas  */
+        #tabela2 thead tr th {
+            text-align: left !important;
+        }
+            /* Título das colunas  */
+            #tabela2 thead tr th span {
+                font-family: calibri, arial, sans-serif !important;
+                font-size: 0.9em !important;
+                font-weight: 500;
+            }
+        
+        /* Os inputs de pesquisa abaixo das colunas */
+        #tabela2 tfoot tr th span {
+            font-family: calibri, arial, sans-serif !important;
+            font-size: 0.9em !important;
+            font-weight: 400;
+        }
+        
+        #tabela2 .grid_fundo_opcoes {
+            float: left !important;
+        }
+        
+        /* Para todas as tables */
+        .table-hover tbody tr:hover input {
+            background-color: #228931;
+        }
+	</style>
+</head>
+
+<body>
+    <!-- Seus componentes DataTables virão aqui -->
+	
+    <table id="tabela1">
+        <thead>
+            <tr>
+                <th>[ ]</th>
+                <th>Itens</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            <!-- //For  -->
+            <!-- //{ -->
+            <tr>
+                <td style='width: 3%;'>[ ]</td>
+                <td style='width: 70%;'> item </td>
+            </tr>
+            <!-- //} -->
+
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>[ ]</th>
+                <th>Itens</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <table id="tabela2">
+        <thead>
+            <tr>
+                <th>[ ]</th>
+                <th>Itens 2</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            <!-- //For  -->
+            <!-- //{ -->
+            <tr>
+                <td style='width: 3%;'>[ ]</td>
+                <td style='width: 70%;'> item 2</td>
+            </tr>
+            <!-- //} -->
+
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>[ ]</th>
+                <th>Itens 2</th>
+            </tr>
+        </tfoot>
+    </table>
+
+	
+</body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+<!-- Outros scripts JS aqui -->
+<script>
+    $(document).ready(function() {
+        //Colocar o Tooltip Balloon destacado fora da posição do mouse hover para ter melhor visão
+        $('[data-toggle="tooltip"]').tooltip();
+        //Configura os boxes de input para cada busca de célula da coluna
+        $('#tabela1 tfoot th').each(function () {
+            var title = $(this).text();
+            //Se não controlar aqui com max-width ele não respeita a formatação do layout
+            $(this).html('<input type="text" placeholder="' + title + '" style="max-width: 106px; padding-left: 4px; border: 1px solid gray; border-radius: 5px;" />');
+        });	
+        $('#tabela2 tfoot th').each(function () {
+            var title = $(this).text();
+            //Se não controlar aqui com max-width ele não respeita a formatação do layout
+            $(this).html('<input type="text" placeholder="' + title + '" style="max-width: 106px; padding-left: 4px; border: 1px solid gray; border-radius: 5px;" />');
+        });	
+	
+        $('#tabela1').DataTable({
+            initComplete: function () {//executa a busca nas células disponíveis no footer
+                this.api()
+                    .columns()
+                    .every(function () {
+                        var that = this;
+                        $('input', this.footer()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+            fixedColumns: {
+                left: -1,  //não permite fixar a primeira coluna
+                right: 1,  //fixa a última coluna dos ícones de ações/botões de ações
+            },
+            autoWidth: true,
+            responsive: true,
+            layout: {
+                topStart: {
+                    pageLength: {
+                        menu: [[10, 25, 50, 100, 250, 500, -1], [10, 25, 50, 100, 250, 500, "Todos"]],
+                    }
+                },
+                //top2Start: 'pageLength',
+                topEnd: {
+                    search: {
+                        placeholder: 'Digite aqui sua busca'
+                    }
+                },
+                bottomStart: 'pageLength',
+                bottomStart: 'info',
+                bottomEnd: {
+                    paging: {
+                        numbers: 4  //quantidade de números de páginas que ficam visíveis o tempo todo no rodapé
+                    }
+                }
+            },
+            "language": {
+                "search": "Busca:",
+                "lengthMenu": "Mostrar _MENU_ resultados por página",
+                "emptyTable": "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
+                "info": "Exibindo: _START_/_END_ de _TOTAL_ registros",
+                "infoFiltered": "(Total de _MAX_ registros existentes na base de dados)",
+                "infoThousands": ".",
+                "thousands": ".",
+                "decimal": ",",
+                "loadingRecords": "Carregando...",
+                "zeroRecords": "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
+                //"infoEmpty": "<b style='color: red;'>Nenhum registro disponível</b>",
+                "paginate": {
+                    "next": "<img src='images/icones/arrow_right_uno.png' width='28%' border='none' />",
+                    "previous": "<img src='images/icones/arrow_left_uno.png' width='28%' border='none' />",
+                    "first": "<img src='images/icones/arrow_left.png' width='28%' border='none' />",
+                    "last": "<img src='images/icones/arrow_right.png' width='28%' border='none' />",
+                },
+                //Fixa o header e o footer para auxiliar na identificação das colunas
+                fixedHeader: {
+                    header: true,
+                    footer: true
+                }
+            }
+        }).draw();
+		
+        $('#tabela2').DataTable({
+            scrollX: false,
+            scrollY: 200,
+            fixedColumns: {
+                left: -1,  //não permite fixar a primeira coluna
+                right: 1,  //fixa a última coluna dos ícones de ações/botões de ações
+            },
+            autoWidth: false,
+            responsive: true,
+            layout: {
+                topStart: {
+                    search: {
+                        placeholder: 'Digite aqui sua busca'
+                    }
+                },
+                topEnd: null,
+            },
+            columnDefs: [
+                {   /* alinhando os textos da colunas à esquerda */
+                    targets: [0],
+                    className: 'dt-body-left'
+                }
+            ],
+            "pageLength": 10,
+            "paging": false,
+            "ordering": false,
+            "info": false,
+            "language": {
+                "search": "Busca Exame:",
+                "lengthMenu": "Mostrar _MENU_ resultados por página",
+                "emptyTable": "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
+                "infoThousands": ".",
+                "thousands": ".",
+                "decimal": ",",
+                "loadingRecords": "Carregando...",
+                "zeroRecords": "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
+                //Fixa o header e o footer para auxiliar na identificação das colunas
+                fixedHeader: {
+                    header: true,
+                    footer: true
+                }
+            }
+        }).draw();
+    });
+</script>
+</html>

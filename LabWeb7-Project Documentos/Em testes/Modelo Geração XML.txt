@@ -1,0 +1,113 @@
+      private String GeraArquivo(FinCFOImportacao valores, String caminho)
+      {
+         var xml = new XmlSerializer(typeof(FinCFOImportacao));
+         XmlSerializerNamespaces ns = new XmlSerializerNamespaces();
+         ns.Add("", "http://tempuri.org/FinCFOImportacao.xsd");
+         var sw = new StringWriterUtf8();
+         var xw = XmlWriter.Create(sw, new XmlWriterSettings { Indent = true });
+         xw.WriteStartDocument(true);
+         var nomeArquivo = String.Format("TOTVSCFO_CORRETORA_{0}.xml", DateTime.Now.ToString("yyyyMMddHHmmssfff"));
+         xml.Serialize(xw, valores, ns);
+         File.WriteAllText(Path.Combine(caminho, nomeArquivo), sw.ToString());
+         return nomeArquivo;
+      }
+
+
+      private String GeraArquivoRM(List<FinCFOImportacao> valores, String caminho, string nomeArquivo)
+      {
+         var caminhoCompleto = Path.Combine(caminho, nomeArquivo);
+         System.IO.StreamWriter fsSaida = new System.IO.StreamWriter(caminhoCompleto);
+         fsSaida.WriteLine("<?xml version=\"1.0\" standalone=\"yes\"?>");
+         fsSaida.WriteLine("<FinCFOImportacao xmlns=\"http://tempuri.org/FinCFOImportacao.xsd\">");
+
+
+         foreach (var valor in valores)
+         {
+            fsSaida.WriteLine("<FCFO>\n"
+                            + "<CODCOLIGADA>" + valor.FCFO.CODCOLIGADA + "</CODCOLIGADA>\n"
+                            + "<CODCFO>" + valor.FCFO.CODCFO + "</CODCFO>\n"
+                            + "<NOMEFANTASIA>" + valor.FCFO.NOMEFANTASIA + "</NOMEFANTASIA>\n"
+                            + "<NOME>" + valor.FCFO.NOME + "</NOME>\n"
+                            + "<CGCCFO>" + valor.FCFO.CGCCFO + "</CGCCFO>\n"
+                            + "<PAGREC>" + valor.FCFO.PAGREC + "</PAGREC>\n"
+                            + "<RUA>" + valor.FCFO.RUA + "</RUA>\n"
+                            + "<NUMERO>" + valor.FCFO.NUMERO + "</NUMERO>\n"
+                            + "<COMPLEMENTO>" + valor.FCFO.COMPLEMENTO + "</COMPLEMENTO>\n"
+                            + "<BAIRRO>" + valor.FCFO.BAIRRO + "</BAIRRO>\n"
+                            + "<CIDADE>" + valor.FCFO.CIDADE + "</CIDADE>\n"
+                            + "<CODETD>" + valor.FCFO.CODETD + "</CODETD>\n"
+                            + "<CEP>" + valor.FCFO.CEP + "</CEP>\n"
+                            + "<CODTCF>" + valor.FCFO.CODTCFSTR + "</CODTCF>\n"
+                            + "<ATIVO>" + valor.FCFO.ATIVO + "</ATIVO>\n"
+                            + "<LIMITECREDITO>" + valor.FCFO.LIMITECREDITO + "</LIMITECREDITO>\n"
+                            + "<VALOROP1>" + valor.FCFO.VALOROP1 + "</VALOROP1>\n"
+                            + "<VALOROP2>" + valor.FCFO.VALOROP2 + "</VALOROP2>\n"
+                            + "<VALOROP3>" + valor.FCFO.VALOROP3 + "</VALOROP3>\n"
+                            + "<PATRIMONIO>" + valor.FCFO.PATRIMONIO + "</PATRIMONIO>\n"
+                            + "<NUMFUNCIONARIOS>" + valor.FCFO.NUMFUNCIONARIOS + "</NUMFUNCIONARIOS>\n"
+                            + "<CODCOLTCF>" + valor.FCFO.CODCOLTCF + "</CODCOLTCF>\n"
+                            + "<CODMUNICIPIO>" + valor.FCFO.CODMUNICIPIO + "</CODMUNICIPIO>\n"
+                            + "<PESSOAFISOUJUR>" + valor.FCFO.PESSOAFISOUJUR + "</PESSOAFISOUJUR>\n"
+                            + "<PAIS>" + valor.FCFO.PAIS + "</PAIS>\n"
+                            + "<CONTRIBUINTE>" + valor.FCFO.CONTRIBUINTE + "</CONTRIBUINTE>\n"
+                            + "<CFOIMOB>" + valor.FCFO.CFOIMOB + "</CFOIMOB>\n"
+                            + "<VALFRETE>" + valor.FCFO.VALFRETESTR + "</VALFRETE>\n"
+                            + "<TPTOMADOR>" + valor.FCFO.TPTOMADOR + "</TPTOMADOR>\n"
+                            + "<CONTRIBUINTEISS>" + valor.FCFO.CONTRIBUINTEISS + "</CONTRIBUINTEISS>\n"
+                            + "<NUMDEPENDENTES>" + valor.FCFO.NUMDEPENDENTES + "</NUMDEPENDENTES>\n"
+                            + "<ORGAOPUBLICO>" + valor.FCFO.ORGAOPUBLICO + "</ORGAOPUBLICO>\n"
+                            + "<VROUTRASDEDUCOESIRRF>" + valor.FCFO.VROUTRASDEDUCOESIRRFSTR + "</VROUTRASDEDUCOESIRRF>\n"
+                            + "<OPTANTEPELOSIMPLES>" + valor.FCFO.OPTANTEPELOSIMPLES + "</OPTANTEPELOSIMPLES>\n"
+                            + "<REGIMEISS>" + valor.FCFO.REGIMEISS + "</REGIMEISS>\n"
+                            + "<RETENCAOISS>" + valor.FCFO.RETENCAOISS + "</RETENCAOISS>\n"
+                            + "<RAMOATIV>" + valor.FCFO.RAMOATIV + "</RAMOATIV>\n"
+                            + "<IDPAIS>" + valor.FCFO.IDPAIS + "</IDPAIS>\n"
+                            + "<NACIONALIDADE>" + valor.FCFO.NACIONALIDADE + "</NACIONALIDADE>\n"
+                            + "<ENTIDADEEXECUTORAPAA>" + valor.FCFO.ENTIDADEEXECUTORAPAA + "</ENTIDADEEXECUTORAPAA>\n"
+                            + "<INOVAR_AUTO>" + valor.FCFO.INOVAR_AUTO + "</INOVAR_AUTO>\n"
+                            + "<TIPOOPCOMBUSTIVEL>" + valor.FCFO.TIPOOPCOMBUSTIVEL + "</TIPOOPCOMBUSTIVEL>\n"
+                            + "<PORTE>" + valor.FCFO.PORTE + "</PORTE>\n"
+                            + "<SITUACAONIF>" + valor.FCFO.SITUACAONIF + "</SITUACAONIF>\n"
+                            + "<TIPORUA>" + valor.FCFO.TIPORUASTR + "</TIPORUA>\n"
+                            + "<TIPOBAIRRO>" + valor.FCFO.TIPOBAIRROSTR + "</TIPOBAIRRO>\n"
+                            + "</FCFO>");
+
+            fsSaida.WriteLine("<FCFOCOMPL>\n"
+                            + "<CODCOLIGADA>" + valor.FCFOCOMPL.CODCOLIGADA + "</CODCOLIGADA>\n"
+                            + "<CODCFO>" + valor.FCFOCOMPL.CODCFO + "</CODCFO>\n"
+                            + "<BASEREDUZIDA>" + valor.FCFOCOMPL.BASEREDUZIDASTR + "</BASEREDUZIDA>\n"
+                            + "<PLANO>" + valor.FCFOCOMPL.PLANO + "</PLANO>\n"
+                            + "<VIGENCIA>" + valor.FCFOCOMPL.VIGENCIASTR + "</VIGENCIA>\n"
+                            + "<VIDAS>" + valor.FCFOCOMPL.VIDAS + "</VIDAS>\n"
+                            + "<VALORPLN>" + valor.FCFOCOMPL.VALORPLNSTR + "</VALORPLN>\n"
+                            + "<VALORACOBRAR>" + valor.FCFOCOMPL.VALORACOBRARSTR + "</VALORACOBRAR>\n"
+                            + "</FCFOCOMPL>");
+
+            if (valor.FDADOSPGTO != null)
+            {
+               fsSaida.WriteLine("<FDADOSPGTO>\n"
+                               + "<CODCOLIGADA>" + valor.FDADOSPGTO.CODCOLIGADA + "</CODCOLIGADA>\n"
+                               + "<CODCOLCFO>" + valor.FDADOSPGTO.CODCOLCFO + "</CODCOLCFO>\n"
+                               + "<CODCFO>" + valor.FDADOSPGTO.CODCFO + "</CODCFO>\n"
+                               + "<IDPGTO>" + valor.FDADOSPGTO.IDPGTO + "</IDPGTO>\n"
+                               + "<DESCRICAO>" + valor.FDADOSPGTO.DESCRICAO + "</DESCRICAO>\n"
+                               + "<TIPODOC>" + valor.FDADOSPGTO.TIPODOC + "</TIPODOC>\n"
+                               + "<CODFILIAL>" + valor.FDADOSPGTO.CODFILIAL + "</CODFILIAL>\n"
+                               + "<CGCFAVORECIDO>" + valor.FDADOSPGTO.CGCFAVORECIDO + "</CGCFAVORECIDO>\n"
+                               + "<FORMAPAGAMENTO>" + valor.FDADOSPGTO.FORMAPAGAMENTO + "</FORMAPAGAMENTO>\n"
+                               + "<NUMEROBANCO>" + valor.FDADOSPGTO.NUMEROBANCO + "</NUMEROBANCO>\n"
+                               + "<CODIGOAGENCIA>" + valor.FDADOSPGTO.CODIGOAGENCIA + "</CODIGOAGENCIA>\n"
+                               + "<CONTACORRENTE>" + valor.FDADOSPGTO.CONTACORRENTE + "</CONTACORRENTE>\n"
+                               + "<DIGITOCONTA>" + valor.FDADOSPGTO.DIGITOCONTA + "</DIGITOCONTA>\n"
+                               + "<TIPOCONTA>" + valor.FDADOSPGTO.TIPOCONTA + "</TIPOCONTA>\n"
+                               + "<FAVORECIDO>" + valor.FDADOSPGTO.FAVORECIDO + "</FAVORECIDO>\n"
+                               + "</FDADOSPGTO>");
+            }
+
+
+         }
+         fsSaida.WriteLine("</FinCFOImportacao>");
+
+         fsSaida.Close();
+         return nomeArquivo;
+      }

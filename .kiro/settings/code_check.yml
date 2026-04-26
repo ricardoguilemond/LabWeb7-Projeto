@@ -1,0 +1,5 @@
+validation_mode: strict
+require_source_reference: true
+allow_inference: false
+log_validation: true
+error_on_missing_code: true

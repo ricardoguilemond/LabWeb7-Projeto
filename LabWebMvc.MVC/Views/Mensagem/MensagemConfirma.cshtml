@@ -1,0 +1,69 @@
+﻿@{
+    ViewData["Title"] = ViewData["TituloModal"] ?? "Mensagem";
+    var sucesso = ViewData["Sucesso"] as bool?;
+    var icon = sucesso == true
+        ? "<span><img src='../images/icones/success-icon.png' width='20%' /></span>"
+        : sucesso == null
+            ? "<span><img src='../images/icones/attention-icon.png' width='20%' /></span>"
+            : "<span><img src='../images/icones/error-icon.png' width='20%' /></span>";
+}
+<div id="myModal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@Html.Raw(icon) @ViewData["TituloModal"]</h5>
+                <form method="post" asp-action="RespostaConfirmacao" asp-controller="Mensagem">
+                    <input type="hidden" name="returnAction" value="@ViewData["ReturnAction"]" />
+                    <input type="hidden" name="returnController" value="@ViewData["ReturnController"]" />
+                    <div class="d-flex gap-2">
+                        <button id="btnConfirmar" type="submit" name="resposta" value="sim" class="btn btn-primary">Sim</button>
+                        <button id="btnCancelar" type="submit" name="resposta" value="nao" class="btn btn-secondary">Não</button>
+                    </div>
+                </form>
+            </div>
+            <div id="mensagemValidacao" class="alert alert-warning" role="alert">
+                Aguardando sua confirmação...
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <div class="d-flex align-items-center w-100">
+                    <div class="alert justify-content-center alert-danger text-center rounded-0 w-100 m-0">
+                        @Html.Raw((ViewData["MensagemModal"]?.ToString() ?? "").Replace("\n", "<br />"))
+                        <div style="font-weight: bold;">
+                            @Html.Raw((ViewData["PerguntaModal"]?.ToString() ?? "").Replace("\n", "<br />"))
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(ViewData["TextoRodape"]?.ToString()))
+            {
+                <div class="modal-footer justify-content-center">
+                    <small>@ViewData["TextoRodape"]</small>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modalElement = document.getElementById('myModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    });
+    document.getElementById("btnConfirmar")?.addEventListener("click", function () {
+        const msg = document.getElementById("mensagemValidacao");
+        if (msg) {
+            msg.classList.remove("alert-warning");
+            msg.classList.add("alert-info");
+            msg.innerHTML = "<i class='fas fa-spinner fa-spin me-2'></i> Aguarde: Processando...";
+        }
+    });
+    document.getElementById("btnCancelar")?.addEventListener("click", function () {
+        const msg = document.getElementById("mensagemValidacao");
+        if (msg) {
+            msg.classList.add("d-none"); // Esconde imediatamente a mensagem ao cancelar
+        }
+    });
+</script>
+

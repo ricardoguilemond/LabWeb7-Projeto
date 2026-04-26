@@ -1,0 +1,115 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@using LabWebMvc.MVC.Areas.Utils
+@model vmPlanoExames
+@{
+    Layout = "_Layout";
+}
+<script>
+    $(document).ready(function () {
+        $('#clickSubmit').click(function (event) {
+            event.preventDefault();
+            $.ajax({
+                type: "POST",
+                async: true,
+                dataType: "json",
+                data: $('#form').serialize(),
+                success: function (data) {
+                    var titulo = data['titulo'];
+                    var mensagem = data['mensagem'];
+                    var actionPos = data['action'];
+                    var sucesso = data['sucesso'];
+                    titulo = (titulo == null) ? 'Atenção' : data['titulo'];
+                    var tipo = 'falha';
+                    if (sucesso == true) tipo = 'sucesso';
+                    clickAviso(titulo, mensagem, tipo, actionPos);
+                },
+                error: function (request, status, error) {
+                    clickAviso('Interrompido', 'Falha na execução', 'critica', '');
+                }
+            });
+        })
+    });
+</script>
+
+@using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))
+{
+    <div class="row">
+        <div class="col-md-4">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="form-group">
+                @Html.Label("Descrição do Item:")
+                <div style="display: inline-block; font-weight: 500;">@Model.Descricao</div>
+                @{
+                    var geral = new vmGeral();
+                    geral.Aviso = Utils.AvisoHtml("Aviso", "A alteração de preços será aplicada em <b>todas as instituições</b> do plano para este item.");
+                    @Html.Raw(geral.Aviso)
+                }
+            </div>
+            <div class="form-group">
+                @Html.Label("Descrição")
+                @Html.TextBoxFor(p => p.Descricao, new { @class = "form-control" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Valor de Custo (R$)")
+                @Html.TextBoxFor(p => p.ValorCusto, new { @class = "form-control", @placeholder = "0,0000" })
+            </div>
+            <div class="form-group">
+                @Html.Label("Valor do Item (R$)")
+                @Html.TextBoxFor(p => p.ValorItem, new { @class = "form-control", @placeholder = "0,0000" })
+            </div>
+            <div class="form-group">
+                <fieldset class="borda_redonda" style="padding: 6px;">
+                    @{
+                        ICollection<int> listaEtiquetas = new HashSet<int>();
+                    }
+                    @for (int i = 0; i <= 10; i++)
+                    {
+                        listaEtiquetas.Add(i);
+                    }
+                    @Html.Label("Quantidade de Etiquetas (Máximo de 10)")
+                    @Html.DropDownListFor(p => p.Etiquetas, new SelectList(listaEtiquetas, "Value"), new { style = "width:50px", size = "1" })
+                </fieldset>
+            </div>
+            <div class="form-group">
+                @Html.Label("Colocar na lista de itens de rotina?")
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int rotinaIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();
+                    string rotinaDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (rotinaIndex == Model.Seleciona);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("Seleciona", rotinaIndex, check)
+                        @Html.Label(rotinaDescricao)
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                @Html.Label("Mostrar este item na recepção?")
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int recepcaoIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();
+                    string recepcaoDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (recepcaoIndex == Model.NaoMostrar);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("NaoMostrar", recepcaoIndex, check)
+                        @Html.Label(recepcaoDescricao)
+                    </div>
+                }
+            </div>
+            <div class="form-group botao-centralizado">
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                    Salvar em Todas as Instituições
+                </button>
+            </div>
+        </div>
+    </div>
+}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

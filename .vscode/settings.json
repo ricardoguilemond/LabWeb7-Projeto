@@ -1,0 +1,7 @@
+{
+  "files.exclude": {
+    "**/.vs": true,
+    "**/.kiro": true,
+    "**/.venv": true
+  }
+}

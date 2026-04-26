@@ -1,0 +1,9 @@
+1) Baixar do site: 
+
+
+2) Rodar o comando abaixo na pasta onde o SSL foi instalado:
+
+   openssl req -x509 -nodes -days 10000 -newkey rsa:2048 -keyout localhost.key -out localhost.crt 
+
+3) Colocar na variável de ambiente do Windows (painel de controle / Sistema), o caminho da pasta onde o SSL foi instalado, pronto!
+

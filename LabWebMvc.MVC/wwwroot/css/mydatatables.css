@@ -1,0 +1,335 @@
+﻿/* 
+ * TODOS OS ESTILOS REFERENTES AOS DATATABLES 
+*/
+.groupButton { /* colocar este na div de grupo de botões ::: botões estilizados para o topo das telas e acima dos Datatables ::: exemplo nos index.cshtml */
+    width: 80%;
+    margin: 0 auto;
+    display: inline !important;
+}
+
+.myButton { /* colocar os botões dentro da div .groupButton ::: botões estilizados para o topo das telas e acima dos Datatables ::: exemplo nos index.cshtml */
+    margin: 0 auto;
+    margin-right: 3px;
+    margin-left: 3px;
+    min-width: 15% !important;
+    min-height: 32px;
+    display: inline-block !important;
+    border: solid 1px silver;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    background-color: #69c38a;
+    color: black;
+    transition-duration: 0.4s;
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+}
+
+    .myButton > a {
+        text-decoration: none;
+        color: white;
+    }
+
+    .myButton:hover, a:hover {
+        background-color: #646464;
+        color: white;
+    }
+
+
+div.lengthMenu { /* relativo ao modeloTable */
+    display: grid;
+    /*grid-gap: 40px; /* espaçamento */
+    grid-template-columns: auto auto; /* exposição na linha */
+}
+
+#op { /* relativo as opções do modeloTable */
+    display: none;
+}
+
+/* Cores dos icons das ações que ficam nos TRs dos modeloTable */
+.add i {
+    color: #1F70BB;
+}
+
+.edit i {
+    color: #FFC107;
+}
+
+.delete i {
+    color: #E34724;
+}
+
+input { /* relativo aos inputs do modeloTable */
+    border: none;
+    outline: none
+}
+
+/* Para todas as tables */
+.table-hover tbody tr:hover input {
+    background-color: gray;
+}
+
+#modeloTableRequisitar tr:hover,
+#modeloTable tr:hover {
+    background-color: #d2d2d2 !important; /* cinza médio */
+}
+
+/* ***************************************
+    Para o DataTables Genérico (Padrão)
+ ***************************************** */
+#modeloTableRequisitar,
+#modeloTable {
+    width: 100% !important; /* largura máxima de exposição da table, e depois quebra a linha dentro do <td></td> */
+    height: 100%; /* aproveita toda a altura da tela */
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 0.9em !important; /* das linhas do grid, exceto títulos das colunas do grid */
+    cursor: pointer;
+    margin-top: 6px;
+}
+
+    #modeloTableRequisitar_filter input,
+    #modeloTable_filter input {
+        float: right;
+        width: 500px;
+        clear: both;
+    }
+
+/* Caixa de Busca */
+#modeloTableRequisitar_filter > label,
+#modeloTable_filter > label {
+    float: right;
+    margin-top: -45px;
+}
+
+/* fundo do título de ações na mesma cor dos títulos, devido column fixed */
+#modeloTableRequisitar thead th,
+#modeloTable thead th {
+    background-color: #72c187;
+}
+
+/* Título das colunas  */
+#modeloTableRequisitar thead tr th span,
+#modeloTable thead tr th span {
+    text-align: left !important;
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 1.0em !important;
+    font-weight: 600 !important;
+}
+
+/* Linhas */
+#modeloTableRequisitar td,
+#modeloTable td {
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 1.0em !important;
+    color: #42444e;
+}
+
+/* Os inputs de pesquisa abaixo das colunas */
+#modeloTableRequisitar tfoot th,
+#modeloTable tfoot th {
+    background-color: #72c187 !important;
+}
+
+#modeloTableRequisitar tfoot tr th span,
+#modeloTable tfoot tr th span {
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 1.0em !important;
+    font-weight: 400;
+}
+
+#modeloTableRequisitar .grid_fundo_opcoes,
+#modeloTable .grid_fundo_opcoes {
+    float: left !important;
+}
+
+/* ********************************************************************
+    Modelo de Table COMPACTA e específica dos lançamentos dos exames 
+ ********************************************************************** */
+#modeloTableCompacta {
+    width: 100% !important; /*  largura máxima de exposição da table, e depois quebra a linha dentro do <td></td>  */
+    height: 100%; /* aproveita toda a altura da tela */
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 1.0em !important; /* das linhas do grid, exceto títulos das colunas do grid  */
+    cursor: pointer;
+    margin-top: 6px;
+}
+
+#modeloTableCompacta_filter input {
+    float: right;
+    width: 200px;
+    clear: both;
+}
+
+/* Caixa de Busca */
+#modeloTableCompacta_filter > label {
+    float: right;
+    margin-top: -45px;
+}
+
+/* fundo do título de ações na mesma cor dos títulos, devido column fixed */
+#modeloTableCompacta thead th {
+    background-color: #72c187 !important;
+}
+
+/* ações nas linhas do grid */
+#modeloTableCompacta tr:hover {
+    background-color: #d2d2d2 !important; /* cinza médio */
+    color: white !important;
+}
+
+/* Título das colunas  */
+#dt-search-0 { /* Search da Tabela Compactada */
+    -webkit-appearance: textfield;
+    box-sizing: content-box;
+    width: 300px;
+    height: 22px;
+}
+
+table thead tr th { /* usando table porque não funcionou com #modeloTableCompacta porque esse Id da table está sendo suprimido AQUI no Thead e não sei o motivo  */
+    background-color: #72c187 !important;
+}
+
+/* Não funcionou com #modeloTableCompacta porque esse Id da table está sendo suprimido AQUI no Thead e não sei o motivo  */
+table .theadCompacta { /* forçando uma class para por título numa Div porque Span está desconfiurando */
+    text-align: left;
+    font-family: calibri, arial, sans-serif;
+    font-size: 0.35em !important;
+    font-weight: 600 !important;
+    margin-left: 2px;
+}
+
+table thead tr th .dt-column-order { /* usando table porque não funcionou com #modeloTableCompacta porque esse Id da table está sendo suprimido e não sei o motivo  */
+    font-size: small;
+}
+
+/* Linhas */
+#modeloTableCompacta td {
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 0.9em !important;
+    color: #42444e;
+}
+
+/* Os inputs de pesquisa abaixo das colunas */
+#modeloTableCompacta tfoot th {
+    background-color: #72c187 !important;
+}
+
+#modeloTableCompacta tfoot tr th span {
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 0.9em !important;
+    font-weight: 500;
+}
+
+#modeloTableCompacta .grid_fundo_opcoes {
+    float: left !important;
+}
+/*  Fim do ModeloTableCompacta */
+
+/* ********************************
+ *  MODELO TABLE MODAL
+ ********************************** */
+#modeloTableModal {
+    width: 100% !important; /*  largura máxima de exposição da table, e depois quebra a linha dentro do <td></td>  */
+    height: 100%; /* aproveita toda a altura da tela */
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 1.0em !important; /* das linhas do grid, exceto títulos das colunas do grid  */
+    cursor: pointer;
+    margin-top: 6px;
+}
+
+#modeloTableModal_filter input {
+    float: right;
+    width: 200px;
+    clear: both;
+}
+
+/* Caixa de Busca */
+#modeloTableModal_filter > label {
+    float: right;
+    margin-top: -45px;
+}
+
+/* fundo do título de ações na mesma cor dos títulos, devido column fixed */
+#modeloTableModal thead th {
+    background-color: #72c187 !important;
+}
+
+/* ações nas linhas do grid */
+#modeloTableModal tr:hover {
+    background-color: #d2d2d2 !important; /* cinza médio */
+    color: white !important;
+}
+
+/* Título das colunas  */
+#dt-search-0 { /* Search da Tabela Compactada */
+    -webkit-appearance: textfield;
+    box-sizing: content-box;
+    width: 300px;
+    height: 22px;
+}
+
+#modeloTableModal thead tr th {
+    background-color: #72c187 !important;
+}
+
+/* Não funcionou com #modeloTableCompacta porque esse Id da table está sendo suprimido AQUI no Thead e não sei o motivo  */
+.theadModal { /* forçando uma class para por título numa Div porque Span está desconfigurando */
+    text-align: left;
+    font-family: calibri, arial, sans-serif;
+    font-size: 0.35em !important;
+    font-weight: 600 !important;
+    margin-left: 2px;
+}
+
+/* Linhas */
+#modeloTableModal td {
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 0.9em !important;
+    color: #42444e;
+}
+
+/* Os inputs de pesquisa abaixo das colunas */
+#modeloTableModal tfoot th {
+    background-color: #72c187 !important;
+}
+
+#modeloTableModal tfoot tr th span {
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 0.9em !important;
+    font-weight: 500;
+}
+
+#modeloTableModal .grid_fundo_opcoes {
+    float: left !important;
+}
+/*  Fim do ModeloTableModal */
+/*
+ *  OUTRAS CONFIGURAÇÕES GENÉRICAS DE TABLES
+*/
+.buttonTable {
+    border: 1px solid gray;
+    border-radius: 6px;
+}
+
+    .buttonTable:hover {
+        background-color: gray;
+        color: white;
+    }
+
+.buttonTableCompacto {
+    border: 1px solid gray;
+    border-radius: 6px !important;
+    font-family: calibri, arial, sans-serif !important;
+    font-size: 0.9em !important;
+    font-weight: 200;
+    background-color: #e4e4e4 !important;
+    color: black !important;
+    min-width: 180px !important;
+    margin-left: 6px !important;
+    height: 28px !important;
+}
+
+    .buttonTableCompacto:hover {
+        background-color: silver !important;
+        color: black !important;
+        font-weight: 500 !important;
+    }

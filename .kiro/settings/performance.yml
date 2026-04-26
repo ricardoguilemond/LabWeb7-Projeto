@@ -1,0 +1,4 @@
+max_threads: 8
+enable_cache: true
+query_timeout: 30s
+optimize_indexes: true

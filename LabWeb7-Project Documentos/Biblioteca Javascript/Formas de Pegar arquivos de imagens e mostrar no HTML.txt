@@ -1,0 +1,18 @@
+São duas formas de pegar uma imagem para ser mostrada no HTML
+A primeira precisa acrescentar o texto da bse64, mas a segunda alteranativa vem completa.
+
+
+1)   var objURL = URL.createObjectURL(e.target.files[0]);
+     objURL = "data:image/png;base64," + objURL;
+
+
+
+
+2)   var input = document.getElementById("fileAss1");
+     var fReader = new FileReader();
+     fReader.readAsDataURL(input.files[0]);
+     fReader.onloadend = function (event) {
+         var img = document.getElementById("imgsAss1");
+         img.src = event.target.result;
+         console.log("img.src: ", img.src);
+     }

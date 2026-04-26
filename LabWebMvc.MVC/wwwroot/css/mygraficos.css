@@ -1,0 +1,121 @@
+﻿/* Estilo geral da página */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+    background-color: #f9f9f9;
+    padding: 20px;
+}
+
+/* Título do gráfico */
+h2 {
+    color: #2c3e50;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.grafico-titulo {
+    font-family: 'Didact Gothic', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #1a237e; /* azul profundo, transmite confiança */
+    padding-left: 16px;
+    padding-top: 4px;
+}
+
+.grafico-cabecalho {
+    padding-left: 16px;
+}
+
+.grafico-titulo {
+    font-family: 'Didact Gothic', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #1a237e; /* azul profundo, transmite confiança */
+    padding-left: 16px;
+    padding-top: 4px;
+}
+
+.grafico-subtitulo {
+    font-family: 'Didact Gothic', sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    color: #1a237e; /* azul profundo, transmite confiança */
+    margin-top: 2px;
+    padding-left: 16px;
+}
+
+/* Responsividade para o canvas do gráfico */
+#graficoReCaptcha {
+    width: 100% !important;
+    max-width: 900px;
+    height: auto !important;
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Legenda do gráfico (opcional se usar plugin legend do Chart.js) */
+.chart-legend {
+    font-size: 14px;
+    color: #555;
+}
+
+/* Cores alternativas para barras */
+.barra-azul {
+    background-color: rgba(54, 162, 235, 0.7);
+    border-color: rgba(54, 162, 235, 1);
+}
+
+.barra-verde {
+    background-color: rgba(75, 192, 192, 0.6);
+    border-color: rgba(75, 192, 192, 1);
+}
+
+.barra-laranja {
+    background-color: rgba(255, 159, 64, 0.6);
+    border-color: rgba(255, 159, 64, 1);
+}
+
+/* Texto padrão do gráfico */
+.chartjs-render-monitor {
+    font-size: 12px;
+    color: #000;
+}
+
+.grafico-rodape {
+    font-family: 'Didact Gothic', sans-serif;
+    font-size: 1.1rem;
+    color: #1a237e;
+    padding: 12px 16px;
+    margin-top: 1rem;
+    border-top: 1px solid #ddd;
+    background-color: #f5f5f5;
+}
+
+    .grafico-rodape i {
+        margin-right: 8px;
+        color: #0077cc;
+    }
+
+.rodape-texto {
+    font-weight: 500;
+}
+
+.rodape-subtexto {
+    font-size: 0.9rem;
+    color: #555;
+    margin-top: 4px;
+}
+
+.rodape-link a {
+    font-size: 0.9rem;
+    color: #0077cc;
+    text-decoration: underline;
+}
+
+.grafico-rodape.alerta {
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+    color: #856404;
+}

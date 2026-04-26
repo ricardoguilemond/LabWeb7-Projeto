@@ -1,0 +1,23 @@
+﻿@{
+    Layout = "_Layout";
+}
+<head>
+    <style>
+        .fonteError {
+            font-size: 1.1em;
+            color: darkgreen;
+        }
+    </style>
+</head>
+<script>
+    console.log("Error404");
+</script>
+<div class="row fonteError">
+    <div class="col-md-10 ml-3">
+        <p><b>Erro 404:</b></p>
+        <p>Falhou a resposta http/https.</p>
+        <p>Sua solicitação chegou até o servidor, mas ele não conseguiu devolver a resposta.</p>
+        <p>Pode ter sido um acesso sem a correspondência da autorização via Login.</p>
+        <p>Ou pode ter sido uma instabilidade momentânea na Internet, mas, se o problema persisitr talvez seja importante comunicar o suporte.</p>
+    </div>
+</div>

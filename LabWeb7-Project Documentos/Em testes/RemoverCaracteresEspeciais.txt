@@ -1,0 +1,13 @@
+            public void RemoverCaracteresEspeciais()
+            {
+                var obj = this;
+                obj.GetType().GetProperties()
+                    .Where(w => w.PropertyType == typeof(String) && !String.IsNullOrWhiteSpace((String)w.GetValue(obj)))
+                    .ToList().ForEach(f =>
+                    {
+                        var oldValue = (String)f.GetValue(obj);
+                        f.SetValue(this, string.IsNullOrWhiteSpace(oldValue) ? string.Empty :
+                                         Encoding.ASCII.GetString(Encoding.GetEncoding("Cyrillic").GetBytes(oldValue)));
+                    });
+            }
+
