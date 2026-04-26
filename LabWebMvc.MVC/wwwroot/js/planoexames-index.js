@@ -12,20 +12,17 @@ $(document).ready(function () {
         numeroItemFolha = $(".itemFolhaExame").val();  //obrigatório porque aqui pega em realtime o número da folha que ESTÁ selecionado no ComboBox!
 
         //Vamos atualizar o número da folha e chamar depois a partial view que vai atualizar AJAX somente a DIV chamada "contaDiv"
-        $.ajax({
-            url: urlIndex + '?numeroItemFolha=' + numeroItemFolha + "&partial=true",
-            type: "GET",
-            async: true,
-            dataType: "html",
-            success: function (data) {
-                $('#modeloTable').DataTable().destroy();  //destrói o DataTables para conseguir atualizar o "data" paginando corretamente!
-                $("#modeloTable").html(data);             //a tabela construída/remontada/atualizada
+        fetch(urlIndex + '?numeroItemFolha=' + numeroItemFolha + "&partial=true", { //Javascript puro: substitui uso de Ajax, mais moderno e simples.
+            method: 'GET'
+        })
+        .then(function (r) { return r.text(); })
+        .then(function (data) {
+            $('#modeloTable').DataTable().destroy();  //destrói o DataTables para conseguir atualizar o "data" paginando corretamente!
+            document.getElementById('modeloTable').innerHTML = data; //a tabela construída/remontada/atualizada
 
-                configTable();                            //reconstrói o DataTable com "draw()" com as configurações determinadas
-
-            },
-            failure: function () { alert("Falhou carregamento do Grid"); }
-        });
+            configTable();                            //reconstrói o DataTable com "draw()" com as configurações determinadas
+        })
+        .catch(function () { alert("Falhou carregamento do Grid"); });
         numeroItemFolha = $(".itemFolhaExame").val(); //atualiza em realtime o número da folha que FOI selecionado no ComboBox!
 
     });

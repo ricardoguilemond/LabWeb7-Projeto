@@ -7,17 +7,15 @@ function montarCupomPorId(id) {
         console.warn('ID inválido ou ausente.');
         return;
     }
-    $.ajax({
-        url: urlMontarItensCupom + '?id=' + id,
-        type: "GET",
-        async: true,
-        dataType: "html",
-        success: function (data) {
-            $("#conteudoItensCupomCaixa").html(data);
-        },
-        failure: function () {
-            clickAviso('Interrompido', 'Falha no carregamento dos dados do cupom', 'falha');
-        }
+    fetch(urlMontarItensCupom + '?id=' + id, { //Javascript puro: substitui uso de Ajax, mais moderno e simples.
+        method: 'GET'
+    })
+    .then(function (r) { return r.text(); })
+    .then(function (data) {
+        document.getElementById('conteudoItensCupomCaixa').innerHTML = data;
+    })
+    .catch(function () {
+        clickAviso('Interrompido', 'Falha no carregamento dos dados do cupom', 'falha');
     });
 }
 
@@ -89,21 +87,18 @@ $(document).ready(function () {
         numeroItemFolha = $(".itemFolhaExame").val();    //obrigatório porque aqui pega em realtime o número da folha que ESTÁ selecionado no ComboBox!
 
         //Vamos atualizar o número da folha e chamar depois a partial view que vai atualizar AJAX somente a DIV chamada "contaDiv"
-        $.ajax({
-            url: urlPlanoExamesItens + '?numeroItemFolha=' + numeroItemFolha + "&numeroTabela=" + numeroItemTabela + "&partial=true",
-            type: "GET",
-            async: true,
-            dataType: "html",
-            success: function (data) {
-                $('#modeloTable').DataTable().destroy();  //destrói o DataTables para conseguir atualizar o "data" paginando corretamente!
-                $("#modeloTable").html(data);             //contaDiv é do "tbody" que monta/substitui a partial grid na posição
+        fetch(urlPlanoExamesItens + '?numeroItemFolha=' + numeroItemFolha + "&numeroTabela=" + numeroItemTabela + "&partial=true", { //Javascript puro: substitui uso de Ajax, mais moderno e simples.
+            method: 'GET'
+        })
+        .then(function (r) { return r.text(); })
+        .then(function (data) {
+            $('#modeloTable').DataTable().destroy();  //destrói o DataTables para conseguir atualizar o "data" paginando corretamente!
+            document.getElementById('modeloTable').innerHTML = data; //contaDiv é do "tbody" que monta/substitui a partial grid na posição
 
-                configTable();                       //reconstrói o DataTable com "draw()" com as configurações determinadas
-
-            },
-            failure: function () {
-                clickAviso('Interrompido', 'Falha no carregamento do grid de exames', 'falha');
-            }
+            configTable();                       //reconstrói o DataTable com "draw()" com as configurações determinadas
+        })
+        .catch(function () {
+            clickAviso('Interrompido', 'Falha no carregamento do grid de exames', 'falha');
         });
         numeroItemFolha = $(".itemFolhaExame").val(); //atualiza em realtime o número da folha que FOI selecionado no ComboBox!
         numeroItemTabela = $(".itemTabelaExame").val();

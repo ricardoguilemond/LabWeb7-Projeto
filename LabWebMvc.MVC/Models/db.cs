@@ -247,22 +247,38 @@ public class Db : DbContext
 
                 var tableName = Model.FindEntityType(entityType)?.GetTableName();
                 if (!string.IsNullOrEmpty(tableName))
-                    await Database.ExecuteSqlAsync($@"LOCK TABLE ""{tableName}"" IN EXCLUSIVE MODE", cts.Token);
+                    //Feito pelo Qoder em 21/04/2026 - ExecuteSqlRawAsync com array vazio de parâmetros evita que cts.Token seja tratado como @p0
+                    await Database.ExecuteSqlRawAsync($"LOCK TABLE \"{tableName}\" IN EXCLUSIVE MODE", Array.Empty<object>(), cts.Token);
+                    //..Qoder
 
                 foreach (var entry in addedEntries)
                 {
-                    int limite = quantidadeRegistrosMaximo ?? int.MaxValue;
+                    int? availableId = null;
 
-                    int? availableId = Enumerable.Range(1, limite)
-                        .FirstOrDefault(i => !usedIds.Contains(i));
-
-                    if (availableId == null)
+                    if (quantidadeRegistrosMaximo.HasValue)
                     {
-                        int nextId = usedIds.Max() + 1;
-                        if (quantidadeRegistrosMaximo.HasValue && nextId > quantidadeRegistrosMaximo.Value)
-                            throw new InvalidOperationException($"Limite de {quantidadeRegistrosMaximo.Value} registros atingido para a entidade {entityType.Name}.");
+                        // Com limite: busca o primeiro gap de 1 até o limite
+                        availableId = Enumerable.Range(1, quantidadeRegistrosMaximo.Value)
+                            .Cast<int?>()
+                            .FirstOrDefault(i => !usedIds.Contains(i!.Value));
 
-                        availableId = nextId;
+                        if (availableId == null)
+                            throw new InvalidOperationException($"Limite de {quantidadeRegistrosMaximo.Value} registros atingido para a entidade {entityType.Name}.");
+                    }
+                    else
+                    {
+                        //Feito pelo Qoder em 21/04/2026 - sem limite: busca o primeiro gap na sequência sem OverflowException
+                        int maximo = usedIds.Count > 0 ? usedIds.Max() : 0;
+                        for (int i = 1; i <= maximo + 1; i++)
+                        {
+                            if (!usedIds.Contains(i))
+                            {
+                                availableId = i;
+                                break;
+                            }
+                        }
+                        availableId ??= maximo + 1;
+                        //..Qoder
                     }
 
                     idProperty.SetValue(entry.Entity, availableId.Value);
@@ -2017,7 +2033,7 @@ public class Db : DbContext
         {
             entity.ToTable("Postos");
             entity.HasKey(e => e.Id).HasName("iPostos1");
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.Id).ValueGeneratedOnAdd(); //importante!
 
             entity.Property(e => e.Bairro)
                 .HasMaxLength(45)

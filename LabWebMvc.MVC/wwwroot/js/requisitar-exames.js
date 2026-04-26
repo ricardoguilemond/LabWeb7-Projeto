@@ -137,17 +137,15 @@ $(document).ready(function () {
 
     $("#buttonLimpaCupom").on("click", function (event) {
         event.preventDefault();
-        $.ajax({
-            url: urlMontarItensCupom + '?id=0',
-            type: "GET",
-            async: true,
-            dataType: "html",
-            success: function (data) {
-                $("#conteudoItensCupomCaixa").html(data);
-            },
-            failure: function () {
-                clickAviso('Interrompido', 'Falha ao tentar zerar os dados do cupom', 'falha');
-            }
+        fetch(urlMontarItensCupom + '?id=0', { //Javascript puro: substitui uso de Ajax, mais moderno e simples.
+            method: 'GET'
+        })
+        .then(function (r) { return r.text(); })
+        .then(function (data) {
+            document.getElementById('conteudoItensCupomCaixa').innerHTML = data;
+        })
+        .catch(function () {
+            clickAviso('Interrompido', 'Falha ao tentar zerar os dados do cupom', 'falha');
         });
     });
 });

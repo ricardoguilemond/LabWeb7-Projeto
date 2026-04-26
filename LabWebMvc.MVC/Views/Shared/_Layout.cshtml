@@ -313,34 +313,38 @@
             };
         </script>
         <script>
-            $(document).ready(function () {
+            document.addEventListener('DOMContentLoaded', function () {
                 //-----------------------------------------------------------------------------------------------
                 //Para saltar de campo em campo (somente input do type=text/TextBoxFor) nos formulários com ENTER
                 //-----------------------------------------------------------------------------------------------
-                $('body').on('keydown', 'input, select', function (e) {
-
+                document.body.addEventListener('keydown', function (e) {
+        
                     //IGNORA campos de busca de DataTables (permite ENTER funcionar normalmente neles)
-                    if ($('#modeloTableCompacta').closest($("input[type='search']")[0]).length > 0) {
+                    const tableCompacta = document.getElementById('modeloTableCompacta');
+                    const searchInput = document.querySelector("input[type='search']");
+                    if (tableCompacta && searchInput && tableCompacta.contains(searchInput)) {
                         console.log("Ignorando campo de busca do DataTable no _Layout");
                         return; // Não interfere
                     }
-                    if (e.which === 13) {
-                        var self = $(this),
-                        form = self.parents('form:eq(0)'),
-                        focusable,
-                        next;
-
-                        focusable = form.find('input[type=text], input[type=date], input[type=email], input[type=number], select').filter(':visible');
-                        next = focusable.eq(focusable.index(this) + 1);
-
-                        if (next.length) {
-                            next.focus();
-                        }
-
+        
+                    if (e.which === 13 || e.key === 'Enter') {
+                        const input = e.target;
+                        if (!input.matches('input, select')) return;
+                        const form = input.closest('form');
+                        if (!form) return;
+        
+                        const focusable = Array.from(form.querySelectorAll(
+                            'input[type=text], input[type=date], input[type=email], input[type=number], select'
+                        )).filter(el => el.offsetParent !== null); // somente visíveis
+        
+                        const idx = focusable.indexOf(input);
+                        const next = focusable[idx + 1];
+                        if (next) next.focus();
+        
                         return false; // bloqueia envio automático do form
                     }
                 });
-                //..
+                //...
             });
             // coloca seta estilizada em todos os botões de submit dos formulários que usam "button"
             document.addEventListener("DOMContentLoaded", function () {

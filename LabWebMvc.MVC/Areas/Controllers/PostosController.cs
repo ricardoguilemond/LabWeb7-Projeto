@@ -116,14 +116,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (string.IsNullOrEmpty(vm.NomePosto))
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Formulário possui campos obrigatórios vazios ou não havia nada para ser salvo" });
 
-            Postos? Postos = await _db.Postos.Where(s => s.NomePosto == vm.NomePosto).SingleOrDefaultAsync();
+            Postos? Postos = await _db.Postos.Where(s => s.NomePosto == vm.NomePosto.ToUpper()).SingleOrDefaultAsync();
             if (Postos != null)
-            {
-                if (Postos.NomePosto == vm.NomePosto.ToUpper())
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto/anexo já cadastrada com este nome", action = "", sucesso = false });
-                else
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto/anexo já cadastrada", action = "", sucesso = false });
-            }
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto/anexo já cadastrado com este nome", action = "", sucesso = false });
 
             Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(async () =>
@@ -132,8 +127,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 {
                     try
                     {
+                        //Feito pelo Qoder em 21/04/2026 - aproveita o primeiro Id vago na sequência
+                        var idsUsados = await _db.Postos.AsNoTracking().Select(p => p.Id).ToListAsync();
+                        int proximoId = 1;
+                        while (idsUsados.Contains(proximoId)) proximoId++;
+                        //..Qoder
+
                         await _db.Postos.AddAsync(new Postos()
                         {
+                            Id = proximoId,
                             //Colunas NÃO nulas:
                             NomePosto = vm.NomePosto.ToUpper(),
                             Responsavel = vm.Responsavel,
@@ -150,7 +152,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             CEP = vm.CEP
                         });
 
-                        await _db.SaveChangesAsync();
+                        await _db.SaveChangesWithSyncAsync();
 
                         await transaction.CommitAsync();
 

@@ -414,12 +414,16 @@ namespace LabWebMvc.MVC.Areas.Validations
             else //Prossegue com a validação de Login identificando a Empresa e pegando o script de conexão
             {
                 //Localiza dados na Empresa/Cliente
+                //Feito pelo Qoder em 26/04/2026 - log sem senha: oculta o valor do campo Password= na string de conexão antes de registrar
+                static string OcultaSenhaConexao(string conn) =>
+                    System.Text.RegularExpressions.Regex.Replace(conn, @"(?i)Password\s*=\s*[^;]+", "Password=***");
+                //..Qoder
                 _eventLog.LogEventViewer($"[DEV-LOGIN] Buscando EmpresaCliente: email='{emailLocalizado.Email}' id='{emailLocalizado.EmpresaClienteId}'", "wInfo");
                 EmpresaCliente cliente = await LocalizaEmpresaAsync(_geralController, _eventLog, admStringConexao, emailLocalizado.Email, emailLocalizado.EmpresaClienteId.ToString());
-                _eventLog.LogEventViewer($"[DEV-LOGIN] EmpresaCliente encontrada: CNPJ='{cliente.CNPJ}' StringConexao='{cliente.StringConexao}'", "wInfo");
+                _eventLog.LogEventViewer($"[DEV-LOGIN] EmpresaCliente encontrada: CNPJ='{cliente.CNPJ}' StringConexao='{OcultaSenhaConexao(cliente.StringConexao)}'", "wInfo");
                 admStringConexao = cliente.StringConexao;  //pega o script de conexão do cliente
                 cnpjEmpresaLogada = cliente.CNPJ;           // guarda o CNPJ correto da empresa
-                _eventLog.LogEventViewer($"[DEV-LOGIN] admStringConexao após LocalizaEmpresa='{admStringConexao}'", "wInfo");
+                _eventLog.LogEventViewer($"[DEV-LOGIN] admStringConexao após LocalizaEmpresa='{OcultaSenhaConexao(admStringConexao)}'", "wInfo");
             }
             if (admStringConexao == "erro")
             {

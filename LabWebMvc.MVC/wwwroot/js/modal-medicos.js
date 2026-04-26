@@ -17,25 +17,23 @@
     //AJAX
     function ajaxFunction(valorSelecionado) {
         if (valorSelecionado.length > 0) {
-            $.ajax({
-                url: urlRetornoModalMedico,  //quando o médico é selecionado no Grid do Modal
-                type: "GET",
-                data: { id: valorSelecionado }, //ATENÇÃO: o valor "id" aqui é o Nome/CRM do médico!
-                cache: true,
-                dataType: "json",
-                success: function (data) {
-                    if (!data.vm.nomeMedico) {
-                        clickAviso('Atenção', 'Não trouxe dados nesta busca', 'falha');
-                        return;
-                    }
-                    // Preenchendo os campos após retornar do Controller
-                    preencherFormularioMedico(data.vm);
-                },
-                error: function () {
-                    clickAviso('Interrompido', 'Falha no carregamento dos dados', 'falha');
-                },
-            }).done(function () {
+            fetch(`${urlRetornoModalMedico}?id=${encodeURIComponent(valorSelecionado)}`, { //Javascript puro: substitui uso de Ajax, mais moderno e simples.
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.vm.nomeMedico) {
+                    clickAviso('Atenção', 'Não trouxe dados nesta busca', 'falha');
+                    return;
+                }
+                // Preenchendo os campos após retornar do Controller
+                preencherFormularioMedico(data.vm);
+
                 ModalManager.fechar('modeloTableModalMedicos');
+            })
+            .catch(function () {
+                clickAviso('Interrompido', 'Falha no carregamento dos dados', 'falha');
             });
         }
     }

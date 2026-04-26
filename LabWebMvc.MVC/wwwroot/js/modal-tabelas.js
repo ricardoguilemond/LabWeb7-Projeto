@@ -18,31 +18,29 @@
 
     function ajaxFunction(valorSelecionado) {
         if (valorSelecionado.length > 0) {
-            $.ajax({
-                url: urlRetornoModalTabela,
-                type: "GET",
-                data: { id: valorSelecionado }, //ATENÇÃO: o valor "id" aqui é a Sigla da Tabela!
-                cache: false,
-                dataType: "json",
-                success: function (data) {
-                    if (!data.vm.siglaTabela || !data.vm.nomeTabela) {
-                        clickAviso('Atenção', 'Não trouxe dados nesta busca', 'falha');
-                        return;
-                    }
-                    // Preenchendo os campos após retornar do Controller
-                    preencherFormularioTabela(data.vm);
-        
-                    // Montando/atualizando o grid de exames referente a Tabela de Exames (para lançamento no paciente)
-                    $('#conteudoListaDeExames').load(`${urlPartialLancarExames}?tabelaExamesId=${data.vm.tabelaExamesId}`);  //obs: é com crase, pois tem interpolação javascript!
+            fetch(`${urlRetornoModalTabela}?id=${encodeURIComponent(valorSelecionado)}`, { //Javascript puro: substitui uso de Ajax, mais moderno e simples.
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.vm.siglaTabela || !data.vm.nomeTabela) {
+                    clickAviso('Atenção', 'Não trouxe dados nesta busca', 'falha');
+                    return;
+                }
+                // Preenchendo os campos após retornar do Controller
+                preencherFormularioTabela(data.vm);
 
-                    //Atualizando o grid de Cupom, cada vez que reabrir a tabela e preços, para que o usuário possa escolher os itens.
-                    $('#conteudoItensCupomCaixa').load(urlPartialMontarItensCupom);
-                },
-                error: function () {
-                    clickAviso('Interrompido', 'Falha no carregamento dos dados', 'falha');
-                },
-            }).done(function () {
+                // Montando/atualizando o grid de exames referente a Tabela de Exames (para lançamento no paciente)
+                $('#conteudoListaDeExames').load(`${urlPartialLancarExames}?tabelaExamesId=${data.vm.tabelaExamesId}`);  //obs: é com crase, pois tem interpolação javascript!
+
+                //Atualizando o grid de Cupom, cada vez que reabrir a tabela e preços, para que o usuário possa escolher os itens.
+                $('#conteudoItensCupomCaixa').load(urlPartialMontarItensCupom);
+
                 ModalManager.fechar('modeloTableModalTabelas');
+            })
+            .catch(function () {
+                clickAviso('Interrompido', 'Falha no carregamento dos dados', 'falha');
             });
         }
     }

@@ -16,26 +16,25 @@ $(document).ready(function () {
             listaCupom.push({ Id: id, Descricao: descricao, ValorItem: valor });
         });
 
-        $.ajax({
-            url: urlSalvar,
-            type: "POST",
-            headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
-            async: true,
-            data: $('#formRequisitar').serialize(),
-            success: function (data) {
-                var titulo = data['titulo'] ?? 'Atenção';
-                var mensagem = data['mensagem'];
-                var actionPos = data['action'];
-                var sucesso = data['sucesso'];
-                var tipo = sucesso ? 'sucesso' : 'falha';
+        fetch(urlSalvar, { //Javascript puro: substitui uso de Ajax, mais moderno e simples.
+            method: 'POST',
+            headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: new URLSearchParams(new FormData(formRequisitar)).toString()
+        })
+        .then(r => r.json())
+        .then(function (data) {
+            var titulo = data['titulo'] ?? 'Atenção';
+            var mensagem = data['mensagem'];
+            var actionPos = data['action'];
+            var sucesso = data['sucesso'];
+            var tipo = sucesso ? 'sucesso' : 'falha';
 
-                //Atualiza a grid e exibe mensagem
-                $('#modeloTableRequisitar').DataTable().ajax.reload();
-                clickAviso(titulo, mensagem, tipo, actionPos);
-            },
-            error: function (request, status, error) {
-                clickAviso('Interrompido', 'Falha na execução', 'critica', null);
-            }
+            //Atualiza a grid e exibe mensagem
+            $('#modeloTableRequisitar').DataTable().ajax.reload();
+            clickAviso(titulo, mensagem, tipo, actionPos);
+        })
+        .catch(function () {
+            clickAviso('Interrompido', 'Falha na execução', 'critica', null);
         });
     }
 

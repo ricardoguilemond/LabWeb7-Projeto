@@ -3,13 +3,14 @@
 -->
 <script>
     /* Total de linhas de registros da tabela inteira trazida para a view */
-    var totalTabela = $('#modeloTable').find('.grid_fundo_opcoes').length;
+    var totalTabela = document.querySelectorAll('#modeloTable .grid_fundo_opcoes').length;
     /*
     Inicio do Grid
     */
-    $(document).ready(function () {
-        var idTable = $('[name="datatable"]').prop("id");
-        if (idTable == "modeloTableCompacta") {
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableEl = document.querySelector('[name="datatable"]');
+        const idTable = tableEl ? tableEl.id : null;
+        if (idTable === "modeloTableCompacta") {
             configTableCompacta();   //constrói o DataTable com parâmetros de uma tabela compacta/simples/reduzida
         }
         else {
