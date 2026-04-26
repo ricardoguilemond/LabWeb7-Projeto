@@ -383,6 +383,8 @@ LabWebMvc.MVC/appsettings.*.json
 LabWebMvc.MVC/appsettings.*
 LabWebMvc.MVC/Settings.cs
 ServicoExportacao/appsettings2.json
+ServicoExportacao/appsettings2.Development.json
+ServicoExportacao/appsettings2.*.json
 LabWebMvc.MVC/Interfaces/Criptografias/CriptoDecripto.cs
 LabWeb7-Project Documentos/Biblioteca EXE/
 LabWeb7-Project Documentos/Biblioteca PDF/
