@@ -37,7 +37,8 @@ $(document).ready(function () {
     const modaisCarregados = {
         Instituicao: false,
         Tabela: false,
-        Medico: false
+        Medico: false,
+        Posto: false
     };
 
     const aplicarBusca = (idTabela, texto) => {
@@ -56,10 +57,37 @@ $(document).ready(function () {
         }
     };
 
-    $("#buscaSiglaInstituicao, #buscaNomeInstituicao, #buscaSiglaTabela, #buscaNomeTabela, #buscaCRM, #buscaNomeMedico")
+    // Reseta flags e esvazia containers ao limpar campos manualmente
+    $("#buscaSiglaInstituicao, #buscaNomeInstituicao").on('input', function () {
+        if ($(this).val().trim() === '') {
+            modaisCarregados.Instituicao = false;
+            $('#modalTriggerInstituicao').empty();
+        }
+    });
+    $("#buscaSiglaTabela, #buscaNomeTabela").on('input', function () {
+        if ($(this).val().trim() === '') {
+            modaisCarregados.Tabela = false;
+            $('#modalTriggerTabela').empty();
+        }
+    });
+    $("#buscaCRM, #buscaNomeMedico").on('input', function () {
+        if ($(this).val().trim() === '') {
+            modaisCarregados.Medico = false;
+            $('#modalTriggerMedico').empty();
+        }
+    });
+    $("#buscaNomePosto").on('input', function () {
+        if ($(this).val().trim() === '') {
+            modaisCarregados.Posto = false;
+            $('#modalTriggerPosto').empty();
+        }
+    });
+
+    $("#buscaSiglaInstituicao, #buscaNomeInstituicao, #buscaSiglaTabela, #buscaNomeTabela, #buscaCRM, #buscaNomeMedico, #buscaNomePosto")
         .off('keydown')
         .on('keydown', function (event) {
             if (teclasPermitidas.includes(event.key)) {
+                event.preventDefault(); // impede submit do formulário ao pressionar ENTER
                 setTimeout(() => {
                     const inputEscrito = event.target.value.trim();
                     const palavras = inputEscrito.split(/\s+/).filter(p => p.length > 0);
@@ -74,12 +102,12 @@ $(document).ready(function () {
                                         modaisCarregados.Instituicao = true;
                                         setTimeout(() => {
                                             ModalManager.abrir('modeloTableModalInstituicao', 'input[type="search"]');
-                                            aplicarBusca('#modeloTableModalInstituicao', inputEscrito);
+                                            aplicarBusca('#tabelaInstituicao', inputEscrito);
                                         }, 100);
                                     });
                                 } else {
                                     ModalManager.abrir('modeloTableModalInstituicao', 'input[type="search"]');
-                                    aplicarBusca('#modeloTableModalInstituicao', inputEscrito);
+                                    aplicarBusca('#tabelaInstituicao', inputEscrito);
                                 }
                                 break;
 
@@ -89,12 +117,12 @@ $(document).ready(function () {
                                         modaisCarregados.Posto = true;
                                         setTimeout(() => {
                                             ModalManager.abrir('modeloTableModalPostos', 'input[type="search"]');
-                                            aplicarBusca('#modeloTableModalPostos', inputEscrito);
+                                            aplicarBusca('#tabelaPostos', inputEscrito);
                                         }, 100);
                                     });
                                 } else {
                                     ModalManager.abrir('modeloTableModalPostos', 'input[type="search"]');
-                                    aplicarBusca('#modeloTableModalPostos', inputEscrito);
+                                    aplicarBusca('#tabelaPostos', inputEscrito);
                                 }
                                 break;
 
@@ -105,12 +133,12 @@ $(document).ready(function () {
                                         modaisCarregados.Tabela = true;
                                         setTimeout(() => {
                                             ModalManager.abrir('modeloTableModalTabelas', 'input[type="search"]');
-                                            aplicarBusca('#modeloTableModalTabelas', inputEscrito);
+                                            aplicarBusca('#tabelaPreco', inputEscrito);
                                         }, 100);
                                     });
                                 } else {
                                     ModalManager.abrir('modeloTableModalTabelas', 'input[type="search"]');
-                                    aplicarBusca('#modeloTableModalTabelas', inputEscrito);
+                                    aplicarBusca('#tabelaPreco', inputEscrito);
                                 }
                                 break;
 
@@ -121,12 +149,12 @@ $(document).ready(function () {
                                         modaisCarregados.Medico = true;
                                         setTimeout(() => {
                                             ModalManager.abrir('modeloTableModalMedicos', 'input[type="search"]');
-                                            aplicarBusca('#modeloTableModalMedicos', inputEscrito);
+                                            aplicarBusca('#tabelaMedicos', inputEscrito);
                                         }, 100);
                                     });
                                 } else {
                                     ModalManager.abrir('modeloTableModalMedicos', 'input[type="search"]');
-                                    aplicarBusca('#modeloTableModalMedicos', inputEscrito);
+                                    aplicarBusca('#tabelaMedicos', inputEscrito);
                                 }
                                 break;
                         }

@@ -217,6 +217,15 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/jquery.maskMoney.min.js"></script>
+    <script src="~/js/requisitar-exames.js"></script>
+    <!-- Feito pelo Qoder em 21/04/2026 — elementos de configuração de URLs para os scripts externos -->
+    <span id="lancarExamesConfig" hidden
+          data-url-montar-itens-cupom="@Url.Action("PartialMontarItensCupom", "Requisitar")"
+          data-url-plano-exames-itens="@Url.Action("PlanoExamesItens", "Requisitar")"
+          data-url-remover-exame-cupom="@Url.Action("RemoverExameCupom", "Requisitar")"></span>
+    <span id="examesConfig" hidden
+          data-url-montar-itens-cupom="@Url.Action("PartialMontarItensCupom", "Requisitar")"></span>
+    <!-- ..Qoder -->
 
     @*     <script type="text/javascript">
         $(document).ready(function () {

@@ -1,6 +1,9 @@
 var lancarExamesConfig = document.getElementById('lancarExamesConfig');
 var urlMontarItensCupom = lancarExamesConfig.dataset.urlMontarItensCupom;
 var urlPlanoExamesItens = lancarExamesConfig.dataset.urlPlanoExamesItens;
+// Feito pelo Qoder em 21/04/2026 — URL para remoção individual de item do cupom
+var urlRemoverExameCupom = lancarExamesConfig.dataset.urlRemoverExameCupom;
+//..Qoder
 
 function montarCupomPorId(id) {
     if (!id) {
@@ -19,6 +22,23 @@ function montarCupomPorId(id) {
     });
 }
 
+// Feito pelo Qoder em 21/04/2026 — remove item específico ao desselecionar no grid
+function removerCupomPorId(id) {
+    if (!id) {
+        console.warn('ID inválido ou ausente.');
+        return;
+    }
+    fetch(urlRemoverExameCupom + '?id=' + id, { method: 'GET' })
+    .then(function (r) { return r.text(); })
+    .then(function (data) {
+        document.getElementById('conteudoItensCupomCaixa').innerHTML = data;
+    })
+    .catch(function () {
+        clickAviso('Interrompido', 'Falha ao remover item do cupom', 'falha');
+    });
+}
+//..Qoder
+
 $(document).ready(function () {
 
     configTableCompacta();   //constrói o DataTable com parâmetros de uma tabela compacta/simples/reduzida
@@ -36,9 +56,11 @@ $(document).ready(function () {
             $(this).find('[name="itemLE"]').prop('checked', true);
             montarCupomPorId(id);
         } else {
-            // Desseleciona o item (não adiciona novamente ao cupom)
+            // Feito pelo Qoder em 21/04/2026 — deselecionar remove o item do cupom
             $(this).removeClass('selectedLinha').addClass('noSelectedLinha');
             $(this).find('[name="itemLE"]').prop('checked', false);
+            removerCupomPorId(id);
+            //..Qoder
         }
     });
     //..

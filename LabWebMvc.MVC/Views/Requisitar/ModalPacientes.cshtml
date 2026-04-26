@@ -11,19 +11,40 @@
         //Constrói o Modal
         configTableModal('#tabelaPacientes');
 
+        // Foca o campo de busca do DataTables ao abrir o modal
+        document.getElementById('modeloTableModalPaciente').addEventListener('shown.bs.modal', function () {
+            var inputBusca = document.querySelector('#modeloTableModalPaciente input[type="search"]');
+            if (inputBusca) inputBusca.focus();
+        });
+
+        // Ao fechar o modal (qualquer forma), move o foco para Sigla da Instituição se um paciente já foi preenchido
+        document.getElementById('modeloTableModalPaciente').addEventListener('hidden.bs.modal', function () {
+            if ($('#buscaNomePaciente').val().trim().length > 0) {
+                setTimeout(function () {
+                    var campo = document.getElementById('buscaSiglaInstituicao');
+                    if (campo) campo.focus();
+                }, 100);
+            }
+        });
+
         // Função para preencher o formulário com os dados do paciente selecionado
         function preencherFormularioPaciente(vm) {
             var $conteudo = $("#conteudoPaciente");
-    
+
             $conteudo.find("#pacienteId").val(vm.pacienteId);
             $conteudo.find("#buscaNomePaciente").val(vm.nomePaciente);
-    
+
+            // Limpa mensagem de validação do campo nome após preenchimento pelo modal
+            var $campoPaciente = $conteudo.find("#buscaNomePaciente");
+            $campoPaciente.removeClass('input-validation-error');
+            $campoPaciente.siblings('div.has-error, span.field-validation-error').hide().text('');
+            $campoPaciente.siblings('div.field-validation-error').hide().text('');
+
             $conteudo.find("#Nascimento").val(vm.nascimento);
             $conteudo.find("#CPFPaciente").val(vm.cpfPaciente);
             $conteudo.find("#Telefone").val(vm.telefone);
             $conteudo.find("#Email").val(vm.email);
-    
-            // Campos de texto simples
+
             $conteudo.find("#Mae").val(vm.nomeMae);
             $conteudo.find("#Naturalidade").val(vm.naturalidade);
             $conteudo.find("#Nacionalidade").val(vm.nacionalidade);
@@ -36,100 +57,92 @@
             $conteudo.find("#Bairro").val(vm.bairro);
             $conteudo.find("#Cidade").val(vm.cidade);
             $conteudo.find("#Observacao").val(vm.observacao);
-    
-            // Dropdowns
+
             $conteudo.find("select[name='vmGeral.TipoUF']").val(vm.uf);
             $conteudo.find("select[name='vmGeral.TipoTempoGestacao']").val(vm.tempoGestacao);
-    
-            // RadioButtons (Sexo e EstadoCivil)
+
             $conteudo.find("input[name='Sexo'][value='" + vm.sexo + "']").prop("checked", true);
             $conteudo.find("input[name='EstadoCivil'][value='" + vm.estadoCivil + "']").prop("checked", true);
-    
-            // Campo DUM (data)
+
             $conteudo.find("input[name='VmPacientes.DUM']").val(vm.dum);
         }
-        //..
 
-        //AJAX
-        function ajaxFunction(valorSelecionado) {
-            if (valorSelecionado.length > 0) {
-                $.ajax({
-                    url: '@Url.Action("RetornoDoModalPacientes", "Requisitar")', //quando o paciente é selecionado no Grid do Modal
-                    type: "GET",
-                    data: { id: valorSelecionado }, //ATENÇÃO: o valor "id" aqui é o Nome do paciente!
-                    cache: false,
-                    dataType: "json",
-                    success: function (data) {
-                        if (!data.vm.nomePaciente) {
-                            clickAviso('Atenção', 'Não trouxe dados nesta busca', 'falha');
-                            return;
-                        }
-                        // Preenchendo os campos após retornar do Controller
-                        preencherFormularioPaciente(data.vm);
-                    },
-                    error: function () {
-                        clickAviso('Interrompido', 'Falha no carregamento dos dados', 'falha');
-                    },
-                }).done(function () {
-                    ModalManager.fechar('modeloTableModalPaciente');
-                });
-            }
+        // Seleciona o paciente: chama AJAX, fecha o modal e move o foco
+        function selecionarPaciente(nomePaciente) {
+            if (!nomePaciente || nomePaciente.length === 0) return;
+
+            $.ajax({
+                url: '@Url.Action("RetornoDoModalPacientes", "Requisitar")',
+                type: "GET",
+                data: { id: nomePaciente },
+                cache: false,
+                dataType: "json",
+                success: function (data) {
+                    if (!data || !data.vm || !data.vm.nomePaciente) {
+                        clickAviso('Atenção', 'Não trouxe dados nesta busca', 'falha');
+                        return;
+                    }
+                    preencherFormularioPaciente(data.vm);
+                    fecharModalEFocar();
+                },
+                error: function () {
+                    clickAviso('Interrompido', 'Falha no carregamento dos dados', 'falha');
+                }
+            });
         }
 
-        // delegação: garante que funcione mesmo se o input for recriado pelo DataTables
-        $(document).on("keydown", "input[type='search']", function (event) {
+        // Fecha o modal de pacientes e move o foco para Sigla da Instituição
+        function fecharModalEFocar() {
+            var modalEl = document.getElementById('modeloTableModalPaciente');
+            // Tenta fechar via instância Bootstrap 5 (qualquer forma que tenha sido aberto)
+            var modalInst = bootstrap.Modal.getInstance(modalEl);
+            if (modalInst) {
+                modalInst.hide();
+            } else {
+                // Fallback: fecha via jQuery Bootstrap
+                $(modalEl).modal('hide');
+            }
+            // Aguarda a animação de fechamento (~300ms) antes de focar
+            setTimeout(function () {
+                var campo = document.getElementById('buscaSiglaInstituicao');
+                if (campo) campo.focus();
+            }, 400);
+        }
+
+        // ENTER no campo de busca do DataTables: seleciona a primeira linha visível
+        $(document).on("keydown", "#modeloTableModalPaciente input[type='search']", function (event) {
             if (event.keyCode === 13) {
-                const table = $('#tabelaPacientes').DataTable();
-                const linhasVisiveis = table.rows({ filter: 'applied' }).nodes();
-        
+                event.preventDefault();
+                event.stopPropagation();
+
+                var table = $('#tabelaPacientes').DataTable();
+                var linhasVisiveis = table.rows({ filter: 'applied' }).nodes();
+
                 if (linhasVisiveis.length > 0) {
-                    const idPaciente = $(linhasVisiveis[0]).find("td:eq(2)").text().trim();
-                    ajaxFunction(idPaciente);
-        
-                    // Fecha o modal com Bootstrap
-                    const modalPaciente = bootstrap.Modal.getInstance(document.getElementById('modeloTableModalPaciente'));
-                    if (modalPaciente) {
-                       modalPaciente.hide();
-                    }
+                    var nomePaciente = $(linhasVisiveis[0]).find('td:eq(0)').clone()
+                        .children('input').remove().end().text().trim();
+                    selecionarPaciente(nomePaciente);
                 } else {
                     clickAviso('Atenção', 'Nenhum paciente encontrado com esse nome', 'falha');
                 }
             }
         });
-        //..
 
-        //Controlando o input checkbox pelo TR e TD (marcando somente de um único por vez!)
-        $(document).on('click', 'tr', function (event) { //marca o input em qualquer posição que o cursor estiver dentro do TR.
+        // Clique em linha do tbody do modal de pacientes
+        $(document).on('click', '#modeloTableModalPaciente tbody tr', function () {
+            var $checkbox = $(this).find("input[type='checkbox']");
+            if ($checkbox.length === 0) return; // ignora linhas sem checkbox (thead, mensagem vazia)
 
-            /*  Esta linha verifica se a tag clicada contém algum checkbox dentro dela.
-                $(this) refere-se ao elemento que foi clicado, e .find('input[type="checkbox"]') procura por checkboxes dentro desse
-                elemento. Se houver um ou mais checkboxes, a condição será verdadeira.
-             */
-            if ($(this).find('input[type="checkbox"]').length > 0) {
-                $('input[type="checkbox"]').prop('checked', false);
-                $(this).find('input[type="checkbox"]').prop('checked', true);
-            }
-            else if ($(this).is('input[type="checkbox"]')) {
-                $('input[type="checkbox"]').prop('checked', false);
-                $(this).prop('checked', true);
-            }
-            //event.preventDefault();//não pode conter esta linha, pois trava o checkbox!!!
+            // Desmarca todos e marca o atual
+            $('#tabelaPacientes input[type="checkbox"]').prop('checked', false);
+            $checkbox.prop('checked', true);
 
-            var valorSelecionado = $(this).find("input[type='checkbox']").attr("id").replace("chk_", "");
-            ajaxFunction(valorSelecionado);
-
-            const modalPaciente = bootstrap.Modal.getInstance(document.getElementById('modeloTableModalPaciente'));
-            if (modalPaciente) {
-                 modalPaciente.hide();
-            }
-
-            $(document).off('click.modalTriggerPaciente'); // remove só esse handler
-
+            var nomePaciente = $checkbox.attr('id').replace('chk_', '');
+            selecionarPaciente(nomePaciente);
         });
-        //..
     });
 </script>
-<div class="modal fade" id="modeloTableModalPaciente" tabindex="-1" aria-labelledby="tituloModalPaciente" aria-hidden="true">
+<div class="modal fade" id="modeloTableModalPaciente" tabindex="-1" aria-labelledby="tituloModalPaciente" aria-hidden="true" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-top modal-dialog-largo">
         <div class="modal-content shadow rounded">
             <div class="modal-header bg-verde-escuro">

@@ -28,24 +28,34 @@
     $(document).ready(function () {
         let modalCarregado = false;
 
+        // Feito pelo Qoder em 21/04/2026 — reseta flag quando o campo de nome for esvaziado manualmente
+        $("#buscaNomePaciente").on('input', function () {
+            if ($(this).val().trim() === '') {
+                modalCarregado = false;
+                $('#modalTriggerPaciente').empty();
+            }
+        });
+        // ..Qoder
+
         $("#buscaNomePaciente").off('keydown').on('keydown', function (event) {
             const teclasPermitidas = [13, 38, 40]; // Enter, Seta cima, Seta baixo
 
             if (teclasPermitidas.includes(event.which)) {
+                event.preventDefault(); // impede submit do formulário ao pressionar ENTER
                 setTimeout(() => {
                     const inputEscrito = event.target.value.trim();
                     const palavras = inputEscrito.split(/\s+/).filter(p => p.length > 0);
 
                     if (palavras.length <= 1) {
                         const aplicarBuscaNoDataTables = () => {
-                            const tabela = $.fn.dataTable.isDataTable('#modeloTableModalPacientes') ? $('#modeloTableModalPacientes').DataTable() : null;
+                            const tabela = $.fn.dataTable.isDataTable('#tabelaPacientes') ? $('#tabelaPacientes').DataTable() : null;
 
                             if (tabela) {
                                 tabela.search(inputEscrito).draw();
                             } else {
                                 // Aguarda até que o DataTables esteja pronto
                                 const intervalo = setInterval(() => {
-                                    const tabelaPronta = $.fn.dataTable.isDataTable('#modeloTableModalPacientes') ? $('#modeloTableModalPacientes').DataTable() : null;
+                                    const tabelaPronta = $.fn.dataTable.isDataTable('#tabelaPacientes') ? $('#tabelaPacientes').DataTable() : null;
 
                                     if (tabelaPronta) {
                                         tabelaPronta.search(inputEscrito).draw();
@@ -62,7 +72,7 @@
                                 aplicarBuscaNoDataTables();
                             });
                         } else {
-                            $('#modalTriggerPaciente').show();
+                            $("#modeloTableModalPaciente").modal("show");
                             aplicarBuscaNoDataTables();
                         }
                     }
@@ -71,9 +81,12 @@
         });
         //..
 
-        //Limpa todos os campos de todos os formulários
+        // Limpa todos os campos de todos os formulários
+        // Feito pelo Qoder em 21/04/2026 — reseta flag do modal de paciente ao limpar formulário
         $("#buttonLimpaFormulario").on("click", function (event) {
             event.preventDefault(); // evita submit
+            modalCarregado = false;
+            $('#modalTriggerPaciente').empty();
        
             // Limpa todos os campos do formulário principal
            $("#formRequisitar").find("input, select, textarea").each(function () {

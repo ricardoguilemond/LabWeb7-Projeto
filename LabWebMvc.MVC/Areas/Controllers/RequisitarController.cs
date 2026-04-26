@@ -377,21 +377,28 @@ namespace LabWebMvc.MVC.Areas.Controllers
         }
 
         //Gera o código sequencial do exame por instituição
-        private async Task<int> GeraSequencialAsync(string siglaInstituicao)
+        // Feito pelo Qoder em 21/04/2026 — substituído UPDLOCK/ROWLOCK (SQL Server) por FOR UPDATE (PostgreSQL)
+        private async Task<int> GeraSequencialAsync(string siglaInstituicao, DbContext? dbTransacional = null)
         {
             if (string.IsNullOrWhiteSpace(siglaInstituicao))
                 throw new ArgumentException("A sigla da instituição é obrigatória para gerar o sequencial.");
 
+            // Usa o dbContext passado (de transação externa) ou cria transação própria
+            var db = (dbTransacional as Db) ?? _db;
+            bool transacaoExterna = dbTransacional != null;
+
             int seq;
 
-            // Inicia transação
-            await using var transaction = await _db.Database.BeginTransactionAsync();
+            // Só cria transação própria se não veio uma transação de fora
+            var transaction = transacaoExterna ? null : await db.Database.BeginTransactionAsync();
 
             try
             {
-                // Busca a instituição com lock pessimista, para evitar condições de corrida.
-                var instituicao = await _db.Instituicao.FromSqlRaw(@"SELECT * FROM Instituicao WITH (UPDLOCK, ROWLOCK) 
-                                  WHERE Sigla = {0}", siglaInstituicao.Trim()).FirstOrDefaultAsync();
+                // Busca a instituição com lock pessimista PostgreSQL (FOR UPDATE)
+                var sigla = siglaInstituicao.Trim();
+                var instituicao = await db.Instituicao
+                    .FromSqlRaw(@"SELECT * FROM ""Instituicao"" WHERE ""Sigla"" = {0} FOR UPDATE", sigla)
+                    .FirstOrDefaultAsync();
 
                 if (instituicao == null)
                     throw new InvalidOperationException("Instituição não encontrada!");
@@ -404,19 +411,28 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 // Atualiza e salva
                 instituicao.Sequencial = seq;
-                await _db.SaveChangesAsync();
+                await db.SaveChangesAsync();
 
-                // Confirma transação
-                await transaction.CommitAsync();
+                // Confirma transação própria (se não veio de fora)
+                if (transaction != null)
+                    await transaction.CommitAsync();
             }
             catch
             {
-                await transaction.RollbackAsync();
+                if (transaction != null)
+                    await transaction.RollbackAsync();
                 throw;
+            }
+            finally
+            {
+                if (transaction != null)
+                    await transaction.DisposeAsync();
             }
             return seq;
         }
+        //..Qoder
 
+        // Feito pelo Qoder em 21/04/2026 — método agora participa da transação externa passada por SalvarRequisicao
         private async Task<bool> SalvarExameRealizadoAsync(vmRequisitar vm, List<Requisitar> listaRequisitar)
         {
             if (vm == null || listaRequisitar == null || !listaRequisitar.Any())
@@ -424,7 +440,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             try
             {
-                int seq = await GeraSequencialAsync(vm.VmInstituicao?.Sigla!);
+                int seq = await GeraSequencialAsync(vm.VmInstituicao?.Sigla!, _db);
 
                 var primeiroRequisitar = listaRequisitar.First();
 
@@ -877,6 +893,28 @@ namespace LabWebMvc.MVC.Areas.Controllers
             return Json(new { success = true, vm = vm });   //retornando os dados da vm pela chamada Ajax JSon!
         }
 
+        //Feito pelo Qoder em 21/04/2026 — remove um item específico do cupom ao desselecionar a linha no grid
+        [HttpGet]
+        [Route("RemoverExameCupom")]
+        public ActionResult RemoverExameCupom(vmPlanoExames vm, string id)
+        {
+            string usuarioId = HttpContext.Session.GetString("SessionEmail") ?? "anonimo";
+            int idBusca = id.ToInt32();
+
+            ListaAcumulativa.Instancia.RemoverItemCupom(usuarioId, idBusca);
+
+            // Recalcula o total e retorna a partial atualizada
+            decimal? totalCupom = 0;
+            var lista = ListaAcumulativa.Instancia.ObterCupom(usuarioId);
+            foreach (var item in lista) totalCupom += item.ValorItem;
+
+            ViewBag.TotalCupom = totalCupom?.ToString("N2");
+            ViewBag.ListaCupom = lista;
+
+            return PartialView("Partials/_PartialMontarItensCupom");
+        }
+        //..Qoder
+
         //..
 
         [HttpGet]
@@ -994,20 +1032,23 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             string nomeInstituicao = _db.Instituicao.Where(s => s.Id == instituicaoId).FirstOrDefault()?.Nome ?? "N/A";
 
-            string nomeLaboratorioTitulo = _db.Empresa.FirstOrDefault()?.TituloEmpresa ?? "LABORATÓRIO";
-            string nomeLaboratorioSubTitulo = _db.Empresa.FirstOrDefault()?.SubTituloEmpresa ?? "";
-            string cnpjLaboratorio = "CNPJ: " + _db.Empresa.FirstOrDefault()?.CNPJ.FormatarCNPJNotNull() ?? "";
-            string telefoneLaboratorio = "Tel: " + _db.Empresa.FirstOrDefault()?.Telefones.FormataTelefoneNotNull() ?? "";
-            string emailLaboratorio = "Email: " + _db.Empresa.FirstOrDefault()?.Email.ToLower() ?? "";
+            // Feito pelo Qoder em 21/04/2026 — consolidado em uma única consulta (antes eram 6 chamadas separadas)
+            var empresa = _db.Empresa.FirstOrDefault();
+            string nomeLaboratorioTitulo = empresa?.TituloEmpresa ?? "LABORATÓRIO";
+            string nomeLaboratorioSubTitulo = empresa?.SubTituloEmpresa ?? "";
+            string cnpjLaboratorio = "CNPJ: " + (empresa?.CNPJ.FormatarCNPJNotNull() ?? "");
+            string telefoneLaboratorio = "Tel: " + (empresa?.Telefones.FormataTelefoneNotNull() ?? "");
+            string emailLaboratorio = "Email: " + (empresa?.Email?.ToLower() ?? "");
 
-            string enderecoLaboratorio = _db.Empresa.FirstOrDefault()?.Logradouro?.TrimEnd() + " " +
-                                         _db.Empresa.FirstOrDefault()?.Endereco?.TrimEnd() + ", " +
-                                         _db.Empresa.FirstOrDefault()?.Numero?.TrimEnd() +
-                                         _db.Empresa.FirstOrDefault()?.Complemento?.TrimEnd() + " - " +
-                                         _db.Empresa.FirstOrDefault()?.Bairro?.TrimEnd() + " - " +
-                                         _db.Empresa.FirstOrDefault()?.Cidade?.TrimEnd() + " - " +
-                                         _db.Empresa.FirstOrDefault()?.UF?.TrimEnd() + " - CEP: " +
-                                         _db.Empresa.FirstOrDefault()?.CEP?.FormatarCEP();
+            string enderecoLaboratorio = empresa?.Logradouro?.TrimEnd() + " " +
+                                         empresa?.Endereco?.TrimEnd() + ", " +
+                                         empresa?.Numero?.TrimEnd() +
+                                         empresa?.Complemento?.TrimEnd() + " - " +
+                                         empresa?.Bairro?.TrimEnd() + " - " +
+                                         empresa?.Cidade?.TrimEnd() + " - " +
+                                         empresa?.UF?.TrimEnd() + " - CEP: " +
+                                         empresa?.CEP?.FormatarCEP();
+            //..Qoder
 
             //Feito pelo Kiro em 20/04/2026
             string dataHoje = DateTime.Now.ToString("dd/MM/yyyy");

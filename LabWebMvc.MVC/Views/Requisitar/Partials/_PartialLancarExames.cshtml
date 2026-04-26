@@ -17,24 +17,37 @@
     }
 </style>
 <script>
+    // Feito pelo Qoder em 21/04/2026 — convertido $.ajax → fetch; deselecionar remove o item do cupom
     function montarCupomPorId(id) {
         if (!id) {
             console.warn('ID inválido ou ausente.');
             return;
         }
-        $.ajax({
-            url: '/PartialMontarItensCupom?id=' + id,
-            type: "GET",
-            async: true,
-            dataType: "html",
-            success: function (data) {
-                $("#conteudoItensCupomCaixa").html(data);
-            },
-            failure: function () {
-                clickAviso('Interrompido', 'Falha no carregamento dos dados do cupom', 'falha');
-            }
+        fetch('/PartialMontarItensCupom?id=' + id, { method: 'GET' })
+        .then(function (r) { return r.text(); })
+        .then(function (data) {
+            document.getElementById('conteudoItensCupomCaixa').innerHTML = data;
+        })
+        .catch(function () {
+            clickAviso('Interrompido', 'Falha no carregamento dos dados do cupom', 'falha');
         });
     }
+
+    function removerCupomPorId(id) {
+        if (!id) {
+            console.warn('ID inválido ou ausente.');
+            return;
+        }
+        fetch('/RemoverExameCupom?id=' + id, { method: 'GET' })
+        .then(function (r) { return r.text(); })
+        .then(function (data) {
+            document.getElementById('conteudoItensCupomCaixa').innerHTML = data;
+        })
+        .catch(function () {
+            clickAviso('Interrompido', 'Falha ao remover item do cupom', 'falha');
+        });
+    }
+    //..Qoder
 
     $(document).ready(function () {
 
@@ -50,12 +63,14 @@
             if ($(this).hasClass("noSelectedLinha")) {
                 $(this).removeClass('noSelectedLinha').addClass('selectedLinha');
                 $(this).find('[name="itemLE"]').prop('checked', true);
+                montarCupomPorId(id);
             } else {
+                // Feito pelo Qoder em 21/04/2026 — deselecionar remove o item do cupom
                 $(this).removeClass('selectedLinha').addClass('noSelectedLinha');
                 $(this).find('[name="itemLE"]').prop('checked', false);
+                removerCupomPorId(id);
+                //..Qoder
             }
-
-            montarCupomPorId(id);
         });
         //..
 

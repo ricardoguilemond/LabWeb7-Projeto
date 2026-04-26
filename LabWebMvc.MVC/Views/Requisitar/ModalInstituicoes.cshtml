@@ -10,6 +10,13 @@
         //Constrói o Modal
         configTableModal('#tabelaInstituicao');
 
+        // Feito pelo Qoder em 21/04/2026 — foca o campo de busca ao abrir o modal
+        document.getElementById('modeloTableModalInstituicao').addEventListener('shown.bs.modal', function () {
+            var inputBusca = document.querySelector('#modeloTableModalInstituicao input[type="search"]');
+            if (inputBusca) inputBusca.focus();
+        });
+        // ..Qoder
+
         function preencherFormularioInstituicao(vm) {
             var $conteudo = $("#conteudoInstituicao");
             $conteudo.find("#buscaSiglaInstituicao").val(vm.siglaInstituicao);
@@ -44,60 +51,37 @@
         }
         //..
 
-        //Captura o que foi digitado no campo "search" ("input[type='search']") do Datatable e entrega no campo certo do formulário...
-        $(document).on("keydown", "input[type='search']", function (event) {
-            console.log("keydown");
-            if (event.keyCode === 13) { // ENTER
-                var valorSelecionado = event.target.value.trim(); // remove espaços extras
-                var palavras = valorSelecionado.split(/\s+/).filter(p => p.length > 0); // remove strings vazias
-                // Se vazio ou apenas uma palavra
-                if (palavras.length <= 1) {
-                    ajaxFunction(valorSelecionado);
-                    ModalManager.fechar('modeloTableModalInstituicao');
-                }
-            }
-        });
-        //..
-
-        //Captura o que foi digitado no campo "search" ("input[type='search']") do Datatable e entrega no campo certo do formulário...
-        $("input[type='search']").on("keydown", function (event) {
+        // Feito pelo Qoder em 21/04/2026 — ENTER seleciona a primeira linha visível do DataTables
+        $(document).on("keydown", "#modeloTableModalInstituicao input[type='search']", function (event) {
             if (event.keyCode === 13) {
+                event.preventDefault();
                 var table = $('#tabelaInstituicao').DataTable();
                 var linhasVisiveis = table.rows({ filter: 'applied' }).nodes();
 
                 if (linhasVisiveis.length > 0) {
-                    // O campo certo é o da primeira coluna da linha da primeira célula da linha (td:eq(0))
-                    var siglaInstituicao = $(linhasVisiveis[0]).find("td:eq(0)").text().trim();
-
-                    ajaxFunction(siglaInstituicao); // envia o nome, não o CPF
+                    // td:eq(0) contém checkbox + Sigla; pega o id do td que é a própria Sigla
+                    var siglaInstituicao = $(linhasVisiveis[0]).find('td:eq(0)').attr('id');
+                    ajaxFunction(siglaInstituicao);
                     ModalManager.fechar('modeloTableModalInstituicao');
+                } else {
+                    clickAviso('Atenção', 'Nenhuma instituição encontrada com essa busca', 'falha');
                 }
             }
         });
+        // ..Qoder
         //..
 
-        //Controlando o input checkbox pelo TR e TD (marcando somente de um único por vez!)
-        $(document).on('click', 'tr', function (event) { //marca o input em qualquer posição que o cursor estiver dentro do TR.
+        //Controlando o input checkbox pelo TR e TD
+        $(document).on('click', '#modeloTableModalInstituicao tbody tr', function (event) {
+            var $checkbox = $(this).find("input[type='checkbox']");
+            if ($checkbox.length === 0) return; // ignora thead e linhas sem checkbox
 
-            /*  Esta linha verifica se a tag clicada contém algum checkbox dentro dela.
-                $(this) refere-se ao elemento que foi clicado, e .find('input[type="checkbox"]') procura por checkboxes dentro desse
-                elemento. Se houver um ou mais checkboxes, a condição será verdadeira.
-             */
-            if ($(this).find('input[type="checkbox"]').length > 0) {
-                $('input[type="checkbox"]').prop('checked', false);
-                $(this).find('input[type="checkbox"]').prop('checked', true);
-            }
-            else if ($(this).is('input[type="checkbox"]')) {
-                $('input[type="checkbox"]').prop('checked', false);
-                $(this).prop('checked', true);
-            }
-            //event.preventDefault();//não pode conter esta linha, pois trava o checkbox!!!
-            var valorSelecionado = event.target.id;
+            $checkbox.closest('table').find("input[type='checkbox']").prop('checked', false);
+            $checkbox.prop('checked', true);
 
+            var valorSelecionado = $checkbox.attr('id').replace('chk_', '');
             ajaxFunction(valorSelecionado);
-
             ModalManager.fechar('modeloTableModalInstituicao');
-            $(document).off('click.modalTriggerInstituicao');  //Desligamos o chamamento do último "click" de Ajax, PARA EVITAR QUE AS REQUISIÇÕES DE AJAX FIQUEM REPETINDO A CADA ACIONAMENTO.
         });
         //..
     });

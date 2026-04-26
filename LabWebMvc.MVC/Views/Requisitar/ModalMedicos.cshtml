@@ -11,6 +11,13 @@
         //Constrói o Modal
         configTableModal('#tabelaMedicos');
 
+        // Feito pelo Qoder em 21/04/2026 — foca o campo de busca ao abrir o modal
+        document.getElementById('modeloTableModalMedicos').addEventListener('shown.bs.modal', function () {
+            var inputBusca = document.querySelector('#modeloTableModalMedicos input[type="search"]');
+            if (inputBusca) inputBusca.focus();
+        });
+        // ..Qoder
+
         function preencherFormularioMedico(vm) {
             var $conteudo = $("#conteudoMedico");
             $conteudo.find("#buscaNomeMedico").val(vm.nomeMedico);
@@ -45,60 +52,37 @@
         }
         //..
 
-        //Captura o que foi digitado no campo "search" ("input[type='search']") do Datatable e entrega no campo certo do formulário...
-        $(document).on("keydown", "input[type='search']", function (event) {
-            console.log("keydown");
-            if (event.keyCode === 13) { // ENTER
-                var valorSelecionado = event.target.value.trim(); // remove espaços extras
-                var palavras = valorSelecionado.split(/\s+/).filter(p => p.length > 0); // remove strings vazias
-                // Se vazio ou apenas uma palavra
-                if (palavras.length <= 1) {
-                    ajaxFunction(valorSelecionado);
-                    ModalManager.fechar('modeloTableModalMedicos');
-                }
-            }
-        });
-        //..
-
-        //Captura o que foi digitado no campo "search" ("input[type='search']") do Datatable e entrega no campo certo do formulário...
-        $("input[type='search']").on("keydown", function (event) {
+        // Feito pelo Qoder em 21/04/2026 — ENTER seleciona a primeira linha visível do DataTables
+        $(document).on("keydown", "#modeloTableModalMedicos input[type='search']", function (event) {
             if (event.keyCode === 13) {
+                event.preventDefault();
                 var table = $('#tabelaMedicos').DataTable();
                 var linhasVisiveis = table.rows({ filter: 'applied' }).nodes();
 
                 if (linhasVisiveis.length > 0) {
-                    // O campo certo é o da primeira coluna da linha da primeira célula da linha (td:eq(0))
-                    var siglaTabela = $(linhasVisiveis[0]).find("td:eq(0)").text().trim();
-
-                    ajaxFunction(siglaTabela);
+                    // td:eq(0) contém checkbox + NomeMedico; o id do td é o próprio NomeMedico
+                    var nomeMedico = $(linhasVisiveis[0]).find('td:eq(0)').attr('id');
+                    ajaxFunction(nomeMedico);
                     ModalManager.fechar('modeloTableModalMedicos');
+                } else {
+                    clickAviso('Atenção', 'Nenhum médico encontrado com essa busca', 'falha');
                 }
             }
         });
+        // ..Qoder
         //..
 
-        //Controlando o input checkbox pelo TR e TD (marcando somente de um único por vez!)
-        $(document).on('click', 'tr', function (event) { //marca o input em qualquer posição que o cursor estiver dentro do TR.
+        //Controlando o input checkbox pelo TR e TD
+        $(document).on('click', '#modeloTableModalMedicos tbody tr', function (event) {
+            var $checkbox = $(this).find("input[type='checkbox']");
+            if ($checkbox.length === 0) return;
 
-            /*  Esta linha verifica se a tag clicada contém algum checkbox dentro dela.
-                $(this) refere-se ao elemento que foi clicado, e .find('input[type="checkbox"]') procura por checkboxes dentro desse
-                elemento. Se houver um ou mais checkboxes, a condição será verdadeira.
-             */
-            if ($(this).find('input[type="checkbox"]').length > 0) {
-                $('input[type="checkbox"]').prop('checked', false);
-                $(this).find('input[type="checkbox"]').prop('checked', true);
-            }
-            else if ($(this).is('input[type="checkbox"]')) {
-                $('input[type="checkbox"]').prop('checked', false);
-                $(this).prop('checked', true);
-            }
-            //event.preventDefault();//não pode conter esta linha, pois trava o checkbox!!!
-            var valorSelecionado = event.target.id;
+            $checkbox.closest('table').find("input[type='checkbox']").prop('checked', false);
+            $checkbox.prop('checked', true);
 
+            var valorSelecionado = $checkbox.attr('id').replace('chk_', '');
             ajaxFunction(valorSelecionado);
             ModalManager.fechar('modeloTableModalMedicos');
-
-            $(document).off('click.modalTriggerMedico');  //Desligamos o chamamento do último "click" de Ajax, PARA EVITAR QUE AS REQUISIÇÕES DE AJAX FIQUEM REPETINDO A CADA ACIONAMENTO.
         });
         //..
     });

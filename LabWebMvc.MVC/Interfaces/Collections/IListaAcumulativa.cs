@@ -27,6 +27,9 @@ namespace LabWebMvc.MVC.Interfaces.Collections
         void AdicionarCupom(string usuarioId, IEnumerable<PlanoExames> dados);
         List<PlanoExames> ObterCupom(string usuarioId);
         void EsvaziarCupom(string usuarioId);
+        // Feito pelo Qoder em 21/04/2026 — remove um item específico do cupom pelo Id do PlanoExames
+        void RemoverItemCupom(string usuarioId, int planoExamesId);
+        //..Qoder
     }
 
     public class ListaAcumulativa : IListaAcumulativa
@@ -58,6 +61,16 @@ namespace LabWebMvc.MVC.Interfaces.Collections
         {
             _dadosPorUsuario.TryRemove(usuarioId, out _);
         }
+
+        // Feito pelo Qoder em 21/04/2026 — remove um item específico do cupom pelo Id do PlanoExames
+        public void RemoverItemCupom(string usuarioId, int planoExamesId)
+        {
+            if (_dadosPorUsuario.TryGetValue(usuarioId, out var lista))
+            {
+                lista.RemoveAll(x => x.Id == planoExamesId);
+            }
+        }
+        //..Qoder
     }
 
     //public class ListaAcumulativa : IListaAcumulativa

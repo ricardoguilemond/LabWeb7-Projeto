@@ -247,8 +247,11 @@ public class Db : DbContext
 
                 var tableName = Model.FindEntityType(entityType)?.GetTableName();
                 if (!string.IsNullOrEmpty(tableName))
-                    //Feito pelo Qoder em 21/04/2026 - ExecuteSqlRawAsync com array vazio de parâmetros evita que cts.Token seja tratado como @p0
+                    // Feito pelo Qoder em 21/04/2026 — tableName vem do modelo EF Core (GetTableName), não de input externo;
+                    // supressão de EF1002 é segura pois o valor é controlado internamente pelo framework.
+#pragma warning disable EF1002
                     await Database.ExecuteSqlRawAsync($"LOCK TABLE \"{tableName}\" IN EXCLUSIVE MODE", Array.Empty<object>(), cts.Token);
+#pragma warning restore EF1002
                     //..Qoder
 
                 foreach (var entry in addedEntries)
