@@ -70,7 +70,7 @@
         /**************************************************************************************** */
         // OK:SUBMIT NO ÚNICO FORM COM VÁRIOS EVENTOS EM OUTRAS "PARTIAL TELAS" DISTRIBUÍDAS
         /**************************************************************************************** */
-        $('#clickSubmit').on("click", function (event) {
+        $('#clickSubmit, #clickImprimeCupom').on("click", function (event) {
             event.preventDefault();
             var listaCupom = [];
 
@@ -80,6 +80,20 @@
                 var valor = $(this).find('.td-valor').text();
                 listaCupom.push({ Id: id, Descricao: descricao, ValorItem: valor });
             });
+
+            //Feito pelo Kiro em 01/05/2026
+            // Exibe loading enquanto salva e prepara o cupom
+            Swal.fire({
+                title: '<span style="color: silver;">Aguarde...</span>',
+                html: '<span style="color: #646464; font-size: 0.85em;">Salvando requisição e preparando cupom</span>',
+                imageUrl: '../images/icones/attention-icon.png',
+                imageHeight: 80,
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            //..Kiro
 
             $.ajax({
                 url: '@Url.Action("SalvarRequisicao", "Requisitar")',
@@ -102,8 +116,10 @@
                             url: urlCupom,
                             type: "GET",
                             success: function (conteudo) {
-                                // Exibe mensagem antes de imprimir
-                                clickAviso('Impressão', 'Cupom gerado, enviando para impressora...', 'sucesso', null);
+                                //Feito pelo Kiro em 01/05/2026
+                                // Fecha o loading antes de criar o iframe de impressão
+                                Swal.close();
+                                //..Kiro
 
                                 const frame = document.createElement("iframe");
                                 frame.style.display = "none";
@@ -123,16 +139,26 @@
 
                             },
                             error: function (request, status, error) {
+                                Swal.close();
                                 clickAviso('Erro', 'Falha na impressão', 'critica', actionPos);  
                             }
                         });
+                    } else {
+                        // Sem impressão: fecha o loading e exibe mensagem
+                        Swal.close();
                     }
             
                     //Atualiza a grid e exibe mensagem
                     $('#modeloTableRequisitar').DataTable().ajax.reload();
-                    //clickAviso(titulo, mensagem, tipo, actionPos);
+
+                    // Limpa o formulário após salvar com sucesso
+                    if (sucesso === true) {
+                        $('#buttonLimpaFormulario').trigger('click');
+                    }
+                    clickAviso(titulo, mensagem, tipo, actionPos);
                 },
                 error: function (request, status, error) {
+                    Swal.close();
                     clickAviso('Interrompido', 'Falha na execução', 'critica', null);
                 }
             });
@@ -203,10 +229,10 @@
         </div>
     </div>
     <!--
-    Submeter Formulário
+    Submeter Formulário — botão oculto; o botão visível é #clickImprimeCupom em _PartialExames
     -->
-    <div class="botao-centralizado">
-        <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+    <div class="botao-centralizado" style="display:none;">
+        <button id="clickSubmit" type="button" class="btn btn-lg btn-success botao-verde">
             Salvar Requisição de Exames
         </button>
     </div>

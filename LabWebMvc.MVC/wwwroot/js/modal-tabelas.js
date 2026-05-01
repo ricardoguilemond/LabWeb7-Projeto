@@ -46,40 +46,29 @@
     }
     //..
 
-    //Captura o que foi digitado no campo "search" ("input[type='search']") do Datatable e entrega no campo certo do formulário...
-    $(document).on("keydown", "input[type='search']", function (event) {
-        console.log("keydown");
+    //Feito pelo Kiro em 01/05/2026
+    // Captura ENTER no campo "search" do DataTables do modal de Tabelas (escopo restrito ao modal)
+    // IMPORTANTE: usar escopo '#modeloTableModalTabelas' para não capturar o search de outros modais
+    // (ex: modal de Postos), evitando carregamento indevido da tabela de exames.
+    $(document).on("keydown", "#modeloTableModalTabelas input[type='search']", function (event) {
         if (event.keyCode === 13) { // ENTER
-            var valorSelecionado = event.target.value.trim(); // remove espaços extras
-            var palavras = valorSelecionado.split(/\s+/).filter(p => p.length > 0); // remove strings vazias
-            // Se vazio ou apenas uma palavra
-            if (palavras.length <= 1) {
-                ajaxFunction(valorSelecionado);
-                ModalManager.fechar('modeloTableModalTabelas');
-            }
-        }
-    });
-    //..
-
-    //Captura o que foi digitado no campo "search" ("input[type='search']") do Datatable e entrega no campo certo do formulário...
-    $("input[type='search']").on("keydown", function (event) {
-        if (event.keyCode === 13) {
+            event.preventDefault();
             var table = $('#tabelaPreco').DataTable();
             var linhasVisiveis = table.rows({ filter: 'applied' }).nodes();
 
             if (linhasVisiveis.length > 0) {
-                // O campo certo é o da primeira coluna da linha da primeira célula da linha (td:eq(0))
-                var siglaTabela = $(linhasVisiveis[0]).find("td:eq(0)").text().trim();
-
-                ajaxFunction(siglaTabela); 
+                var siglaTabela = $(linhasVisiveis[0]).find("td:eq(0)").attr('id');
+                ajaxFunction(siglaTabela);
                 ModalManager.fechar('modeloTableModalTabelas');
+            } else {
+                clickAviso('Atenção', 'Nenhuma tabela encontrada com essa busca', 'falha');
             }
         }
     });
-    //..
+    //..Kiro
 
     //Controlando o input checkbox pelo TR e TD (marcando somente de um único por vez!)
-    $(document).on('click', 'tr', function (event) { //marca o input em qualquer posição que o cursor estiver dentro do TR.
+    $(document).on('click', '#modeloTableModalTabelas tr', function (event) { //marca o input em qualquer posição que o cursor estiver dentro do TR.
 
         /*  Esta linha verifica se a tag clicada contém algum checkbox dentro dela.
             $(this) refere-se ao elemento que foi clicado, e .find('input[type="checkbox"]') procura por checkboxes dentro desse

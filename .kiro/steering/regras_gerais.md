@@ -12,8 +12,9 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
 3. Se o prompt contiver informações dúbias ou deixar dúvidas, não executar.
 4. Em caso de dúvida, formular perguntas objetivas antes de prosseguir.
 5. Só iniciar a execução quando todas as informações estiverem claras.
-6. Atuar como **Analista Desenvolvedor Sênior** com cargo de **Tech Lead**
-   e profundo conhecimento em análise de dados.
+6. Atuar como **Engenheiro Sênior** em sistemas **.NET C#, JavaScript,
+   HTML, CSS, Razor e Blazor**, com cargo de **Tech Lead** e profundo
+   conhecimento em análise de dados.
 7. Antes de implementar, avaliar impacto, riscos, performance e
    manutenibilidade — como faria um Tech Lead em code review.
 8. Questionar decisões de design quando identificar fragilidades,
@@ -51,6 +52,11 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
 - Não utiliza Migrations
 - Multi-cliente, banco único por empresa
 - PostgreSQL roda local (desenvolvimento), não está em produção
+- Princípio de frontend: **simples é melhor que sofisticado** —
+  preferir CSS padrão, JavaScript puro e manipulação direta do DOM
+  sobre plugins e bibliotecas adicionais.
+- Regras detalhadas de CSS, JavaScript e DataTables estão no
+  steering `regras-frontend-css-js.md`.
 
 ## Banco de Dados
 
@@ -82,6 +88,14 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
   (`@page` é exclusiva de Razor Pages na pasta `Pages/`)
 - O `site.js` é carregado duas vezes no `_Layout.cshtml` (no head e no body)
   — não adicionar uma terceira referência
+- Não adicionar bibliotecas JavaScript ou CSS de terceiros sem
+  aprovação explícita do usuário
+- DataTables pode ser atualizado sob demanda, com avaliação prévia
+  de impacto no design e aprovação do usuário
+- Colunas fixas em grids: usar CSS `position: sticky` — não usar
+  o plugin `fixedColumns` do DataTables
+- Estilos específicos de uma partial ficam no `<style>` da própria
+  partial, não em CSS globais
 
 ## Regras de Negócio — Requisição de Exames
 
@@ -91,6 +105,44 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
   o médico e o paciente devem continuar salvos no banco.
 - Nunca envolver o cadastro de Médico/Paciente dentro da mesma
   transação que processa os itens de exame na Requisição.
+
+## Regras de Negócio — Grid de Requisições do Dia
+
+O grid exibido na tela de Requisição (`_PartialRequisitar.cshtml`) mostra
+as requisições do dia atual, agrupadas por `PacienteId` (registro mais
+recente por paciente). Cada linha possui três botões de ação:
+
+### Botão Verde — Reimprimir Cupom
+- Chama `POST /Requisitar/CupomRequisicao` com `idPaciente` e `data`.
+- Reutiliza o mesmo endpoint usado no salvamento original.
+- Não valida resultados — a reimpressão é sempre permitida.
+
+### Botão Amarelo — Carregar para Edição
+- Chama `GET /Requisitar/CarregarRequisicaoParaEdicao?pacienteId=&data=`.
+- Carrega **todos os itens** do paciente na data (não apenas o registro
+  exibido no grid).
+- **Bloqueado** se qualquer item da requisição já possuir resultado
+  lançado (`Resultado` não nulo/vazio na tabela `Requisitar`).
+- Em caso de bloqueio, exibe mensagem informativa via `clickAviso`.
+- Ao carregar com sucesso, preenche todos os campos do formulário
+  (paciente, médico, instituição, posto, tabela) e recarrega o grid
+  de exames da tabela selecionada.
+
+### Botão Vermelho — Excluir Requisição
+- Chama `POST /Requisitar/ExcluirRequisicao` com `idPaciente` e `data`.
+- Exclui **todos os itens** de `Requisitar` do paciente na data.
+- **Bloqueado** se qualquer item já possuir resultado lançado.
+- Exige confirmação via SweetAlert2 antes de executar.
+- **Mantém** o cadastro do paciente e do médico intactos.
+- Após exclusão bem-sucedida, recarrega o grid automaticamente.
+
+### Regras gerais do grid
+- O double-click na linha **não existe** — a impressão é feita
+  exclusivamente pelo botão verde.
+- A data recebida no grid está no formato `dd/MM/yyyy` e deve ser
+  convertida para `yyyy-MM-dd` antes de enviar ao backend.
+- Os endpoints de edição e exclusão validam resultados **no servidor**
+  — nunca confiar apenas na validação client-side.
 
 ## Regras de Negócio — Exclusão de Registros
 
@@ -102,6 +154,16 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
 - Nunca deixar a exceção de FK do PostgreSQL ser a única
   proteção — sempre validar no controller antes do DELETE.
 - Documentos de análise devem ser criados em `Documentos do Kiro/`.
+
+## Build e Qualidade
+
+- Após qualquer alteração de código, executar o build e confirmar **0 erros e 0 avisos**.
+- Qualquer erro, warning ou hint no output do build deve ser corrigido antes de
+  declarar a tarefa concluída. Ver steering `regras-build-qualidade.md` para detalhes.
+- **Nunca** adicionar, remover ou atualizar pacotes NuGet sem aprovação explícita do usuário.
+- A preferência é sempre manter as bibliotecas existentes nas versões atuais.
+- Quando um conflito de build exigir mudança de versão, apresentar ao usuário o pacote
+  afetado, versão atual, versão proposta e motivo — e aguardar aprovação antes de agir.
 
 ## Encoding
 

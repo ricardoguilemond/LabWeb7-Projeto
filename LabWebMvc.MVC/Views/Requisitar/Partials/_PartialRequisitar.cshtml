@@ -2,122 +2,433 @@
 @using LabWebMvc.MVC.ViewModel
 @model List<vmRequisitarSimplificado>
 
+<style>
+    /* Barra superior/head igual ao rodapé/bottom */
+    #wrapperRequisitar .dt-scroll-top {
+        overflow-x: auto;
+        overflow-y: hidden;
+        height: 16px;
+        margin-bottom: 4px;
+    }
+
+    #wrapperRequisitar .dt-scroll-top-inner {
+        height: 1px;
+    }
+    /* .. */
+
+    /*Feito pelo Kiro em 01/05/2026*/
+    .btn-grid-req {
+        border: none;
+        border-radius: 3px;
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        cursor: pointer;
+        font-size: 11px;
+        line-height: 22px;
+        text-align: center;
+        display: inline-block;
+        margin: 0 1px;
+    }
+    /* Botões verde, amarelo e vermelho para cada linha do grid */
+    .btn-grid-req-verde   { background-color: #28a745; color: white; }
+    .btn-grid-req-amarelo { background-color: #ffc107; color: #333;  }
+    .btn-grid-req-vermelho{ background-color: #dc3545; color: white; }
+    .btn-grid-req:hover   { opacity: 0.82; }
+
+    /* Ajustando o tamanho dos fontes dos títulos dos campos, por Ricardo em 01/05/2026 */
+    #wrapperRequisitar table.dataTable thead th,
+    #wrapperRequisitar table.dataTable thead th span,
+    #wrapperRequisitar table.dataTable thead th .dt-column-title,
+    #wrapperRequisitar table.dataTable thead th .dt-column-order,
+    #wrapperRequisitar table.dataTable tfoot th,
+    #wrapperRequisitar table.dataTable tfoot th span,
+    #wrapperRequisitar table.dataTable tfoot th .dt-column-title {
+        font-size: 14px !important;
+        line-height: 22px !important;
+    }
+
+    /* Larguras reais das 4 colunas fixas, por Ricardo Guilemond em 01/05/2026 */
+    #modeloTableRequisitar th:nth-child(1),
+    #modeloTableRequisitar td:nth-child(1) {
+        min-width: 50px !important;
+        width: 50px !important;
+        max-width: 50px !important;
+    }
+
+    #modeloTableRequisitar th:nth-child(2),
+    #modeloTableRequisitar td:nth-child(2) {
+        min-width: 70px !important;
+        width: 70px !important;
+        max-width: 70px !important;
+    }
+
+    #modeloTableRequisitar th:nth-child(3),
+    #modeloTableRequisitar td:nth-child(3) {
+        min-width: 180px !important;
+        width: 180px !important;
+        max-width: 180px !important;
+    }
+
+    #modeloTableRequisitar th:nth-child(4),
+    #modeloTableRequisitar td:nth-child(4) {
+        min-width: 90px !important;
+        width: 90px !important;
+        max-width: 90px !important;
+    }
+
+    /* CSS sticky por Ricardo Guilemond em 01/05/2026 */
+    #modeloTableRequisitar th:nth-child(1),
+    #modeloTableRequisitar td:nth-child(1) {
+        position: sticky !important;
+        left: 0 !important;
+        z-index: 10;
+    }
+
+    #modeloTableRequisitar th:nth-child(2),
+    #modeloTableRequisitar td:nth-child(2) {
+        position: sticky !important;
+        left: 50px !important;
+        z-index: 10;
+    }
+
+    #modeloTableRequisitar th:nth-child(3),
+    #modeloTableRequisitar td:nth-child(3) {
+        position: sticky !important;
+        left: 120px !important;
+        z-index: 10;
+    }
+
+    #modeloTableRequisitar th:nth-child(4),
+    #modeloTableRequisitar td:nth-child(4) {
+        position: sticky !important;
+        left: 300px !important;
+        z-index: 10;
+        box-shadow: 3px 0 5px -2px rgba(0,0,0,0.25);
+    }
+
+    /* Para o cabeçalho ficar acima das células */
+    #modeloTableRequisitar thead th:nth-child(-n+4) {
+        z-index: 20 !important;
+        background-color: #72c187 !important;
+    }
+
+    #modeloTableRequisitar tbody td:nth-child(-n+4) {
+        background-color: #f8f9fa !important;
+    }
+    /* .. */
+
+    /* Zebra e hover nas colunas fixas */
+    #modeloTableRequisitar tbody tr:nth-child(odd)  td:nth-child(-n+4) { background-color: #f2f2f2; }
+    #modeloTableRequisitar tbody tr:nth-child(even) td:nth-child(-n+4) { background-color: #ffffff; }
+    #modeloTableRequisitar tbody tr:hover           td:nth-child(-n+4) { background-color: #d2d2d2 !important; }
+
+    /*
+     * Sobrescreve o width:100%!important do mydatatables.css para este grid.
+     * Com scrollX:true o DataTables precisa que a tabela tenha largura natural
+     * (soma das colunas) para que o scroll horizontal apareça no rodapé.
+     */
+    #modeloTableRequisitar {
+        width: auto !important;
+    }
+    /*..Kiro*/
+</style>
+
 <script>
+    //Feito pelo Kiro em 01/05/2026
+    // Configuração EXCLUSIVA do DataTables para o Grid de Requisições do Dia.
+    // scrollX:true gera o div.dt-scroll-body com overflow-x:auto (barra horizontal no rodapé).
+    // autoWidth:false respeita as larguras fixas por coluna.
+    // As 4 primeiras colunas são fixadas via CSS sticky (style acima).
+    // initComplete cria a barra de scroll superior no momento exato da renderização.
     $(document).ready(function () {
-        //Requisições do dia
+        if ($.fn.dataTable.isDataTable('#modeloTableRequisitar')) {
+            $('#modeloTableRequisitar').DataTable().destroy();
+        }
+
         const modeloTable = $('#modeloTableRequisitar').DataTable({
             ajax: {
                 url: '/Requisitar/GetLancamentosHoje',
-                dataSrc: 'data'
+                dataSrc: 'data',
+                error: function (xhr, error, thrown) {
+                    console.error('GetLancamentosHoje erro:', xhr.status, xhr.responseText, thrown);
+                }
             },
-            columns: [    //aqui já vai preencher o tbody linha a linha <tbody></tbody>
-                { data: 'id' },
-                { data: 'pacienteId' },
-                { data: 'nomePaciente' },
-                { data: 'nascimento' },
-                { data: 'nomeInstituicao' },
-                { data: 'nomePosto' },
-                { data: 'nomeTabela' },
-                { data: 'laboratorioApoio' },
-                { data: 'dataIni' },
-                { data: 'dataEntregaParcial' }
+            columns: [
+                { data: 'id',                 width: '50px'  },
+                { data: 'pacienteId',         width: '70px'  },
+                { data: 'nomePaciente',       width: '180px' },
+                { data: 'nascimento',         width: '90px'  },
+                { data: 'nomeInstituicao',    width: '280px' },
+                {
+                    data: 'nomePosto',
+                    width: '140px',
+                    render: function (data) {
+                        return (data === '-') ? '-' : data;
+                    }
+                },
+                { data: 'nomeTabela',         width: '200px' },
+                {
+                    data: 'laboratorioApoio',
+                    width: '120px',
+                    render: function (data) {
+                        return (data === '-') ? '-' : data;
+                    }
+                },
+                { data: 'dataIni',            width: '90px'  },
+                { data: 'dataEntregaParcial', width: '110px' },
+                {
+                    data: null,
+                    width: '80px',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        return '<button class="btn-grid-req btn-grid-req-verde"    title="Reimprimir cupom"   onclick="reimprimirCupom('   + row.pacienteId + ', \'' + row.dataIni + '\')" ><i class="fa-solid fa-print"></i></button>'
+                             + '<button class="btn-grid-req btn-grid-req-amarelo"  title="Editar requisição"  onclick="editarRequisicao('  + row.pacienteId + ', \'' + row.dataIni + '\')" ><i class="fa-solid fa-pen"></i></button>'
+                             + '<button class="btn-grid-req btn-grid-req-vermelho" title="Excluir requisição" onclick="excluirRequisicao(' + row.pacienteId + ', \'' + row.dataIni + '\')" ><i class="fa-solid fa-trash"></i></button>';
+                    }
+                }
             ],
-            responsive: true,
-            order: [[5, 'asc']],
+            //Feito pelo Kiro em 01/05/2026
+            // Centraliza o traço (-) nas colunas Posto (5) e Lab. Apoio (7).
+            // O DataTables 2.x envolve o conteúdo do <td> em <span> internos,
+            // por isso o text-align é aplicado tanto no <td> quanto no <span>.
+            createdRow: function (row, data) {
+                if (data.nomePosto === '-') {
+                    var td = $('td', row).eq(5);
+                    td.css('text-align', 'center');
+                    td.find('span').css('text-align', 'center');
+                }
+                if (data.laboratorioApoio === '-') {
+                    var td = $('td', row).eq(7);
+                    td.css('text-align', 'center');
+                    td.find('span').css('text-align', 'center');
+                }
+            },
+            //..Kiro
+            scrollX: true,
+            autoWidth: false,
+            responsive: false,
+            order: [[0, 'desc']],
+            layout: {
+                topStart: {
+                    pageLength: {
+                        menu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]]
+                    }
+                },
+                topEnd: {
+                    search: { placeholder: 'Buscar...' }
+                },
+                bottomStart: 'info',
+                bottomEnd: {
+                    paging: { numbers: 5 }
+                }
+            },
             language: {
-                        "search": "Busca:",
-                        "lengthMenu": "Mostrar _MENU_ resultados por página",
-                        "emptyTable": "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
-                        "info": "Exibindo: _START_/_END_ de _TOTAL_ registros",
-                        "infoFiltered": "(Total de _MAX_ registros existentes na base de dados)",
-                        "infoThousands": ".",
-                        "thousands": ".",
-                        "decimal": ",",
-                        "loadingRecords": "Carregando...",
-                        "zeroRecords": "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
-                        "paginate": {
-                            "next": "<img src='images/icones/arrow_right_uno.png' width='28%' border='none' />",
-                            "previous": "<img src='images/icones/arrow_left_uno.png' width='28%' border='none' />",
-                            "first": "<img src='images/icones/arrow_left.png' width='28%' border='none' />",
-                            "last": "<img src='images/icones/arrow_right.png' width='28%' border='none' />",
-                        },
-                        //Fixa o header e o footer para auxiliar na identificação das colunas
-                        fixedHeader: {
-                            header: true,
-                            footer: true
-                        }
+                search: "Busca:",
+                lengthMenu: "Mostrar _MENU_ resultados por página",
+                emptyTable: "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
+                info: "Exibindo: _START_/_END_ de _TOTAL_ registros",
+                infoFiltered: "(Total de _MAX_ registros existentes na base de dados)",
+                infoThousands: ".",
+                thousands: ".",
+                decimal: ",",
+                loadingRecords: "Carregando...",
+                zeroRecords: "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
+                paginate: {
+                    next: "<img src='images/icones/arrow_right_uno.png' width='28%' border='none' />",
+                    previous: "<img src='images/icones/arrow_left_uno.png' width='28%' border='none' />",
+                    first: "<img src='images/icones/arrow_left.png' width='28%' border='none' />",
+                    last: "<img src='images/icones/arrow_right.png' width='28%' border='none' />"
+                }
+            },
+            /* Barra de rolagem superior — criada via initComplete em vez de setTimeout.
+               Executa no momento exato em que o DataTables termina de renderizar,
+               eliminando o delay arbitrário de 300ms. Por Ricardo Guilemond / Kiro em 01/05/2026 */
+            initComplete: function () {
+                var $wrapper = $('#wrapperRequisitar');
+                var $bodyScroll = $wrapper.find('.dt-scroll-body');
+
+                if ($bodyScroll.length === 0) return;
+
+                if ($wrapper.find('.dt-scroll-top').length === 0) {
+                    $bodyScroll.before(
+                        '<div class="dt-scroll-top">' +
+                            '<div class="dt-scroll-top-inner"></div>' +
+                        '</div>'
+                    );
+                }
+
+                var $topScroll = $wrapper.find('.dt-scroll-top');
+                var $topInner = $wrapper.find('.dt-scroll-top-inner');
+
+                $topInner.width($bodyScroll.get(0).scrollWidth);
+
+                $topScroll.on('scroll', function () {
+                    $bodyScroll.scrollLeft(this.scrollLeft);
+                });
+
+                $bodyScroll.on('scroll', function () {
+                    $topScroll.scrollLeft(this.scrollLeft);
+                });
             }
         });
-        //..
-        // Evento de duplo clique na linha
-        document.querySelector('#modeloTableRequisitar tbody').addEventListener('dblclick', function (event) {
-            const tr = event.target.closest('tr');
-            const rowData = modeloTable.row(tr).data();
-        
-            if (!rowData) {
-                console.error("Nenhum dado encontrado na linha.");
-                clickAviso("Erro", "Não foi possível obter os dados da linha selecionada", "falha", null);
-                return;
-            }
-        
-            //console.log("Dados da linha selecionada:", rowData); //Ajuda a inspecionar os campos disponíveis
-        
-            const idPaciente = parseInt(rowData.pacienteId, 10);
-            const dataBruta = rowData.dataIni;
-        
-            if (!idPaciente || !dataBruta) {
-                //console.error("Dados inválidos:", { idPaciente, dataBruta });
-                clickAviso("Erro", "Dados incompletos para impressão do cupom", "falha", null);
-                return;
-            }
-        
-            // Validação da data no formato dd/MM/yyyy
-            const regexData = /^\d{2}\/\d{2}\/\d{4}$/;
-            if (!regexData.test(dataBruta)) {
-                //console.error("Formato de data inválido:", dataBruta);
-                clickAviso("Erro", "Formato de data inválido", "falha", null);
-                return;
-            }
-        
-            const [dia, mes, ano] = dataBruta.split('/');
-            const dataFormatada = `${ano}-${mes}-${dia}`; // yyyy-MM-dd
 
-            fetch('/Requisitar/CupomRequisicao', {
-               method: 'POST',
-               headers: {
-                   'Content-Type': 'application/json'
-               },
-               body: JSON.stringify({
-                   idPaciente: idPaciente,
-                   data: dataFormatada
-               })
-           })
-           .then(response => {
-               if (!response.ok) {
-                   return response.text().then(text => { throw new Error(text); });
-               }
-               return response.json(); //lendo o json retornado
-           })
-           .then(data => {
-               const titulo = data.titulo ?? 'Atenção';
-               const mensagem = data.mensagem ?? 'Cupom processado.';
-               const sucesso = data.sucesso ?? false;
-               const tipo = sucesso ? 'sucesso' : 'falha';
-       
-               clickAviso(titulo, mensagem, tipo, null);
-           })
-           .catch(error => {
-               clickAviso("Impressão", "A impressão do Cupom falhou: " + error.message, "falha", null);
-           });
-        });    
-        //..
     });
+    //..Kiro
+
+    //Feito pelo Kiro em 01/05/2026
+
+    // Converte data "dd/MM/yyyy" para objeto Date e retorna no formato "yyyy-MM-dd" para o backend
+    function parseDateGrid(dataBruta) {
+        var partes = dataBruta.split('/');
+        if (partes.length !== 3) return null;
+        return partes[2] + '-' + partes[1] + '-' + partes[0]; // yyyy-MM-dd
+    }
+
+    // 3.1 — Reimprimir cupom (botão verde)
+    function reimprimirCupom(pacienteId, dataIni) {
+        var dataFormatada = parseDateGrid(dataIni);
+        if (!dataFormatada) {
+            clickAviso('Erro', 'Formato de data inválido', 'falha', null);
+            return;
+        }
+        fetch('/Requisitar/CupomRequisicao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idPaciente: pacienteId, data: dataFormatada })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            clickAviso(data.titulo ?? 'Atenção', data.mensagem ?? '', data.sucesso ? 'sucesso' : 'falha', null);
+        })
+        .catch(function () {
+            clickAviso('Erro', 'Falha ao reimprimir o cupom', 'critica', null);
+        });
+    }
+
+    // 3.2 — Carregar para edição (botão amarelo)
+    function editarRequisicao(pacienteId, dataIni) {
+        $.ajax({
+            url: '/Requisitar/CarregarRequisicaoParaEdicao',
+            type: 'GET',
+            data: { pacienteId: pacienteId, data: dataIni },
+            cache: false,
+            dataType: 'json',
+            success: function (data) {
+                if (!data.sucesso) {
+                    clickAviso('Edição não permitida', data.mensagem, 'falha', null);
+                    return;
+                }
+
+                // Preenche dados do paciente
+                var $pac = $("#conteudoPaciente");
+                $pac.find("#pacienteId").val(data.pacienteId);
+                $pac.find("#buscaNomePaciente").val(data.nomePaciente);
+                $pac.find("#Nascimento").val(data.nascimento);
+                $pac.find("#CPFPaciente").val(data.cpfPaciente);
+                $pac.find("#Telefone").val(data.telefone);
+                $pac.find("#Email").val(data.email);
+                $pac.find("#Mae").val(data.nomeMae);
+                $pac.find("#Naturalidade").val(data.naturalidade);
+                $pac.find("#Nacionalidade").val(data.nacionalidade);
+                $pac.find("#Profissao").val(data.profissao);
+                $pac.find("#CEP").val(data.cep);
+                $pac.find("#Logradouro").val(data.logradouro);
+                $pac.find("#Endereco").val(data.endereco);
+                $pac.find("#Numero").val(data.numero);
+                $pac.find("#Complemento").val(data.complemento);
+                $pac.find("#Bairro").val(data.bairro);
+                $pac.find("#Cidade").val(data.cidade);
+                $pac.find("#Observacao").val(data.observacao);
+                $pac.find("select[name='vmGeral.TipoUF']").val(data.uf);
+                $pac.find("select[name='vmGeral.TipoTempoGestacao']").val(data.tempoGestacao);
+                $pac.find("input[name='Sexo'][value='" + data.sexo + "']").prop("checked", true);
+                $pac.find("input[name='EstadoCivil'][value='" + data.estadoCivil + "']").prop("checked", true);
+                $pac.find("input[name='VmPacientes.DUM']").val(data.dum);
+
+                // Preenche médico
+                var $med = $("#conteudoMedico");
+                $med.find("#medicoId").val(data.medicoId);
+                $med.find("#buscaNomeMedico").val(data.nomeMedico);
+                $med.find("#buscaCRM").val(data.crm);
+
+                // Preenche instituição
+                var $inst = $("#conteudoInstituicao");
+                $inst.find("#instituicaoId").val(data.instituicaoId);
+                $inst.find("#buscaSiglaInstituicao").val(data.siglaInstituicao);
+                $inst.find("#buscaNomeInstituicao").val(data.nomeInstituicao);
+
+                // Preenche posto
+                var $posto = $("#conteudoPosto");
+                $posto.find("#postoId").val(data.postoId);
+                $posto.find("#buscaNomePosto").val(data.nomePosto);
+
+                // Preenche tabela
+                var $tab = $("#conteudoTabela");
+                $tab.find("#tabelaExamesId").val(data.tabelaExamesId);
+                $tab.find("#buscaSiglaTabela").val(data.siglaTabela);
+                $tab.find("#buscaNomeTabela").val(data.nomeTabela);
+
+                // Recarrega o grid de exames da tabela selecionada
+                var urlLancarExames = document.getElementById('lancarExamesConfig').dataset.urlPlanoExamesItens;
+                $('#conteudoListaDeExames').load(urlLancarExames + '?tabelaExamesId=' + data.tabelaExamesId);
+
+                // Rola a página para o topo do formulário
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                clickAviso('Requisição carregada', 'Dados carregados para edição. Faça as alterações e salve novamente.', 'sucesso', null);
+            },
+            error: function () {
+                clickAviso('Erro', 'Falha ao carregar a requisição para edição', 'critica', null);
+            }
+        });
+    }
+
+    // 3.3 — Excluir requisição (botão vermelho)
+    function excluirRequisicao(pacienteId, dataIni) {
+        var dataFormatada = parseDateGrid(dataIni);
+        if (!dataFormatada) {
+            clickAviso('Erro', 'Formato de data inválido', 'falha', null);
+            return;
+        }
+
+        Swal.fire({
+            title: '<span style="color: gray;">Confirmar exclusão</span>',
+            html: '<span style="color: #646464;">Todos os itens de exame desta requisição serão excluídos.<br>O cadastro do paciente e do médico serão mantidos.<br><br>Deseja continuar?</span>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar'
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+
+            fetch('/Requisitar/ExcluirRequisicao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idPaciente: pacienteId, data: dataFormatada })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                clickAviso(data.sucesso ? 'Excluído' : 'Não permitido', data.mensagem, data.sucesso ? 'sucesso' : 'falha', null);
+                if (data.sucesso) {
+                    $('#modeloTableRequisitar').DataTable().ajax.reload();
+                }
+            })
+            .catch(function () {
+                clickAviso('Erro', 'Falha ao excluir a requisição', 'critica', null);
+            });
+        });
+    }
+    //..Kiro
 </script>
 <div class="col-xl-12">
     <div class="card">
         <div class="card-header"><i class="fas fa-chart-bar me-1"></i>Grid das Requisições de Hoje!</div>
-        <div class="table-responsive">
-            <table id="modeloTableRequisitar" name="datatable" data-order='[[ 0, "desc" ]]' class="display compact order-column table-striped table-hover nowrap">
+        <div id="wrapperRequisitar">
+            <table id="modeloTableRequisitar" data-order='[[ 0, "desc" ]]' class="display compact order-column table-striped table-hover nowrap">
                 <thead>
                     <tr>
                         <th>Id</th>
@@ -130,6 +441,7 @@
                         <th>Laboratorio Apoio</th>
                         <th>DT Entrada</th>
                         <th>DT Entrega Parcial</th>
+                        <th>Opções</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -146,6 +458,7 @@
                         <th>Laboratorio Apoio</th>
                         <th>DT Entrada</th>
                         <th>DT Entrega Parcial</th>
+                        <th>Opções</th>
                     </tr>
                 </tfoot>
             </table>

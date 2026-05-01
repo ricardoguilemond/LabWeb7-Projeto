@@ -62,11 +62,9 @@ namespace LabWebMvc.MVC
             //..
 
             //Serviços para injeção de dependência para o BLL
-#if DEBUG
-            services.AddScoped<ITempoServidorService, TempoLocal>();
-#else
-            services.AddScoped<ITempoServidorService, TempoServidorMSSQL>();
-#endif
+            // Fonte de data/hora: PostgreSQL (SELECT NOW() AT TIME ZONE 'America/Sao_Paulo')
+            // Fallback automático para DateTime.Now local se banco inacessível (modo offline)
+            services.AddScoped<ITempoServidorService, TempoServidorPostgreSQL>();
             services.AddScoped<GeralController>();  //para injeção de dependência do serviço de métodos gerais de controller
             services.AddScoped<IValidacoesDeSenhas, ValidacoesDeSenhas>();  //para injeção de dependência do serviço de validações de senhas
             services.AddSingleton<IEventLogHelper, EventLogHelper>();   //para injeção de uma única instância do Log Helper por toda a aplicação.

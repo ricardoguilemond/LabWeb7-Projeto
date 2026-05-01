@@ -8,15 +8,26 @@
 <script>
     $(document).ready(function () {
 
-        //Constrói o Modal
-        configTableModal('#tabelaPreco');
-
-        // Feito pelo Qoder em 21/04/2026 — foca o campo de busca ao abrir o modal
+        // Inicializa DataTables e foca o Search somente após o modal estar visível
         document.getElementById('modeloTableModalTabelas').addEventListener('shown.bs.modal', function () {
+            if (!$.fn.dataTable.isDataTable('#tabelaPreco')) {
+                configTableModal('#tabelaPreco');
+            } else {
+                $('#tabelaPreco').DataTable().columns.adjust();
+            }
             var inputBusca = document.querySelector('#modeloTableModalTabelas input[type="search"]');
             if (inputBusca) inputBusca.focus();
         });
-        // ..Qoder
+
+        // Ao fechar o modal, move o foco para o próximo campo (Nome do Médico)
+        document.getElementById('modeloTableModalTabelas').addEventListener('hidden.bs.modal', function () {
+            if ($('#buscaSiglaTabela').val().trim().length > 0) {
+                setTimeout(function () {
+                    var campo = document.getElementById('buscaNomeMedico');
+                    if (campo) campo.focus();
+                }, 100);
+            }
+        });
 
         function preencherFormularioTabela(vm) {
             var $conteudo = $("#conteudoTabela");

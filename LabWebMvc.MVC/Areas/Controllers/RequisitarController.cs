@@ -301,8 +301,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         private List<Requisitar> CriarRequisicoes(vmRequisitar vm)
         {
-            DateTime dataIni = _geralController.ObterDataHoraServidor().ToFormataData();
-            DateTime dataEntregaParcial = vm.DataEntregaParcial ?? dataIni.AddDays(7);
+            // ObterDataHoraServidor() usa SELECT NOW() AT TIME ZONE 'America/Sao_Paulo'
+            // retorna sempre o horário de Brasília do servidor PostgreSQL — sem depender do cliente
+            DateTime dataIni = DateTime.SpecifyKind(
+                _geralController.ObterDataHoraServidor().ToFormataData(),
+                DateTimeKind.Unspecified);
+            DateTime dataEntregaParcial = vm.DataEntregaParcial.HasValue
+                ? DateTime.SpecifyKind(vm.DataEntregaParcial.Value, DateTimeKind.Unspecified)
+                : dataIni.AddDays(7);
 
             var listaRequisitar = new List<Requisitar>();
 
@@ -994,6 +1000,159 @@ namespace LabWebMvc.MVC.Areas.Controllers
          #                                       
          ----------------------------------------
          */
+
+        //Feito pelo Kiro em 01/05/2026
+        /// <summary>
+        /// Carrega todos os dados de uma requisição do paciente na data para edição no formulário.
+        /// Bloqueia o carregamento se qualquer item já possuir resultado lançado.
+        /// </summary>
+        [HttpGet]
+        [Route("Requisitar/CarregarRequisicaoParaEdicao")]
+        public IActionResult CarregarRequisicaoParaEdicao(int pacienteId, string data)
+        {
+            if (pacienteId <= 0 || string.IsNullOrWhiteSpace(data))
+                return Json(new { sucesso = false, mensagem = "Dados inválidos para carregamento." });
+
+            // Converte data recebida (dd/MM/yyyy) para DateTime
+            if (!DateTime.TryParseExact(data, "dd/MM/yyyy",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out DateTime dataConsulta))
+                return Json(new { sucesso = false, mensagem = "Formato de data inválido." });
+
+            var dataInicio = DateTime.SpecifyKind(dataConsulta.Date, DateTimeKind.Unspecified);
+            var dataFim    = DateTime.SpecifyKind(dataConsulta.Date.AddDays(1).AddTicks(-1), DateTimeKind.Unspecified);
+
+            // Carrega todos os itens do paciente na data com includes necessários
+            var itens = _db.Requisitar
+                .Include(r => r.Pacientes)
+                .Include(r => r.Medicos)
+                .Include(r => r.Instituicao)
+                .Include(r => r.Posto)
+                .Include(r => r.TabelaExames)
+                .Where(r => r.PacienteId == pacienteId
+                         && r.DataIni >= dataInicio
+                         && r.DataIni <= dataFim)
+                .OrderBy(r => r.OrdemItem)
+                .AsNoTracking()
+                .ToList();
+
+            if (!itens.Any())
+                return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para este paciente na data informada." });
+
+            // Verifica se algum item já possui resultado lançado
+            bool temResultado = itens.Any(r => !string.IsNullOrWhiteSpace(r.Resultado));
+            if (temResultado)
+                return Json(new { sucesso = false, mensagem = "Esta requisição não pode ser editada pois um ou mais exames já possuem resultado lançado." });
+
+            var primeiro = itens.First();
+
+            // Monta a lista de itens do cupom para recarregar no formulário
+            var listaCupom = itens.Select(r => new
+            {
+                id          = r.Id,
+                contaExame  = r.ContaExame,
+                descricao   = r.Descricao,
+                valorItem   = r.ValorItem,
+                refExame    = r.RefExame,
+                refItem     = r.RefItem,
+                exameId     = r.ExameId,
+                etiquetas   = r.Etiquetas
+            }).ToList();
+
+            var resultado = new
+            {
+                sucesso    = true,
+                pacienteId = primeiro.PacienteId,
+                nomePaciente      = primeiro.Pacientes?.NomePaciente ?? "",
+                nascimento        = primeiro.Pacientes?.Nascimento.ToString("yyyy-MM-dd") ?? "",
+                cpfPaciente       = primeiro.Pacientes?.CPF ?? "",
+                telefone          = primeiro.Pacientes?.Telefone ?? "",
+                email             = primeiro.Pacientes?.Email ?? "",
+                nomeMae           = primeiro.Pacientes?.NomeMae ?? "",
+                naturalidade      = primeiro.Pacientes?.Naturalidade ?? "",
+                nacionalidade     = primeiro.Pacientes?.Nacionalidade ?? "",
+                profissao         = primeiro.Pacientes?.Profissao ?? "",
+                cep               = primeiro.Pacientes?.CEP ?? "",
+                logradouro        = primeiro.Pacientes?.Logradouro ?? "",
+                endereco          = primeiro.Pacientes?.Endereco ?? "",
+                numero            = primeiro.Pacientes?.Numero ?? "",
+                complemento       = primeiro.Pacientes?.Complemento ?? "",
+                bairro            = primeiro.Pacientes?.Bairro ?? "",
+                cidade            = primeiro.Pacientes?.Cidade ?? "",
+                uf                = primeiro.Pacientes?.UF ?? "",
+                observacao        = primeiro.Pacientes?.Observacao ?? "",
+                sexo              = primeiro.Pacientes?.Sexo ?? "",
+                estadoCivil       = (int)(primeiro.Pacientes?.EstadoCivil ?? 0),
+                tempoGestacao     = (int)(primeiro.Pacientes?.TempoGestacao ?? 0),
+                dum               = primeiro.Pacientes?.DUM?.ToString("yyyy-MM-dd") ?? "",
+                medicoId          = primeiro.MedicoId,
+                nomeMedico        = primeiro.Medicos?.NomeMedico ?? "",
+                crm               = primeiro.Medicos?.CRM ?? "",
+                instituicaoId     = primeiro.InstituicaoId,
+                siglaInstituicao  = primeiro.Instituicao?.Sigla ?? "",
+                nomeInstituicao   = primeiro.Instituicao?.Nome ?? "",
+                postoId           = primeiro.PostoId ?? 0,
+                nomePosto         = primeiro.Posto?.NomePosto ?? "",
+                tabelaExamesId    = primeiro.TabelaExamesId,
+                siglaTabela       = primeiro.TabelaExames?.SiglaTabela ?? "",
+                nomeTabela        = primeiro.TabelaExames?.NomeTabela ?? "",
+                dataIni           = primeiro.DataIni.ToString("dd/MM/yyyy"),
+                listaCupom
+            };
+
+            return Json(resultado);
+        }
+        //..Kiro
+
+        //Feito pelo Kiro em 01/05/2026
+        /// <summary>
+        /// Exclui todos os itens de Requisitar do paciente na data.
+        /// Bloqueia a exclusão se qualquer item já possuir resultado lançado.
+        /// Mantém o cadastro do paciente e do médico intactos.
+        /// </summary>
+        [HttpPost]
+        [Route("Requisitar/ExcluirRequisicao")]
+        public async Task<IActionResult> ExcluirRequisicao([FromBody] CupomRequisicaoViewModel vm)
+        {
+            if (vm == null || vm.IdPaciente <= 0 || vm.Data == null)
+                return Json(new { sucesso = false, mensagem = "Dados inválidos para exclusão." });
+
+            var dataInicio = DateTime.SpecifyKind(vm.Data.Value.Date, DateTimeKind.Unspecified);
+            var dataFim    = DateTime.SpecifyKind(vm.Data.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Unspecified);
+
+            var itens = await _db.Requisitar
+                .Where(r => r.PacienteId == vm.IdPaciente
+                         && r.DataIni >= dataInicio
+                         && r.DataIni <= dataFim)
+                .ToListAsync();
+
+            if (!itens.Any())
+                return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para exclusão." });
+
+            // Verifica se algum item já possui resultado lançado
+            bool temResultado = itens.Any(r => !string.IsNullOrWhiteSpace(r.Resultado));
+            if (temResultado)
+                return Json(new { sucesso = false, mensagem = "Esta requisição não pode ser excluída pois um ou mais exames já possuem resultado lançado." });
+
+            try
+            {
+                using var transaction = await _db.Database.BeginTransactionAsync();
+
+                _db.Requisitar.RemoveRange(itens);
+                await _db.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return Json(new { sucesso = true, mensagem = $"{itens.Count} item(ns) de exame excluído(s) com sucesso." });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer($"Erro ao excluir requisição: {ex.Message}", "wError");
+                return Json(new { sucesso = false, mensagem = "Erro ao excluir a requisição: " + ex.Message });
+            }
+        }
+        //..Kiro
+
         //Imprimir Cupom
         [HttpPost]
         [Route("Requisitar/CupomRequisicao")]   //Rota de uma chamada javascript para imprimir o cupom de requisição
@@ -1051,9 +1210,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //..Qoder
 
             //Feito pelo Kiro em 20/04/2026
-            string dataHoje = DateTime.Now.ToString("dd/MM/yyyy");
-            string horaHoje = DateTime.Now.ToString("HH:mm");
-            string dataPrevista = DateTime.Now.AddDays(7).ToString("dd/MM/yyyy"); //padrão 7 dias para entrega inicial 
+            // Usa ObterDataHoraServidor() — fonte confiável: PostgreSQL no fuso de Brasília
+            // Fallback automático para data local se banco inacessível (modo offline)
+            var dataServidorCupom = _geralController.ObterDataHoraServidor().ToFormataData();
+            string dataHoje     = dataServidorCupom.ToString("dd/MM/yyyy");
+            string horaHoje     = dataServidorCupom.ToString("HH:mm");
+            string dataPrevista = dataServidorCupom.AddDays(7).ToString("dd/MM/yyyy"); //padrão 7 dias para entrega inicial
             //..Kiro
 
             //Impressão do Cupom
@@ -1133,39 +1295,115 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //..
 
         //Lançamentos no partial Grid dos Lançamentos dos Exames do Dia
+        //Feito pelo Kiro em 01/05/2026
+        // Otimização de performance: query única com projeção direta + AsNoTracking.
+        // Antes: 2 roundtrips ao banco, 4 Includes (JOINs completos), GroupBy em memória.
+        // Agora: 1 roundtrip, subquery para MAX(Id) por paciente, projeção sem Include.
         [HttpGet]
         [Route("Requisitar/GetLancamentosHoje")]
         public IActionResult GetLancamentosHoje()
         {
-            var hoje = DateTime.Today; //Feito pelo Kiro em 20/04/2026 — corrigido de DateTime.SpecifyKind UTC //..Kiro
+            try
+            {
+                // Obtém data do servidor PostgreSQL — Kind=Unspecified para Npgsql 8.x
+                var hoje       = DateTime.SpecifyKind(_geralController.ObterDataHoraServidor().ToFormataData().Date, DateTimeKind.Unspecified);
+                var hojeInicio = hoje;
+                var hojeFim    = DateTime.SpecifyKind(hoje.AddDays(1).AddTicks(-1), DateTimeKind.Unspecified);
 
-            var requisicoesHoje = _db.Requisitar
-                .Include(r => r.Pacientes)
-                .Include(r => r.Instituicao)
-                .Include(r => r.Posto)
-                .Include(r => r.TabelaExames)
-                .Where(r => r.DataIni.Date == hoje)
-                .ToList(); //materializa os dados antes do GroupBy
+                // Subquery: busca o Id máximo por paciente no dia (agrupamento no banco)
+                var idsMaisRecentes = _db.Requisitar
+                    .AsNoTracking()
+                    .Where(r => r.DataIni >= hojeInicio && r.DataIni <= hojeFim)
+                    .GroupBy(r => r.PacienteId)
+                    .Select(g => g.Max(r => r.Id));
 
-            var lista = requisicoesHoje
-                .GroupBy(r => r.PacienteId) // agrupa por paciente
-                .Select(g => g.OrderByDescending(r => r.Id).First()) // pega o mais recente
-                .Select(r => new vmRequisitarSimplificado
-                {
-                    Id = r.Id,
-                    PacienteId = r.PacienteId,
-                    NomePaciente = r.Pacientes?.NomePaciente ?? "N/A",
-                    Nascimento = r.Pacientes?.Nascimento.ToString("dd/MM/yyyy") ?? "N/A",
-                    NomeInstituicao = r.Instituicao?.Sigla + " - " + r.Instituicao?.Nome ?? "N/A",
-                    NomePosto = r.Posto?.NomePosto ?? "N/A",    
-                    NomeTabela = r.TabelaExames?.SiglaTabela + " - " + r.TabelaExames?.NomeTabela ?? "N/A",
-                    LaboratorioApoio = r.LaboratorioApoio ?? "N/A",
-                    DataIni = r.DataIni.ToString("dd/MM/yyyy") ?? "N/A",
-                    DataEntregaParcial = r.DataEntregaParcial?.ToString("dd/MM/yyyy") ?? "N/A"
+                // Query principal: projeta diretamente para o ViewModel sem Include
+                var lista = _db.Requisitar
+                    .AsNoTracking()
+                    .Where(r => idsMaisRecentes.Contains(r.Id))
+                    .Select(r => new vmRequisitarSimplificado
+                    {
+                        Id                 = r.Id,
+                        PacienteId         = r.PacienteId,
+                        NomePaciente       = r.Pacientes != null ? r.Pacientes.NomePaciente ?? "N/A" : "N/A",
+                        Nascimento         = r.Pacientes != null ? r.Pacientes.Nascimento.ToString("dd/MM/yyyy") : "N/A",
+                        NomeInstituicao    = (r.Instituicao != null ? r.Instituicao.Sigla ?? "" : "") + " - " + (r.Instituicao != null ? r.Instituicao.Nome ?? "" : ""),
+                        NomePosto          = r.Posto != null ? r.Posto.NomePosto ?? "-" : "-",
+                        NomeTabela         = (r.TabelaExames != null ? r.TabelaExames.SiglaTabela ?? "" : "") + " - " + (r.TabelaExames != null ? r.TabelaExames.NomeTabela ?? "" : ""),
+                        LaboratorioApoio   = r.LaboratorioApoio ?? "-",
+                        DataIni            = r.DataIni.ToString("dd/MM/yyyy"),
+                        DataEntregaParcial = r.DataEntregaParcial != null ? r.DataEntregaParcial.Value.ToString("dd/MM/yyyy") : ""
+                    })
+                    .ToList();
+
+                return Json(new { data = lista });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("GetLancamentosHoje ERRO: " + ex.Message + " | " + ex.StackTrace, "wError");
+                return Json(new { data = new List<vmRequisitarSimplificado>(), erro = ex.Message, stack = ex.StackTrace });
+            }
+        }
+        //..Kiro
+
+        // Endpoint temporário de diagnóstico — remover após confirmação
+        [HttpGet]
+        [Route("Requisitar/DiagnosticoHoje")]
+        public IActionResult DiagnosticoHoje()
+        {
+            var dataServidorStr = _geralController.ObterDataHoraServidor();
+            var dtNow = DateTime.Now;
+            var dtToday = DateTime.Today;
+            var dtUtcNow = DateTime.UtcNow;
+
+            DateTime dataServidor;
+            DateTime.TryParseExact(dataServidorStr, "dd/MM/yyyy HH:mm:ss",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out dataServidor);
+
+            var hojeInicio = dataServidor == default ? dtToday : dataServidor.Date;
+            var hojeProximoDia = hojeInicio.AddDays(1);
+
+            // Total de registros sem filtro de data
+            int totalSemFiltro = _db.Requisitar.Count();
+
+            // As 5 últimas datas gravadas na tabela (brutas, com Kind)
+            var ultimasDatas = _db.Requisitar
+                .OrderByDescending(r => r.Id)
+                .Take(5)
+                .Select(r => new { r.Id, r.DataIni })
+                .AsEnumerable()
+                .Select(r => new {
+                    r.Id,
+                    DataIniStr = r.DataIni.ToString("yyyy-MM-dd HH:mm:ss"),
+                    Kind = r.DataIni.Kind.ToString(),
+                    Date = r.DataIni.Date.ToString("yyyy-MM-dd")
                 })
                 .ToList();
 
-            return Json(new { data = lista });
+            // Filtra em memória para evitar problema de Kind/fuso no LINQ-to-SQL
+            var hojeLocal = DateTime.Today;
+            int totalHojeLINQ = _db.Requisitar
+                .Where(r => r.DataIni >= hojeInicio && r.DataIni < hojeProximoDia)
+                .Count();
+            int totalHojeMemoria = _db.Requisitar
+                .AsEnumerable()
+                .Count(r => r.DataIni.Date == hojeLocal);
+
+            return Json(new
+            {
+                dataServidorStr,
+                dataServidor = dataServidor.ToString("dd/MM/yyyy HH:mm:ss"),
+                dtNow = dtNow.ToString("dd/MM/yyyy HH:mm:ss"),
+                dtToday = dtToday.ToString("dd/MM/yyyy"),
+                dtUtcNow = dtUtcNow.ToString("dd/MM/yyyy HH:mm:ss"),
+                hojeInicio = hojeInicio.ToString("yyyy-MM-dd"),
+                hojeProximoDia = hojeProximoDia.ToString("yyyy-MM-dd"),
+                totalSemFiltro,
+                totalHojeLINQ,
+                totalHojeMemoria,
+                ultimasDatas
+            });
         }
 
 

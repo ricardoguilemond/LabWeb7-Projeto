@@ -42,32 +42,52 @@ namespace LabWebMvc.MVC.Interfaces.Collections
         private readonly ConcurrentDictionary<string, List<PlanoExames>> _dadosPorUsuario
             = new ConcurrentDictionary<string, List<PlanoExames>>();
 
+        // Lock por usuário para proteger a List<> interna (não thread-safe por si só)
+        private readonly ConcurrentDictionary<string, object> _locks
+            = new ConcurrentDictionary<string, object>();
+
         private ListaAcumulativa() { }
+
+        private object GetLock(string usuarioId)
+            => _locks.GetOrAdd(usuarioId, _ => new object());
 
         public void AdicionarCupom(string usuarioId, IEnumerable<PlanoExames> dados)
         {
-            var lista = _dadosPorUsuario.GetOrAdd(usuarioId, new List<PlanoExames>());
-            lista.AddRange(dados);
+            lock (GetLock(usuarioId))
+            {
+                var lista = _dadosPorUsuario.GetOrAdd(usuarioId, _ => new List<PlanoExames>());
+                lista.AddRange(dados);
+            }
         }
 
         public List<PlanoExames> ObterCupom(string usuarioId)
         {
-            return _dadosPorUsuario.TryGetValue(usuarioId, out var lista)
-                ? lista
-                : new List<PlanoExames>();
+            lock (GetLock(usuarioId))
+            {
+                // Retorna cópia para evitar InvalidOperationException ao iterar fora do lock
+                return _dadosPorUsuario.TryGetValue(usuarioId, out var lista)
+                    ? new List<PlanoExames>(lista)
+                    : new List<PlanoExames>();
+            }
         }
 
         public void EsvaziarCupom(string usuarioId)
         {
-            _dadosPorUsuario.TryRemove(usuarioId, out _);
+            lock (GetLock(usuarioId))
+            {
+                _dadosPorUsuario.TryRemove(usuarioId, out _);
+            }
         }
 
         // Feito pelo Qoder em 21/04/2026 — remove um item específico do cupom pelo Id do PlanoExames
         public void RemoverItemCupom(string usuarioId, int planoExamesId)
         {
-            if (_dadosPorUsuario.TryGetValue(usuarioId, out var lista))
+            lock (GetLock(usuarioId))
             {
-                lista.RemoveAll(x => x.Id == planoExamesId);
+                if (_dadosPorUsuario.TryGetValue(usuarioId, out var lista))
+                {
+                    lista.RemoveAll(x => x.Id == planoExamesId);
+                }
             }
         }
         //..Qoder

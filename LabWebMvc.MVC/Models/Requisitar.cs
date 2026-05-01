@@ -13,7 +13,7 @@ public partial class Requisitar
     public string? RefItem { get; set; }
     public string ContaExame { get; set; } = null!;
     public int InstituicaoId { get; set; }
-    public int PostoId { get; set; }
+    public int? PostoId { get; set; }
     public int TabelaExamesId { get; set; }
     public int MedicoId { get; set; }
     public string? LaboratorioApoio { get; set; }
@@ -35,7 +35,7 @@ public partial class Requisitar
 
     public virtual ClasseExames ClasseExames { get; set; } = null!;
     public virtual Instituicao Instituicao { get; set; } = null!;
-    public virtual Postos Posto { get; set; } = null!;
+    public virtual Postos? Posto { get; set; }
     public virtual Medicos Medicos { get; set; } = null!;
     public virtual Pacientes Pacientes { get; set; } = null!;
     public virtual TabelaExames TabelaExames { get; set; } = null!;

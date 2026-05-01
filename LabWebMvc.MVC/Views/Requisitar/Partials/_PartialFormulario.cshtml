@@ -37,28 +37,52 @@
         });
         // ..Qoder
 
+        // Navegação por ENTER entre os campos do paciente (formulário simples)
+        // Cada campo avança para o próximo; o último (#Email) vai para Instituição.
+        // stopPropagation impede que o handler global do _Layout interfira.
+        var navegacaoPaciente = [
+            { de: '#Nascimento',   para: '#CPFPaciente'             },
+            { de: '#CPFPaciente',  para: '#Telefone'                },
+            { de: '#Telefone',     para: '#Email'                   },
+            { de: '#Email',        para: '#buscaSiglaInstituicao'   }
+        ];
+        navegacaoPaciente.forEach(function(item) {
+            $(item.de).on('keydown', function(event) {
+                if (event.which === 13 || event.key === 'Enter') {
+                    event.preventDefault();
+                    event.stopImmediatePropagation(); // impede outros listeners no mesmo elemento (ex: _Layout)
+                    var campo = document.getElementById(item.para.replace('#', ''));
+                    if (campo) campo.focus();
+                }
+            });
+        });
+        // ..Qoder
+
+        //Feito pelo Kiro em 01/05/2026
+        // ENTER no campo de nome do paciente:
+        // - Campo vazio → abre o modal de busca
+        // - Campo com texto → tenta buscar diretamente pelo nome parcial sem abrir o modal
         $("#buscaNomePaciente").off('keydown').on('keydown', function (event) {
             const teclasPermitidas = [13, 38, 40]; // Enter, Seta cima, Seta baixo
 
             if (teclasPermitidas.includes(event.which)) {
-                event.preventDefault(); // impede submit do formulário ao pressionar ENTER
-                setTimeout(() => {
-                    const inputEscrito = event.target.value.trim();
-                    const palavras = inputEscrito.split(/\s+/).filter(p => p.length > 0);
+                event.preventDefault();
+                event.stopImmediatePropagation();
 
-                    if (palavras.length <= 1) {
+                const inputEscrito = event.target.value.trim();
+
+                if (inputEscrito.length === 0) {
+                    // Campo vazio: abre o modal de busca de pacientes
+                    setTimeout(() => {
                         const aplicarBuscaNoDataTables = () => {
                             const tabela = $.fn.dataTable.isDataTable('#tabelaPacientes') ? $('#tabelaPacientes').DataTable() : null;
-
                             if (tabela) {
-                                tabela.search(inputEscrito).draw();
+                                tabela.search('').draw();
                             } else {
-                                // Aguarda até que o DataTables esteja pronto
                                 const intervalo = setInterval(() => {
                                     const tabelaPronta = $.fn.dataTable.isDataTable('#tabelaPacientes') ? $('#tabelaPacientes').DataTable() : null;
-
                                     if (tabelaPronta) {
-                                        tabelaPronta.search(inputEscrito).draw();
+                                        tabelaPronta.search('').draw();
                                         clearInterval(intervalo);
                                     }
                                 }, 100);
@@ -75,10 +99,94 @@
                             $("#modeloTableModalPaciente").modal("show");
                             aplicarBuscaNoDataTables();
                         }
+                    }, 0);
+                    return;
+                }
+
+                // Campo com texto: busca diretamente pelo nome parcial sem abrir o modal
+                $.ajax({
+                    url: '@Url.Action("RetornoDoModalPacientes", "Requisitar")',
+                    type: "GET",
+                    data: { id: inputEscrito },
+                    cache: false,
+                    dataType: "json",
+                    success: function (data) {
+                        if (!data || !data.vm || !data.vm.nomePaciente) {
+                            // Não encontrou: abre o modal com o texto já filtrado
+                            setTimeout(() => {
+                                const aplicarBusca = () => {
+                                    const tabela = $.fn.dataTable.isDataTable('#tabelaPacientes') ? $('#tabelaPacientes').DataTable() : null;
+                                    if (tabela) {
+                                        tabela.search(inputEscrito).draw();
+                                    } else {
+                                        const intervalo = setInterval(() => {
+                                            const tabelaPronta = $.fn.dataTable.isDataTable('#tabelaPacientes') ? $('#tabelaPacientes').DataTable() : null;
+                                            if (tabelaPronta) {
+                                                tabelaPronta.search(inputEscrito).draw();
+                                                clearInterval(intervalo);
+                                            }
+                                        }, 100);
+                                    }
+                                };
+                                if (!modalCarregado) {
+                                    $('#modalTriggerPaciente').load('@Url.Action("ModalPacientes", "Requisitar")', function () {
+                                        $("#modeloTableModalPaciente").modal("show");
+                                        modalCarregado = true;
+                                        aplicarBusca();
+                                    });
+                                } else {
+                                    $("#modeloTableModalPaciente").modal("show");
+                                    aplicarBusca();
+                                }
+                            }, 0);
+                            return;
+                        }
+
+                        // Encontrou: preenche os campos diretamente (reutiliza a função do ModalPacientes)
+                        // Preenche manualmente os campos do formulário com os dados retornados
+                        var vm = data.vm;
+                        var $conteudo = $("#conteudoPaciente");
+                        $conteudo.find("#pacienteId").val(vm.pacienteId);
+                        $conteudo.find("#buscaNomePaciente").val(vm.nomePaciente);
+                        $conteudo.find("#Nascimento").val(vm.nascimento);
+                        $conteudo.find("#CPFPaciente").val(vm.cpfPaciente);
+                        $conteudo.find("#Telefone").val(vm.telefone);
+                        $conteudo.find("#Email").val(vm.email);
+                        $conteudo.find("#Mae").val(vm.nomeMae);
+                        $conteudo.find("#Naturalidade").val(vm.naturalidade);
+                        $conteudo.find("#Nacionalidade").val(vm.nacionalidade);
+                        $conteudo.find("#Profissao").val(vm.profissao);
+                        $conteudo.find("#CEP").val(vm.cep);
+                        $conteudo.find("#Logradouro").val(vm.logradouro);
+                        $conteudo.find("#Endereco").val(vm.endereco);
+                        $conteudo.find("#Numero").val(vm.numero);
+                        $conteudo.find("#Complemento").val(vm.complemento);
+                        $conteudo.find("#Bairro").val(vm.bairro);
+                        $conteudo.find("#Cidade").val(vm.cidade);
+                        $conteudo.find("#Observacao").val(vm.observacao);
+                        $conteudo.find("select[name='vmGeral.TipoUF']").val(vm.uf);
+                        $conteudo.find("select[name='vmGeral.TipoTempoGestacao']").val(vm.tempoGestacao);
+                        $conteudo.find("input[name='Sexo'][value='" + vm.sexo + "']").prop("checked", true);
+                        $conteudo.find("input[name='EstadoCivil'][value='" + vm.estadoCivil + "']").prop("checked", true);
+                        $conteudo.find("input[name='VmPacientes.DUM']").val(vm.dum);
+
+                        // Limpa mensagem de validação
+                        $conteudo.find("#buscaNomePaciente").removeClass('input-validation-error');
+                        $conteudo.find("#buscaNomePaciente").siblings('div.has-error, span.field-validation-error').hide().text('');
+
+                        // Avança o foco para Instituição
+                        setTimeout(function () {
+                            var campo = document.getElementById('buscaSiglaInstituicao');
+                            if (campo) campo.focus();
+                        }, 100);
+                    },
+                    error: function () {
+                        clickAviso('Interrompido', 'Falha ao buscar paciente', 'falha');
                     }
-                }, 0);
+                });
             }
         });
+        //..Kiro
         //..
 
         // Limpa todos os campos de todos os formulários
@@ -237,7 +345,7 @@
                 @Html.TextAreaFor(p => p.VmPacientes.Observacao, new { @id = "Observacao", @name = "Observacao", @class = "form-control fm2 capitalize", @rows = "2", @placeholder = "Observação" })
             </div>
             <div class="form-group fg2">
-               <button id="buttonLimpaFormulario" name="buttonLimpaFormulario" class="buttonTableCompacto">Esvaziar este formulário</button>
+               <button id="buttonLimpaFormulario" name="buttonLimpaFormulario" type="button" class="buttonTableCompacto">Esvaziar este formulário</button>
             </div>
         </div>
     </div>

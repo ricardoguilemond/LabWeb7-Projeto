@@ -8,11 +8,13 @@
 <script>
     $(document).ready(function () {
 
-        //Constrói o Modal
-        configTableModal('#tabelaPacientes');
-
-        // Foca o campo de busca do DataTables ao abrir o modal
+        // Inicializa DataTables e foca o Search somente após o modal estar visível
         document.getElementById('modeloTableModalPaciente').addEventListener('shown.bs.modal', function () {
+            if (!$.fn.dataTable.isDataTable('#tabelaPacientes')) {
+                configTableModal('#tabelaPacientes');
+            } else {
+                $('#tabelaPacientes').DataTable().columns.adjust();
+            }
             var inputBusca = document.querySelector('#modeloTableModalPaciente input[type="search"]');
             if (inputBusca) inputBusca.focus();
         });
@@ -152,11 +154,11 @@
             <div class="modal-body bg-light">
                 <div class="table-responsive">
                     <table id="tabelaPacientes" name="datatable" class="table table-striped table-hover table-bordered">
-                        <thead>
+                        <thead class="table-dark">
                             <tr>
-                                <th>Nome Paciente</th>
-                                <th>CPF</th>
-                                <th class="text-end">Id</th>
+                                <th><div class="theadModal">Nome Paciente</div></th>
+                                <th><div class="theadModal">CPF</div></th>
+                                <th class="text-end"><div class="theadModal">Id</div></th>
                             </tr>
                         </thead>
                         <tbody>

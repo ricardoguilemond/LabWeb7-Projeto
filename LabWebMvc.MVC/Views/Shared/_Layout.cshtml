@@ -305,12 +305,17 @@
 
         <!-- ENCERRA O LOADING DE CARREGAMENTO DAS PÁGINAS -->
         <script type="text/javascript">
+            //Feito pelo Kiro em 01/05/2026
+            // Reduzido de 1000ms para 200ms — o delay original mantinha o overlay
+            // de loading por 1 segundo mesmo com a página já renderizada.
+            // O DataTables exibe seu próprio "Carregando..." via language.loadingRecords.
             window.onload = function () {
                 setTimeout(function () {
                     document.body.removeChild(modalLoading);
                     loading.style.display = "none";
-                }, 1000);
+                }, 200);
             };
+            //..Kiro
         </script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {

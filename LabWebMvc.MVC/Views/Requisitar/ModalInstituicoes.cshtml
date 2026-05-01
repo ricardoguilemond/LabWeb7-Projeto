@@ -7,15 +7,26 @@
 <script>
     $(document).ready(function () {
 
-        //Constrói o Modal
-        configTableModal('#tabelaInstituicao');
-
-        // Feito pelo Qoder em 21/04/2026 — foca o campo de busca ao abrir o modal
+        // Inicializa DataTables e foca o Search somente após o modal estar visível
         document.getElementById('modeloTableModalInstituicao').addEventListener('shown.bs.modal', function () {
+            if (!$.fn.dataTable.isDataTable('#tabelaInstituicao')) {
+                configTableModal('#tabelaInstituicao');
+            } else {
+                $('#tabelaInstituicao').DataTable().columns.adjust();
+            }
             var inputBusca = document.querySelector('#modeloTableModalInstituicao input[type="search"]');
             if (inputBusca) inputBusca.focus();
         });
-        // ..Qoder
+
+        // Ao fechar o modal, move o foco para o próximo campo (Posto de Coleta)
+        document.getElementById('modeloTableModalInstituicao').addEventListener('hidden.bs.modal', function () {
+            if ($('#buscaSiglaInstituicao').val().trim().length > 0) {
+                setTimeout(function () {
+                    var campo = document.getElementById('buscaNomePosto');
+                    if (campo) campo.focus();
+                }, 100);
+            }
+        });
 
         function preencherFormularioInstituicao(vm) {
             var $conteudo = $("#conteudoInstituicao");
@@ -98,9 +109,9 @@
                     <table id="tabelaInstituicao" name="datatable" class="table table-striped table-hover table-bordered">
                         <thead class="table-dark">
                             <tr>
-                                <th>Sigla</th>
-                                <th>Nome</th>
-                                <th class="text-end">Id</th>
+                                <th><div class="theadModal">Sigla</div></th>
+                                <th><div class="theadModal">Nome</div></th>
+                                <th class="text-end"><div class="theadModal">Id</div></th>
                             </tr>
                         </thead>
                         <tbody>

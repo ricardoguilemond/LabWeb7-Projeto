@@ -937,23 +937,19 @@ table.dataTable tbody tr:hover {
         font-size: 0.85rem;
     }
 
-/* Título dos campos/colunas */
-#modeloTableModalMedicos .dt-column-title {
+/* Título das colunas nos modais com DataTables */
+/* .theadModal é aplicado diretamente nos <th> de todos os modais */
+/* No DataTables 2.x com fixedColumns, o conteúdo do <th> fica dentro de .dt-column-title */
+/* A regra abaixo cobre ambos os casos */
+.theadModal {
     font-size: 14px !important;
     font-weight: 500 !important;
     line-height: 1.2 !important;
 }
-#modeloTableModalInstituicao .dt-column-title {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    line-height: 1.2 !important;
-}
-#modeloTableModalTabelas .dt-column-title {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    line-height: 1.2 !important;
-}
-#modeloTableModalPaciente .dt-column-title {
+#modeloTableModalMedicos th,
+#modeloTableModalInstituicao th,
+#modeloTableModalTabelas th,
+#modeloTableModalPaciente th {
     font-size: 14px !important;
     font-weight: 500 !important;
     line-height: 1.2 !important;

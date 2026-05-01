@@ -2202,6 +2202,14 @@ public class Db : DbContext
                 .HasForeignKey(d => d.TabelaExamesId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("iRequisitar_TabelaExames");
+
+            entity.Property(e => e.PostoId).IsRequired(false);
+
+            entity.HasOne(d => d.Posto).WithMany(p => p.Requisitar)
+                .HasForeignKey(d => d.PostoId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("iRequisitar_Postos");
         });
 
         modelBuilder.Entity<Senhas>(entity =>

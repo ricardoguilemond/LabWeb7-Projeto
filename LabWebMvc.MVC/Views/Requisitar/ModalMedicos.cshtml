@@ -8,15 +8,26 @@
 <script>
     $(document).ready(function () {
 
-        //Constrói o Modal
-        configTableModal('#tabelaMedicos');
-
-        // Feito pelo Qoder em 21/04/2026 — foca o campo de busca ao abrir o modal
+        // Inicializa DataTables e foca o Search somente após o modal estar visível
         document.getElementById('modeloTableModalMedicos').addEventListener('shown.bs.modal', function () {
+            if (!$.fn.dataTable.isDataTable('#tabelaMedicos')) {
+                configTableModal('#tabelaMedicos');
+            } else {
+                $('#tabelaMedicos').DataTable().columns.adjust();
+            }
             var inputBusca = document.querySelector('#modeloTableModalMedicos input[type="search"]');
             if (inputBusca) inputBusca.focus();
         });
-        // ..Qoder
+
+        // Ao fechar o modal, move o foco para o botão de salvar (fim do fluxo)
+        document.getElementById('modeloTableModalMedicos').addEventListener('hidden.bs.modal', function () {
+            if ($('#buscaNomeMedico').val().trim().length > 0) {
+                setTimeout(function () {
+                    var campo = document.getElementById('clickImprimeCupom');
+                    if (campo) campo.focus();
+                }, 100);
+            }
+        });
 
         function preencherFormularioMedico(vm) {
             var $conteudo = $("#conteudoMedico");
@@ -99,9 +110,9 @@
                     <table id="tabelaMedicos" name="datatable" class="table table-striped table-hover table-bordered">
                         <thead class="table-dark">
                             <tr>
-                                <th>Nome Médico</th>
-                                <th>CRM/Documento</th>
-                                <th class="text-end">Id</th>
+                                <th><div class="theadModal">Nome Médico</div></th>
+                                <th><div class="theadModal">CRM/Documento</div></th>
+                                <th class="text-end"><div class="theadModal">Id</div></th>
                             </tr>
                         </thead>
                         <tbody>
