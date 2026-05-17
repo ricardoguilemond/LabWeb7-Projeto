@@ -24,8 +24,8 @@ dependência (infraestrutura primeiro, qualidade por último).
     - Marcar bloco com `//Feito pelo Kiro em dd/MM/yyyy` e `//..Kiro`
     - _Requisitos: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 2. Listagem e Filtros — Action Index com Query e Filtros Backend
-  - [ ] 2.1 Implementar a Action `Index` com query base e projeção
+- [x] 2. Listagem e Filtros — Action Index com Query e Filtros Backend
+  - [x] 2.1 Implementar a Action `Index` com query base e projeção
     - Assinatura: `async Task<IActionResult> Index(string? dataExame, string? nomePaciente, int? codigoExame, string? siglaInstituicao, string? nomeInstituicao, string? nomePosto)`
     - Atributos: `[HttpGet]`, `[Route("ConsultarExames")]`
     - Query base com `AsNoTracking()` e `.Include()` para Instituicao, Postos, Pacientes, TabelaExames
@@ -34,7 +34,7 @@ dependência (infraestrutura primeiro, qualidade por último).
     - Montar `vmListaValidacao<dynamic>` e retornar via `ValidacaoGenerica`
     - _Requisitos: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ] 2.2 Implementar filtros backend na Action `Index`
+  - [x] 2.2 Implementar filtros backend na Action `Index`
     - Filtro por data: converter para range UTC via `_geralController.ConverterDataLocalParaRangeUtc()`
     - Filtro por nome do paciente: `ToLower().Contains()` case-insensitive
     - Filtro por código do exame: correspondência exata por `Id`
@@ -44,14 +44,14 @@ dependência (infraestrutura primeiro, qualidade por último).
     - Quando filtro aplicado: sem limite de 100 registros
     - _Requisitos: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
 
-- [ ] 3. Checkpoint — Compilar e validar infraestrutura + listagem
+- [x] 3. Checkpoint — Compilar e validar infraestrutura + listagem
   - Executar `dotnet build "LabWebMvc.MVC/LabWebMvc.MVC.csproj"`
   - Resultado obrigatório: 0 erros, 0 avisos
   - Garantir que o controller compila corretamente com todas as dependências
   - Perguntar ao usuário se há dúvidas antes de prosseguir
 
-- [ ] 4. View e Grid Header — HTML, DataTables e Layout
-  - [ ] 4.1 Criar a View `Views/ConsultarExames/Index.cshtml`
+- [x] 4. View e Grid Header — HTML, DataTables e Layout
+  - [x] 4.1 Criar a View `Views/ConsultarExames/Index.cshtml`
     - Encoding: UTF-8 com BOM
     - Incluir `@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers`
     - Incluir `@using BLL` e `@using static BLL.UtilBLL`
@@ -60,7 +60,7 @@ dependência (infraestrutura primeiro, qualidade por último).
     - Botão "Pesquisar" que submete via GET para a action Index
     - _Requisitos: 7.1, 7.2, 7.5, 7.6_
 
-  - [ ] 4.2 Implementar o Grid Header (ExamesRealizados) na View
+  - [x] 4.2 Implementar o Grid Header (ExamesRealizados) na View
     - Tabela com `id="modeloTable"`, `name="datatable"`, `data-order='[[ 0, "desc" ]]'`
     - Classes: `display compact order-column stripe table-hover nowrap`
     - Estrutura: `<thead>`, `<tbody>` com `@foreach`, `<tfoot>`
@@ -69,14 +69,14 @@ dependência (infraestrutura primeiro, qualidade por último).
     - Formatação de datas com `ToLocalString("dd/MM/yyyy")`
     - _Requisitos: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-  - [ ] 4.3 Configurar DataTables e section Scripts
+  - [x] 4.3 Configurar DataTables e section Scripts
     - Incluir `@section Scripts` com `<partial name='_PartialDatatables' />`
     - Utilizar `configTable()` padrão do `mydatatables.js`
     - Filtro nativo DataTables ativo (search box no topo, inputs no footer)
     - _Requisitos: 7.3, 7.4, 8.1, 8.2, 8.3_
 
-- [ ] 5. Master/Detail — Action ObterItensExame, JavaScript e Grid Detail
-  - [ ] 5.1 Implementar a Action `ObterItensExame` no controller
+- [x] 5. Master/Detail — Action ObterItensExame, JavaScript e Grid Detail
+  - [x] 5.1 Implementar a Action `ObterItensExame` no controller
     - Assinatura: `async Task<IActionResult> ObterItensExame(int exameRealizadoId)`
     - Atributos: `[HttpGet]`, `[Route("ConsultarExames/ObterItensExame")]`
     - Query com `AsNoTracking()` filtrando por `ExameRealizadoId`
@@ -85,14 +85,14 @@ dependência (infraestrutura primeiro, qualidade por último).
     - Retornar `Json(new { sucesso = true, itens })`
     - _Requisitos: 5.1, 5.3, 5.6_
 
-  - [ ] 5.2 Implementar o Grid Detail (HTML oculto) na View
+  - [x] 5.2 Implementar o Grid Detail (HTML oculto) na View
     - Container `#detailContainer` com `style="display: none;"`
     - Tabela `#detailTable` com classes DataTables padrão
     - Colunas: Classe, Ref. Exame, Ref. Item, Conta Exame, Descrição, Valor Item, Etiquetas (Qtd)
     - `<tbody id="detailBody">` vazio (preenchido via JS)
     - _Requisitos: 5.2, 5.3, 5.5_
 
-  - [ ] 5.3 Implementar JavaScript de Master/Detail
+  - [x] 5.3 Implementar JavaScript de Master/Detail
     - Event handler no click da linha do grid header (ignorar coluna de opções)
     - Função `carregarDetail(exameRealizadoId)` com `$.ajax` GET para `ConsultarExames/ObterItensExame`
     - Função `renderizarDetail(itens)` que limpa e popula `#detailBody`
@@ -100,8 +100,8 @@ dependência (infraestrutura primeiro, qualidade por último).
     - Somente um detail aberto por vez (limpa anterior ao clicar nova linha)
     - _Requisitos: 5.1, 5.4, 5.5, 5.6_
 
-- [ ] 6. Exclusão — Action ExcluirExame, Validação, Transação e AJAX
-  - [ ] 6.1 Implementar a Action `ExcluirExame` no controller
+- [x] 6. Exclusão — Action ExcluirExame, Validação, Transação e AJAX
+  - [x] 6.1 Implementar a Action `ExcluirExame` no controller
     - Assinatura: `async Task<IActionResult> ExcluirExame(int id)`
     - Atributos: `[HttpGet]`, `[Route("ConsultarExames/ExcluirExame")]`
     - Buscar `ExamesRealizados` pelo `id`
@@ -110,7 +110,7 @@ dependência (infraestrutura primeiro, qualidade por último).
     - Se exame não encontrado → retornar erro JSON
     - _Requisitos: 6.2, 6.3_
 
-  - [ ] 6.2 Implementar transação de exclusão na Action `ExcluirExame`
+  - [x] 6.2 Implementar transação de exclusão na Action `ExcluirExame`
     - Usar `_db.Database.BeginTransactionAsync()`
     - Remover `ItensExamesRealizados` via `RemoveRange`
     - Buscar e remover `Requisitar` vinculados via `RemoveRange`
@@ -120,49 +120,49 @@ dependência (infraestrutura primeiro, qualidade por último).
     - Retornar JSON com `titulo`, `mensagem`, `sucesso`
     - _Requisitos: 6.4, 6.6, 6.7, 9.3_
 
-  - [ ] 6.3 Implementar JavaScript de exclusão com SweetAlert2
+  - [x] 6.3 Implementar JavaScript de exclusão com SweetAlert2
     - Função `clickDeleteExame(x)` usando `clickConfirm` do `site.js`
     - Parâmetros: `clickConfirm(x, null, "Excluir este exame?", null, "ConsultarExames/ExcluirExame")`
     - O `clickConfirm` já implementa confirmação, loading, mensagem e reload
     - _Requisitos: 6.1, 6.5_
 
-- [ ] 7. Checkpoint — Compilar e validar funcionalidades completas
+- [x] 7. Checkpoint — Compilar e validar funcionalidades completas
   - Executar `dotnet build "LabWebMvc.MVC/LabWebMvc.MVC.csproj"`
   - Resultado obrigatório: 0 erros, 0 avisos
   - Garantir que todas as actions, view e scripts estão integrados
   - Perguntar ao usuário se há dúvidas antes de prosseguir
 
-- [ ] 8. Menu e Navegação — Partial de Menu e Integração
-  - [ ] 8.1 Criar a partial `Views/ConsultarExames/Partials/_PartialMenuConsultarExames.cshtml`
+- [x] 8. Menu e Navegação — Partial de Menu e Integração
+  - [x] 8.1 Criar a partial `Views/ConsultarExames/Partials/_PartialMenuConsultarExames.cshtml`
     - Encoding: UTF-8 com BOM
     - Seguir padrão visual de `_PartialMenuPacientes.cshtml`
     - Título: "Consultar Exames"
     - Adaptar estrutura HTML/CSS conforme padrão existente
     - _Requisitos: 7.2_
 
-  - [ ] 8.2 Integrar no menu principal (Exames → Consultar Exames)
+  - [x] 8.2 Integrar no menu principal (Exames → Consultar Exames)
     - Adicionar link no menu existente apontando para `/ConsultarExames`
     - Seguir padrão de navegação das demais telas
     - Verificar que o item de menu aparece na posição correta
     - _Requisitos: 2.1_
 
-- [ ] 9. Qualidade — Build Final, Encoding e Marcação de Código
-  - [ ] 9.1 Validação de build final
+- [x] 9. Qualidade — Build Final, Encoding e Marcação de Código
+  - [x] 9.1 Validação de build final
     - Executar `dotnet build "LabWebMvc.MVC/LabWebMvc.MVC.csproj"`
     - Resultado obrigatório: 0 erros, 0 avisos
     - _Requisitos: 9.1_
 
-  - [ ] 9.2 Validação de encoding dos arquivos criados
+  - [x] 9.2 Validação de encoding dos arquivos criados
     - Confirmar UTF-8 com BOM em: `ConsultarExamesController.cs`, `Index.cshtml`, `_PartialMenuConsultarExames.cshtml`
     - Confirmar acentuação correta em todos os textos pt-BR
     - _Requisitos: 9.4_
 
-  - [ ] 9.3 Validação de marcação de código
+  - [x] 9.3 Validação de marcação de código
     - Confirmar presença de `//Feito pelo Kiro em dd/MM/yyyy` no início dos blocos significativos
     - Confirmar presença de `//..Kiro` no final dos blocos
     - _Requisitos: 9.6_
 
-  - [ ] 9.4 Validação de conformidade técnica
+  - [x] 9.4 Validação de conformidade técnica
     - Confirmar uso de `AsNoTracking()` em todas as queries de consulta
     - Confirmar uso de tratamento de exceções com log na exclusão
     - Confirmar que nenhum pacote NuGet foi adicionado

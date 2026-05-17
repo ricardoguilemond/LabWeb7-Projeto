@@ -132,3 +132,16 @@ pelos 7 últimos dígitos, e se houver correspondência em qualquer
 tabela relacionada, a operação é válida para todas as Instituições.
 O campo `TabelaExamesId` garante o filtro correto por Instituição,
 e os preços/valores são sempre tratados de forma individual.
+
+## Nomenclatura — ClasseExames (Folha de Exame)
+
+- No código-fonte, a entidade é chamada `ClasseExames` e o campo
+  é `ClasseExamesNome`. Esse é o nome técnico interno.
+- Nos layouts expostos ao usuário (grids, títulos, labels, menus),
+  o nome correto é **"Folha"** ou **"Folha Exame"**.
+- Nunca exibir "Classe" ou "ClasseExames" em interfaces visíveis
+  ao usuário final.
+- Exemplos de uso correto em UI:
+  - Título de coluna em grid: "Folha"
+  - Label em formulário: "Folha Exame"
+  - Filtro de pesquisa: "Folha"
