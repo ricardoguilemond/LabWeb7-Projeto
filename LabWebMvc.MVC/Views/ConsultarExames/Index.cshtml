@@ -1,0 +1,260 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
+@using static BLL.UtilBLL
+
+<partial name='Partials/_PartialMenuConsultarExames' />
+
+@*Feito pelo Kiro em 17/05/2026*@
+<!-- Filtros Backend -->
+<div id="filtrosConsultarExames" style="margin-bottom: 10px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background-color: #f9f9f9;">
+    <form method="get" asp-action="Index" asp-controller="ConsultarExames" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+        <label style="font: normal 13px calibri, arial, sans-serif;">Data Exame:</label>
+        <input type="text" name="dataExame" placeholder="dd/MM/yyyy" value="@Context.Request.Query["dataExame"]"
+               style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Paciente:</label>
+        <input type="text" name="nomePaciente" placeholder="Nome do paciente" value="@Context.Request.Query["nomePaciente"]"
+               style="width: 160px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Código:</label>
+        <input type="text" name="codigoExame" placeholder="Id" value="@Context.Request.Query["codigoExame"]"
+               style="width: 70px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Sigla Inst.:</label>
+        <input type="text" name="siglaInstituicao" placeholder="Sigla" value="@Context.Request.Query["siglaInstituicao"]"
+               style="width: 80px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Instituição:</label>
+        <input type="text" name="nomeInstituicao" placeholder="Nome instituição" value="@Context.Request.Query["nomeInstituicao"]"
+               style="width: 150px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Posto:</label>
+        <input type="text" name="nomePosto" placeholder="Nome do posto" value="@Context.Request.Query["nomePosto"]"
+               style="width: 140px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
+            <i class="fa-sharp fa-solid fa-magnifying-glass"></i> Pesquisar
+        </button>
+    </form>
+</div>
+
+<!-- Grid Header (ExamesRealizados) -->
+<div class="table-responsive">
+    <table id="modeloTable" name="datatable" data-order='[[ 0, "desc" ]]' class="display compact order-column stripe table-hover nowrap">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Tabela</th>
+                <th>Sigla Instituição</th>
+                <th>Nome Instituição</th>
+                <th>Nome Posto</th>
+                <th>Nome Paciente</th>
+                <th>Data Nascimento</th>
+                <th>Sequencial</th>
+                <th>Data do Exame</th>
+                <th>Opções</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in ViewBag.ListaDados)
+            {
+                @Html.Raw(
+                         "<tr>" +
+                         "<td>" + item.Id + "</td>" +
+                         "<td>" + item.TabelaExamesId + "</td>" +
+                         "<td>" + item.SiglaInstituicao + "</td>" +
+                         "<td>" + item.NomeInstituicao + "</td>" +
+                         "<td>" + item.NomePosto + "</td>" +
+                         "<td>" + item.NomePaciente + "</td>" +
+                         "<td>" + ((DateTime)item.Nascimento).ToLocalString("dd/MM/yyyy") + "</td>" +
+                         "<td>" + item.Sequencial + "</td>" +
+                         "<td>" + ((DateTime)item.DataIni).ToLocalString("dd/MM/yyyy") + "</td>" +
+                         "<td class='grid_fundo_opcoes'>" +
+                         "<a id=" + item.Id + " class='grid_itens' onclick=clickDeleteExame(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>" +
+                         "</td>" +
+                         "</tr>")
+                ;
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Id</th>
+                <th>Tabela</th>
+                <th>Sigla Instituição</th>
+                <th>Nome Instituição</th>
+                <th>Nome Posto</th>
+                <th>Nome Paciente</th>
+                <th>Data Nascimento</th>
+                <th>Sequencial</th>
+                <th>Data do Exame</th>
+                <th id="op">Opções</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+@section Scripts {
+    <div class="toolbar"><partial name='_PartialDatatables' /></div>
+}
+@*..Kiro*@
+<style>
+    tr.detail-row {
+        background-color: #f0f8f0 !important;
+        font-size: 13px;
+        pointer-events: none;
+    }
+    tr.detail-row td {
+        padding: 4px 8px !important;
+        border-top: none !important;
+        color: #555;
+    }
+    tr.detail-header-row {
+        background-color: #d4edda !important;
+        font-size: 13px;
+        font-weight: bold;
+        pointer-events: none;
+    }
+    tr.detail-header-row td {
+        padding: 5px 8px !important;
+        color: #333;
+    }
+    tr.detail-parent-highlight {
+        background-color: #fff3cd !important;
+    }
+    tr.detail-parent-highlight td {
+        background-color: #fff3cd !important;
+    }
+</style>
+<script>
+    //Feito pelo Kiro em 17/05/2026
+    function clickDeleteExame(x) {
+        return clickConfirm(x, null, "Excluir este exame?", null, "ConsultarExames/ExcluirExame");
+    }
+
+    // Máscara de data no campo de filtro
+    $(document).ready(function () {
+        $("input[name='dataExame']").mask("99/99/9999", { placeholder: " ", autoclear: false });
+    });
+
+    // Master/Detail inline — click na linha do grid header
+    $(document).ready(function () {
+        $('#modeloTable tbody').on('click', 'tr', function (e) {
+            // Ignora cliques na coluna de opções e nas linhas de detalhe
+            if ($(e.target).closest('.grid_fundo_opcoes').length) return;
+            if ($(this).hasClass('detail-row') || $(this).hasClass('detail-header-row')) return;
+
+            var $row = $(this);
+            var id = $row.find('td:first').text();
+            if (!id) return;
+
+            // Remove detalhe anterior (se existir)
+            $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
+            $('#modeloTable tbody tr.detail-parent-highlight').removeClass('detail-parent-highlight');
+
+            // Destaca a linha header clicada
+            $row.addClass('detail-parent-highlight');
+
+            carregarDetailInline($row, id);
+        });
+    });
+
+    function carregarDetailInline($headerRow, exameRealizadoId) {
+        $.ajax({
+            url: 'ConsultarExames/ObterItensExame',
+            data: { exameRealizadoId: exameRealizadoId },
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.sucesso && data.itens && data.itens.length > 0) {
+                    renderizarDetailInline($headerRow, data.itens, exameRealizadoId);
+                }
+            }
+        });
+    }
+
+    function clickExcluirItemExame(itemId, exameRealizadoId) {
+        Swal.fire({
+            title: 'Cancelar item de exame?',
+            html: 'Este item será excluído permanentemente.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Não'
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'ConsultarExames/ExcluirItemExame',
+                    data: { itemId: itemId },
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.sucesso) {
+                            // Remove linhas de detalhe e recarrega
+                            $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
+                            var $parentRow = $('#modeloTable tbody tr.detail-parent-highlight');
+                            if ($parentRow.length) {
+                                carregarDetailInline($parentRow, exameRealizadoId);
+                            }
+                        } else {
+                            clickAviso(data.titulo, data.mensagem, 'critica', null);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    function renderizarDetailInline($headerRow, itens, exameRealizadoId) {
+        // 7 colunas de detalhe: Classe, Ref.Exame, Ref.Item, ContaExame, Descrição, ValorItem, Etiquetas
+        // O grid header tem 10 colunas. Usamos colspan nas últimas para preencher.
+
+        // Linha de cabeçalho do detalhe
+        var headerHtml = '<tr class="detail-header-row">' +
+            '<td>Folha</td>' +
+            '<td>Ref. Exame</td>' +
+            '<td>Ref. Item</td>' +
+            '<td style="white-space:nowrap;">Conta Exame</td>' +
+            '<td colspan="3">Descrição</td>' +
+            '<td style="white-space:nowrap; text-align:right;">Valor Item</td>' +
+            '<td>Etiquetas</td>' +
+            '<td style="text-align:center;">Ação</td>' +
+            '</tr>';
+        $headerRow.after(headerHtml);
+
+        // Linhas de detalhe
+        var $lastInserted = $headerRow.next();
+        itens.forEach(function (item) {
+            var rowHtml = '<tr class="detail-row">' +
+                '<td>' + (item.classeExamesNome || '-') + '</td>' +
+                '<td>' + (item.refExame || '-') + '</td>' +
+                '<td>' + (item.refItem || '-') + '</td>' +
+                '<td style="white-space:nowrap;">' + (item.contaExame || '-') + '</td>' +
+                '<td colspan="3">' + (item.descricao || '-') + '</td>' +
+                '<td style="text-align:right;">' + (item.valorItem || '-') + '</td>' +
+                '<td>' + (item.etiquetas || 0) + '</td>' +
+                '<td style="pointer-events:auto; text-align:center;">' +
+                '<a class="grid_itens" style="cursor:pointer; color:#dc3545;" title="Cancelar item" onclick="clickExcluirItemExame(' + item.id + ', ' + exameRealizadoId + ')"><i class="fa-sharp fa-solid fa-xmark"></i></a>' +
+                '</td>' +
+                '</tr>';
+            $lastInserted.after(rowHtml);
+            $lastInserted = $lastInserted.next();
+        });
+
+        // Linha de total após o último item de detalhe
+        var total = 0;
+        itens.forEach(function (item) {
+            var val = item.valorItem ? item.valorItem.replace('.', '').replace(',', '.') : '0';
+            var num = parseFloat(val);
+            if (!isNaN(num)) total += num;
+        });
+        var totalFormatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        var totalHtml = '<tr class="detail-row" style="font-weight:bold;">' +
+            '<td colspan="7"></td>' +
+            '<td style="text-align:right; pointer-events:none;">Total: R$ ' + totalFormatado + '</td>' +
+            '<td colspan="2"></td>' +
+            '</tr>';
+        $lastInserted.after(totalHtml);
+    }
+    //..Kiro
+</script>
