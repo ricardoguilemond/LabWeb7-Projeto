@@ -89,6 +89,20 @@ namespace LabWebMvc.MVC.Integracoes.Exportacao
                         primeiraData = layout.DataInicial.HasValue ? layout.DataInicial.Value : primeiraData;
                         ultimaData = layout.DataFinal.HasValue ? layout.DataFinal.Value : ultimaData;
 
+                        // Converte datas locais (Kind=Unspecified) para UTC antes de gravar em timestamptz
+                        // (Npgsql 8.x rejeita DateTimeKind.Unspecified em colunas timestamptz)
+                        var tzExp = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+                        if (primeiraData.Kind != DateTimeKind.Utc)
+                        {
+                            var offset1 = tzExp.GetUtcOffset(primeiraData);
+                            primeiraData = new DateTimeOffset(primeiraData, offset1).UtcDateTime;
+                        }
+                        if (ultimaData.Kind != DateTimeKind.Utc)
+                        {
+                            var offset2 = tzExp.GetUtcOffset(ultimaData);
+                            ultimaData = new DateTimeOffset(ultimaData, offset2).UtcDateTime;
+                        }
+
                         filename = "EXP_PACIENTES_".NomeArquivoIncremental(ultimaData, _db, execucao);
 
                         //Lista com as linhas do arquivo
@@ -152,7 +166,7 @@ namespace LabWebMvc.MVC.Integracoes.Exportacao
                             _db.LogArquivos.Add(new LogArquivos
                             {
                                 StrRef = string.Format("Id Paciente: {0} Nome: {1}", dado.Id.ToString(), dado.p.NomePaciente),
-                                Data = DateTime.Now,
+                                Data = DateTime.UtcNow,
                                 DataPeriodoInicial = primeiraData,
                                 DataPeriodoFinal = ultimaData,
                                 IntegracaoDadosLayoutId = layout.Id,

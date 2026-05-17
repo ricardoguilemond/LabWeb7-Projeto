@@ -83,15 +83,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 if (Conteudo.Split('/').Count() == 3 || Conteudo.Split('-').Count() == 3) //está buscando alguma data
                 {
                     DateTime dataBusca = Conteudo.Trim().FormataData("dd/MM/yyyy", true);
+                    // Converte data local para range UTC — necessário para comparar com colunas timestamptz no Npgsql 8.x
+                    // (Usar .Day/.Month/.Year em timestamptz traduz para EXTRACT() que opera em UTC, causando resultados incorretos)
+                    var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataBusca);
                     ICollection<Senhas> dadosQuery = await _db.Senhas.AsNoTracking()
-                                                       .Where(l => (l.DataCadastro.Day > 0 &&
-                                                                    l.DataCadastro.Year == dataBusca.Year &&
-                                                                    l.DataCadastro.Month == dataBusca.Month &&
-                                                                    l.DataCadastro.Day == dataBusca.Day) ||
+                                                       .Where(l => (l.DataCadastro >= inicioUtc &&
+                                                                    l.DataCadastro <= fimUtc) ||
                                                                     (l.DataExpira.HasValue &&
-                                                                    l.DataExpira.Value.Year == dataBusca.Year &&
-                                                                    l.DataExpira.Value.Month == dataBusca.Month &&
-                                                                    l.DataExpira.Value.Day == dataBusca.Day)
+                                                                    l.DataExpira.Value >= inicioUtc &&
+                                                                    l.DataExpira.Value <= fimUtc)
                                                                    )
                                                        .ToListAsync();
                     if (dadosQuery.Count > 0)
@@ -301,21 +301,29 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     LoggerFile.Write("ERRO: A senha alterada pelo administrador não foi salva para o usuário que está bloqueado: " + loginUsuario);
                     return Json(new { titulo = "Ops", mensagem = "Este usuário <b>" + loginUsuario + "</b> está bloqueado, não posso alterar a senha", action = redirecionaUrl, sucesso = false });
                 }
-                if (senhas.DataExpira.HasValue && senhas.DataExpira <= _geralController.ObterDataHoraServidor().ToFormataData()) //se a data de expiração for menor ou igual a data atual
+                if (senhas.DataExpira.HasValue && senhas.DataExpira <= _geralController.ObterDataHoraUtc()) //se a data de expiração for menor ou igual a data atual (UTC)
                 {
                     LoggerFile.Write("ERRO: A senha do usuário não foi alterada pelo administrador porque tem data expirada: " + loginUsuario);
                     return Json(new { titulo = "Ops", mensagem = "Este usuário <b>" + loginUsuario + "</b> está com data expirada, não posso alterar sua senha", action = redirecionaUrl, sucesso = false });
                 }
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                //Feito pelo Kiro em 03/05/2026 — migrado TransactionScope → EF Core nativo
+                using var transaction = await _db.Database.BeginTransactionAsync();
+                try
                 {
                     //Pega a nova senha definida pelo usuário e gera hash BCrypt antes de salvar na tabela
                     senhas.SenhaUsuario = CriptoDecripto.HashSenha(senhaUsuario);
-                    if (_db.SaveChanges() < 1)
+                    if (await _db.SaveChangesAsync() < 1)
                     {
                         LoggerFile.Write("ERRO: A senha alterada não foi salva para o usuário: " + loginUsuario);
                     }
-                    trans.Complete();
+                    await transaction.CommitAsync();
                 }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+                //..Kiro
                 return Json(new { titulo = "Ok", mensagem = "Senha foi alterada para o usuário <b>" + loginUsuario + "</b><br />" + nomeCompleto, action = redirecionaUrl, sucesso = true });
             }
         }
@@ -405,7 +413,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 //Vamos alterar a senha do usuário com um hash
                 Senhas senhas = _db.Senhas.Where(s => s.LoginUsuario == objLogin.LoginUsuario).Single();
-                using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                //Feito pelo Kiro em 03/05/2026 — migrado TransactionScope → EF Core nativo
+                using var transaction = _db.Database.BeginTransaction();
+                try
                 {
                     //Pega a nova senha definida pelo usuário e gera hash BCrypt antes de salvar na tabela
                     senhas.SenhaUsuario = CriptoDecripto.HashSenha(objLogin.SenhaUsuario);
@@ -413,8 +423,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     {
                         LoggerFile.Write("ERRO: O usuário não conseguiu alterar sua senha : " + objLogin.LoginUsuario);
                     }
-                    trans.Complete();
+                    transaction.Commit();
                 }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+                //..Kiro
             }
 
             //Implementar o Envio do Email com a senha alterada...
@@ -447,7 +463,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     !string.IsNullOrEmpty(validaLogin.LoginUsuario))
                 {
                     Senhas senhas = _db.Senhas.Where(s => s.LoginUsuario == objLogin.LoginUsuario).Single();
-                    using (TransactionScope trans = new(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+                    //Feito pelo Kiro em 03/05/2026 — migrado TransactionScope → EF Core nativo
+                    using var transaction = _db.Database.BeginTransaction();
+                    try
                     {
                         //Gera uma senha aleatória para o usuário, gera hash BCrypt e salva na tabela para enviar por Email
                         string senhaAleatoria = Criptografias.GeraSenhaAleatoria();
@@ -461,8 +479,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         {
                             LoggerFile.Write("RECUPERACAO DE LOGIN: usuário resetou a senha para recuperação do Login: " + objLogin.LoginUsuario);
                         }
-                        trans.Complete();
+                        transaction.Commit();
                     }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                    //..Kiro
                 }
                 else
                 {

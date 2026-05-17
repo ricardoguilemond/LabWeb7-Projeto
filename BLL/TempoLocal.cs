@@ -1,31 +1,62 @@
 ﻿namespace BLL
 {
-    // TempoLocal: fallback usado quando o banco PostgreSQL não está acessível (modo offline/standalone)
-    // Usa DateTime.Now do computador local — único recurso disponível sem conexão
+    /// <summary>
+    /// Fallback offline para ITempoServidorService.
+    /// Usado quando o PostgreSQL está inacessível.
+    /// SEMPRE retorna UTC internamente; conversão para local ocorre apenas na formatação legacy.
+    /// </summary>
     public class TempoLocal : ITempoServidorService
     {
-        // Método síncrono
-        public string ObterDataHoraServidor(string? formato = null)
+        // ===================================================================
+        // MÉTODOS UTC
+        // ===================================================================
+
+        public DateTime ObterDataHoraUtc()
         {
-            DateTime agora = DateTime.Now; // horário local do computador — não depende do banco
+            return DateTime.UtcNow;
+        }
+
+        public Task<DateTime> ObterDataHoraUtcAsync()
+        {
+            return Task.FromResult(DateTime.UtcNow);
+        }
+
+        public string FormatarUtcParaLocal(DateTime utc, string? formato = null, string timezoneId = "America/Sao_Paulo")
+        {
+            if (utc.Kind != DateTimeKind.Utc)
+                utc = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+            var local = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
 
             return formato?.ToLower() switch
             {
-                "iso" => agora.ToString("o"), // ISO 8601
-                _ => agora.ToString("dd/MM/yyyy HH:mm:ss") // Padrão brasileiro
+                "iso" => local.ToString("o"),
+                _ => local.ToString("dd/MM/yyyy HH:mm:ss")
             };
         }
 
-        // Método assíncrono sem dependência externa
-        public Task<DateTime?> ObterDataHoraServidorAsync()
+        // ===================================================================
+        // MÉTODOS LEGACY — delegam para os métodos UTC + conversão local
+        // ===================================================================
+
+        public string ObterDataHoraServidor(string? formato = null)
         {
-            return Task.FromResult<DateTime?>(DateTime.Now);
+            var utc = ObterDataHoraUtc();
+            return FormatarUtcParaLocal(utc, formato);
         }
 
-        // Método assíncrono com formatação
+        public Task<DateTime?> ObterDataHoraServidorAsync()
+        {
+            var utc = ObterDataHoraUtc();
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            var local = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+            return Task.FromResult<DateTime?>(local);
+        }
+
         public Task<string> ObterDataHoraServidorFormatadoAsync(string? formato = null)
         {
-            string resultado = ObterDataHoraServidor(formato);
+            var resultado = ObterDataHoraServidor(formato);
             return Task.FromResult(resultado);
         }
     }

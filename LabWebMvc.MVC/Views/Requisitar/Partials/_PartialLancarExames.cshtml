@@ -51,28 +51,28 @@
 
     $(document).ready(function () {
 
-        configTableCompacta();   //constrói o DataTable com parâmetros de uma tabela compacta/simples/reduzida
+        //Feito pelo Kiro em 02/05/2026
+        // Handler de clique registrado ANTES do configTableCompacta para garantir
+        // que execute antes de qualquer handler interno do DataTables.
+        // Usa namespace '.lancarExame' e off() para evitar acúmulo ao recarregar.
+        $(document).off('click.lancarExame').on('click.lancarExame', '[name="itemLancarExame"]', function (event) {
+            var $tr = $(this);
+            var id = $tr.attr('data-id');
+            if (!id || id === '0') return;
 
-        //Seleciona os itens de exames e acumula para salvar e montar o mapa para lançamentos de resultados.
-        //Delegação correta: captura clicks em qualquer linha com name="itemLancarExame", mesmo após renderizações do DataTables
-        $(document).on('click', '[name="itemLancarExame"]', function (event) {
-            event.preventDefault();
-
-            const id = this.getAttribute("data-id");
-
-            if ($(this).hasClass("noSelectedLinha")) {
-                $(this).removeClass('noSelectedLinha').addClass('selectedLinha');
-                $(this).find('[name="itemLE"]').prop('checked', true);
-                montarCupomPorId(id);
-            } else {
-                // Feito pelo Qoder em 21/04/2026 — deselecionar remove o item do cupom
-                $(this).removeClass('selectedLinha').addClass('noSelectedLinha');
-                $(this).find('[name="itemLE"]').prop('checked', false);
+            if ($tr.hasClass('selectedLinha')) {
+                $tr.removeClass('selectedLinha').addClass('noSelectedLinha');
+                $tr.find('[name="itemLE"]').prop('checked', false);
                 removerCupomPorId(id);
-                //..Qoder
+            } else {
+                $tr.removeClass('noSelectedLinha').addClass('selectedLinha');
+                $tr.find('[name="itemLE"]').prop('checked', true);
+                montarCupomPorId(id);
             }
         });
-        //..
+        //..Kiro
+
+        configTableCompacta();   //constrói o DataTable com parâmetros de uma tabela compacta/simples/reduzida
 
         //Excuta Ajax no campo search para localizar o primeiro item visível do grid
         const campoSearch = document.getElementById('customSearchBox');

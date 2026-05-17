@@ -190,6 +190,48 @@ public IActionResult Create()
    (`Swal.fire`).
 7. Mensagens informativas devem usar `clickAviso` — função já
    existente no projeto.
+8. Handlers delegados em partials carregadas via `$.load()`
+   devem usar namespace e `$(document).off()` antes de
+   `$(document).on()` para evitar acúmulo. Exemplo:
+   `$(document).off('click.meuNamespace').on('click.meuNamespace', selector, handler)`
+
+### SweetAlert2 — Padrão de Fontes para Confirmações
+
+O tamanho de fonte das mensagens SweetAlert2 é controlado
+globalmente via `site.css`, usando as classes nativas do
+SweetAlert2:
+
+```css
+.swal2-title {
+    font-size: 1.1em !important;
+    color: gray;
+}
+.swal2-html-container {
+    font-size: 0.85em !important;
+    color: #646464;
+}
+```
+
+- ❌ Não usar `<span style="font-size:...">` inline no `title`
+  ou `html` do `Swal.fire` — o CSS global já cuida disso.
+- Se uma mensagem específica precisar de tamanho diferente,
+  o inline sobrescreve o CSS global normalmente.
+- As funções genéricas `clickConfirm`, `clickAviso` e
+  `clickAction` do `site.js` passam o título e mensagem
+  como texto puro — sem `<span>` wrapper.
+- O `clickAviso` usa `returnFocus: false` para evitar que o
+  browser restaure o foco no elemento anterior ao fechar,
+  prevenindo scroll indesejado.
+- Mensagens informativas são dispensáveis quando a ação visual
+  já é autoexplicativa (ex: preenchimento de campos na edição).
+  Preferir feedback visual implícito sobre mensagens explícitas.
+- O projeto usa imagens PNG (`imageUrl`/`iconHtml`) em vez de
+  ícones SVG nativos (`icon`) do SweetAlert2. Motivo: as regras
+  CSS globais do projeto (`div { clear: both; line-height: 1.8em; }`
+  e `span { font-size: 40px; }`) distorcem os ícones SVG internos
+  do Swal2. Não trocar para `icon` nativo sem antes resolver os
+  conflitos CSS globais.
+- O `imageHeight` padrão para imagens PNG no SweetAlert2 é 80px.
 
 ### Padrão de Scripts
 ```javascript
@@ -511,6 +553,17 @@ Antes de criar/alterar controllers e views:
   antes de enviar ao backend.
 - Validação de resultados é feita **no servidor** (campo `Resultado`
   da tabela `Requisitar`). Nunca confiar apenas no client-side.
+
+### CupomRequisicao — Filtro por TabelaExamesId
+- O CupomRequisicao filtra por `TabelaExamesId` quando disponível
+  para evitar incluir itens de outras requisições do mesmo paciente
+  no mesmo dia.
+
+### Validação de ValorItem no cupom
+- Itens de exame sem valor definido (`ValorItem` null ou <= 0)
+  não podem ser adicionados ao cupom.
+- O sistema deve exibir mensagem informativa ao usuário quando
+  tentar selecionar um item sem valor.
 
 ---
 

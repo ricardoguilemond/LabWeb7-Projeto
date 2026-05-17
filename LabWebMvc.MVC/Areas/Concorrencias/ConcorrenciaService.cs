@@ -34,14 +34,16 @@ namespace LabWebMvc.MVC.Areas.Concorrencias
         {
             ControleConcorrencia? concorrencia = await _db.ControleConcorrencia.FirstOrDefaultAsync(c => c.Processo == processo);
 
-            var dataHoraServidor = await _tempoService.ObterDataHoraServidorAsync();
+            //Feito pelo Kiro em 03/05/2026 — migrado para UTC (timestamptz)
+            var dataHoraServidor = await _tempoService.ObterDataHoraUtcAsync();
+            //..Kiro
 
             if (concorrencia != null)
             {
                 // Se o registro tem mais de 10 minutos, atualizamos e permitimos prosseguir
-                if (concorrencia.DataHora.AddMinutes(tempoRetidoMinutos) < dataHoraServidor.Value)
+                if (concorrencia.DataHora.AddMinutes(tempoRetidoMinutos) < dataHoraServidor)
                 {
-                    concorrencia.DataHora = dataHoraServidor.Value;
+                    concorrencia.DataHora = dataHoraServidor;
                     _db.ControleConcorrencia.Update(concorrencia);
                     await _db.SaveChangesAsync();
                     return true; // Permite a continuação da operação
@@ -50,7 +52,7 @@ namespace LabWebMvc.MVC.Areas.Concorrencias
             }
 
             // Se não existir concorrência, cria um novo registro
-            ControleConcorrencia novoControle = new() { Processo = processo, DataHora = dataHoraServidor.Value };
+            ControleConcorrencia novoControle = new() { Processo = processo, DataHora = dataHoraServidor };
             await _db.ControleConcorrencia.AddAsync(novoControle);
             await _db.SaveChangesAsync();
 

@@ -84,8 +84,8 @@
             //Feito pelo Kiro em 01/05/2026
             // Exibe loading enquanto salva e prepara o cupom
             Swal.fire({
-                title: '<span style="color: silver;">Aguarde...</span>',
-                html: '<span style="color: #646464; font-size: 0.85em;">Salvando requisição e preparando cupom</span>',
+                title: 'Aguarde...',
+                html: 'Salvando requisição e preparando cupom',
                 imageUrl: '../images/icones/attention-icon.png',
                 imageHeight: 80,
                 showConfirmButton: false,
@@ -107,40 +107,26 @@
                     var sucesso = data['sucesso'];
                     var tipo = sucesso ? 'sucesso' : 'falha';
             
-                    //Se salvou com sucesso, imprime o cupom
+                    //Se salvou com sucesso, solicita impressão do cupom via backend
                     if (sucesso === true && data.pacienteId) {
                         const idPaciente = data.pacienteId;
-                        const urlCupom = `/Requisitar/CupomRequisicao?idPaciente=${idPaciente}`;
+                        const tabelaExamesId = data.tabelaExamesId || 0;
+                        const urlCupom = `/Requisitar/CupomRequisicao?idPaciente=${idPaciente}&tabelaExamesId=${tabelaExamesId}`;
             
                         $.ajax({
                             url: urlCupom,
                             type: "GET",
-                            success: function (conteudo) {
-                                //Feito pelo Kiro em 01/05/2026
-                                // Fecha o loading antes de criar o iframe de impressão
+                            success: function (resultado) {
+                                // O backend imprime diretamente via ImpressoraWindows (PrintDocument).
+                                // Aqui apenas verificamos o status retornado.
                                 Swal.close();
-                                //..Kiro
-
-                                const frame = document.createElement("iframe");
-                                frame.style.display = "none";
-                                document.body.appendChild(frame);
-            
-                                const doc = frame.contentWindow.document;
-                                doc.open();
-                                doc.write(`<pre style="font-family:monospace;">${conteudo}</pre>`);
-                                doc.close();
-            
-                                frame.contentWindow.focus();
-                                frame.contentWindow.print();
-
-                                frame.contentWindow.onafterprint = function () {
-                                    document.body.removeChild(frame);
-                                };
-
+                                if (resultado.sucesso !== true) {
+                                    clickAviso('Impressão', resultado.mensagem || 'Falha ao imprimir cupom.', 'falha');
+                                }
                             },
                             error: function (request, status, error) {
                                 Swal.close();
-                                clickAviso('Erro', 'Falha na impressão', 'critica', actionPos);  
+                                clickAviso('Erro', 'Falha na comunicação com o servidor de impressão', 'critica');  
                             }
                         });
                     } else {
@@ -154,12 +140,25 @@
                     // Limpa o formulário após salvar com sucesso
                     if (sucesso === true) {
                         $('#buttonLimpaFormulario').trigger('click');
+                        //Feito pelo Kiro em 02/05/2026
+                        // Esvazia o cupom em tela e no servidor após salvamento
+                        fetch('/PartialMontarItensCupom?id=0', { method: 'GET' })
+                        .then(function (r) { return r.text(); })
+                        .then(function (html) {
+                            document.getElementById('conteudoItensCupomCaixa').innerHTML = html;
+                        });
+                        // Reseta o TabelaExamesIdOriginal (não é mais edição)
+                        $('#tabelaExamesIdOriginal').val(0);
+                        // Reseta o ExameRealizadoId (não é mais edição)
+                        $('#exameRealizadoId').val(0);
+                        //..Kiro
                     }
                     clickAviso(titulo, mensagem, tipo, actionPos);
                 },
                 error: function (request, status, error) {
                     Swal.close();
-                    clickAviso('Interrompido', 'Falha na execução', 'critica', null);
+                    var detalhe = request.responseText ? request.responseText.substring(0, 200) : status;
+                    clickAviso('Interrompido', 'Falha na execução: ' + detalhe, 'critica', null);
                 }
             });
         });

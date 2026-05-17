@@ -51,14 +51,23 @@ namespace LabWebMvc.MVC.Interfaces.Collections
         private object GetLock(string usuarioId)
             => _locks.GetOrAdd(usuarioId, _ => new object());
 
+        //Feito pelo Kiro em 02/05/2026
+        // Verificação de duplicatas: não adiciona PlanoExames com Id já existente na lista.
         public void AdicionarCupom(string usuarioId, IEnumerable<PlanoExames> dados)
         {
             lock (GetLock(usuarioId))
             {
                 var lista = _dadosPorUsuario.GetOrAdd(usuarioId, _ => new List<PlanoExames>());
-                lista.AddRange(dados);
+                foreach (var item in dados)
+                {
+                    if (!lista.Any(x => x.Id == item.Id))
+                    {
+                        lista.Add(item);
+                    }
+                }
             }
         }
+        //..Kiro
 
         public List<PlanoExames> ObterCupom(string usuarioId)
         {

@@ -173,8 +173,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     // Se não encontrar, cria novo
                     paciente = new Pacientes();
                     _db.Pacientes.Add(paciente);
-                    paciente.DataEntrada = _geralController.ObterDataHoraServidor().ToFormataData();
-                    paciente.DataRegistro = _geralController.ObterDataHoraServidor().ToFormataData();
+                    paciente.DataEntrada = _geralController.ObterDataHoraUtc();
+                    paciente.DataRegistro = _geralController.ObterDataHoraUtc();
                     paciente.StatusBaixa = 0;
                 }
                 else
@@ -188,15 +188,17 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // Cria novo paciente
                 paciente = new Pacientes();
                 _db.Pacientes.Add(paciente);
-                paciente.DataEntrada = _geralController.ObterDataHoraServidor().ToFormataData();
-                paciente.DataRegistro = _geralController.ObterDataHoraServidor().ToFormataData();
+                paciente.DataEntrada = _geralController.ObterDataHoraUtc();
+                paciente.DataRegistro = _geralController.ObterDataHoraUtc();
                 paciente.StatusBaixa = 0;
             }
 
             // Atualiza os dados (comum para novo ou existente)
             paciente.IdPacienteExterno = vm.VmPacientes.IdPacienteExterno.Safe();
             paciente.NomePaciente = vm.VmPacientes.NomePaciente.ToUpper();
-            paciente.Nascimento = vm.VmPacientes.Nascimento;
+            // Nascimento, DUM e DataEntradaBrasil são colunas timestamptz — o model binder gera Kind=Unspecified,
+            // que o Npgsql 8.x rejeita. Converte para UTC antes de gravar.
+            paciente.Nascimento = _geralController.ConverterLocalParaUtc(vm.VmPacientes.Nascimento);
             paciente.NomeSocial = vm.VmPacientes.NomeSocial.SafeUpper();
             paciente.NomeMae = vm.VmPacientes.NomeMae.SafeUpper();
             paciente.NomePai = vm.VmPacientes.NomePai.SafeUpper();
@@ -210,12 +212,16 @@ namespace LabWebMvc.MVC.Areas.Controllers
             paciente.Cor = vm.VmPacientes.Cor.Safe();
             paciente.EtniaIndigena = vm.VmPacientes.EtniaIndigena.SafeUpper();
             paciente.TipoSanguineo = vm.VmPacientes.TipoSanguineo.Safe();
-            paciente.DUM = vm.VmPacientes.DUM;
+            paciente.DUM = vm.VmPacientes.DUM.HasValue
+                ? _geralController.ConverterLocalParaUtc(vm.VmPacientes.DUM.Value)
+                : null;
             paciente.TempoGestacao = vm.VmPacientes.TempoGestacao;
             paciente.Profissao = vm.VmPacientes.Profissao.SafeUpper();
             paciente.Naturalidade = vm.VmPacientes.Naturalidade.SafeUpper();
             paciente.Nacionalidade = vm.VmPacientes.Nacionalidade.SafeUpper();
-            paciente.DataEntradaBrasil = vm.VmPacientes.DataEntradaBrasil;
+            paciente.DataEntradaBrasil = vm.VmPacientes.DataEntradaBrasil.HasValue
+                ? _geralController.ConverterLocalParaUtc(vm.VmPacientes.DataEntradaBrasil.Value)
+                : null;
             paciente.Logradouro = vm.VmPacientes.Logradouro.SafeUpper();
             paciente.Endereco = vm.VmPacientes.Endereco.SafeUpper();
             paciente.Numero = vm.VmPacientes.Numero.Safe();
@@ -245,7 +251,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 {
                     IdPacienteExterno = vm.VmPacientes.IdPacienteExterno.Safe(),
                     NomePaciente = vm.VmPacientes.NomePaciente.ToUpper(),
-                    Nascimento = vm.VmPacientes.Nascimento,
+                    Nascimento = _geralController.ConverterLocalParaUtc(vm.VmPacientes.Nascimento),
                     NomeSocial = vm.VmPacientes.NomeSocial.SafeUpper(),
                     NomeMae = vm.VmPacientes.NomeMae.SafeUpper(),
                     NomePai = vm.VmPacientes.NomePai.SafeUpper(),
@@ -259,12 +265,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     Cor = vm.VmPacientes.Cor.Safe(),
                     EtniaIndigena = vm.VmPacientes.EtniaIndigena.SafeUpper(),
                     TipoSanguineo = vm.VmPacientes.TipoSanguineo.Safe(),
-                    DUM = vm.VmPacientes.DUM,
+                    DUM = vm.VmPacientes.DUM.HasValue ? _geralController.ConverterLocalParaUtc(vm.VmPacientes.DUM.Value) : null,
                     TempoGestacao = vm.VmPacientes.TempoGestacao,
                     Profissao = vm.VmPacientes.Profissao.SafeUpper(),
                     Naturalidade = vm.VmPacientes.Naturalidade.SafeUpper(),
                     Nacionalidade = vm.VmPacientes.Nacionalidade.SafeUpper(),
-                    DataEntradaBrasil = vm.VmPacientes.DataEntradaBrasil,
+                    DataEntradaBrasil = vm.VmPacientes.DataEntradaBrasil.HasValue ? _geralController.ConverterLocalParaUtc(vm.VmPacientes.DataEntradaBrasil.Value) : null,
                     Logradouro = vm.VmPacientes.Logradouro.SafeUpper(),
                     Endereco = vm.VmPacientes.Endereco.SafeUpper(),
                     Numero = vm.VmPacientes.Numero.Safe(),
@@ -276,8 +282,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     Email = vm.VmPacientes.Email.SafeLower(),
                     Telefone = vm.VmPacientes.Telefone.ApenasNumeros(),
                     Observacao = vm.VmPacientes.Observacao.Safe(),
-                    DataEntrada = _geralController.ObterDataHoraServidor().ToFormataData(),
-                    DataRegistro = _geralController.ObterDataHoraServidor().ToFormataData(),
+                    DataEntrada = _geralController.ObterDataHoraUtc(),
+                    DataRegistro = _geralController.ObterDataHoraUtc(),
                     StatusBaixa = 0  //ativo
                 };
             }
@@ -301,13 +307,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         private List<Requisitar> CriarRequisicoes(vmRequisitar vm)
         {
-            // ObterDataHoraServidor() usa SELECT NOW() AT TIME ZONE 'America/Sao_Paulo'
-            // retorna sempre o horário de Brasília do servidor PostgreSQL — sem depender do cliente
-            DateTime dataIni = DateTime.SpecifyKind(
-                _geralController.ObterDataHoraServidor().ToFormataData(),
-                DateTimeKind.Unspecified);
+            // ObterDataHoraUtc() retorna UTC do servidor PostgreSQL — fonte canônica
+            // Fallback: DateTime.UtcNow do servidor de aplicação
+            DateTime dataIni = _geralController.ObterDataHoraUtc();
+            // DataEntregaParcial vem do cliente como horário local — converter para UTC
+            // antes de gravar em timestamptz (Npgsql 8.x rejeita Unspecified)
             DateTime dataEntregaParcial = vm.DataEntregaParcial.HasValue
-                ? DateTime.SpecifyKind(vm.DataEntregaParcial.Value, DateTimeKind.Unspecified)
+                ? _geralController.ConverterLocalParaUtc(vm.DataEntregaParcial.Value)
                 : dataIni.AddDays(7);
 
             var listaRequisitar = new List<Requisitar>();
@@ -439,16 +445,19 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //..Qoder
 
         // Feito pelo Qoder em 21/04/2026 — método agora participa da transação externa passada por SalvarRequisicao
-        private async Task<bool> SalvarExameRealizadoAsync(vmRequisitar vm, List<Requisitar> listaRequisitar)
+        //Feito pelo Kiro em 03/05/2026
+        // APENAS INCLUSÃO NOVA — cria header ExamesRealizados + ItensExamesRealizados.
+        // A edição é controlada pelo orquestrador SalvarRequisicao.
+        // Retorna o ExameRealizadoId gerado para propagar ao Requisitar.
+        private async Task<int> SalvarExameRealizadoAsync(vmRequisitar vm, List<Requisitar> listaRequisitar)
         {
             if (vm == null || listaRequisitar == null || !listaRequisitar.Any())
-                return false;
+                return 0;
 
             try
             {
-                int seq = await GeraSequencialAsync(vm.VmInstituicao?.Sigla!, _db);
-
                 var primeiroRequisitar = listaRequisitar.First();
+                int seq = await GeraSequencialAsync(vm.VmInstituicao?.Sigla!, _db);
 
                 var exame = new ExamesRealizados
                 {
@@ -462,7 +471,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     ControleApoio = vm.ControleApoio ?? string.Empty,
                     DataIni = primeiroRequisitar.DataIni,
                     Liberacao = 0,
-                    DataExame = _geralController.ObterDataHoraServidor().ToFormataData(),
+                    DataExame = _geralController.ObterDataHoraUtc(),
                     DataColeta = primeiroRequisitar.DataIni.ToString("yyyy-MM-dd"),
                     Baixado = 0,
                     EnviarEmail = 0,
@@ -473,12 +482,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 _db.ExamesRealizados.Add(exame);
                 await _db.SaveChangesAsync();
 
+                // Insere itens vinculados ao novo header
                 int ordemItem = 0;
                 var itensExames = new List<ItensExamesRealizados>();
 
                 foreach (var item in listaRequisitar)
                 {
-                    var itemExame = new ItensExamesRealizados
+                    itensExames.Add(new ItensExamesRealizados
                     {
                         PacienteId = vm.VmPacientes!.Id,
                         ClasseExamesId = item.ClasseExamesId,
@@ -502,21 +512,21 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         DataEntregaParcial = item.DataEntregaParcial,
                         Liberado = 0,
                         Baixado = 0
-                    };
-                    itensExames.Add(itemExame);
+                    });
                 }
 
                 _db.ItensExamesRealizados.AddRange(itensExames);
                 await _db.SaveChangesAsync();
 
-                return true;
+                return exame.Id;
             }
             catch (Exception ex)
             {
                 _eventLogHelper.LogEventViewer($"Erro ao salvar exame realizado: {ex.Message}", "Error");
-                return false;
+                return 0;
             }
         }
+        //..Kiro
 
 
         [HttpPost]
@@ -565,39 +575,147 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // === INÍCIO DA TRANSAÇÃO ===
                 using var transaction = await _db.Database.BeginTransactionAsync();
 
+                //Feito pelo Kiro em 03/05/2026
+                // ORQUESTRADOR: SalvarRequisicao controla toda a exclusão e inserção.
+                // SalvarExameRealizadoAsync é responsável apenas por header + itens (sem exclusão).
+                // Decisão inclusão vs edição: exclusivamente por ExameRealizadoId.
+
+                int exameRealizadoId = vm.ExameRealizadoId;
                 List<Requisitar> listaRequisitar = CriarRequisicoes(vm);
-                registroID = await PersistirDadosRequisitarAsync(listaRequisitar, vm.VmPacientes.Id, vm.VmMedicos.Id);
+
+                // Variáveis locais validadas — ValidarDadosDominio garante que não são nulos
+                int pacienteIdValidado = vm.VmPacientes?.Id ?? 0;
+                int medicoIdValidado = vm.VmMedicos?.Id ?? 0;
+                int tabelaExamesIdValidado = vm.VmTabelaExames?.Id ?? 0;
+
+                if (exameRealizadoId > 0)
+                {
+                    // === EDIÇÃO ===
+                    // 1. Validar: buscar header existente
+                    var headerExistente = await _db.ExamesRealizados.FindAsync(exameRealizadoId);
+                    if (headerExistente == null)
+                    {
+                        await transaction.RollbackAsync();
+                        return Ok(new ApiResult(false, $"Exame Realizado Id={exameRealizadoId} não encontrado. Não é possível editar.", redirecionaUrl, null));
+                    }
+
+                    // 2. Atualizar header (sem recriar)
+                    headerExistente.TabelaExamesId = vm.VmTabelaExames?.Id ?? headerExistente.TabelaExamesId;
+                    headerExistente.InstituicaoId = vm.VmInstituicao?.Id ?? headerExistente.InstituicaoId;
+                    headerExistente.PostoId = vm.VmPostos?.Id ?? headerExistente.PostoId;
+                    headerExistente.MedicoId = vm.VmMedicos?.Id ?? headerExistente.MedicoId;
+                    headerExistente.LaboratorioApoio = vm.LaboratorioApoio;
+                    headerExistente.ControleApoio = vm.ControleApoio ?? string.Empty;
+
+                    // 3. Excluir ItensExamesRealizados por ExameRealizadoId
+                    var itensAntigos = await _db.ItensExamesRealizados
+                        .Where(i => i.ExameRealizadoId == exameRealizadoId)
+                        .ToListAsync();
+                    if (itensAntigos.Any())
+                        _db.ItensExamesRealizados.RemoveRange(itensAntigos);
+
+                    // 4. Excluir Requisitar por ExameRealizadoId
+                    var requisitarAntigos = await _db.Requisitar
+                        .Where(r => r.ExameRealizadoId == exameRealizadoId)
+                        .ToListAsync();
+                    if (requisitarAntigos.Any())
+                        _db.Requisitar.RemoveRange(requisitarAntigos);
+
+                    await _db.SaveChangesAsync();
+
+                    // 5. Inserir novos ItensExamesRealizados
+                    int ordemItem = 0;
+                    var novosItens = new List<ItensExamesRealizados>();
+                    foreach (var item in listaRequisitar)
+                    {
+                        novosItens.Add(new ItensExamesRealizados
+                        {
+                            PacienteId = vm.VmPacientes!.Id,
+                            ClasseExamesId = item.ClasseExamesId,
+                            ClasseExamesNome = item.ClasseExamesNome,
+                            ExameRealizadoId = exameRealizadoId,
+                            TabelaExamesId = vm.VmTabelaExames!.Id,
+                            OrdemItem = ++ordemItem,
+                            RefExame = item.RefExame!,
+                            RefItem = item.RefItem!,
+                            ContaExame = item.ContaExame,
+                            Descricao = item.Descricao,
+                            ValorItem = item.ValorItem,
+                            Etiquetas = item.Etiquetas,
+                            InstituicaoId = vm.VmInstituicao!.Id,
+                            Sequencial = headerExistente.Sequencial,
+                            LaboratorioApoio = item.LaboratorioApoio,
+                            ControleApoio = item.ControleApoio,
+                            LaboratorioExterno = item.LaboratorioExterno,
+                            MaterialSaida = item.MaterialSaida,
+                            MaterialRetorno = item.MaterialRetorno,
+                            DataEntregaParcial = item.DataEntregaParcial,
+                            Liberado = 0,
+                            Baixado = 0
+                        });
+                    }
+                    _db.ItensExamesRealizados.AddRange(novosItens);
+
+                    // 6. Inserir novos Requisitar com ExameRealizadoId
+                    foreach (var req in listaRequisitar)
+                    {
+                        req.ExameRealizadoId = exameRealizadoId;
+                    }
+                    registroID = await PersistirDadosRequisitarAsync(listaRequisitar, pacienteIdValidado, medicoIdValidado);
+
+                    await _db.SaveChangesAsync();
+                }
+                else
+                {
+                    // === INCLUSÃO NOVA ===
+                    // SalvarExameRealizadoAsync cria header + itens e retorna o Id
+                    exameRealizadoId = await SalvarExameRealizadoAsync(vm, listaRequisitar);
+                    if (exameRealizadoId <= 0)
+                    {
+                        await transaction.RollbackAsync();
+                        return Ok(new ApiResult(false, "Falha ao salvar dados na tabela de Exames.", redirecionaUrl, null));
+                    }
+
+                    // Propagar ExameRealizadoId a todos os registros Requisitar
+                    foreach (var req in listaRequisitar)
+                    {
+                        req.ExameRealizadoId = exameRealizadoId;
+                    }
+                    registroID = await PersistirDadosRequisitarAsync(listaRequisitar, pacienteIdValidado, medicoIdValidado);
+                }
 
                 if (registroID <= 0)
                 {
                     await transaction.RollbackAsync();
                     return Ok(new ApiResult(false, "Falha ao salvar dados na tabela de Requisitos.", redirecionaUrl, null));
                 }
-
-                bool salvouExame = await SalvarExameRealizadoAsync(vm, listaRequisitar);
-                if (!salvouExame)
-                {
-                    await transaction.RollbackAsync();
-                    return Ok(new ApiResult(false, "Falha ao salvar dados na tabela de Exames.", redirecionaUrl, null));
-                }
+                //..Kiro
 
                 await transaction.CommitAsync();
 
                 // Limpa cupom do usuário
                 ListaAcumulativa.Instancia.EsvaziarCupom(usuarioId);
 
-                var vmCupom = new CupomRequisicaoViewModel
+                // Retorna JSON com sucesso — o JavaScript chama CupomRequisicao separadamente para impressão
+                // action=null para NÃO redirecionar após fechar o modal de sucesso (permanece na tela)
+                return Ok(new
                 {
-                    IdPaciente = vm.VmPacientes.Id,
-                    Data = listaRequisitar[0].DataIni
-                };
-
-                return CupomRequisicao(vmCupom);
+                    sucesso = true,
+                    titulo = "Sucesso",
+                    mensagem = "Requisição salva com sucesso!",
+                    pacienteId = pacienteIdValidado,
+                    tabelaExamesId = tabelaExamesIdValidado,
+                    exameRealizadoId = exameRealizadoId,
+                    action = (string?)null
+                });
             }
             catch (Exception ex)
             {
-                _eventLogHelper.LogEventViewer($"Erro ao tentar salvar requisição: {ex.Message}", "Error");  
-                return StatusCode(500, $"Erro ao tentar salvar requisição: {ex.Message}");
+                var detalhe = ex.InnerException != null
+                    ? $"{ex.Message} | Inner: {ex.InnerException.Message}"
+                    : ex.Message;
+                _eventLogHelper.LogEventViewer($"Erro ao tentar salvar requisição: {detalhe}\n{ex.StackTrace}", "Error");  
+                return StatusCode(500, $"Erro ao tentar salvar requisição: {detalhe}");
             }
         }
 
@@ -943,7 +1061,29 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 ICollection<PlanoExames> dados = [];
 
-                dados = await _db.PlanoExames.Where(s => s.Id == idBusca && s.ValorItem > 0).AsNoTracking().Take(1000).ToListAsync();
+                //Feito pelo Kiro em 02/05/2026
+                // Busca o PlanoExames pelo Id sem filtro de valor para poder
+                // validar e avisar o usuário se o item não tem valor definido.
+                var itemBuscado = await _db.PlanoExames.Where(s => s.Id == idBusca).AsNoTracking().FirstOrDefaultAsync();
+
+                if (itemBuscado == null)
+                {
+                    ViewBag.TotalCupom = "0,00";
+                    ViewBag.ListaCupom = ListaAcumulativa.Instancia.ObterCupom(usuarioId);
+                    ViewBag.MensagemErro = "Item de exame não encontrado.";
+                    return PartialView("Partials/_PartialMontarItensCupom");
+                }
+
+                if (itemBuscado.ValorItem == null || itemBuscado.ValorItem <= 0)
+                {
+                    ViewBag.TotalCupom = "0,00";
+                    ViewBag.ListaCupom = ListaAcumulativa.Instancia.ObterCupom(usuarioId);
+                    ViewBag.MensagemErro = "Item sem valor definido, não pode ser selecionado.";
+                    return PartialView("Partials/_PartialMontarItensCupom");
+                }
+
+                dados = new List<PlanoExames> { itemBuscado };
+                //..Kiro
 
                 //Adicionando linhas no Cupom, a cada vez que entrar por este método "PartialMontarCupom"
                 ListaAcumulativa.Instancia.AdicionarCupom(usuarioId, dados);
@@ -1008,7 +1148,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         /// </summary>
         [HttpGet]
         [Route("Requisitar/CarregarRequisicaoParaEdicao")]
-        public IActionResult CarregarRequisicaoParaEdicao(int pacienteId, string data)
+        public IActionResult CarregarRequisicaoParaEdicao(int pacienteId, string data, int tabelaExamesId = 0)
         {
             if (pacienteId <= 0 || string.IsNullOrWhiteSpace(data))
                 return Json(new { sucesso = false, mensagem = "Dados inválidos para carregamento." });
@@ -1019,11 +1159,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     System.Globalization.DateTimeStyles.None, out DateTime dataConsulta))
                 return Json(new { sucesso = false, mensagem = "Formato de data inválido." });
 
-            var dataInicio = DateTime.SpecifyKind(dataConsulta.Date, DateTimeKind.Unspecified);
-            var dataFim    = DateTime.SpecifyKind(dataConsulta.Date.AddDays(1).AddTicks(-1), DateTimeKind.Unspecified);
+            // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
+            var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
 
-            // Carrega todos os itens do paciente na data com includes necessários
-            var itens = _db.Requisitar
+            //Feito pelo Kiro em 02/05/2026
+            // Filtra por PacienteId + Data + TabelaExamesId para identificar
+            // a requisição específica quando o paciente tem múltiplas no mesmo dia.
+            var query = _db.Requisitar
                 .Include(r => r.Pacientes)
                 .Include(r => r.Medicos)
                 .Include(r => r.Instituicao)
@@ -1031,10 +1173,16 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Include(r => r.TabelaExames)
                 .Where(r => r.PacienteId == pacienteId
                          && r.DataIni >= dataInicio
-                         && r.DataIni <= dataFim)
+                         && r.DataIni <= dataFim);
+
+            if (tabelaExamesId > 0)
+                query = query.Where(r => r.TabelaExamesId == tabelaExamesId);
+
+            var itens = query
                 .OrderBy(r => r.OrdemItem)
                 .AsNoTracking()
                 .ToList();
+            //..Kiro
 
             if (!itens.Any())
                 return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para este paciente na data informada." });
@@ -1097,10 +1245,85 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 siglaTabela       = primeiro.TabelaExames?.SiglaTabela ?? "",
                 nomeTabela        = primeiro.TabelaExames?.NomeTabela ?? "",
                 dataIni           = primeiro.DataIni.ToString("dd/MM/yyyy"),
+                //Feito pelo Kiro em 03/05/2026
+                exameRealizadoId  = primeiro.ExameRealizadoId ?? 0,
+                //..Kiro
                 listaCupom
             };
 
             return Json(resultado);
+        }
+        //..Kiro
+
+        //Feito pelo Kiro em 02/05/2026
+        /// <summary>
+        /// Recarrega o cupom de exames para edição de uma requisição existente.
+        /// Busca os itens da requisição do paciente na data, localiza os PlanoExames
+        /// correspondentes por ContaExame + TabelaExamesId, popula a ListaAcumulativa,
+        /// e retorna a partial _PartialMontarItensCupom renderizada.
+        /// </summary>
+        [HttpGet]
+        [Route("Requisitar/CarregarCupomEdicao")]
+        public async Task<ActionResult> CarregarCupomEdicao(int pacienteId, string data)
+        {
+            string usuarioId = HttpContext.Session.GetString("SessionEmail") ?? "anonimo";
+
+            // Esvazia o cupom atual antes de recarregar
+            ListaAcumulativa.Instancia.EsvaziarCupom(usuarioId);
+
+            decimal? totalCupom = 0;
+
+            if (pacienteId > 0 && !string.IsNullOrWhiteSpace(data))
+            {
+                if (DateTime.TryParseExact(data, "dd/MM/yyyy",
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.None, out DateTime dataConsulta))
+                {
+                    // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
+                    var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
+
+                    // Busca os itens da requisição do paciente na data
+                    var itensRequisicao = await _db.Requisitar
+                        .AsNoTracking()
+                        .Where(r => r.PacienteId == pacienteId
+                                 && r.DataIni >= dataInicio
+                                 && r.DataIni <= dataFim)
+                        .Select(r => new { r.ContaExame, r.TabelaExamesId })
+                        .ToListAsync();
+
+                    if (itensRequisicao.Any())
+                    {
+                        // Extrai as ContaExame e o TabelaExamesId para buscar no PlanoExames
+                        var contasExame = itensRequisicao.Select(r => r.ContaExame).Distinct().ToList();
+                        var tabelaId = itensRequisicao.First().TabelaExamesId;
+
+                        // Localiza os PlanoExames correspondentes
+                        var planoExames = await _db.PlanoExames
+                            .AsNoTracking()
+                            .Where(p => p.TabelaExamesId == tabelaId
+                                     && contasExame.Contains(p.ContaExame))
+                            .ToListAsync();
+
+                        // Popula a ListaAcumulativa com os PlanoExames encontrados
+                        if (planoExames.Any())
+                        {
+                            ListaAcumulativa.Instancia.AdicionarCupom(usuarioId, planoExames);
+                        }
+                    }
+                }
+            }
+
+            // Obtém a lista acumulada e calcula o total
+            var lista = ListaAcumulativa.Instancia.ObterCupom(usuarioId);
+            foreach (var item in lista)
+            {
+                totalCupom += item.ValorItem;
+            }
+
+            ViewBag.TotalCupom = totalCupom?.ToString("N2");
+            ViewBag.ListaCupom = lista;
+
+            return PartialView("Partials/_PartialMontarItensCupom");
         }
         //..Kiro
 
@@ -1117,8 +1340,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (vm == null || vm.IdPaciente <= 0 || vm.Data == null)
                 return Json(new { sucesso = false, mensagem = "Dados inválidos para exclusão." });
 
-            var dataInicio = DateTime.SpecifyKind(vm.Data.Value.Date, DateTimeKind.Unspecified);
-            var dataFim    = DateTime.SpecifyKind(vm.Data.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Unspecified);
+            // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
+            var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(vm.Data.Value.Date);
 
             var itens = await _db.Requisitar
                 .Where(r => r.PacienteId == vm.IdPaciente
@@ -1154,16 +1377,17 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //..Kiro
 
         //Imprimir Cupom
-        [HttpPost]
+        [HttpGet]
         [Route("Requisitar/CupomRequisicao")]   //Rota de uma chamada javascript para imprimir o cupom de requisição
-        public IActionResult CupomRequisicao([FromBody] CupomRequisicaoViewModel vm)
+        public IActionResult CupomRequisicao([FromQuery] CupomRequisicaoViewModel vm)
         {
-            if (vm == null || vm.IdPaciente <= 0 || vm.Data == null)
+            if (vm == null || vm.IdPaciente <= 0)
             {
                 _eventLogHelper.LogEventViewer("Bad Request ::: Dados inválidos na impressão de cupom", "wError");
                 return BadRequest("Bad Request ::: Dados inválidos.");
             }
-            var dataConsulta = vm.Data ?? DateTime.Today;
+            // Se a data não vier na query, usa a data/hora atual do servidor
+            var dataConsulta = vm.Data ?? _geralController.ObterDataHoraLocal().Date;
 
             var paciente = _db.Pacientes.Where(s => s.Id == vm.IdPaciente).FirstOrDefault();
             if (paciente == null)
@@ -1174,10 +1398,20 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             ResultadoImpressao resultado;
 
-            var exames = _db.Requisitar
-                         .Where(r => r.PacienteId == vm.IdPaciente && r.DataIni.Date == dataConsulta.Date)
-                         .OrderBy(r => r.Id)
-                         .ToList();
+            //Filtra por TabelaExamesId quando disponível para evitar incluir
+            // itens de outras requisições do mesmo paciente no mesmo dia.
+            // Usa range UTC em vez de .Date (Npgsql 8.x + timestamptz)
+            var (dataInicioUtc, dataFimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
+            var queryExames = _db.Requisitar
+                         .Where(r => r.PacienteId == vm.IdPaciente
+                                  && r.DataIni >= dataInicioUtc
+                                  && r.DataIni <= dataFimUtc);
+
+            if (vm.TabelaExamesId > 0)
+                queryExames = queryExames.Where(r => r.TabelaExamesId == vm.TabelaExamesId);
+
+            var exames = queryExames.OrderBy(r => r.Id).ToList();
+            //..Kiro
 
             if (!exames.Any())
                 return Content("Nenhuma requisição de exame encontrada para esta data.", "text/plain");
@@ -1187,7 +1421,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             int instituicaoId = exames.FirstOrDefault()?.InstituicaoId ?? 0;
             int tabelaExamesId = exames.FirstOrDefault()?.TabelaExamesId ?? 0;
-            string codigoExame = exames.FirstOrDefault()?.Id.ToString() ?? ""; 
+            //Feito pelo Kiro em 03/05/2026
+            // Código do exame = ExameRealizadoId (vínculo lógico com ExamesRealizados.Id)
+            // Nunca usar Requisitar.Id como código do exame.
+            string codigoExame = exames.FirstOrDefault()?.ExameRealizadoId?.ToString() ?? "-";
+            //..Kiro 
 
             string nomeInstituicao = _db.Instituicao.Where(s => s.Id == instituicaoId).FirstOrDefault()?.Nome ?? "N/A";
 
@@ -1210,9 +1448,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //..Qoder
 
             //Feito pelo Kiro em 20/04/2026
-            // Usa ObterDataHoraServidor() — fonte confiável: PostgreSQL no fuso de Brasília
-            // Fallback automático para data local se banco inacessível (modo offline)
-            var dataServidorCupom = _geralController.ObterDataHoraServidor().ToFormataData();
+            // Usa ObterDataHoraLocal() — converte UTC do PostgreSQL para timezone local
+            var dataServidorCupom = _geralController.ObterDataHoraLocal();
             string dataHoje     = dataServidorCupom.ToString("dd/MM/yyyy");
             string horaHoje     = dataServidorCupom.ToString("HH:mm");
             string dataPrevista = dataServidorCupom.AddDays(7).ToString("dd/MM/yyyy"); //padrão 7 dias para entrega inicial
@@ -1305,17 +1542,20 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             try
             {
-                // Obtém data do servidor PostgreSQL — Kind=Unspecified para Npgsql 8.x
-                var hoje       = DateTime.SpecifyKind(_geralController.ObterDataHoraServidor().ToFormataData().Date, DateTimeKind.Unspecified);
-                var hojeInicio = hoje;
-                var hojeFim    = DateTime.SpecifyKind(hoje.AddDays(1).AddTicks(-1), DateTimeKind.Unspecified);
+                // Range do dia em UTC — necessário para comparar com colunas timestamptz no Npgsql 8.x
+                // (DateTimeKind.Unspecified causa InvalidOperationException em timestamptz)
+                var (hojeInicio, hojeFim) = _geralController.ObterRangeDiaUtc();
 
-                // Subquery: busca o Id máximo por paciente no dia (agrupamento no banco)
+                //Feito pelo Kiro em 03/05/2026
+                // Agrupamento por ExameRealizadoId (quando disponível) ou PacienteId (legado).
+                // Cada ExameRealizadoId representa uma requisição única.
+                // Registros antigos sem ExameRealizadoId são agrupados por PacienteId (fallback).
                 var idsMaisRecentes = _db.Requisitar
                     .AsNoTracking()
                     .Where(r => r.DataIni >= hojeInicio && r.DataIni <= hojeFim)
-                    .GroupBy(r => r.PacienteId)
+                    .GroupBy(r => r.ExameRealizadoId != null ? r.ExameRealizadoId : -r.PacienteId)
                     .Select(g => g.Max(r => r.Id));
+                //..Kiro
 
                 // Query principal: projeta diretamente para o ViewModel sem Include
                 var lista = _db.Requisitar
@@ -1332,7 +1572,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         NomeTabela         = (r.TabelaExames != null ? r.TabelaExames.SiglaTabela ?? "" : "") + " - " + (r.TabelaExames != null ? r.TabelaExames.NomeTabela ?? "" : ""),
                         LaboratorioApoio   = r.LaboratorioApoio ?? "-",
                         DataIni            = r.DataIni.ToString("dd/MM/yyyy"),
-                        DataEntregaParcial = r.DataEntregaParcial != null ? r.DataEntregaParcial.Value.ToString("dd/MM/yyyy") : ""
+                        DataEntregaParcial = r.DataEntregaParcial != null ? r.DataEntregaParcial.Value.ToString("dd/MM/yyyy") : "",
+                        TabelaExamesId     = r.TabelaExamesId,
+                        ExameRealizadoId   = r.ExameRealizadoId
                     })
                     .ToList();
 
@@ -1361,8 +1603,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 System.Globalization.CultureInfo.InvariantCulture,
                 System.Globalization.DateTimeStyles.None, out dataServidor);
 
-            var hojeInicio = dataServidor == default ? dtToday : dataServidor.Date;
-            var hojeProximoDia = hojeInicio.AddDays(1);
+            // Range do dia em UTC — necessário para comparar com colunas timestamptz no Npgsql 8.x
+            var (hojeInicioUtc, hojeProximoDiaUtc) = _geralController.ObterRangeDiaUtc();
 
             // Total de registros sem filtro de data
             int totalSemFiltro = _db.Requisitar.Count();
@@ -1381,10 +1623,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 })
                 .ToList();
 
-            // Filtra em memória para evitar problema de Kind/fuso no LINQ-to-SQL
+            // Filtra usando range UTC
             var hojeLocal = DateTime.Today;
             int totalHojeLINQ = _db.Requisitar
-                .Where(r => r.DataIni >= hojeInicio && r.DataIni < hojeProximoDia)
+                .Where(r => r.DataIni >= hojeInicioUtc && r.DataIni < hojeProximoDiaUtc)
                 .Count();
             int totalHojeMemoria = _db.Requisitar
                 .AsEnumerable()
@@ -1397,8 +1639,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 dtNow = dtNow.ToString("dd/MM/yyyy HH:mm:ss"),
                 dtToday = dtToday.ToString("dd/MM/yyyy"),
                 dtUtcNow = dtUtcNow.ToString("dd/MM/yyyy HH:mm:ss"),
-                hojeInicio = hojeInicio.ToString("yyyy-MM-dd"),
-                hojeProximoDia = hojeProximoDia.ToString("yyyy-MM-dd"),
+                hojeInicio = hojeInicioUtc.ToString("yyyy-MM-dd"),
+                hojeProximoDia = hojeProximoDiaUtc.ToString("yyyy-MM-dd"),
                 totalSemFiltro,
                 totalHojeLINQ,
                 totalHojeMemoria,

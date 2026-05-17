@@ -70,11 +70,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 if (Conteudo.Split('/').Count() == 3 || Conteudo.Split('-').Count() == 3) //está buscando alguma data
                 {
                     DateTime dataBusca = Conteudo.Trim().FormataData("dd/MM/yyyy", true);
+                    // Converte data local para range UTC — necessário para comparar com colunas timestamptz no Npgsql 8.x
+                    // (Usar .Day/.Month/.Year em timestamptz traduz para EXTRACT() que opera em UTC, causando resultados incorretos)
+                    var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataBusca);
                     ICollection<Pacientes> dadosQuery = await _db.Pacientes.AsNoTracking()
-                                                       .Where(l => l.Nascimento.Day > 0 &&
-                                                                    l.Nascimento.Year == dataBusca.Year &&
-                                                                    l.Nascimento.Month == dataBusca.Month &&
-                                                                    l.Nascimento.Day == dataBusca.Day
+                                                       .Where(l => l.Nascimento >= inicioUtc &&
+                                                                    l.Nascimento <= fimUtc
                                                                    )
                                                        .OrderByDescending(o => o.Id)
                                                        .ToListAsync();
@@ -174,18 +175,20 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                         //Colunas NÃO nulas:
                         paciente.NomePaciente = obj.NomePaciente.ToUpper();
-                        paciente.Nascimento = obj.Nascimento;
+                        // Nascimento e DUM são timestamptz — o model binder gera Kind=Unspecified
+                        // que o Npgsql 8.x rejeita. Converte para UTC antes de gravar.
+                        paciente.Nascimento = _geralController.ConverterLocalParaUtc(obj.Nascimento);
                         paciente.EstadoCivil = obj.EstadoCivil; // obj.vmGeral.TipoEstadoCivil;
                         paciente.TempoGestacao = obj.vmGeral.TipoTempoGestacao;
-                        paciente.DataEntrada = _geralController.ObterDataHoraServidor().ToFormataData();   //DateTime.UtcNow;
-                        paciente.DataRegistro = _geralController.ObterDataHoraServidor().ToFormataData();   //DateTime.UtcNow;
+                        paciente.DataEntrada = _geralController.ObterDataHoraUtc();
+                        paciente.DataRegistro = _geralController.ObterDataHoraUtc();
                         paciente.StatusBaixa = 0;
                         paciente.IdPacienteExterno = obj.IdPacienteExterno;
 
                         //Endereçamento e outros dados que aceitam nulos:
                         paciente.CarteiraSUS = obj.CarteiraSUS;
                         paciente.Complemento = obj.Complemento;
-                        paciente.DUM = obj.DUM;
+                        paciente.DUM = obj.DUM.HasValue ? _geralController.ConverterLocalParaUtc(obj.DUM.Value) : null;
                         paciente.Email = obj.Email;
                         paciente.CEP = obj.CEP;
                         paciente.Logradouro = obj.Logradouro.ToCapitalize();
@@ -333,7 +336,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                         //Colunas NÃO nulas:
                         paciente.NomePaciente = vm.NomePaciente.ToUpper();
-                        paciente.Nascimento = vm.Nascimento;
+                        paciente.Nascimento = _geralController.ConverterLocalParaUtc(vm.Nascimento);
                         paciente.EstadoCivil = vm.EstadoCivil;
                         paciente.TempoGestacao = vm.vmGeral.TipoTempoGestacao;
 
@@ -343,7 +346,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         paciente.CEP = vm.CEP;
                         paciente.Cidade = vm.Cidade.ToCapitalize();
                         paciente.Complemento = vm.Complemento;
-                        paciente.DUM = vm.DUM;
+                        paciente.DUM = vm.DUM.HasValue ? _geralController.ConverterLocalParaUtc(vm.DUM.Value) : null;
                         paciente.Email = vm.Email;
                         paciente.Endereco = vm.Endereco.ToCapitalize();
                         paciente.IdPacienteExterno = vm.IdPacienteExterno;

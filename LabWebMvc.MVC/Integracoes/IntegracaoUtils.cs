@@ -61,9 +61,16 @@ namespace LabWebMvc.MVC.Integracoes
         public static string NomeArquivoIncremental(this string nomeArquivo, DateTime ultimaData, Db db, IntegracaoDadosExecucao dadosExecucao)
         {
             int lay = dadosExecucao.IntegracaoDadosLayoutId;
-            //No linq abaixo estamos usando (DateTime.Compare(data.Value.Date))==0, para evitar DbFunction.TruncateTime(data), mas tem que testar!
+            // Converte data local para range UTC — necessário para comparar com colunas timestamptz.
+            // O .Date em timestamptz (Kind=Utc) comparado com data local (Kind=Unspecified) gera resultados incorretos.
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            var offset = tz.GetUtcOffset(ultimaData.Date);
+            var inicioUtc = new DateTimeOffset(ultimaData.Date, offset).UtcDateTime;
+            var fimUtc = new DateTimeOffset(ultimaData.Date.AddDays(1).AddTicks(-1), offset).UtcDateTime;
+
             LogArquivos? Lista = db.LogArquivos.Where(c => c.IntegracaoDadosLayoutId == lay && c.DataPeriodoFinal.HasValue &&
-                                                   DateTime.Compare(c.DataPeriodoFinal.Value.Date, ultimaData.Date) == 0).ToList().LastOrDefault();
+                                                   c.DataPeriodoFinal.Value >= inicioUtc && c.DataPeriodoFinal.Value <= fimUtc)
+                                                   .ToList().LastOrDefault();
 
             string strTotal = string.Empty;
             int Total = 1;    /* primeiro arquivo do período quando a lista é nula/vazia */

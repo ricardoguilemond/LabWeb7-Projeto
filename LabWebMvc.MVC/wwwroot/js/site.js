@@ -89,8 +89,10 @@ function MontaUrl(action) {
 //..
 
 
-/** FUNCIONANDO, NÃO ALTERAR!
- * clickConfirm ::: função genérica Javascript para realizar diversos serviços e também mensagens ajax
+/** FUNCIONANDO — Refatorado pelo Kiro em 02/05/2026
+ * clickConfirm ::: função genérica para confirmação Sim/Não com ação AJAX
+ * Melhorias: ícones nativos Swal2, async:true com Swal.showLoading(),
+ * removido setInterval vazio, imageHeight padronizado.
  * @param {any} x
  * @param {any} titulo
  * @param {any} pergunta
@@ -99,11 +101,10 @@ function MontaUrl(action) {
  * @param {any} action
  * @param {any} variavel
  */
+//Feito pelo Kiro em 02/05/2026
 function clickConfirm(x, titulo, pergunta, icone, action, nomeVariavel, valor) {
     if (titulo == null) titulo = 'Atenção';
-    titulo = '<span style="font: normal 28px calibri, arial, sans-serif; color: gray;">' + titulo + '</span>';
     if (pergunta == null) pergunta = 'Confirma?';
-    pergunta = '<span style="font: normal 22px calibri, arial, sans-serif; color: #646464;">' + pergunta + '</span>';
     if (icone == null) icone = 'question';
     if (nomeVariavel == null) nomeVariavel = 'id';
     if (valor != null) {
@@ -121,45 +122,49 @@ function clickConfirm(x, titulo, pergunta, icone, action, nomeVariavel, valor) {
         cancelButtonText: 'Não'
     }).then((result) => {
         if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Aguarde...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
             $.ajax({
-                async: false,
+                async: true,
                 cache: false,
-                type: "Get",     //opções podem ser: Get, Post, Delete
-                url: action + '?' + nomeVariavel,      //tem nome de rota definida na action, que vai executar o serviço!
+                type: "Get",
+                url: action + '?' + nomeVariavel,
                 dataType: "json",
                 contentType: 'application/json; charset=utf-8',
                 success: function (data) {
-                    //dados de retorno do Json!
                     var json = data;
                     var titulo = json['titulo'];
                     var mensagem = json['mensagem'];
                     var sucesso = json['sucesso'];
-                    console.log("mensagem: ", mensagem); //se algo der errado a mensagem entra no console e fica visível no navegador sem o site carregado
-                    var icone = '<img src="images/icones/error-icon.png" width="100px" border="0" style="background-color: white;">';
-                    if (sucesso == true) icone = '<img src="images/icones/success-icon.png" width="100px" border="0" style="background-color: white;">';
+                    console.log("mensagem: ", mensagem);
+                    //Feito pelo Kiro em 02/05/2026
+                    // Revertido para iconHtml com PNG — ícones SVG nativos são
+                    // distorcidos pelas regras CSS globais do projeto.
+                    var iconeHtml = '<img src="images/icones/error-icon.png" width="100px" border="0" style="background-color: white;">';
+                    if (sucesso == true) iconeHtml = '<img src="images/icones/success-icon.png" width="100px" border="0" style="background-color: white;">';
+                    //..Kiro
                     titulo = (titulo == null) ? 'Atenção' : titulo;
                     Swal.fire({
                         title: titulo,
                         html: mensagem,
-                        iconHtml: icone,
+                        iconHtml: iconeHtml,
                         confirmButtonColor: '#008b3f',
                         confirmButtonText: 'Fechar',
-                        timer: 7000,        //7 segundos!
-                        didOpen: () => {
-                            timerInterval = setInterval(() => {
-                            }, 10)
-                        },
+                        timer: 7000,
                         willClose: () => {
-                            clearInterval(timerInterval);
                             if (sucesso == true)
                                 location.reload();
                         }
-                    }).then(function () { //executar função pós sucesso
+                    }).then(function () {
                         if (sucesso == true)
                             location.reload();
                     });
                 },
-                error: function () {//outros erros não esperados de fora da action
+                error: function () {
                     console.log("error, interrompido");
                     Swal.fire({
                         title: 'Interrompido',
@@ -167,13 +172,8 @@ function clickConfirm(x, titulo, pergunta, icone, action, nomeVariavel, valor) {
                         iconHtml: '<img src="images/icones/error-icon.png" width="100px" border="0" style="background-color: white;">',
                         confirmButtonColor: '#008b3f',
                         confirmButtonText: 'Fechar',
-                        timer: 7000,        //7 segundos!
-                        didOpen: () => {
-                            timerInterval = setInterval(() => {
-                            }, 10)
-                        },
+                        timer: 7000,
                         willClose: () => {
-                            clearInterval(timerInterval);
                             location.reload();
                         }
                     });
@@ -187,114 +187,117 @@ function clickConfirm(x, titulo, pergunta, icone, action, nomeVariavel, valor) {
                 icon: 'info',
                 confirmButtonColor: '#008b3f',
                 confirmButtonText: 'Fechar',
-                timer: 7000,        //7 segundos!
-                didOpen: () => {
-                    timerInterval = setInterval(() => {
-                    }, 10)
-                },
-                willClose: () => {
-                    clearInterval(timerInterval);
-                }
+                timer: 7000
             });
         }
     });
 };
+//..Kiro
 
 
-/** FUNCIONANDO, NÃO ALTERAR!
- * clickAviso ::: função genérica Javascript para realizar diversos serviços de mensagens ajax
- * USO: clicakAviso("titulo da mensagem", "mensagem", "normal ou falha ou critica", action de redirecionamento")
- * 
+/** FUNCIONANDO — Refatorado pelo Kiro em 02/05/2026
+ * clickAviso ::: função genérica para mensagens informativas
+ * Melhorias: ícones nativos Swal2 em vez de PNG, removido setInterval vazio.
+ * USO: clickAviso("titulo", "mensagem", "normal|sucesso|falha|critica", "action")
+ *
  * @param {any} titulo
  * @param {any} mensagem
  * @param {any} tipo
  * @param {any} action
  */
+//Feito pelo Kiro em 02/05/2026
 function clickAviso(titulo, mensagem, tipo, action) {
     if (titulo == null) titulo = 'Atenção';
-    titulo = '<span style="color: silver;">' + titulo + '</span>';
     if (mensagem == null) mensagem = '';
-    //icon pode ser: 'success', 'error', 'warning', 'info' or 'question', got 'danger', ou podem ser imagens png
+    //Feito pelo Kiro em 02/05/2026
+    // Revertido para imageUrl com PNG — os ícones nativos SVG do Swal2
+    // são distorcidos pelas regras CSS globais do projeto
+    // (div { clear:both; line-height:1.8em }).
+    var icone = '../images/icones/attention-icon.png';
     if (tipo == null || tipo == 'normal') icone = '../images/icones/attention-icon.png';
     if (tipo == 'sucesso') icone = '../images/icones/success-icon.png';
     if (tipo == 'falha') icone = '../images/icones/attention-icon.png';
     if (tipo == 'critica') icone = '../images/icones/fatal-errors-icon.png';
-    //console.log("clickAviso ::: action: ", action);
+    //..Kiro
     Swal.fire({
         title: titulo,
         html: mensagem,
-        //icon: 'success',
         imageUrl: icone,
-        imageHeight: 120,
+        imageHeight: 80,
         showCancelButton: false,
         confirmButtonColor: '#008b3f',
         confirmButtonText: 'Fechar',
-        timer: 7000,        //7 segundos!
-        didOpen: () => {
-            timerInterval = setInterval(() => {
-            }, 10)
-        },
+        returnFocus: false,
+        timer: 7000,
         willClose: () => {
-            clearInterval(timerInterval);
-            if (action != null && action != "") {//após fechar a tela depois de 7 (timer) segundos, redireciona pela action enviada!
+            if (action != null && action != "") {
                 location.replace(action);
             }
         }
-    }).then(function (result) {//se fechou pelo botão, redireciona pela action enviada!
-        //console.log("entrei no 'result': ", result.value);
-        //console.log("action modificada: ", action);
+    }).then(function (result) {
         if (result.value && action != null && action != "") {
             location.replace(action);
         }
     });
 };
+//..Kiro
 
 
-//função genérica Javascript para realizar diversos serviços de mensagens ajax
+//Feito pelo Kiro em 02/05/2026
+// Refatorado: ícones nativos Swal2, async:true com Swal.showLoading(),
+// corrigido icon:'danger' para icon:'error' (danger não existe no Swal2).
 function clickAction(x, titulo, mensagem, icone, action) {
     if (titulo == null) titulo = 'Atenção';
-    titulo = '<span style="font: normal 28px calibri, arial, sans-serif; color: gray;">' + titulo + '</span>';
     if (mensagem == null) mensagem = 'Operação realizada com sucesso';
     if (icone == null) icone = 'info';
 
+    Swal.fire({
+        title: 'Aguarde...',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
     $.ajax({
-        async: false,
+        async: true,
         cache: false,
-        type: "Get",     //opções podem ser: Get, Post, Delete
-        url: action,     //tem nome de rota definida na action, que vai executar o serviço!
-        dataType: "text",
+        type: "Get",
+        url: action,
+        dataType: "json",
         contentType: 'application/json; charset=utf-8',
         success: function (data) {
-            //dados de retorno do Json!
-            var json = data;  // $.parseJSON(data);
+            var json = data;
             var sucesso = json['sucesso'];
             var mensagem = json['mensagem'];
             var titulo = json['titulo'];
-            var icone = '<img src="images/icones/error-icon.png" width="100px" border="0" style="background-color: white;">';
-            if (sucesso) icone = '<img src="images/icones/success-icon.png" width="100px" border="0" style="background-color: white;">';
+            //Feito pelo Kiro em 02/05/2026
+            // Revertido para iconHtml com PNG — ícones SVG nativos são
+            // distorcidos pelas regras CSS globais do projeto.
+            var iconeHtml = '<img src="images/icones/error-icon.png" width="100px" border="0" style="background-color: white;">';
+            if (sucesso) iconeHtml = '<img src="images/icones/success-icon.png" width="100px" border="0" style="background-color: white;">';
+            //..Kiro
             titulo = (titulo == null) ? 'Atenção' : json['titulo'];
             Swal.fire({
                 title: titulo,
                 html: mensagem,
-                iconHtml: icone,
+                iconHtml: iconeHtml,
                 confirmButtonColor: '#008b3f',
                 confirmButtonText: 'Fechar'
-            }).then(function () { //mensagem oriunda da action/controller
-                //location.reload();
             });
         },
-        error: function (req, status, error) {//outros erros de fora da action
+        error: function (req, status, error) {
             console.log("error: ", error);
             Swal.fire({
                 title: 'Interrompido',
                 html: 'Falha na execução',
-                icon: 'danger',
+                iconHtml: '<img src="images/icones/error-icon.png" width="100px" border="0" style="background-color: white;">',
                 confirmButtonColor: '#008b3f',
                 confirmButtonText: 'Fechar'
             });
         }
     });
 };
+//..Kiro
 
 
 

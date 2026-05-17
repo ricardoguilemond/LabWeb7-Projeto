@@ -149,12 +149,17 @@ namespace LabWebMvc.MVC.Integracoes
                     dadosExecucao.NomeArquivo = parameter.NomeArquivo;
                     dadosExecucao.NomeServico = parameter.NomeServico;
                     dadosExecucao.Header = parameter.Header;
-                    dadosExecucao.Inicio = new DateTime(parameter.AnoInicio, parameter.MesInicio, parameter.DiaInicio, parameter.HoraInicio, parameter.MinutoInicio, 0);
+                    // Converte data/hora local para UTC antes de gravar em timestamptz
+                    // (Npgsql 8.x rejeita DateTimeKind.Unspecified em colunas timestamptz)
+                    var dataInicioLocal = new DateTime(parameter.AnoInicio, parameter.MesInicio, parameter.DiaInicio, parameter.HoraInicio, parameter.MinutoInicio, 0);
+                    var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+                    var offset = tz.GetUtcOffset(dataInicioLocal);
+                    dadosExecucao.Inicio = new DateTimeOffset(dataInicioLocal, offset).UtcDateTime;
                     dadosExecucao.IntegracaoDadosLayoutId = tipoServico.Id;
                     dadosExecucao.Resumo = parameter.Resumo;
                     dadosExecucao.Summary = parameter.Summary;
                     dadosExecucao.Sucesso = parameter.Sucesso;
-                    dadosExecucao.Termino = DateTime.Now;
+                    dadosExecucao.Termino = DateTime.UtcNow;
 
                     if (parameter != null && (parameter.NomeServico != null))
                     {
@@ -284,11 +289,17 @@ namespace LabWebMvc.MVC.Integracoes
                                             }
                                         }
                                     }
-                                    DateTime dataHoje = DateTime.Today;
+                                    // Converte data local para range UTC — necessário para comparar com colunas timestamptz no Npgsql 8.x
+                                    // (DateTime.Today gera Kind=Unspecified que causa InvalidOperationException em timestamptz)
+                                    var tz2 = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+                                    var dataHojeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz2).Date;
+                                    var offsetHoje = tz2.GetUtcOffset(dataHojeLocal);
+                                    var dataHojeInicioUtc = new DateTimeOffset(dataHojeLocal, offsetHoje).UtcDateTime;
+                                    var dataHojeFimUtc = new DateTimeOffset(dataHojeLocal.AddDays(1).AddTicks(-1), offsetHoje).UtcDateTime;
                                     if (configuracao.Periodicidade == (int)TipoPeriodoExtracao.Diario)//diario=1
                                     {
                                         //verifica se ja rodou anteriormente
-                                        if (db.IntegracaoDadosExecucao.Any(a => a.IntegracaoDadosLayoutId == layout.Id && (DateTime.Compare(a.Inicio, dataHoje) == 0) && (a.Termino > DateTime.MinValue) && a.Sucesso))
+                                        if (db.IntegracaoDadosExecucao.Any(a => a.IntegracaoDadosLayoutId == layout.Id && a.Inicio >= dataHojeInicioUtc && a.Inicio <= dataHojeFimUtc && (a.Termino > DateTime.MinValue) && a.Sucesso))
                                         {
                                             //ja executado anteriormente com sucesso. Ignora
                                             continue;
@@ -298,7 +309,7 @@ namespace LabWebMvc.MVC.Integracoes
                                     {
                                         if (configuracao.DiaExecucao == DateTime.Now.Day)
                                         {
-                                            if (db.IntegracaoDadosExecucao.Any(a => a.IntegracaoDadosLayoutId == layout.Id && (DateTime.Compare(a.Inicio, dataHoje) == 0) && (a.Termino > DateTime.MinValue) && a.Sucesso))
+                                            if (db.IntegracaoDadosExecucao.Any(a => a.IntegracaoDadosLayoutId == layout.Id && a.Inicio >= dataHojeInicioUtc && a.Inicio <= dataHojeFimUtc && (a.Termino > DateTime.MinValue) && a.Sucesso))
                                             {
                                                 //ja executado anteriormente com sucesso. Ignora
                                                 continue;

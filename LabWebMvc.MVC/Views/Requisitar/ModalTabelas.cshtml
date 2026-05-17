@@ -57,7 +57,8 @@
                         $('#conteudoListaDeExames').load(`${url}?tabelaExamesId=${data.vm.tabelaExamesId}`);  //obs: é com crase, pois tem interpolação javascript!
 
                         //Atualizando o grid de Cupom, cada vez que reabrir a tabela e preços, para que o usuário possa escolher os itens.
-                        $('#conteudoItensCupomCaixa').load('@Url.Action(nameof(RequisitarController.PartialMontarItensCupom), "Requisitar")');
+                        //Feito pelo Kiro em 02/05/2026 — passa id=0 para esvaziar a ListaAcumulativa no servidor
+                        $('#conteudoItensCupomCaixa').load('@Url.Action(nameof(RequisitarController.PartialMontarItensCupom), "Requisitar")' + '?id=0');
                     },
                     error: function () {
                         clickAviso('Interrompido', 'Falha no carregamento dos dados', 'falha');

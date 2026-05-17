@@ -34,6 +34,11 @@
                 @Html.TextBoxFor(p => p.VmTabelaExames.NomeTabela, new { @id = "buscaNomeTabela", @class = "form-control fm3 upper", @placeholder = "Nome da Tabela de Exames", @required = "required", @style = "width: 60%;" })
                 <!-- Campo hidden para armazenar o Id da tabela -->
                 @Html.HiddenFor(p => p.VmTabelaExames.Id, new { @id = "tabelaExamesId" })
+                <!--Feito pelo Kiro em 02/05/2026 — armazena o TabelaExamesId original ao carregar para edição -->
+                <input type="hidden" id="tabelaExamesIdOriginal" name="TabelaExamesIdOriginal" value="0" />
+                <!--Feito pelo Kiro em 03/05/2026 — ExameRealizadoId: código do exame (vínculo lógico) -->
+                <input type="hidden" id="exameRealizadoId" name="ExameRealizadoId" value="0" />
+                <!--..Kiro-->
                 @Html.DisplayFor(p => p.VmTabelaExames.Id, new { @class = "form-control fm3 upper", @style = "width: 5%;" })
             </div>
         </div>

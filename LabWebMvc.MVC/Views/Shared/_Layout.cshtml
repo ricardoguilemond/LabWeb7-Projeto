@@ -15,8 +15,6 @@
 
     <!-- JS para a aplicação -->
     <script src="~/js/jquery.min.js"></script>
-    <!-- Exclusivo para o PopUp estilizado exibindo mensagens nas telas -->
-    <script src="~/js/jquery.bpopup.min.js"></script>
     <!-- Para as máscaras de HTML usadas apenas nas exibições -->
     <script src="~/js/inputmask/jquery.inputmask.js"></script>
     <script src="~/js/jquery.maskedinput-1.4.1.min.js"></script>
@@ -362,20 +360,11 @@
                 });
             });
             //..
-            //Permite o salvamento através de F5 em todas as páginas, pois aciona o clique do botão de submit
-            document.addEventListener("keydown", function (event) {
-                // Verifica se a tecla pressionada é F5
-                if (event.key === "F5") {
-                    event.preventDefault(); // Impede o reload da página
-
-                    // Encontra o botão de submit e aciona o clique
-                    const botaoSalvar = document.querySelector(".botao-verde");
-                    if (botaoSalvar) {
-                        botaoSalvar.click();
-                    }
-                }
-            });
-            //..
+            //Feito pelo Kiro em 02/05/2026
+            // F5 e CTRL+F5 devem apenas recarregar a página (comportamento padrão do browser).
+            // Não devem acionar salvamento de dados em nenhuma tela do sistema.
+            // O listener anterior que acionava o botão .botao-verde foi removido.
+            //..Kiro
         </script>
         @RenderSection("Scripts", required: false)
     </div>

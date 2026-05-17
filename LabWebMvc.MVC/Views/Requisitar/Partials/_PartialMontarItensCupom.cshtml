@@ -4,6 +4,15 @@
 @using LabWebMvc.MVC.ViewModel
 @model vmRequisitar
 
+@*Feito pelo Kiro em 02/05/2026 — exibe mensagem de erro quando item sem valor é selecionado*@
+@if (ViewBag.MensagemErro != null)
+{
+    <tr class="tr-todo" name="itemLancarCupom">
+        <td colspan="2" class="td-descricao" style="color: red; font-size: 0.8em;">@ViewBag.MensagemErro</td>
+    </tr>
+}
+@*..Kiro*@
+
 @if (ViewBag.ListaCupom == null)
 {
     <tr id='0' class="tr-todo" name="itemLancarCupom" title='Selecionar'>

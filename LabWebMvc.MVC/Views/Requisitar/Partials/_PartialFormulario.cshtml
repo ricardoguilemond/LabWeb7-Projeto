@@ -147,6 +147,7 @@
                         var vm = data.vm;
                         var $conteudo = $("#conteudoPaciente");
                         $conteudo.find("#pacienteId").val(vm.pacienteId);
+                        $conteudo.find("#pacienteIdVisivel").val(vm.pacienteId > 0 ? vm.pacienteId : '');
                         $conteudo.find("#buscaNomePaciente").val(vm.nomePaciente);
                         $conteudo.find("#Nascimento").val(vm.nascimento);
                         $conteudo.find("#CPFPaciente").val(vm.cpfPaciente);
@@ -225,7 +226,12 @@
         <div class="modalPaciente" id="conteudoPaciente">
             <div class="form-group fg2">
                 @Html.Label("Nome do Paciente (sem abreviar!)", null, new { @class = "" })
-                @Html.TextBoxFor(p => p.VmPacientes.NomePaciente, new { @id = "buscaNomePaciente", @name = "buscaNomePaciente", @class = "form-control fm2 capitalize", @placeholder = "Entre com o nome completo do paciente", @required = "required" })
+                <!--Feito pelo Kiro em 02/05/2026 — Id do paciente visível ao lado do nome -->
+                <div style="display:flex; gap:4px;">
+                    @Html.TextBoxFor(p => p.VmPacientes.NomePaciente, new { @id = "buscaNomePaciente", @name = "buscaNomePaciente", @class = "form-control fm2 capitalize", @placeholder = "Entre com o nome completo do paciente", @required = "required", @style = "flex:1;" })
+                    <input type="text" id="pacienteIdVisivel" class="form-control fm2" style="width:60px; text-align:center; background-color:#f0f0f0;" readonly disabled placeholder="Id" />
+                </div>
+                <!--..Kiro-->
                 @Html.ValidationMessageFor(p => p.VmPacientes.NomePaciente, null, new { @class = "has-error" }, "div")
                 <!-- Campo hidden para armazenar o Id do paciente -->
                 @Html.HiddenFor(p => p.VmPacientes.Id, new { @id = "pacienteId", @name = "pacienteId" })

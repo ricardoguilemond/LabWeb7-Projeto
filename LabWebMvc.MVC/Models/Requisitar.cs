@@ -33,6 +33,12 @@ public partial class Requisitar
     public int Liberado { get; set; }
     public int Baixado { get; set; }
 
+    //Feito pelo Kiro em 03/05/2026
+    // Vínculo lógico com ExamesRealizados.Id — SEM FK física no banco.
+    // Identifica o código do exame ao qual estes itens pertencem.
+    public int? ExameRealizadoId { get; set; }
+    //..Kiro
+
     public virtual ClasseExames ClasseExames { get; set; } = null!;
     public virtual Instituicao Instituicao { get; set; } = null!;
     public virtual Postos? Posto { get; set; }

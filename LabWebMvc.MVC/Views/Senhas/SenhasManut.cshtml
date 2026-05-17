@@ -1,4 +1,4 @@
-﻿@model LabWebMvc.MVC.ViewModel.vmSenhas
+@model LabWebMvc.MVC.ViewModel.vmSenhas
 @{
     Layout = "_Layout";
 }
@@ -17,47 +17,47 @@
             <form asp-action="Senhas">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <div class="form-group">
-                    <label asp-for="NomeUsuario" class="control-label">Nick do Usuário (usar uma palavra única)(</label>
+                    <label asp-for="NomeUsuario" class="form-label">Nick do Usuário (usar uma palavra única)(</label>
                     <input asp-for="NomeUsuario" class="form-control" />
                     <span asp-validation-for="NomeUsuario" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="NomeCompleto" class="control-label">Nome Completo</label>
+                    <label asp-for="NomeCompleto" class="form-label">Nome Completo</label>
                     <input asp-for="NomeCompleto" class="form-control" />
                     <span asp-validation-for="NomeCompleto" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="DataCadastro" class="control-label">Data Cadastro</label>
+                    <label asp-for="DataCadastro" class="form-label">Data Cadastro</label>
                     <input asp-for="DataCadastro" class="form-control" />
                     <span asp-validation-for="DataCadastro" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="DataExpira" class="control-label">Data Expira</label>
+                    <label asp-for="DataExpira" class="form-label">Data Expira</label>
                     <input asp-for="DataExpira" class="form-control" />
                     <span asp-validation-for="DataExpira" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="UsarAssinatura" class="control-label">Usa Assinatura nos Laudos?</label>
+                    <label asp-for="UsarAssinatura" class="form-label">Usa Assinatura nos Laudos?</label>
                     <input asp-for="UsarAssinatura" class="form-control" />
                     <span asp-validation-for="UsarAssinatura" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="Assinatura" class="control-label">Imagem da Assinatura</label>
+                    <label asp-for="Assinatura" class="form-label">Imagem da Assinatura</label>
                     <input asp-for="Assinatura" class="form-control" />
                     <span asp-validation-for="Assinatura" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="Bloqueado" class="control-label">Acesso Bloqueado?</label>
+                    <label asp-for="Bloqueado" class="form-label">Acesso Bloqueado?</label>
                     <input asp-for="Bloqueado" class="form-control" />
                     <span asp-validation-for="Bloqueado" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="Administrador" class="control-label">Conta de Administrador?</label>
+                    <label asp-for="Administrador" class="form-label">Conta de Administrador?</label>
                     <input asp-for="Administrador" class="form-control" />
                     <span asp-validation-for="Administrador" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="Count" class="control-label"></label>
+                    <label asp-for="Count" class="form-label"></label>
                     <input asp-for="Count" class="form-control" />
                     <span asp-validation-for="Count" class="text-danger"></span>
                 </div>

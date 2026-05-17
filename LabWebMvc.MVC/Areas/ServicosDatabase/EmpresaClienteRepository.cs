@@ -116,7 +116,9 @@ namespace LabWebMvc.MVC.Areas.ServicosDatabase
                                 Email = reader["Email"].ToString() ?? "",
                                 StringConexao = reader["StringConexao"].ToString() ?? "",
                                 LimiteUsuarios = reader["LimiteUsuarios"].ToString() ?? "0",
-                                DataExpira = string.IsNullOrEmpty(reader["DataExpira"].ToString()) ? _geralController.ObterDataHoraServidor().ToFormataData().AddDays(30) : Convert.ToDateTime(reader["DataExpira"])
+                                //Feito pelo Kiro em 03/05/2026 — migrado para UTC (timestamptz)
+                                DataExpira = string.IsNullOrEmpty(reader["DataExpira"].ToString()) ? _geralController.ObterDataHoraUtc().AddDays(30) : Convert.ToDateTime(reader["DataExpira"])
+                                //..Kiro
                             };
                         }
                     }

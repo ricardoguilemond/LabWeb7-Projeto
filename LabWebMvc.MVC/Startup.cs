@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
+using System.Text.Json;
 
 namespace LabWebMvc.MVC
 {
@@ -62,8 +63,8 @@ namespace LabWebMvc.MVC
             //..
 
             //Serviços para injeção de dependência para o BLL
-            // Fonte de data/hora: PostgreSQL (SELECT NOW() AT TIME ZONE 'America/Sao_Paulo')
-            // Fallback automático para DateTime.Now local se banco inacessível (modo offline)
+            // Fonte de data/hora: PostgreSQL (SELECT NOW() → UTC/timestamptz)
+            // Fallback automático para DateTime.UtcNow se banco inacessível
             services.AddScoped<ITempoServidorService, TempoServidorPostgreSQL>();
             services.AddScoped<GeralController>();  //para injeção de dependência do serviço de métodos gerais de controller
             services.AddScoped<IValidacoesDeSenhas, ValidacoesDeSenhas>();  //para injeção de dependência do serviço de validações de senhas
@@ -119,6 +120,11 @@ namespace LabWebMvc.MVC
             services.AddControllersWithViews(options =>
             {
                 options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+            })
+            .AddJsonOptions(options =>
+            {
+                // Serialização JSON: DateTime UTC em formato ISO 8601 com Z
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             });
             //..
 

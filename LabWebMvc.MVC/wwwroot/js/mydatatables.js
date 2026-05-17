@@ -110,12 +110,16 @@ function configTableCompacta() {
             }
         },
         searching: true, //deixa habilitado o campo de busca para que o campo personalizado de busca funcione!
-        select: { /* Para os checkbox o JQuery exemplo está no "Index.cshtml" e corresponde ao "_PartialLancarExames.cshtml"  */
-            selector: 'td, input.noSelectedLinha:not(:has(:checkbox))',
-        },
+        //Feito pelo Kiro em 02/05/2026
+        // Extensão Select desabilitada — a seleção de linhas é controlada
+        // manualmente pelo handler jQuery em _PartialLancarExames.cshtml
+        // (toggle noSelectedLinha/selectedLinha). Com select habilitado,
+        // o primeiro clique era consumido pelo DataTables e não chegava ao handler.
+        select: false,
+        //..Kiro
         fixedColumns: {
-            left: -1,  //não permite fixar a primeira coluna
-            right: 1,  //fixa a última coluna dos ícones de ações/botões de ações
+            left: -1,
+            right: 1,
         },
         autoWidth: true,
         responsive: true,

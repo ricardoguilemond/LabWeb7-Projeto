@@ -653,7 +653,7 @@ public class Db : DbContext
             entity.Property(e => e.Processo)
                 .HasMaxLength(200)
                 .IsUnicode(false);
-            entity.Property(e => e.DataHora).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataHora).HasColumnType("timestamp with time zone");
         });
 
         modelBuilder.Entity<ControleDeAcesso>(entity =>
@@ -816,8 +816,8 @@ public class Db : DbContext
             entity.Property(e => e.Complemento)
                 .HasMaxLength(25)
                 .IsUnicode(false);
-            entity.Property(e => e.DataCadastro).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataExpira).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataCadastro).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataExpira).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Email)
                 .HasMaxLength(500)
                 .IsUnicode(false);
@@ -914,10 +914,10 @@ public class Db : DbContext
             entity.Property(e => e.Id)
                   .ValueGeneratedOnAdd(); //importante!
 
-            entity.Property(e => e.DataEntrega).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataExame).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataFim).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataIni).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataEntrega).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataExame).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataFim).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataIni).HasColumnType("timestamp with time zone");
             entity.Property(e => e.HistoricoClinico)
                 .HasMaxLength(2000)
                 .IsUnicode(false);
@@ -945,9 +945,9 @@ public class Db : DbContext
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.DataColeta).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataExportado).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataImportado).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataColeta).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataExportado).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataImportado).HasColumnType("timestamp with time zone");
             entity.Property(e => e.LaboratorioApoio)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -985,8 +985,8 @@ public class Db : DbContext
             entity.Property(e => e.Id)
                   .ValueGeneratedOnAdd(); //importante!
 
-            entity.Property(e => e.DataExame).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataImpresso).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataExame).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataImpresso).HasColumnType("timestamp with time zone");
 
             entity.HasOne(d => d.Instituicao).WithMany(p => p.ExamesImpressos)
                 .HasForeignKey(d => d.InstituicaoId)
@@ -1017,7 +1017,7 @@ public class Db : DbContext
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(15)
                 .IsUnicode(false);
-            entity.Property(e => e.DataIni).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataIni).HasColumnType("timestamp with time zone");
             entity.Property(e => e.LaboratorioApoio)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -1070,10 +1070,10 @@ public class Db : DbContext
             entity.Property(e => e.DataColeta)
                 .HasMaxLength(10)
                 .IsUnicode(false);
-            entity.Property(e => e.DataEntrega).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataExame).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataFim).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataIni).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataEntrega).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataExame).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataFim).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataIni).HasColumnType("timestamp with time zone");
             entity.Property(e => e.ExameColado)
                 .HasMaxLength(250)
                 .IsUnicode(false);
@@ -1126,10 +1126,10 @@ public class Db : DbContext
             entity.Property(e => e.DataColeta)
                 .HasMaxLength(10)
                 .IsUnicode(false);
-            entity.Property(e => e.DataEntrega).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataExame).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataFim).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataIni).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataEntrega).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataExame).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataFim).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataIni).HasColumnType("timestamp with time zone");
             entity.Property(e => e.ExameColado)
                 .HasMaxLength(250)
                 .IsUnicode(false);
@@ -1236,9 +1236,9 @@ public class Db : DbContext
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.DataExame).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataFim).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataIni).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataExame).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataFim).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataIni).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Descricao)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -1289,9 +1289,9 @@ public class Db : DbContext
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.DataExame).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataFim).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataIni).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataExame).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataFim).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataIni).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Descricao)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -1350,9 +1350,9 @@ public class Db : DbContext
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.DataExame).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataFim).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataIni).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataExame).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataFim).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataIni).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Descricao)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -1560,7 +1560,7 @@ public class Db : DbContext
             entity.Property(e => e.Header)
                 .HasMaxLength(1000)
                 .IsUnicode(false);
-            entity.Property(e => e.Inicio).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.Inicio).HasColumnType("timestamp with time zone");
             entity.Property(e => e.NomeArquivo)
                 .HasMaxLength(200)
                 .IsUnicode(false);
@@ -1573,7 +1573,7 @@ public class Db : DbContext
             entity.Property(e => e.Summary)
                 .HasMaxLength(1000)
                 .IsUnicode(false);
-            entity.Property(e => e.Termino).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.Termino).HasColumnType("timestamp with time zone");
 
             entity.HasOne(d => d.IntegracaoDadosLayout).WithMany(p => p.IntegracaoDadosExecucao)
                 .HasForeignKey(d => d.IntegracaoDadosLayoutId)
@@ -1612,8 +1612,8 @@ public class Db : DbContext
             entity.Property(e => e.Id)
                   .ValueGeneratedOnAdd(); //importante!
 
-            entity.Property(e => e.DataFinal).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataInicial).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataFinal).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataInicial).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Descricao)
                 .HasMaxLength(60)
                 .IsUnicode(false);
@@ -1654,7 +1654,7 @@ public class Db : DbContext
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.DataEntregaParcial).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataEntregaParcial).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Descricao)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -1731,7 +1731,7 @@ public class Db : DbContext
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.DataEntregaParcial).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataEntregaParcial).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Descricao)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -1798,9 +1798,9 @@ public class Db : DbContext
             entity.Property(e => e.Id)
                   .ValueGeneratedOnAdd(); //importante!
 
-            entity.Property(e => e.Data).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataPeriodoFinal).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataPeriodoInicial).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.Data).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataPeriodoFinal).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataPeriodoInicial).HasColumnType("timestamp with time zone");
             entity.Property(e => e.NomeArquivo)
                 .HasMaxLength(200)
                 .IsUnicode(false);
@@ -1912,12 +1912,12 @@ public class Db : DbContext
                 .HasMaxLength(11)
                 .IsUnicode(false)
                 .HasColumnName("CPF");
-            entity.Property(e => e.DataBaixa).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataEntrada).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataEntradaBrasil).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataRegistro).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataBaixa).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataEntrada).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataEntradaBrasil).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataRegistro).HasColumnType("timestamp with time zone");
             entity.Property(e => e.DUM)
-                .HasColumnType("timestamp without time zone")
+                .HasColumnType("timestamp with time zone")
                 .HasColumnName("DUM");
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
@@ -1941,7 +1941,7 @@ public class Db : DbContext
             entity.Property(e => e.Nacionalidade)
                 .HasMaxLength(30)
                 .IsUnicode(false);
-            entity.Property(e => e.Nascimento).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.Nascimento).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Naturalidade)
                 .HasMaxLength(30)
                 .IsUnicode(false);
@@ -2081,7 +2081,7 @@ public class Db : DbContext
             entity.HasKey(e => e.Id).HasName("iRastreamentos1");
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-            entity.Property(e => e.DataOcorrencia).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataOcorrencia).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Exception)
                 .HasMaxLength(4000)
                 .IsUnicode(false);
@@ -2144,8 +2144,8 @@ public class Db : DbContext
             entity.Property(e => e.ControleApoio)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.DataEntregaParcial).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataIni).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataEntregaParcial).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataIni).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Descricao)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -2205,6 +2205,12 @@ public class Db : DbContext
 
             entity.Property(e => e.PostoId).IsRequired(false);
 
+            //Feito pelo Kiro em 03/05/2026
+            // ExameRealizadoId: vínculo lógico com ExamesRealizados.Id
+            // SEM FK física, SEM navegação — apenas coluna INT NULL.
+            entity.Property(e => e.ExameRealizadoId).IsRequired(false);
+            //..Kiro
+
             entity.HasOne(d => d.Posto).WithMany(p => p.Requisitar)
                 .HasForeignKey(d => d.PostoId)
                 .IsRequired(false)
@@ -2224,8 +2230,8 @@ public class Db : DbContext
                 .HasMaxLength(14)
                 .IsUnicode(false)
                 .HasColumnName("CNPJEmpresa");
-            entity.Property(e => e.DataCadastro).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataExpira).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataCadastro).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataExpira).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
                 .IsUnicode(false);
@@ -2402,8 +2408,8 @@ public class Db : DbContext
                 .HasMaxLength(11)
                 .IsUnicode(false)
                 .HasColumnName("CPFUsuario");
-            entity.Property(e => e.DataCadastro).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.DataNascimentoUsuario).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.DataCadastro).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataNascimentoUsuario).HasColumnType("timestamp with time zone");
 
             entity.HasOne(e => e.Senhas)
                 .WithOne(e => e.UsuariosWeb)

@@ -88,6 +88,9 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
   (`@page` é exclusiva de Razor Pages na pasta `Pages/`)
 - O `site.js` é carregado duas vezes no `_Layout.cshtml` (no head e no body)
   — não adicionar uma terceira referência
+- F5 e CTRL+F5 **não devem salvar dados** em nenhuma tela do sistema.
+  Devem manter o comportamento padrão do browser (recarregar a página).
+  O salvamento deve ser exclusivamente por acionamento de botão.
 - Não adicionar bibliotecas JavaScript ou CSS de terceiros sem
   aprovação explícita do usuário
 - DataTables pode ser atualizado sob demanda, com avaliação prévia
@@ -127,6 +130,13 @@ recente por paciente). Cada linha possui três botões de ação:
 - Ao carregar com sucesso, preenche todos os campos do formulário
   (paciente, médico, instituição, posto, tabela) e recarrega o grid
   de exames da tabela selecionada.
+- Após preencher o formulário, chama
+  `GET /Requisitar/CarregarCupomEdicao?pacienteId=&data=` para
+  recarregar o cupom com os itens de exame da requisição existente.
+- O endpoint `CarregarCupomEdicao` localiza os `PlanoExames`
+  correspondentes por `ContaExame` + `TabelaExamesId`, popula a
+  `ListaAcumulativa` no servidor, e retorna a partial do cupom
+  renderizada.
 
 ### Botão Vermelho — Excluir Requisição
 - Chama `POST /Requisitar/ExcluirRequisicao` com `idPaciente` e `data`.
@@ -143,6 +153,56 @@ recente por paciente). Cada linha possui três botões de ação:
   convertida para `yyyy-MM-dd` antes de enviar ao backend.
 - Os endpoints de edição e exclusão validam resultados **no servidor**
   — nunca confiar apenas na validação client-side.
+
+## Regras de Negócio — Edição e Salvamento de Requisição
+
+### Relacionamento entre tabelas
+- `ExamesRealizados` é o header do exame do paciente.
+- `ItensExamesRealizados` são os itens/detalhes do exame.
+- `Requisitar` é uma cópia/junção de ambos (backup operacional).
+- O campo `TabelaExamesId` identifica a tabela de exames/preços
+  utilizada e está presente nas três tabelas (falso relacionamento
+  em `Requisitar` — não é FK física).
+
+### Chave composta de identificação
+- A combinação `PacienteId + ClasseExamesId + ExameId + ContaExame
+  + InstituicaoId + PostoId + TabelaExamesId + MedicoId` identifica
+  univocamente uma requisição.
+- Um paciente pode ter múltiplas requisições no mesmo dia, com
+  médicos, instituições, postos e tabelas diferentes.
+- O `TabelaExamesId` é o campo que diferencia qual requisição
+  está sendo editada quando há múltiplas no mesmo dia.
+
+### Exclusão de itens anteriores ao salvar (edição)
+- Ao salvar uma requisição editada, os itens anteriores do paciente
+  na data para a tabela específica devem ser excluídos antes de
+  inserir os novos.
+- Excluir: `Requisitar` + `ItensExamesRealizados`
+- **Manter:** `ExamesRealizados` (header — nunca excluir)
+- Filtrar por: `PacienteId + Data + TabelaExamesId`
+- Usar `TabelaExamesIdOriginal` (campo hidden preenchido ao
+  carregar para edição) para identificar a tabela original,
+  mesmo que o usuário tenha trocado durante a edição.
+
+### Validação de ValorItem no cupom
+- Itens de exame sem valor definido (`ValorItem` null ou <= 0)
+  não podem ser adicionados ao cupom.
+- O sistema deve exibir mensagem informativa ao usuário quando
+  tentar selecionar um item sem valor.
+
+### Prevenção de acúmulo de handlers jQuery
+- Handlers delegados jQuery (`$(document).on`) em partials
+  carregadas via `$.load()` devem usar `$(document).off()` com
+  namespace antes de registrar, para evitar acúmulo de handlers
+  que causa toggle duplo.
+- Exemplo: `$(document).off('click.ns').on('click.ns', sel, fn)`
+
+### Prevenção de duplicatas
+- A `ListaAcumulativa` verifica por `PlanoExames.Id` antes de
+  adicionar — jamais permitir que um exame do mesmo código seja
+  lançado duas vezes no cupom.
+- Ao trocar a tabela de exames via modal, o cupom no servidor
+  deve ser esvaziado (`id=0`) antes de carregar os novos itens.
 
 ## Regras de Negócio — Exclusão de Registros
 

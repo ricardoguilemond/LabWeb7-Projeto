@@ -1904,6 +1904,12 @@ public class Db : DbContext
                 .HasForeignKey(d => d.TabelaExamesId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("iRequisitar_TabelaExames");
+
+            //Feito pelo Kiro em 03/05/2026
+            // ExameRealizadoId: vínculo lógico com ExamesRealizados.Id
+            // SEM FK física, SEM navegação — apenas coluna INT NULL.
+            entity.Property(e => e.ExameRealizadoId).IsRequired(false);
+            //..Kiro
         });
 
         modelBuilder.Entity<Senhas>(entity =>

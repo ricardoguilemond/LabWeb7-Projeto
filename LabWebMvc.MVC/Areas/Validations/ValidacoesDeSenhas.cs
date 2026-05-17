@@ -170,7 +170,9 @@ namespace LabWebMvc.MVC.Areas.Validations
                     NomeCompleto = obj.NomeCompleto.ToUpper(),
                     Email = obj.Email.ToLower(),
                     SenhaUsuario = CriptoDecripto.HashSenha("12345"),  //hash BCrypt da senha padrão (por enquanto) //TODO Criptografias.GeraSenhaAleatoria(),
-                    DataCadastro = _tempoService.ObterDataHoraServidor().ToFormataData(),
+                    //Feito pelo Kiro em 03/05/2026 — migrado para UTC (timestamptz)
+                    DataCadastro = _tempoService.ObterDataHoraUtc(),
+                    //..Kiro
                     DataExpira = obj.DataExpira ?? null,
                     UsarAssinatura = obj.UsarAssinatura ?? 0,
                     Assinatura = obj.Assinatura,
@@ -397,7 +399,9 @@ namespace LabWebMvc.MVC.Areas.Validations
                     NomeUsuario = "ADMINISTRADOR",
                     NomeCompleto = "ADMINISTRADOR DO SISTEMA",
                     SenhaUsuario = CriptoDecripto.HashSenha("12345"),  //hash BCrypt da senha padrão (por enquanto) //TODO Criptografias.GeraSenhaAleatoria(),
-                    DataCadastro = _tempoService.ObterDataHoraServidor().ToFormataData(),
+                    //Feito pelo Kiro em 03/05/2026 — migrado para UTC (timestamptz)
+                    DataCadastro = _tempoService.ObterDataHoraUtc(),
+                    //..Kiro
                     Administrador = 1,
                     CNPJEmpresa = cliente.CNPJ,
                     StringDeConexao = cliente.StringConexao

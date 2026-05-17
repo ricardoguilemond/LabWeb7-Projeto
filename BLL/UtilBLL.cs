@@ -287,6 +287,49 @@ namespace BLL
                 return data.ToString().Substring(posDia, 2) + "/" + data.ToString().Substring(posMes, 2) + "/" + data.ToString().Substring(posAno, 4);
         }
 
+        // ===================================================================
+        // HELPERS DE TIMEZONE — UTC ↔ LOCAL
+        // ===================================================================
+
+        /// <summary>
+        /// Converte DateTime UTC para string no timezone local (padrão: America/Sao_Paulo).
+        /// Uso nas Views: @Model.DataIni.ToLocalString()
+        /// </summary>
+        public static string ToLocalString(this DateTime utc, string formato = "dd/MM/yyyy HH:mm:ss", string timezoneId = "America/Sao_Paulo")
+        {
+            if (utc.Kind != DateTimeKind.Utc)
+                utc = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+            var local = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+            return local.ToString(formato);
+        }
+
+        /// <summary>
+        /// Converte DateTime? UTC para string no timezone local (padrão: America/Sao_Paulo).
+        /// Retorna string vazia se nulo.
+        /// Uso nas Views: @Model.DataIni.ToLocalString()
+        /// </summary>
+        public static string ToLocalString(this DateTime? utc, string formato = "dd/MM/yyyy HH:mm:ss", string timezoneId = "America/Sao_Paulo")
+        {
+            if (!utc.HasValue) return string.Empty;
+            return utc.Value.ToLocalString(formato, timezoneId);
+        }
+
+        /// <summary>
+        /// Converte DateTime UTC para DateTime local (Kind=Unspecified).
+        /// Uso: comparações de data em queries EF Core quando o banco usa timestamptz.
+        /// </summary>
+        public static DateTime ToLocalDateTime(this DateTime utc, string timezoneId = "America/Sao_Paulo")
+        {
+            if (utc.Kind != DateTimeKind.Utc)
+                utc = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+            var local = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+            return DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
+        }
+
         public static dynamic RetornaSN(this object? valor, bool compacto = true)
         {
             return valor switch

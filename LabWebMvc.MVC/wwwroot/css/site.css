@@ -787,9 +787,12 @@ a {
         cursor: pointer;
     }
 
-span, .modal-x {
+/*Feito pelo Kiro em 02/05/2026*/
+/* Botão X de fechar dos modais antigos (myModal) — limitado ao escopo do modal */
+.modal .close span, .modal-x {
     font-size: 40px;
 }
+/*..Kiro*/
 
 /* Fim do Modal de Mensagens em Tela */
 /* 
@@ -969,3 +972,30 @@ table.dataTable tbody tr:hover {
 #modeloTableRequisitar tbody tr {
     cursor: pointer; /* Mantém cursor como ponteiro */
 }
+
+/*Feito pelo Kiro em 02/05/2026*/
+/* SweetAlert2 — padrão de fontes para confirmações em todo o sistema.
+   Sobrescreve o tamanho padrão do SweetAlert2 que renderiza fontes grandes.
+   Afeta todas as chamadas Swal.fire() sem necessidade de inline styles. */
+.swal2-title {
+    font-size: 1.1em !important;
+    color: gray;
+}
+
+.swal2-html-container {
+    font-size: 0.85em !important;
+    color: #646464;
+}
+
+/* Neutraliza regras globais (div { clear:both; line-height:1.8em })
+   que distorcem o layout interno do SweetAlert2 (ícone, botões). */
+.swal2-popup div {
+    clear: none;
+    line-height: normal;
+}
+
+.swal2-popup .swal2-icon {
+    clear: none;
+    line-height: normal;
+}
+/*..Kiro*/

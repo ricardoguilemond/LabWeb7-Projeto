@@ -214,5 +214,100 @@ namespace LabWebMvc.MVC.Areas.Controllers
             else
                 return _tempoService.ObterDataHoraServidor();       //dd/mm/yyyy HH:mm:ss
         }
+
+        /// <summary>
+        /// Retorna DateTime UTC para uso em persistência.
+        /// Fonte: PostgreSQL (NOW()). Fallback: DateTime.UtcNow.
+        /// NUNCA use DateTime.Now ou dados do cliente para timestamps de criacao.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        public DateTime ObterDataHoraUtc()
+        {
+            return _tempoService.ObterDataHoraUtc();
+        }
+
+        /// <summary>
+        /// Retorna DateTime no timezone local (America/Sao_Paulo) com Kind=Unspecified.
+        /// Uso: exibição e lógica de negócio local.
+        /// NÃO use para persistência — use ObterDataHoraUtc() para isso.
+        /// NÃO use como parâmetro de query EF Core com colunas timestamptz — use ObterRangeDiaUtc().
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        public DateTime ObterDataHoraLocal()
+        {
+            var utc = _tempoService.ObterDataHoraUtc();
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            var local = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+            return DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
+        }
+
+        /// <summary>
+        /// Retorna o range do dia atual em UTC (Kind=Utc), pronto para uso em
+        /// queries EF Core que comparam com colunas timestamptz.
+        /// 
+        /// IMPORTANTE: No Npgsql 8.x (sem legacy behavior), DateTimeKind.Unspecified
+        /// causa InvalidOperationException ao comparar com timestamptz.
+        /// Este método converte meia-noite local (America/Sao_Paulo) para UTC corretamente.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        public (DateTime inicioUtc, DateTime fimUtc) ObterRangeDiaUtc()
+        {
+            var utcAgora = _tempoService.ObterDataHoraUtc();
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            var hojeLocal = TimeZoneInfo.ConvertTimeFromUtc(utcAgora, tz).Date; // meia-noite local
+            return ConverterDataLocalParaRangeUtc(hojeLocal);
+        }
+
+        /// <summary>
+        /// Converte uma data local (meia-noite America/Sao_Paulo) para range UTC (Kind=Utc),
+        /// pronto para uso em queries EF Core com colunas timestamptz.
+        /// 
+        /// Use este método quando o filtro vem de input do usuário (string dd/MM/yyyy)
+        /// ou de DateTime.Parse. NUNCA passe DateTime.Kind=Unspecified diretamente ao PostgreSQL.
+        /// 
+        /// Exemplo: dataLocal = 2026-05-03 00:00:00 (Brasília)
+        ///          inicioUtc = 2026-05-03 03:00:00 UTC
+        ///          fimUtc    = 2026-05-04 02:59:59 UTC
+        /// </summary>
+        public (DateTime inicioUtc, DateTime fimUtc) ConverterDataLocalParaRangeUtc(DateTime dataLocal)
+        {
+            // Se já é UTC, extrai a data e calcula o range diretamente
+            if (dataLocal.Kind == DateTimeKind.Utc)
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+                var dataLocalBr = TimeZoneInfo.ConvertTimeFromUtc(dataLocal, tz).Date;
+                var offset = tz.GetUtcOffset(dataLocalBr);
+                var inicioUtc = new DateTimeOffset(dataLocalBr, offset).UtcDateTime;
+                var fimUtc = new DateTimeOffset(dataLocalBr.AddDays(1).AddTicks(-1), offset).UtcDateTime;
+                return (inicioUtc, fimUtc);
+            }
+
+            // Kind=Unspecified ou Kind=Local: trata como horário de Brasília
+            var tz2 = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            var data = dataLocal.Date; // garante meia-noite
+            var offset2 = tz2.GetUtcOffset(data);
+            var inicioUtc2 = new DateTimeOffset(data, offset2).UtcDateTime;
+            var fimUtc2 = new DateTimeOffset(data.AddDays(1).AddTicks(-1), offset2).UtcDateTime;
+            return (inicioUtc2, fimUtc2);
+        }
+
+        /// <summary>
+        /// Converte um DateTime local (America/Sao_Paulo, Kind=Unspecified) para UTC (Kind=Utc),
+        /// pronto para gravação em colunas timestamptz.
+        /// 
+        /// Use quando um valor de data/hora vem do cliente (ex: DataEntregaParcial)
+        /// e precisa ser persistido como UTC.
+        /// </summary>
+        public DateTime ConverterLocalParaUtc(DateTime dataLocal)
+        {
+            // Se já é UTC, retorna sem conversão (evita dobrar o offset)
+            if (dataLocal.Kind == DateTimeKind.Utc)
+                return dataLocal;
+
+            // Kind=Unspecified ou Kind=Local: trata como horário de Brasília e converte para UTC
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            var offset = tz.GetUtcOffset(dataLocal);
+            return new DateTimeOffset(dataLocal, offset).UtcDateTime;
+        }
     }
 }

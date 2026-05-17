@@ -69,6 +69,20 @@ namespace LabWebMvc.MVC.ViewModel
         public virtual string SiglaTabela { get; set; } = null!;
         public virtual string NomeTabela { get; set; } = null!;
 
+        //Feito pelo Kiro em 02/05/2026
+        // Armazena o TabelaExamesId original ao carregar para edição.
+        // Usado no SalvarRequisicao para identificar qual requisição excluir
+        // quando o usuário troca a tabela de exames durante a edição.
+        public int TabelaExamesIdOriginal { get; set; }
+        //..Kiro
+
+        //Feito pelo Kiro em 03/05/2026
+        // ExameRealizadoId: código do exame (vínculo lógico com ExamesRealizados.Id).
+        // Em inclusão nova: 0 (será preenchido após criar ExamesRealizados).
+        // Em edição: valor existente que deve ser preservado.
+        public int ExameRealizadoId { get; set; }
+        //..Kiro
+
         //Do Médico
         public virtual string CRM { get; set; } = null!;
         public virtual string NomeMedico { get; set; } = null!;

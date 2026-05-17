@@ -3,101 +3,169 @@ using Npgsql;
 
 namespace BLL
 {
-    // Fonte canônica de data/hora do servidor PostgreSQL
-    // Usa AT TIME ZONE 'America/Sao_Paulo' — retorna sempre horário de Brasília
-    // Fallback automático para DateTime.Now local se banco inacessível (modo offline)
+    /// <summary>
+    /// Fonte canônica de data/hora UTC para a aplicação LabWeb7.
+    /// 
+    /// ARQUITETURA:
+    /// - Fonte primária: PostgreSQL via SELECT NOW() (retorna timestamptz = UTC)
+    /// - Fallback: DateTime.UtcNow do servidor de aplicação (nunca DateTime.Now)
+    /// - Proibido: usar hora do cliente (browser/frontend)
+    /// - Armazenamento: UTC no banco (timestamptz)
+    /// - Exibição: conversão UTC → America/Sao_Paulo SOMENTE na camada de apresentação
+    /// </summary>
     public class TempoServidorPostgreSQL : ITempoServidorService
     {
         private readonly string _connectionString;
 
+        /// <summary>
+        /// Construtor usado pelo DI — recebe IConfiguration e aplica a substituição
+        /// de credenciais (usubanco→sistema, ususenha→senha real) igual ao ConnectionService.
+        /// Isso é necessário porque o appsettings.json contém placeholders.
+        /// </summary>
         public TempoServidorPostgreSQL(IConfiguration config)
         {
-            _connectionString = config.GetSection("ConexaoPostgreSQL")["PSQLConnectionString"]
+            var raw = config.GetSection("ConexaoPostgreSQL")["PSQLConnectionString"]
                 ?? throw new InvalidOperationException("Connection string 'PSQLConnectionString' not found.");
+
+            var userId = config.GetSection("LoginPadraoSistema")?["Sistema"] ?? "sistema";
+            var password = config.GetSection("LoginPadraoSistema")?["Senha"] ?? "Acer@105";
+
+            _connectionString = raw
+                .Replace("usubanco", userId)
+                .Replace("ususenha", password);
         }
 
-        /*
-            USO direto:
-            string data = _tempoService.ObterDataHoraServidor();          // formato padrão
-            string dataIso = _tempoService.ObterDataHoraServidor("iso");  // formato ISO 8601
-        */
+        /// <summary>
+        /// Construtor alternativo — recebe a connection string já processada.
+        /// Ideal para injeção via IConnectionService.GetConnectionString().
+        /// </summary>
+        public TempoServidorPostgreSQL(string connectionString)
+        {
+            _connectionString = connectionString
+                ?? throw new ArgumentNullException(nameof(connectionString));
+        }
 
-        // Método síncrono para obter a data e hora do servidor PostgreSQL no fuso de Brasília
-        // Usa AT TIME ZONE 'America/Sao_Paulo' para garantir horário correto
-        // independente do fuso do servidor .NET ou do cliente
-        // Fallback: se o banco não estiver acessível (modo offline/standalone), usa DateTime.Now do computador local
-        public string ObterDataHoraServidor(string? formato = null)
+        // ===================================================================
+        // MÉTODOS UTC — uso obrigatório para persistência e lógica de negócio
+        // ===================================================================
+
+        /// <summary>
+        /// Retorna a data/hora UTC atual do servidor PostgreSQL.
+        /// Query: SELECT NOW() → retorna timestamptz (UTC).
+        /// Fallback: DateTime.UtcNow do servidor de aplicação.
+        /// </summary>
+        public DateTime ObterDataHoraUtc()
         {
             try
             {
-                using NpgsqlConnection connection = new(_connectionString);
+                using var connection = new NpgsqlConnection(_connectionString);
                 connection.Open();
 
-                // AT TIME ZONE 'America/Sao_Paulo': converte UTC → horário de Brasília no banco
-                using NpgsqlCommand command = new("SELECT NOW() AT TIME ZONE 'America/Sao_Paulo'", connection);
+                using var command = new NpgsqlCommand("SELECT NOW()", connection);
                 object? resultado = command.ExecuteScalar();
 
                 if (resultado is DateTime dataHora)
                 {
-                    return formato?.ToLower() switch
-                    {
-                        "iso" => dataHora.ToString("o"), // ISO 8601
-                        _ => dataHora.ToString("dd/MM/yyyy HH:mm:ss") // Padrão brasileiro
-                    };
+                    // Garante Kind=Utc independente do que o Npgsql retornar
+                    return DateTime.SpecifyKind(dataHora, DateTimeKind.Utc);
                 }
 
-                // Banco retornou valor inesperado: fallback para data local
-                return FormatarDataLocal(DateTime.Now, formato);
+                // Banco retornou valor inesperado: fallback controlado
+                return DateTime.UtcNow;
             }
             catch
             {
-                // Banco inacessível (offline/standalone): usa data do computador local
-                return FormatarDataLocal(DateTime.Now, formato);
+                // Banco inacessível: fallback controlado com UTC
+                return DateTime.UtcNow;
             }
         }
 
-        // Método assíncrono para obter a data e hora do servidor PostgreSQL no fuso de Brasília
-        // Fallback: se o banco não estiver acessível, usa DateTime.Now do computador local
-        public async Task<DateTime?> ObterDataHoraServidorAsync()
+        /// <summary>
+        /// Versão assíncrona de ObterDataHoraUtc().
+        /// Query: SELECT NOW() → retorna timestamptz (UTC).
+        /// Fallback: DateTime.UtcNow do servidor de aplicação.
+        /// </summary>
+        public async Task<DateTime> ObterDataHoraUtcAsync()
         {
             try
             {
-                using NpgsqlConnection conn = new(_connectionString);
-                // AT TIME ZONE 'America/Sao_Paulo': converte UTC → horário de Brasília no banco
-                using NpgsqlCommand cmd = new("SELECT NOW() AT TIME ZONE 'America/Sao_Paulo'", conn);
+                using var conn = new NpgsqlConnection(_connectionString);
+                using var cmd = new NpgsqlCommand("SELECT NOW()", conn);
 
                 await conn.OpenAsync();
                 object? result = await cmd.ExecuteScalarAsync();
-                return Convert.ToDateTime(result);
+
+                if (result is DateTime dataHora)
+                {
+                    return DateTime.SpecifyKind(dataHora, DateTimeKind.Utc);
+                }
+
+                return DateTime.UtcNow;
             }
             catch
             {
-                // Banco inacessível: fallback para data local
-                return DateTime.Now;
+                return DateTime.UtcNow;
             }
         }
 
-        // Helper privado: formata um DateTime conforme o parâmetro formato
-        private static string FormatarDataLocal(DateTime dt, string? formato) =>
-            formato?.ToLower() switch
-            {
-                "iso" => dt.ToString("o"),
-                _ => dt.ToString("dd/MM/yyyy HH:mm:ss")
-            };
-
-        // Método assíncrono com formatação
-        public async Task<string> ObterDataHoraServidorFormatadoAsync(string? formato = null)
+        /// <summary>
+        /// Converte um DateTime UTC para string no timezone local de exibição.
+        /// Padrão: America/Sao_Paulo, formato dd/MM/yyyy HH:mm:ss.
+        /// </summary>
+        public string FormatarUtcParaLocal(DateTime utc, string? formato = null, string timezoneId = "America/Sao_Paulo")
         {
-            DateTime? dataHora = await ObterDataHoraServidorAsync();
+            if (utc.Kind != DateTimeKind.Utc)
+            {
+                // Se receber Unspecified/Local, assume que já está em UTC
+                // (defesa contra chamadas incorretas)
+                utc = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+            }
 
-            if (dataHora == null)
-                return "Data inválida";
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+            var local = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
 
             return formato?.ToLower() switch
             {
-                "iso" => dataHora.Value.ToString("o"),
-                _ => dataHora.Value.ToString("dd/MM/yyyy HH:mm:ss")
+                "iso" => local.ToString("o"),
+                _ => local.ToString("dd/MM/yyyy HH:mm:ss")
             };
+        }
+
+        // ===================================================================
+        // MÉTODOS LEGACY — mantidos para compatibilidade com views/controllers existentes
+        // Internamente delegam para os métodos UTC + conversão local
+        // ===================================================================
+
+        /// <summary>
+        /// LEGACY: retorna string formatada no timezone local (dd/MM/yyyy HH:mm:ss).
+        /// Para persistência, use ObterDataHoraUtc() em vez deste método.
+        /// </summary>
+        public string ObterDataHoraServidor(string? formato = null)
+        {
+            var utc = ObterDataHoraUtc();
+            return FormatarUtcParaLocal(utc, formato);
+        }
+
+        /// <summary>
+        /// LEGACY: retorna DateTime? do timezone local (Kind=Unspecified).
+        /// Para persistência, use ObterDataHoraUtcAsync() em vez deste método.
+        /// </summary>
+        public async Task<DateTime?> ObterDataHoraServidorAsync()
+        {
+            var utc = await ObterDataHoraUtcAsync();
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            var local = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+            return local;
+        }
+
+        /// <summary>
+        /// LEGACY: retorna string formatada de forma assíncrona.
+        /// Para persistência, use ObterDataHoraUtcAsync() em vez deste método.
+        /// </summary>
+        public async Task<string> ObterDataHoraServidorFormatadoAsync(string? formato = null)
+        {
+            var utc = await ObterDataHoraUtcAsync();
+            return FormatarUtcParaLocal(utc, formato);
         }
     }
 }

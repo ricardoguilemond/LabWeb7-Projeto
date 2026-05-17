@@ -1,4 +1,4 @@
----
+im---
 inclusion: always
 description: Regras de frontend — CSS, JavaScript, jQuery e DataTables para o projeto LabWeb7
 ---
@@ -101,13 +101,49 @@ description: Regras de frontend — CSS, JavaScript, jQuery e DataTables para o 
 4. Manipulação de DOM para criar elementos auxiliares
    (ex: barra de scroll superior) é preferível a plugins.
 5. Usar `fetch` ou `$.ajax` conforme o padrão já existente
-   na tela — não misturar ambos na mesma função sem motivo.
+   na tela — não misturar ambos na mesma função sem motivo. Mas,
+   se for melhor otimizado preferir o uso de `fetch`.
 6. Sempre converter datas do grid (`dd/MM/yyyy`) para
    `yyyy-MM-dd` antes de enviar ao backend.
 7. Confirmações destrutivas (exclusão) devem usar SweetAlert2
    (`Swal.fire`) — já presente no projeto.
 8. Mensagens informativas devem usar `clickAviso` — função
    já existente no projeto.
+9. Handlers delegados em partials carregadas via `$.load()`
+   devem usar namespace e `$(document).off()` antes de
+   `$(document).on()` para evitar acúmulo. Exemplo:
+   `$(document).off('click.meuNamespace').on('click.meuNamespace', selector, handler)`
+
+### SweetAlert2 — Padrão de fontes para confirmações
+
+O tamanho de fonte das mensagens SweetAlert2 é controlado
+globalmente via `site.css`, usando as classes nativas do
+SweetAlert2:
+
+```css
+.swal2-title {
+    font-size: 1.1em !important;
+    color: gray;
+}
+.swal2-html-container {
+    font-size: 0.85em !important;
+    color: #646464;
+}
+```
+
+- Não usar `<span style="font-size:...">` inline no `title`
+  ou `html` do `Swal.fire` — o CSS global já cuida disso.
+- Se uma mensagem específica precisar de tamanho diferente,
+  o inline sobrescreve o CSS global normalmente.
+- As funções genéricas `clickConfirm`, `clickAviso` e
+  `clickAction` do `site.js` passam o título e mensagem
+  como texto puro — sem `<span>` wrapper.
+- O `clickAviso` usa `returnFocus: false` para evitar que o
+  browser restaure o foco no elemento anterior ao fechar,
+  prevenindo scroll indesejado.
+- Mensagens informativas são dispensáveis quando a ação visual
+  já é autoexplicativa (ex: preenchimento de campos na edição).
+  Preferir feedback visual implícito sobre mensagens explícitas.
 
 ### Barra de rolagem superior (dual scrollbar)
 

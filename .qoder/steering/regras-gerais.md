@@ -65,6 +65,9 @@ description: Regras gerais de conduta e restrições do Qoder para o projeto Lab
   e bibliotecas adicionais
 - **DataTables:** Pode ser atualizado sob demanda, com avaliação prévia
   de impacto no design e aprovação do usuário
+- F5 e CTRL+F5 **não devem salvar dados** em nenhuma tela do sistema.
+  Devem manter o comportamento padrão do browser (recarregar a página).
+  O salvamento deve ser exclusivamente por acionamento de botão.
 - Regras detalhadas de CSS, JavaScript e DataTables estão no steering
   `regras-controllers-views.md`
 
@@ -173,6 +176,7 @@ Exemplos:
 ### Steering Files do Qoder
 Este arquivo faz parte do conjunto de steering files do Qoder:
 - `regras-gerais.md` (este arquivo)
+- `regras-analise-antes-de-alterar.md`
 - `encoding-acentuacao-ptbr.md`
 - `formatacao-tabelas.md`
 - `regras-banco-dados.md`

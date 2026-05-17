@@ -34,6 +34,7 @@
             var $conteudo = $("#conteudoPaciente");
 
             $conteudo.find("#pacienteId").val(vm.pacienteId);
+            $conteudo.find("#pacienteIdVisivel").val(vm.pacienteId > 0 ? vm.pacienteId : '');
             $conteudo.find("#buscaNomePaciente").val(vm.nomePaciente);
 
             // Limpa mensagem de validação do campo nome após preenchimento pelo modal
