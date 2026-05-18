@@ -106,6 +106,14 @@
             margin-left: -30px;
         }
     </style>
+    <script>
+        // Script síncrono: esconde o Dashboard ANTES da renderização para evitar flicker
+        try {
+            if (localStorage.getItem("dashboardVisible") === "false") {
+                document.write('<style>#divEscondeMostra{display:none !important;}</style>');
+            }
+        } catch (e) { }
+    </script>
 </head>
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
@@ -196,35 +204,17 @@
                 <script type="text/javascript">
                     const card = document.createElement("div");
                     //..
-                    (function () {
-                        try {
-                            document.addEventListener("DOMContentLoaded", function () {
-                                var div = document.getElementById("divEscondeMostra");
-                                var visible = localStorage.getItem("dashboardVisible");
-
-                                if (div) {
-                                    if (visible === "false") {
-                                        div.classList.add("hidden");
-                                    } else {
-                                        div.classList.remove("hidden");
-                                    }
-                                }
-                            });
-                        } catch (e) {
-                            console.warn("Erro ao acessar localStorage:", e);
-                        }
-                    })();
-
                     function func_Dashboard() {
                         const div = document.getElementById("divEscondeMostra");
                         if (!div) return;
 
-                        const isHidden = div.classList.contains("hidden");
+                        const computedDisplay = window.getComputedStyle(div).display;
+                        const isHidden = (computedDisplay === "none");
 
                         if (isHidden) {
                             // Mostrar com transição suave
-                            div.classList.remove("hidden");
-                            div.classList.add("fading-in");
+                            div.style.setProperty("display", "block", "important");
+                            div.style.opacity = "0";
 
                             // Força o reflow para que a transição funcione
                             void div.offsetWidth;
@@ -232,16 +222,12 @@
                             div.style.transition = "opacity 0.5s ease-in";
                             div.style.opacity = "1";
 
-                            setTimeout(() => {
-                                div.classList.remove("fading-in");
-                            }, 500);
-
-                            localStorage.setItem("dashboardVisible", true);
+                            localStorage.setItem("dashboardVisible", "true");
                         } else {
                             // Esconde imediatamente
-                            div.classList.add("hidden");
+                            div.style.setProperty("display", "none", "important");
                             div.style.transition = "none";
-                            localStorage.setItem("dashboardVisible", false);
+                            localStorage.setItem("dashboardVisible", "false");
                         }
                     }
                     //..

@@ -1,182 +1,189 @@
-# Plano de Implementação: Consultar Exames
+# Implementation Plan: Consultar Exames do Paciente (Master/Detail)
 
-## Visão Geral
+## Overview
 
-Implementação da tela de consulta e exclusão de exames realizados, acessível
-via menu **Exames → Consultar Exames**. A implementação segue o padrão
-Master/Detail inline com grid DataTables, exclusão transacional com validação,
-e filtros backend + client-side.
+Implementação incremental da consulta de exames na tela de Pacientes,
+adicionando filtros backend, endpoints AJAX e detail inline
+(expand/collapse). A abordagem segue: investigação → backend
+(endpoints) → frontend (filtros + detail) → verificação final.
 
-A implementação está dividida em 7 grupos independentes, ordenados por
-dependência (infraestrutura primeiro, qualidade por último).
+Linguagem: C# (.NET 8) + JavaScript/jQuery + Razor
 
-## Tarefas
+## Tasks
 
-- [ ] 1. Infraestrutura — Controller, Rotas e Injeção de Dependência
-  - [x] 1.1 Criar o arquivo `Areas/Controllers/ConsultarExamesController.cs`
-    - Namespace: `LabWebMvc.MVC.Areas.Controllers`
-    - Herdar de `BaseController`
-    - Implementar construtor com injeção de dependência: `IDbFactory`, `IValidadorDeSessao`, `GeralController`, `IEventLogHelper`, `Imagem`, `ExclusaoService`, `IConnectionService`
-    - Chamar `base(...)` com todos os parâmetros
-    - Adicionar `[TypeFilter(typeof(SessionFilter))]` em todas as actions
-    - Definir rotas: `[Route("ConsultarExames")]`, `[Route("ConsultarExames/ObterItensExame")]`, `[Route("ConsultarExames/ExcluirExame")]`
-    - Criar stubs vazios das 3 actions (Index, ObterItensExame, ExcluirExame) retornando `View()` / `Json()` temporários
+- [x] 1. Investigação obrigatória (Fase 1) — Relatório de análise
+  - Investigar `Areas/Controllers/PacientesController.cs`: métodos existentes, assinatura do Index, DbContext injetado, imports
+  - Investigar `Views/Pacientes/Index.cshtml`: estrutura HTML, DataTables config, scripts existentes, partial menus
+  - Investigar models: `Pacientes`, `ExamesRealizados`, `ItensExamesRealizados`, `ClasseExames` — confirmar FKs e navigation properties
+  - Investigar padrão AJAX existente no projeto (ex: `ConsultarExames/Index.cshtml`) para replicar o padrão de detail inline
+  - Investigar `GeralController`: método `ConverterDataLocalParaRangeUtc()` — assinatura e uso
+  - Investigar extension methods: `ToLocalString()`, `FormatarContaExameSem11()` — localização e assinatura
+  - Gerar relatório em `Documentos do Kiro/investigacao-consultar-exames.md` com: arquivos analisados, controller encontrado, cshtml analisado, padrão DataTables, padrão AJAX, relacionamentos reais, riscos e plano técnico
+  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
+
+- [x] 2. Implementar endpoints backend no PacientesController
+  - [x] 2.1 Implementar endpoint `ObterFolhasExame`
+    - Criar método `[HttpGet]` com `[Route("Pacientes/ObterFolhasExame")]`
+    - Aplicar `[TypeFilter(typeof(SessionFilter))]`
+    - Query: `_db.ClasseExames.AsNoTracking().OrderBy(c => c.RefExame).Select(c => new { c.Id, c.RefExame })`
+    - Retornar `Json(new { sucesso = true, folhas })`
+    - Tratamento de exceção com `_eventLogHelper` e retorno `{ sucesso = false, mensagem }`
     - Marcar bloco com `//Feito pelo Kiro em dd/MM/yyyy` e `//..Kiro`
-    - _Requisitos: 1.1, 1.2, 1.3, 1.4_
+    - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-- [x] 2. Listagem e Filtros — Action Index com Query e Filtros Backend
-  - [x] 2.1 Implementar a Action `Index` com query base e projeção
-    - Assinatura: `async Task<IActionResult> Index(string? dataExame, string? nomePaciente, int? codigoExame, string? siglaInstituicao, string? nomeInstituicao, string? nomePosto)`
-    - Atributos: `[HttpGet]`, `[Route("ConsultarExames")]`
-    - Query base com `AsNoTracking()` e `.Include()` para Instituicao, Postos, Pacientes, TabelaExames
-    - Sem filtros: `Take(100).OrderByDescending(x => x.Id)`
-    - Projetar resultado em lista `dynamic` com campos: Id, TabelaExamesId, SiglaInstituicao, NomeInstituicao, NomePosto, NomePaciente, Nascimento, Sequencial, DataIni
-    - Montar `vmListaValidacao<dynamic>` e retornar via `ValidacaoGenerica`
-    - _Requisitos: 2.1, 2.2, 2.3, 2.4, 2.5_
+  - [x] 2.2 Implementar endpoint `ObterExamesPaciente`
+    - Criar método `[HttpGet]` com `[Route("Pacientes/ObterExamesPaciente")]`
+    - Aplicar `[TypeFilter(typeof(SessionFilter))]`
+    - Parâmetro: `int pacienteId`
+    - Query com `AsNoTracking()`, `Include(Instituicao)`, `Include(Postos)`, `Include(ClasseExames)`
+    - Ordenar por `DataIni` decrescente
+    - Projetar: Id, DataIni formatada dd/MM/yyyy, DataFim formatada, Sigla Instituição, NomePosto abreviado (max 12 chars), Folha (RefExame)
+    - Retornar `Json(new { sucesso = true, exames })`
+    - Tratamento de exceção com log
+    - Marcar bloco com `//Feito pelo Kiro em dd/MM/yyyy` e `//..Kiro`
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 5.1, 5.3, 5.4_
 
-  - [x] 2.2 Implementar filtros backend na Action `Index`
-    - Filtro por data: converter para range UTC via `_geralController.ConverterDataLocalParaRangeUtc()`
-    - Filtro por nome do paciente: `ToLower().Contains()` case-insensitive
-    - Filtro por código do exame: correspondência exata por `Id`
-    - Filtro por sigla da instituição: `ToLower().Contains()` case-insensitive
-    - Filtro por nome da instituição: `ToLower().Contains()` case-insensitive
-    - Filtro por nome do posto: `ToLower().Contains()` case-insensitive
-    - Quando filtro aplicado: sem limite de 100 registros
-    - _Requisitos: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
-
-- [x] 3. Checkpoint — Compilar e validar infraestrutura + listagem
-  - Executar `dotnet build "LabWebMvc.MVC/LabWebMvc.MVC.csproj"`
-  - Resultado obrigatório: 0 erros, 0 avisos
-  - Garantir que o controller compila corretamente com todas as dependências
-  - Perguntar ao usuário se há dúvidas antes de prosseguir
-
-- [x] 4. View e Grid Header — HTML, DataTables e Layout
-  - [x] 4.1 Criar a View `Views/ConsultarExames/Index.cshtml`
-    - Encoding: UTF-8 com BOM
-    - Incluir `@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers`
-    - Incluir `@using BLL` e `@using static BLL.UtilBLL`
-    - Incluir partial de menu: `<partial name='Partials/_PartialMenuConsultarExames' />`
-    - Área de filtros com `<form method="get">` e campos: dataExame, nomePaciente, codigoExame, siglaInstituicao, nomeInstituicao, nomePosto
-    - Botão "Pesquisar" que submete via GET para a action Index
-    - _Requisitos: 7.1, 7.2, 7.5, 7.6_
-
-  - [x] 4.2 Implementar o Grid Header (ExamesRealizados) na View
-    - Tabela com `id="modeloTable"`, `name="datatable"`, `data-order='[[ 0, "desc" ]]'`
-    - Classes: `display compact order-column stripe table-hover nowrap`
-    - Estrutura: `<thead>`, `<tbody>` com `@foreach`, `<tfoot>`
-    - Colunas: Id, TabelaExamesId, Sigla Instituição, Nome Instituição, Nome Posto, Nome Paciente, Data Nascimento, Sequencial, Data do Exame
-    - Coluna de Opções com botão excluir (ícone `fa-sharp fa-solid fa-trash-can`)
-    - Formatação de datas com `ToLocalString("dd/MM/yyyy")`
-    - _Requisitos: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
-
-  - [x] 4.3 Configurar DataTables e section Scripts
-    - Incluir `@section Scripts` com `<partial name='_PartialDatatables' />`
-    - Utilizar `configTable()` padrão do `mydatatables.js`
-    - Filtro nativo DataTables ativo (search box no topo, inputs no footer)
-    - _Requisitos: 7.3, 7.4, 8.1, 8.2, 8.3_
-
-- [x] 5. Master/Detail — Action ObterItensExame, JavaScript e Grid Detail
-  - [x] 5.1 Implementar a Action `ObterItensExame` no controller
-    - Assinatura: `async Task<IActionResult> ObterItensExame(int exameRealizadoId)`
-    - Atributos: `[HttpGet]`, `[Route("ConsultarExames/ObterItensExame")]`
-    - Query com `AsNoTracking()` filtrando por `ExameRealizadoId`
-    - Ordenar por `OrdemItem`
-    - Projetar: ClasseExamesNome, RefExame, RefItem, ContaExame, Descricao, ValorItem (formatado N2 ou "-"), Etiquetas
+  - [x] 2.3 Implementar endpoint `ObterItensExame`
+    - Criar método `[HttpGet]` com `[Route("Pacientes/ObterItensExame")]`
+    - Aplicar `[TypeFilter(typeof(SessionFilter))]`
+    - Parâmetro: `int exameRealizadoId`
+    - Query com `AsNoTracking()`, filtrar por `ExameRealizadoId`, ordenar por `OrdemItem`
+    - Projetar: RefExame, RefItem, ContaExame (formatado via `FormatarContaExameSem11()`), Descricao
     - Retornar `Json(new { sucesso = true, itens })`
-    - _Requisitos: 5.1, 5.3, 5.6_
+    - Tratamento de exceção com log
+    - Marcar bloco com `//Feito pelo Kiro em dd/MM/yyyy` e `//..Kiro`
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 6.1, 6.2, 6.3_
 
-  - [x] 5.2 Implementar o Grid Detail (HTML oculto) na View
-    - Container `#detailContainer` com `style="display: none;"`
-    - Tabela `#detailTable` com classes DataTables padrão
-    - Colunas: Classe, Ref. Exame, Ref. Item, Conta Exame, Descrição, Valor Item, Etiquetas (Qtd)
-    - `<tbody id="detailBody">` vazio (preenchido via JS)
-    - _Requisitos: 5.2, 5.3, 5.5_
+  - [ ]* 2.4 Escrever teste unitário para lógica de abreviação de NomePosto
+    - **Property 4: Abreviação de NomePosto respeita limite de 12 caracteres**
+    - **Validates: Requirements 5.1, 5.4**
+    - Testar strings de tamanhos variados: 0, 1, 11, 12, 13, 50, 100 caracteres
+    - Verificar: se length > 12 → resultado tem 12 chars e termina com "..."
+    - Verificar: se length <= 12 → resultado é igual à string original
 
-  - [x] 5.3 Implementar JavaScript de Master/Detail
-    - Event handler no click da linha do grid header (ignorar coluna de opções)
-    - Função `carregarDetail(exameRealizadoId)` com `$.ajax` GET para `ConsultarExames/ObterItensExame`
-    - Função `renderizarDetail(itens)` que limpa e popula `#detailBody`
-    - Mostrar `#detailContainer` após carregar com sucesso
-    - Somente um detail aberto por vez (limpa anterior ao clicar nova linha)
-    - _Requisitos: 5.1, 5.4, 5.5, 5.6_
+- [x] 3. Estender método Index com filtros backend
+  - [x] 3.1 Adicionar parâmetros de filtro ao método Index existente
+    - Estender assinatura: `string? dataInicial, string? dataFinal, string? nomePaciente, int? folhaId`
+    - Preservar integralmente o comportamento atual do parâmetro `Conteudo`
+    - Novos filtros só se aplicam quando `Conteudo` está vazio
+    - _Requirements: 1.1, 1.2, 4.7_
 
-- [x] 6. Exclusão — Action ExcluirExame, Validação, Transação e AJAX
-  - [x] 6.1 Implementar a Action `ExcluirExame` no controller
-    - Assinatura: `async Task<IActionResult> ExcluirExame(int id)`
-    - Atributos: `[HttpGet]`, `[Route("ConsultarExames/ExcluirExame")]`
-    - Buscar `ExamesRealizados` pelo `id`
-    - Buscar `ItensExamesRealizados` onde `ExameRealizadoId == id`
-    - Validar: se algum `Resultado` preenchido → retornar erro JSON com mensagem específica
-    - Se exame não encontrado → retornar erro JSON
-    - _Requisitos: 6.2, 6.3_
+  - [x] 3.2 Implementar lógica de filtro por período
+    - Usar `_geralController.ConverterDataLocalParaRangeUtc()` para converter datas
+    - Filtrar pacientes que possuam `ExamesRealizados.DataIni` dentro do range UTC
+    - Usar `AsNoTracking()` na query
+    - _Requirements: 4.3, 3.3_
 
-  - [x] 6.2 Implementar transação de exclusão na Action `ExcluirExame`
-    - Usar `_db.Database.BeginTransactionAsync()`
-    - Remover `ItensExamesRealizados` via `RemoveRange`
-    - Buscar e remover `Requisitar` vinculados via `RemoveRange`
-    - Remover `ExamesRealizados` via `Remove`
-    - `SaveChangesAsync()` + `CommitAsync()`
-    - Em caso de erro: `RollbackAsync()` + log via `_eventLogHelper.LogEventViewer()` com nível `"wError"`
-    - Retornar JSON com `titulo`, `mensagem`, `sucesso`
-    - _Requisitos: 6.4, 6.6, 6.7, 9.3_
+  - [x] 3.3 Implementar lógica de filtro por nome e folha
+    - Filtro nome: `NomePaciente.Contains(nomePaciente)` case-insensitive
+    - Filtro folha: pacientes com `ExamesRealizados.ClasseExamesId == folhaId`
+    - Combinar filtros aditivamente (AND)
+    - Marcar bloco com `//Feito pelo Kiro em dd/MM/yyyy` e `//..Kiro`
+    - _Requirements: 4.4, 4.6_
 
-  - [x] 6.3 Implementar JavaScript de exclusão com SweetAlert2
-    - Função `clickDeleteExame(x)` usando `clickConfirm` do `site.js`
-    - Parâmetros: `clickConfirm(x, null, "Excluir este exame?", null, "ConsultarExames/ExcluirExame")`
-    - O `clickConfirm` já implementa confirmação, loading, mensagem e reload
-    - _Requisitos: 6.1, 6.5_
+- [x] 4. Checkpoint — Verificar build backend
+  - Ensure all tests pass, ask the user if questions arise.
+  - Executar `dotnet build` e confirmar 0 erros e 0 avisos
+  - Verificar que rotas existentes continuam respondendo
 
-- [x] 7. Checkpoint — Compilar e validar funcionalidades completas
-  - Executar `dotnet build "LabWebMvc.MVC/LabWebMvc.MVC.csproj"`
-  - Resultado obrigatório: 0 erros, 0 avisos
-  - Garantir que todas as actions, view e scripts estão integrados
-  - Perguntar ao usuário se há dúvidas antes de prosseguir
+- [x] 5. Implementar filtros backend no frontend (HTML + JS)
+  - [x] 5.1 Adicionar HTML dos filtros acima do grid
+    - Criar `<div id="filtrosPacientesExames">` com form GET
+    - Campos: Data Inicial (type=date, padrão hoje-3), Data Final (type=date, padrão hoje), Nome (text), Folha (select), Botão Pesquisar
+    - Estilo inline: flex-wrap, gap 8px, border, border-radius, background #f9f9f9
+    - Posicionar antes do grid existente `#modeloTable`
+    - _Requirements: 4.1, 4.2_
 
-- [x] 8. Menu e Navegação — Partial de Menu e Integração
-  - [x] 8.1 Criar a partial `Views/ConsultarExames/Partials/_PartialMenuConsultarExames.cshtml`
-    - Encoding: UTF-8 com BOM
-    - Seguir padrão visual de `_PartialMenuPacientes.cshtml`
-    - Título: "Consultar Exames"
-    - Adaptar estrutura HTML/CSS conforme padrão existente
-    - _Requisitos: 7.2_
+  - [x] 5.2 Implementar carregamento AJAX do ComboBox de Folhas
+    - Ao carregar a página, chamar `GET /Pacientes/ObterFolhasExame`
+    - Popular o `<select>` com option value=Id e text=RefExame
+    - Adicionar option vazia "Todas" como padrão
+    - Preservar seleção atual via query string
+    - _Requirements: 4.5, 9.1_
 
-  - [x] 8.2 Integrar no menu principal (Exames → Consultar Exames)
-    - Adicionar link no menu existente apontando para `/ConsultarExames`
-    - Seguir padrão de navegação das demais telas
-    - Verificar que o item de menu aparece na posição correta
-    - _Requisitos: 2.1_
+  - [x] 5.3 Adicionar CSS dos filtros no bloco `<style>` da view
+    - Estilos para responsividade dos filtros em telas menores
+    - Manter consistência visual com o restante da tela
+    - _Requirements: 11.4_
 
-- [x] 9. Qualidade — Build Final, Encoding e Marcação de Código
-  - [x] 9.1 Validação de build final
-    - Executar `dotnet build "LabWebMvc.MVC/LabWebMvc.MVC.csproj"`
-    - Resultado obrigatório: 0 erros, 0 avisos
-    - _Requisitos: 9.1_
+- [x] 6. Implementar detail inline de exames (expand/collapse + AJAX)
+  - [x] 6.1 Implementar handler de clique na linha do paciente
+    - Handler delegado com namespace: `$(document).off('click.detailExames').on('click.detailExames', '#modeloTable tbody tr', handler)`
+    - Ignorar cliques na coluna de opções (`.grid_fundo_opcoes`)
+    - Ignorar cliques em linhas de detalhe (`.detail-row`, `.detail-header-row`)
+    - Fechar detail anterior antes de abrir novo (somente um aberto por vez)
+    - Extrair `pacienteId` da linha clicada
+    - _Requirements: 2.1, 2.5, 11.1_
 
-  - [x] 9.2 Validação de encoding dos arquivos criados
-    - Confirmar UTF-8 com BOM em: `ConsultarExamesController.cs`, `Index.cshtml`, `_PartialMenuConsultarExames.cshtml`
+  - [x] 6.2 Implementar chamada AJAX para ObterExamesPaciente
+    - Chamar `GET /Pacientes/ObterExamesPaciente?pacienteId=X`
+    - Tratar resposta: se `sucesso=true` e `exames.length > 0` → renderizar detail
+    - Se `exames.length === 0` → exibir mensagem "Nenhum exame encontrado"
+    - Se erro de rede → exibir mensagem via `clickAviso`
+    - Prevenir clique duplo (flag de carregamento)
+    - _Requirements: 2.6, 3.1, 3.2, 5.2_
+
+  - [x] 6.3 Implementar renderização do detail inline (TRs injetados)
+    - Injetar TR de header com título "Exames Realizados" e colunas
+    - Injetar TRs de dados com: Cód. Exame, Data Ini, Data Fim, Sigla Instituição, Posto, Folha
+    - Aplicar classes CSS: `.detail-row`, `.detail-header-row`, `.detail-parent-highlight`
+    - Highlight na linha do paciente clicado
+    - _Requirements: 2.2, 2.3, 2.4, 5.1, 5.3_
+
+- [x] 7. Implementar sub-detail de itens do exame
+  - [x] 7.1 Implementar handler de clique na linha do exame no detail
+    - Handler delegado com namespace: `$(document).off('click.detailItens').on('click.detailItens', '.detail-exame-row', handler)`
+    - Extrair `exameRealizadoId` da linha clicada
+    - Fechar sub-detail anterior antes de abrir novo
+    - _Requirements: 6.2_
+
+  - [x] 7.2 Implementar chamada AJAX para ObterItensExame e renderização
+    - Chamar `GET /Pacientes/ObterItensExame?exameRealizadoId=Y`
+    - Renderizar TRs de itens com: RefExame, RefItem, ContaExame, Descrição
+    - Aplicar classe `.detail-item-row`
+    - Tratar lista vazia e erros de rede
+    - _Requirements: 6.1, 6.3, 8.1, 8.4_
+
+  - [x] 7.3 Adicionar CSS do detail e sub-detail no bloco `<style>`
+    - Estilos para `.detail-row`, `.detail-header-row`, `.detail-parent-highlight`, `.detail-exame-row`, `.detail-item-row`
+    - Seguir padrão visual de `ConsultarExames/Index.cshtml`
+    - Garantir que detail não interfere no grid existente
+    - _Requirements: 10.1, 10.2, 11.2, 11.3_
+
+- [x] 8. Checkpoint — Verificar integração frontend + backend
+  - Ensure all tests pass, ask the user if questions arise.
+  - Executar `dotnet build` e confirmar 0 erros e 0 avisos
+  - Verificar que o grid existente mantém busca, paginação, ordenação e ações
+  - Verificar que filtros submetem corretamente via GET
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 12.5_
+
+- [x] 9. Verificação final — Build, encoding e marcação
+  - [x] 9.1 Executar build completo e confirmar 0 erros e 0 avisos
+    - Comando: `dotnet build "LabWebMvc.MVC/LabWebMvc.MVC.csproj"`
+    - Resultado esperado: 0 Erro(s) e 0 Aviso(s)
+    - _Requirements: 12.1_
+
+  - [x] 9.2 Verificar encoding UTF-8 com BOM nos arquivos .cs e .cshtml alterados
+    - Confirmar BOM (EF BB BF) nos primeiros bytes de cada arquivo alterado
     - Confirmar acentuação correta em todos os textos pt-BR
-    - _Requisitos: 9.4_
+    - _Requirements: 12.3_
 
-  - [x] 9.3 Validação de marcação de código
-    - Confirmar presença de `//Feito pelo Kiro em dd/MM/yyyy` no início dos blocos significativos
-    - Confirmar presença de `//..Kiro` no final dos blocos
-    - _Requisitos: 9.6_
+  - [x] 9.3 Verificar marcação de código `//Feito pelo Kiro` em todos os blocos implementados
+    - Confirmar que cada bloco significativo tem marcação de início e fim
+    - Confirmar formato da data: dd/MM/yyyy
+    - _Requirements: 11.5_
 
-  - [x] 9.4 Validação de conformidade técnica
-    - Confirmar uso de `AsNoTracking()` em todas as queries de consulta
-    - Confirmar uso de tratamento de exceções com log na exclusão
-    - Confirmar que nenhum pacote NuGet foi adicionado
-    - _Requisitos: 9.2, 9.3, 9.5_
+  - [x] 9.4 Verificar que nenhum pacote NuGet foi adicionado ou alterado
+    - Comparar `.csproj` antes e depois — nenhuma alteração em PackageReference
+    - _Requirements: 12.2_
 
-## Notas
+## Notes
 
-- Cada grupo pode ser implementado separadamente, respeitando a ordem de dependência
-- O Grupo 1 (Infraestrutura) é pré-requisito para todos os demais
-- Os Grupos 2 e 4 podem ser implementados em paralelo após o Grupo 1
-- O Grupo 5 depende do Grupo 4 (view precisa existir para o detail)
-- O Grupo 6 depende do Grupo 1 (controller precisa existir para a action)
-- O Grupo 8 (Menu) pode ser implementado a qualquer momento após o Grupo 4
-- O Grupo 9 (Qualidade) é sempre o último, validando tudo
-- Checkpoints (Grupos 3 e 7) garantem validação incremental
-- Não há property-based tests — o design não possui Correctness Properties
-- Testes unitários e de integração são recomendados mas não obrigatórios nesta fase
+- Tasks marcadas com `*` são opcionais e podem ser ignoradas para MVP mais rápido
+- A Task 1 (Investigação) é pré-requisito obrigatório — implementação só inicia após aprovação do relatório
+- Cada task referencia requisitos específicos para rastreabilidade
+- Checkpoints garantem validação incremental
+- O detail inline NÃO usa DataTables — é TR injetado via DOM (mais leve)
+- Todos os endpoints usam `AsNoTracking()` (somente leitura)
+- Handlers jQuery usam namespace e `off()` antes de `on()` para evitar acúmulo
+- Property 4 (abreviação NomePosto) é a única propriedade adequada para teste unitário/PBT por ser função pura

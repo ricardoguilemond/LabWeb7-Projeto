@@ -832,11 +832,6 @@ public class Db : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.ClasseExames).WithMany(p => p.ExamesRealizados)
-                .HasForeignKey(d => d.ClasseExamesId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("iExamesRealizados_ClasseExames");
-
             entity.HasOne(d => d.Instituicao).WithMany(p => p.ExamesRealizados)
                 .HasForeignKey(d => d.InstituicaoId)
                 .OnDelete(DeleteBehavior.ClientSetNull)

@@ -6,6 +6,39 @@
 @using LabWebMvc.MVC.Areas.Utils
 @model vmPacientes
 <partial name='Partials/_PartialMenuPacientes' />
+
+@*Feito pelo Kiro em 17/05/2026*@
+<!-- Filtros Backend de Exames -->
+<div id="filtrosPacientesExames" style="margin-bottom: 10px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background-color: #f9f9f9;">
+    <form method="get" asp-action="Index" asp-controller="Pacientes" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+        <label style="font: normal 13px calibri, arial, sans-serif;">Data Inicial:</label>
+        <input type="text" name="dataInicial" id="filtroDataInicial" placeholder="dd/MM/yyyy"
+               value="@Context.Request.Query["dataInicial"]"
+               style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Data Final:</label>
+        <input type="text" name="dataFinal" id="filtroDataFinal" placeholder="dd/MM/yyyy"
+               value="@Context.Request.Query["dataFinal"]"
+               style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Paciente:</label>
+        <input type="text" name="nomePaciente" placeholder="Nome do paciente"
+               value="@Context.Request.Query["nomePaciente"]"
+               style="width: 160px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Folha:</label>
+        <select name="folhaId" id="filtroFolhaId"
+                style="width: 150px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px; height: 24px;">
+            <option value="">Todas</option>
+        </select>
+
+        <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
+            <i class="fa-sharp fa-solid fa-magnifying-glass"></i> Pesquisar
+        </button>
+    </form>
+</div>
+@*..Kiro*@
+
 <div class="table-responsive">
     <table id="modeloTable" name="datatable" data-order='[[ 0, "desc" ]]' class="display compact order-column stripe table-hover nowrap">
         <thead>
@@ -76,6 +109,64 @@
     <div class="toolbar"><partial name='_PartialDatatables' /></div>
     <partial name="_ValidationScriptsPartial" />
 }
+<style>
+    /*Feito pelo Kiro em 17/05/2026*/
+    @@media (max-width: 768px) {
+        #filtrosPacientesExames form {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        #filtrosPacientesExames input,
+        #filtrosPacientesExames select {
+            width: 100% !important;
+        }
+    }
+
+    tr.detail-row {
+        background-color: #f0f8f0 !important;
+        font-size: 13px;
+        pointer-events: none;
+    }
+    tr.detail-row td {
+        padding: 4px 8px !important;
+        border-top: none !important;
+        color: #555;
+    }
+    tr.detail-header-row {
+        background-color: #d4edda !important;
+        font-size: 13px;
+        font-weight: bold;
+        pointer-events: none;
+    }
+    tr.detail-header-row td {
+        padding: 5px 8px !important;
+        color: #333;
+    }
+    tr.detail-parent-highlight {
+        background-color: #fff3cd !important;
+    }
+    tr.detail-parent-highlight td {
+        background-color: #fff3cd !important;
+    }
+    tr.detail-exame-row {
+        pointer-events: auto;
+        cursor: pointer;
+    }
+    tr.detail-exame-row:hover td {
+        background-color: #e2f0e2 !important;
+    }
+    tr.detail-item-row {
+        background-color: #e8f4fd !important;
+        font-size: 12px;
+        pointer-events: none;
+    }
+    tr.detail-item-row td {
+        padding: 3px 8px !important;
+        border-top: none !important;
+        color: #444;
+    }
+    /*..Kiro*/
+</style>
 <script>
     //ACTIONS ICONS
     function clickConsulta(x) {
@@ -95,4 +186,308 @@
         //x.id é somente o "id" na tag da linha
         return clickConfirm(x, null, "Excluir paciente?", null, "ExcluirPaciente");
     };
+
+    //Feito pelo Kiro em 17/05/2026
+    // Filtros de exames — máscara de data, valores padrão e carregamento de folhas
+    $(document).ready(function () {
+        // Máscara de data nos campos de filtro
+        $("#filtroDataInicial, #filtroDataFinal").mask("99/99/9999", { placeholder: " ", autoclear: false });
+
+        // Valores padrão (hoje - 3 e hoje) se os campos estiverem vazios
+        var dataIniInput = $("#filtroDataInicial");
+        var dataFimInput = $("#filtroDataFinal");
+
+        if (!dataIniInput.val()) {
+            var hoje = new Date();
+            var tresDiasAtras = new Date(hoje);
+            tresDiasAtras.setDate(hoje.getDate() - 3);
+            dataIniInput.val(formatarDataBR(tresDiasAtras));
+        }
+        if (!dataFimInput.val()) {
+            var hoje = new Date();
+            dataFimInput.val(formatarDataBR(hoje));
+        }
+
+        // Carregar ComboBox de Folhas via AJAX
+        carregarFolhasExame();
+    });
+
+    function formatarDataBR(data) {
+        var dia = String(data.getDate()).padStart(2, '0');
+        var mes = String(data.getMonth() + 1).padStart(2, '0');
+        var ano = data.getFullYear();
+        return dia + '/' + mes + '/' + ano;
+    }
+
+    function carregarFolhasExame() {
+        var select = $("#filtroFolhaId");
+        var folhaAtual = '@Context.Request.Query["folhaId"]';
+
+        $.ajax({
+            url: '/Pacientes/ObterFolhasExame',
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.sucesso && data.folhas) {
+                    data.folhas.forEach(function (folha) {
+                        var selected = (folhaAtual && folha.id == folhaAtual) ? ' selected' : '';
+                        select.append('<option value="' + folha.id + '"' + selected + '>' + folha.refExame + '</option>');
+                    });
+                }
+            }
+        });
+    }
+    //..Kiro
+
+    //Feito pelo Kiro em 17/05/2026
+    // Detail inline de exames — expand/collapse ao clicar na linha do paciente
+    var _carregandoDetailExames = false;
+
+    $(document).ready(function () {
+        $(document).off('click.detailExames').on('click.detailExames', '#modeloTable tbody tr', function (e) {
+            // Ignorar cliques na coluna de opções
+            if ($(e.target).closest('.grid_fundo_opcoes').length) return;
+            // Ignorar cliques em linhas de detalhe
+            if ($(this).hasClass('detail-row') || $(this).hasClass('detail-header-row')) return;
+            // Prevenir clique duplo
+            if (_carregandoDetailExames) return;
+
+            var $row = $(this);
+            var pacienteId = $.trim($row.find('td:first').text());
+            if (!pacienteId) return;
+
+            // Fechar detail anterior (somente um aberto por vez)
+            $('#modeloTable tbody tr.detail-item-row').remove();
+            $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
+            $('#modeloTable tbody tr.detail-parent-highlight').removeClass('detail-parent-highlight');
+
+            // Destacar a linha do paciente clicado
+            $row.addClass('detail-parent-highlight');
+
+            // Carregar exames do paciente via AJAX
+            carregarExamesPaciente($row, pacienteId);
+        });
+    });
+
+    function carregarExamesPaciente($row, pacienteId) {
+        _carregandoDetailExames = true;
+
+        $.ajax({
+            url: '/Pacientes/ObterExamesPaciente',
+            data: { pacienteId: pacienteId },
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.sucesso && data.exames && data.exames.length > 0) {
+                    renderizarExamesPaciente($row, data.exames, data.examesOcultos || 0, data.totalExames || 0);
+                } else if (data.sucesso && (!data.exames || data.exames.length === 0)) {
+                    // Nenhum exame encontrado — exibir mensagem inline
+                    var msgHtml = '<tr class="detail-row">' +
+                        '<td colspan="9" style="text-align:center; color:#888; font-style:italic;">Nenhum exame encontrado para este paciente.</td>' +
+                        '</tr>';
+                    $row.after(msgHtml);
+                }
+            },
+            error: function () {
+                clickAviso('Erro de Rede', 'Não foi possível carregar os exames do paciente. Verifique sua conexão.', 'critica', null);
+                $row.removeClass('detail-parent-highlight');
+            },
+            complete: function () {
+                _carregandoDetailExames = false;
+            }
+        });
+    }
+
+    function renderizarExamesPaciente($row, exames, examesOcultos, totalExames) {
+        // Linha de cabeçalho do detail
+        var headerHtml = '<tr class="detail-header-row">' +
+            '<td colspan="9"><strong>Exames Realizados</strong></td>' +
+            '</tr>';
+        $row.after(headerHtml);
+
+        var $lastInserted = $row.next();
+        exames.forEach(function (exame) {
+            // Linha de títulos do exame
+            var titulosHtml = '<tr class="detail-row detail-exame-row" style="font-weight:bold;">' +
+                '<td style="padding-left:10px;">Cód. Exame</td>' +
+                '<td>Data Ini</td>' +
+                '<td>Data Fim</td>' +
+                '<td>Sigla Inst.</td>' +
+                '<td colspan="5">Posto</td>' +
+                '</tr>';
+            $lastInserted.after(titulosHtml);
+            $lastInserted = $lastInserted.next();
+
+            // Linha de dados do exame
+            var exameHtml = '<tr class="detail-row detail-exame-row">' +
+                '<td style="padding-left:10px;"><strong>Cód. ' + (exame.id || '-') + '</strong></td>' +
+                '<td>' + (exame.dataIni || '-') + '</td>' +
+                '<td>' + (exame.dataFim || '-') + '</td>' +
+                '<td>' + (exame.siglaInstituicao || '-') + '</td>' +
+                '<td colspan="5">' + (exame.nomePosto || '-') + '</td>' +
+                '</tr>';
+            $lastInserted.after(exameHtml);
+            $lastInserted = $lastInserted.next();
+
+            // Itens do exame (sub-linhas)
+            if (exame.itens && exame.itens.length > 0) {
+                // Header dos itens (com Folha)
+                var itensHeaderHtml = '<tr class="detail-item-row" style="font-weight:bold;">' +
+                    '<td></td>' +
+                    '<td style="padding-left:20px;">Folha</td>' +
+                    '<td>Ref. Exame</td>' +
+                    '<td>Ref. Item</td>' +
+                    '<td>Conta Exame</td>' +
+                    '<td colspan="4">Descrição</td>' +
+                    '</tr>';
+                $lastInserted.after(itensHeaderHtml);
+                $lastInserted = $lastInserted.next();
+
+                exame.itens.forEach(function (item) {
+                    var itemHtml = '<tr class="detail-item-row">' +
+                        '<td></td>' +
+                        '<td style="padding-left:20px;">' + (item.folha || '-') + '</td>' +
+                        '<td>' + (item.refExame || '-') + '</td>' +
+                        '<td>' + (item.refItem || '-') + '</td>' +
+                        '<td>' + (item.contaExame || '-') + '</td>' +
+                        '<td colspan="4">' + (item.descricao || '-') + '</td>' +
+                        '</tr>';
+                    $lastInserted.after(itemHtml);
+                    $lastInserted = $lastInserted.next();
+                });
+            }
+        });
+
+        // Indicador de exames ocultos (clicável — expande para últimos 12 meses)
+        if (examesOcultos > 0) {
+            var indicadorHtml = '<tr class="detail-row detail-expandir-row" data-paciente-id="' + $row.find('td:first').text().trim() + '">' +
+                '<td colspan="9" style="text-align:center; padding:6px; color:#1a73e8; font-style:italic; cursor:pointer; pointer-events:auto;">' +
+                '<i class="fa-solid fa-angles-down"></i> +' + examesOcultos + ' exames anteriores — ver histórico 12 meses (total: ' + totalExames + ')' +
+                '</td></tr>';
+            $lastInserted.after(indicadorHtml);
+        }
+    }
+
+    //Feito pelo Kiro em 17/05/2026
+    // Sub-detail de itens do exame — expand/collapse ao clicar na linha do exame
+    var _carregandoDetailItens = false;
+
+    $(document).ready(function () {
+        $(document).off('click.detailItens').on('click.detailItens', '.detail-exame-row', function (e) {
+            // Prevenir clique duplo
+            if (_carregandoDetailItens) return;
+
+            var $exameRow = $(this);
+            var exameRealizadoId = $exameRow.data('exame-id');
+            if (!exameRealizadoId) return;
+
+            // Fechar sub-detail anterior antes de abrir novo
+            $('#modeloTable tbody tr.detail-item-row').remove();
+
+            // Carregar itens do exame via AJAX
+            carregarItensExame($exameRow, exameRealizadoId);
+        });
+    });
+
+    function carregarItensExame($exameRow, exameRealizadoId) {
+        _carregandoDetailItens = true;
+
+        $.ajax({
+            url: '/Pacientes/ObterItensExame',
+            data: { exameRealizadoId: exameRealizadoId },
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.sucesso && data.itens && data.itens.length > 0) {
+                    renderizarItensExame($exameRow, data.itens);
+                } else if (data.sucesso && (!data.itens || data.itens.length === 0)) {
+                    // Nenhum item encontrado — exibir mensagem inline
+                    var msgHtml = '<tr class="detail-item-row">' +
+                        '<td colspan="9" style="text-align:center; color:#888; font-style:italic; padding-left:40px;">Nenhum item encontrado para este exame.</td>' +
+                        '</tr>';
+                    $exameRow.after(msgHtml);
+                }
+            },
+            error: function () {
+                clickAviso('Erro de Rede', 'Não foi possível carregar os itens do exame. Verifique sua conexão.', 'critica', null);
+            },
+            complete: function () {
+                _carregandoDetailItens = false;
+            }
+        });
+    }
+
+    function renderizarItensExame($exameRow, itens) {
+        // Linha de cabeçalho dos itens
+        var headerHtml = '<tr class="detail-item-row" style="font-weight:bold;">' +
+            '<td></td>' +
+            '<td style="padding-left:20px;">Ref. Exame</td>' +
+            '<td>Ref. Item</td>' +
+            '<td>Conta Exame</td>' +
+            '<td colspan="5">Descrição</td>' +
+            '</tr>';
+        $exameRow.after(headerHtml);
+
+        // Linhas de dados dos itens
+        var $lastInserted = $exameRow.next();
+        itens.forEach(function (item) {
+            var rowHtml = '<tr class="detail-item-row">' +
+                '<td></td>' +
+                '<td style="padding-left:20px;">' + (item.refExame || '-') + '</td>' +
+                '<td>' + (item.refItem || '-') + '</td>' +
+                '<td>' + (item.contaExame || '-') + '</td>' +
+                '<td colspan="5">' + (item.descricao || '-') + '</td>' +
+                '</tr>';
+            $lastInserted.after(rowHtml);
+            $lastInserted = $lastInserted.next();
+        });
+    }
+
+    // Handler de clique no indicador de expansão (últimos 12 meses)
+    $(document).ready(function () {
+        $(document).off('click.expandirExames').on('click.expandirExames', '.detail-expandir-row', function (e) {
+            var $indicador = $(this);
+            var pacienteId = $indicador.data('paciente-id');
+            if (!pacienteId) return;
+
+            // Encontrar a linha do paciente (detail-parent-highlight)
+            var $parentRow = $('#modeloTable tbody tr.detail-parent-highlight');
+            if (!$parentRow.length) return;
+
+            // Remover detail atual
+            $('#modeloTable tbody tr.detail-item-row').remove();
+            $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
+
+            // Carregar exames expandidos (últimos 12 meses)
+            carregarExamesPacienteExpandido($parentRow, pacienteId);
+        });
+    });
+
+    function carregarExamesPacienteExpandido($row, pacienteId) {
+        _carregandoDetailExames = true;
+
+        $.ajax({
+            url: '/Pacientes/ObterExamesPaciente',
+            data: { pacienteId: pacienteId, expandir: true },
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.sucesso && data.exames && data.exames.length > 0) {
+                    renderizarExamesPaciente($row, data.exames, 0, 0);
+                } else if (data.sucesso && (!data.exames || data.exames.length === 0)) {
+                    var msgHtml = '<tr class="detail-row">' +
+                        '<td colspan="9" style="text-align:center; color:#888; font-style:italic;">Nenhum exame encontrado nos últimos 12 meses.</td>' +
+                        '</tr>';
+                    $row.after(msgHtml);
+                }
+            },
+            error: function () {
+                clickAviso('Erro de Rede', 'Não foi possível carregar os exames expandidos.', 'critica', null);
+            },
+            complete: function () {
+                _carregandoDetailExames = false;
+            }
+        });
+    }
+    //..Kiro
 </script>

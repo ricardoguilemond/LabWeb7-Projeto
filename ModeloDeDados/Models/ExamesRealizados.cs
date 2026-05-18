@@ -17,8 +17,6 @@ public partial class ExamesRealizados
 
     public int MedicoId { get; set; }
 
-    public int ClasseExamesId { get; set; }
-
     public int Sequencial { get; set; }
 
     public string? LaboratorioApoio { get; set; }
@@ -52,8 +50,6 @@ public partial class ExamesRealizados
     public int Situacao { get; set; }
 
     public int TotalImpresso { get; set; }
-
-    public virtual ClasseExames ClasseExames { get; set; } = null!;
 
     public virtual ICollection<ExamesExportados> ExamesExportados { get; set; } = new List<ExamesExportados>();
 

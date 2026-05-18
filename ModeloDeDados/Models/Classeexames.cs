@@ -47,8 +47,6 @@ public partial class ClasseExames
 
     public virtual ICollection<ExamesPendentes> ExamesPendentes { get; set; } = new List<ExamesPendentes>();
 
-    public virtual ICollection<ExamesRealizados> ExamesRealizados { get; set; } = new List<ExamesRealizados>();
-
     public virtual ICollection<ExamesRealizadosAM> ExamesRealizadosAM { get; set; } = new List<ExamesRealizadosAM>();
 
     public virtual ICollection<ItensExamesRealizados> ItensExamesRealizados { get; set; } = new List<ItensExamesRealizados>();

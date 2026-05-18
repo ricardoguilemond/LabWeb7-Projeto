@@ -44,7 +44,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Pacientes")]
-        public async Task<IActionResult> Index(string? Conteudo, int registros = 50)
+        public async Task<IActionResult> Index(string? Conteudo, int registros = 50,
+            string? dataInicial = null, string? dataFinal = null,
+            string? nomePaciente = null, int? folhaId = null)
         {
             // ViewBag.TextoMenu = new object[] { "Cadastro de Pacientes", false };
 
@@ -84,7 +86,53 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             }
             else
-                dados = await _db.Pacientes.AsNoTracking().OrderByDescending(o => o.Id).Take(registros).ToListAsync();
+            {
+                //Feito pelo Kiro em 17/05/2026
+                // Filtros backend de exames — só se aplicam quando Conteudo está vazio
+                bool temFiltroExames = !string.IsNullOrEmpty(dataInicial)
+                                    || !string.IsNullOrEmpty(dataFinal)
+                                    || !string.IsNullOrEmpty(nomePaciente)
+                                    || folhaId.HasValue;
+
+                if (temFiltroExames)
+                {
+                    var query = _db.Pacientes.AsNoTracking().AsQueryable();
+
+                    // Filtro por período (DataIni dos ExamesRealizados dentro do range UTC)
+                    if (!string.IsNullOrEmpty(dataInicial))
+                    {
+                        DateTime dataIniParsed = dataInicial.Trim().FormataData("dd/MM/yyyy", true);
+                        var (inicioUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataIniParsed);
+                        query = query.Where(p => p.ExamesRealizados.Any(e => e.DataIni >= inicioUtc));
+                    }
+
+                    if (!string.IsNullOrEmpty(dataFinal))
+                    {
+                        DateTime dataFimParsed = dataFinal.Trim().FormataData("dd/MM/yyyy", true);
+                        var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataFimParsed);
+                        query = query.Where(p => p.ExamesRealizados.Any(e => e.DataIni <= fimUtc));
+                    }
+
+                    // Filtro por nome do paciente (case-insensitive)
+                    if (!string.IsNullOrEmpty(nomePaciente))
+                    {
+                        query = query.Where(p => p.NomePaciente.ToLower().Contains(nomePaciente.Trim().ToLower()));
+                    }
+
+                    // Filtro por folha de exame (via ItensExamesRealizados.ClasseExamesId)
+                    if (folhaId.HasValue)
+                    {
+                        query = query.Where(p => p.ExamesRealizados.Any(e => e.ItensExamesRealizados.Any(i => i.ClasseExamesId == folhaId.Value)));
+                    }
+
+                    dados = await query.OrderByDescending(o => o.Id).ToListAsync();
+                }
+                else
+                {
+                    dados = await _db.Pacientes.AsNoTracking().OrderByDescending(o => o.Id).Take(registros).ToListAsync();
+                }
+                //..Kiro
+            }
 
             foreach (Pacientes item in dados)
             {
@@ -480,6 +528,189 @@ namespace LabWebMvc.MVC.Areas.Controllers
             _geralController.Validacao("ConsultarPaciente,Pacientes", ViewBag.TextoMenu[0]);
             return PartialView(vm); //na edição a vm precisa retornar para a View
         }
+
+        //Feito pelo Kiro em 17/05/2026
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpGet]
+        [Route("Pacientes/ObterFolhasExame")]
+        public IActionResult ObterFolhasExame()
+        {
+            try
+            {
+                var folhas = _db.ClasseExames
+                    .AsNoTracking()
+                    .OrderBy(c => c.RefExame)
+                    .Select(c => new { c.Id, c.RefExame })
+                    .ToList();
+
+                return Json(new { sucesso = true, folhas });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[Pacientes] ObterFolhasExame - Erro: " + ex.Message, "wError");
+                return Json(new { sucesso = false, mensagem = "Erro ao obter folhas de exame" });
+            }
+        }
+        //..Kiro
+
+        //Feito pelo Kiro em 17/05/2026
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpGet]
+        [Route("Pacientes/ObterExamesPaciente")]
+        public async Task<IActionResult> ObterExamesPaciente(int pacienteId, bool expandir = false)
+        {
+            try
+            {
+                if (expandir)
+                {
+                    // Modo expandido: exames dos últimos 12 meses (sem limite de quantidade)
+                    DateTime dataLimite12Meses = DateTime.UtcNow.AddMonths(-12);
+
+                    var dadosExpandidos = await _db.ExamesRealizados
+                        .AsNoTracking()
+                        .Where(e => e.PacienteId == pacienteId && e.DataIni >= dataLimite12Meses)
+                        .OrderByDescending(e => e.DataIni)
+                        .Include(e => e.Instituicao)
+                        .Include(e => e.Postos)
+                        .Include(e => e.ItensExamesRealizados)
+                            .ThenInclude(i => i.ClasseExames)
+                        .ToListAsync();
+
+                    var examesExpandidos = dadosExpandidos.Select(e => new
+                    {
+                        e.Id,
+                        DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
+                        DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
+                        SiglaInstituicao = e.Instituicao?.Sigla ?? "",
+                        NomePosto = (e.Postos?.NomePosto ?? "").Length > 12
+                            ? (e.Postos?.NomePosto ?? "").Substring(0, 9) + "..."
+                            : e.Postos?.NomePosto ?? "",
+                        Folha = e.ItensExamesRealizados
+                            .FirstOrDefault()?.ClasseExames?.RefExame ?? "",
+                        Itens = e.ItensExamesRealizados
+                            .OrderBy(i => i.OrdemItem)
+                            .Select(i => new
+                            {
+                                Folha = i.ClasseExames?.RefExame ?? "",
+                                i.RefExame,
+                                i.RefItem,
+                                ContaExame = i.ContaExame.FormatarContaExameSem11(),
+                                Descricao = i.Descricao ?? ""
+                            }).ToList()
+                    }).ToList();
+
+                    return Json(new { sucesso = true, exames = examesExpandidos, totalExames = examesExpandidos.Count, examesOcultos = 0 });
+                }
+
+                // Regra de Exibição Inteligente:
+                // ExamesExibidos = MAX(últimos 4, exames nos últimos 90 dias) LIMIT 8
+                const int minimoExames = 4;
+                const int maximoExames = 8;
+                const int diasJanela = 90;
+
+                // 1. Buscar os últimos 8 exames do paciente (limite máximo no banco)
+                var ultimos8 = await _db.ExamesRealizados
+                    .AsNoTracking()
+                    .Where(e => e.PacienteId == pacienteId)
+                    .OrderByDescending(e => e.DataIni)
+                    .Take(maximoExames)
+                    .Include(e => e.Instituicao)
+                    .Include(e => e.Postos)
+                    .Include(e => e.ItensExamesRealizados)
+                        .ThenInclude(i => i.ClasseExames)
+                    .ToListAsync();
+
+                // 2. Aplicar regra adaptativa em memória (sobre max 8 registros)
+                // Regra: MAX(últimos 4, exames nos últimos 90 dias) LIMIT 8
+                // - Pegar todos os exames dos últimos 90 dias dentre os 8 buscados
+                // - Se forem menos de 4, completar com os mais recentes até ter 4
+                DateTime dataLimite90Dias = DateTime.UtcNow.AddDays(-diasJanela);
+                var examesDentro90Dias = ultimos8.Where(e => e.DataIni >= dataLimite90Dias).ToList();
+
+                List<ExamesRealizados> examesExibidos;
+                if (examesDentro90Dias.Count >= minimoExames)
+                {
+                    // Já tem 4+ dentro dos 90 dias — exibir todos (max 8 já garantido pelo Take)
+                    examesExibidos = examesDentro90Dias;
+                }
+                else
+                {
+                    // Menos de 4 dentro dos 90 dias — garantir mínimo de 4 (pegar os mais recentes)
+                    examesExibidos = ultimos8.Take(minimoExames).ToList();
+                }
+
+                // 3. Contar total para indicador de ocultos
+                int totalExames = await _db.ExamesRealizados
+                    .Where(e => e.PacienteId == pacienteId)
+                    .CountAsync();
+
+                int examesOcultos = totalExames - examesExibidos.Count;
+
+                // 4. Projetar resultado
+                var exames = examesExibidos.Select(e => new
+                {
+                    e.Id,
+                    DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
+                    DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
+                    SiglaInstituicao = e.Instituicao?.Sigla ?? "",
+                    NomePosto = (e.Postos?.NomePosto ?? "").Length > 12
+                        ? (e.Postos?.NomePosto ?? "").Substring(0, 9) + "..."
+                        : e.Postos?.NomePosto ?? "",
+                    Folha = e.ItensExamesRealizados
+                        .FirstOrDefault()?.ClasseExames?.RefExame ?? "",
+                    Itens = e.ItensExamesRealizados
+                        .OrderBy(i => i.OrdemItem)
+                        .Select(i => new
+                        {
+                            Folha = i.ClasseExames?.RefExame ?? "",
+                            i.RefExame,
+                            i.RefItem,
+                            ContaExame = i.ContaExame.FormatarContaExameSem11(),
+                            Descricao = i.Descricao ?? ""
+                        }).ToList()
+                }).ToList();
+
+                return Json(new { sucesso = true, exames, totalExames, examesOcultos });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[Pacientes] ObterExamesPaciente - Erro: " + ex.Message, "wError");
+                return Json(new { sucesso = false, mensagem = "Erro ao obter exames do paciente" });
+            }
+        }
+        //..Kiro
+
+        //Feito pelo Kiro em 17/05/2026
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpGet]
+        [Route("Pacientes/ObterItensExame")]
+        public async Task<IActionResult> ObterItensExame(int exameRealizadoId)
+        {
+            try
+            {
+                var dados = await _db.ItensExamesRealizados
+                    .AsNoTracking()
+                    .Where(i => i.ExameRealizadoId == exameRealizadoId)
+                    .OrderBy(i => i.OrdemItem)
+                    .ToListAsync();
+
+                var itens = dados.Select(i => new
+                {
+                    i.RefExame,
+                    i.RefItem,
+                    ContaExame = i.ContaExame.FormatarContaExameSem11(),
+                    Descricao = i.Descricao ?? ""
+                }).ToList();
+
+                return Json(new { sucesso = true, itens });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[Pacientes] ObterItensExame - Erro: " + ex.Message, "wError");
+                return Json(new { sucesso = false, mensagem = "Erro ao obter itens do exame" });
+            }
+        }
+        //..Kiro
 
         public IActionResult ConverterPdf()
         {

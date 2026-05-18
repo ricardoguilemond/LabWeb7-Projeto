@@ -1,619 +1,464 @@
-# Design Document — Consultar Exames
+# Design Document — Consultar Exames do Paciente (Master/Detail)
 
-## Visão Geral
+## Overview
 
-Tela de consulta e exclusão de exames realizados, acessível via menu
-**Exames → Consultar Exames**. Implementa um padrão Master/Detail inline
-onde o grid principal (header) exibe registros de `ExamesRealizados` e,
-ao clicar em uma linha, um grid secundário (detail) exibe os respectivos
-`ItensExamesRealizados` via AJAX.
+Evolução incremental da tela de **Cadastro de Pacientes** (`/Pacientes`)
+para adicionar consulta de exames em formato Master/Detail inline. A
+implementação adiciona:
 
-A tela é somente leitura (sem inclusão/edição), com exceção da operação
-de exclusão que valida a inexistência de resultados antes de remover
-registros em transação.
+1. **Filtros backend** acima do grid existente (período, nome, folha)
+2. **Três endpoints AJAX** no `PacientesController` para carregamento
+   sob demanda (exames, itens, folhas)
+3. **Detail inline** expandido abaixo da linha do paciente clicado,
+   exibindo exames realizados e seus itens
+
+A funcionalidade é exclusivamente de **visualização** — sem ações de
+edição ou exclusão no detail.
 
 ### Decisões de Design
 
 | Decisão                          | Justificativa                                    |
 |----------------------------------|--------------------------------------------------|
-| Herdar de `BaseController`       | Padrão existente — injeta serviços via construtor |
-| `ValidacaoGenerica<dynamic>`     | Padrão de `PacientesController.Index`            |
-| Joins via navigation properties  | EF Core já mapeia as relações no model           |
-| Transação nativa EF Core         | Padrão de `RequisitarController.ExcluirRequisicao`|
-| Detail via AJAX (não modal)      | Requisito de master/detail inline                |
-| `configTable()` para header      | Padrão global de `mydatatables.js`               |
-| SweetAlert2 para confirmação     | Padrão existente em `site.js` (`clickConfirm`)   |
-| `ToLocalString()` para datas     | Extension method existente em `BLL/UtilBLL.cs`   |
+| Endpoints no PacientesController | Requisito explícito; mantém coesão com a tela    |
+| Detail via TR injetado no DOM    | Padrão já usado em ConsultarExamesController     |
+| Filtros via form GET             | Padrão existente no projeto (ConsultarExames)    |
+| DataTables NÃO usado no detail  | Detail é simples, TR injetado é mais leve        |
+| AsNoTracking() em todas queries  | Requisito de performance; somente leitura        |
 
----
+## Architecture
 
-## Arquitetura
+### Integração com o Existente
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Views/Pacientes/Index.cshtml (EXISTENTE — preservado)        │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ _PartialMenuPacientes (EXISTENTE — preservado)          ││
+│  └─────────────────────────────────────────────────────────┘│
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ NOVO: Filtros Backend (Data Ini, Data Fim, Nome, Folha) ││
+│  └─────────────────────────────────────────────────────────┘│
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ Grid DataTables #modeloTable (EXISTENTE — preservado)   ││
+│  │  ├── Linha Paciente (click → expande detail)            ││
+│  │  │   └── Detail inline (TR injetado via JS)             ││
+│  │  │       ├── Header: Exames Realizados                  ││
+│  │  │       └── Sub-detail: Itens do Exame                 ││
+│  │  └── ...                                                ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Fluxo de Dados
 
 ```mermaid
-graph TD
-    A[Menu: Exames → Consultar Exames] --> B[GET /ConsultarExames]
-    B --> C[ConsultarExamesController.Index]
-    C --> D[Query EF Core com Joins]
-    D --> E[ValidacaoGenerica → View]
-    E --> F[Views/ConsultarExames/Index.cshtml]
-    F --> G[Grid Header - DataTables configTable]
-    G -->|Click linha| H[AJAX GET /ConsultarExames/ObterItensExame]
-    H --> I[ConsultarExamesController.ObterItensExame]
-    I --> J[JSON com itens]
-    J --> K[Grid Detail - renderizado via JS]
-    G -->|Click excluir| L[SweetAlert2 Confirmação]
-    L -->|Sim| M[AJAX POST /ConsultarExames/ExcluirExame]
-    M --> N[ConsultarExamesController.ExcluirExame]
-    N --> O[Validação Resultado + Transação]
+sequenceDiagram
+    participant U as Usuário
+    participant V as View (Index.cshtml)
+    participant C as PacientesController
+    participant DB as PostgreSQL
+
+    Note over U,V: Carregamento inicial da página
+    U->>V: GET /Pacientes?dataInicial=&dataFinal=&nome=&folha=
+    V->>C: Index(dataInicial, dataFinal, nomePaciente, folhaId)
+    C->>DB: Query Pacientes + filtros (AsNoTracking)
+    DB-->>C: Lista de Pacientes
+    C-->>V: ViewBag.ListaDados + render grid
+
+    Note over U,V: Clique no paciente (sob demanda)
+    U->>V: Click na linha do paciente
+    V->>C: GET /Pacientes/ObterExamesPaciente?pacienteId=X
+    C->>DB: ExamesRealizados + Include (AsNoTracking)
+    DB-->>C: Exames do paciente
+    C-->>V: JSON { sucesso, exames }
+    V->>V: Renderiza detail inline (TR injetado)
+
+    Note over U,V: Clique no exame (sub-detail)
+    U->>V: Click na linha do exame no detail
+    V->>C: GET /Pacientes/ObterItensExame?exameRealizadoId=Y
+    C->>DB: ItensExamesRealizados (AsNoTracking)
+    DB-->>C: Itens do exame
+    C-->>V: JSON { sucesso, itens }
+    V->>V: Renderiza sub-detail (TR injetado)
 ```
 
-### Estrutura de Arquivos
+## Components and Interfaces
 
-```
-LabWebMvc.MVC/
-├── Areas/Controllers/
-│   └── ConsultarExamesController.cs    ← Controller principal
-├── Views/ConsultarExames/
-│   ├── Index.cshtml                    ← View principal (header + detail)
-│   └── Partials/
-│       └── _PartialMenuConsultarExames.cshtml  ← Menu da tela
-```
+### Backend — PacientesController (Novos Endpoints)
 
----
+#### 1. Endpoint Index (ALTERAÇÃO)
 
-## Componentes e Interfaces
-
-### ConsultarExamesController
-
-**Arquivo:** `Areas/Controllers/ConsultarExamesController.cs`
-**Namespace:** `LabWebMvc.MVC.Areas.Controllers`
-**Herança:** `BaseController`
-
-#### Construtor
+O método `Index` existente será **estendido** para aceitar novos
+parâmetros de filtro. A assinatura atual:
 
 ```csharp
-public ConsultarExamesController(
-    IDbFactory dbFactory,
-    IValidadorDeSessao validador,
-    GeralController geralController,
-    IEventLogHelper eventLogHelper,
-    Imagem imagem,
-    ExclusaoService exclusaoService,
-    IConnectionService connectionService)
-    : base(dbFactory, validador, geralController,
-           eventLogHelper, imagem, exclusaoService, connectionService)
-{ }
-```
+// ATUAL (preservado):
+public async Task<IActionResult> Index(string? Conteudo, int registros = 50)
 
-#### Actions
-
-| Action           | Verbo | Rota                                    | Retorno          |
-|------------------|-------|-----------------------------------------|------------------|
-| `Index`          | GET   | `/ConsultarExames`                      | `View()`         |
-| `ObterItensExame`| GET   | `/ConsultarExames/ObterItensExame`      | `Json()`         |
-| `ExcluirExame`   | GET   | `/ConsultarExames/ExcluirExame`         | `Json()`         |
-
----
-
-### Action Index — Assinatura e Fluxo
-
-```csharp
-[TypeFilter(typeof(SessionFilter))]
-[HttpGet]
-[Route("ConsultarExames")]
+// NOVO (estendido):
 public async Task<IActionResult> Index(
-    string? dataExame,
-    string? nomePaciente,
-    int? codigoExame,
-    string? siglaInstituicao,
-    string? nomeInstituicao,
-    string? nomePosto)
+    string? Conteudo,
+    int registros = 50,
+    string? dataInicial = null,
+    string? dataFinal = null,
+    string? nomePaciente = null,
+    int? folhaId = null)
 ```
 
-**Fluxo de execução:**
+**Lógica de filtro adicionada:**
+- Se `dataInicial` e/ou `dataFinal` informados: filtrar pacientes que
+  possuam `ExamesRealizados.DataIni` dentro do range UTC
+- Se `nomePaciente` informado: filtrar `Pacientes.NomePaciente`
+  case-insensitive (Contains)
+- Se `folhaId` informado: filtrar pacientes que possuam exame com
+  `ExamesRealizados.ClasseExamesId == folhaId`
+- Valores padrão: `dataInicial` = hoje - 3 dias, `dataFinal` = hoje
+  (aplicados no frontend via value dos inputs)
 
-1. Verificar se algum filtro foi informado
-2. Se nenhum filtro → `Take(100).OrderByDescending(x => x.Id)`
-3. Se filtro informado → aplicar filtros sem limite de registros
-4. Executar query com joins (Instituicao, Postos, Pacientes, TabelaExames)
-5. Projetar resultado em lista `dynamic` com campos formatados
-6. Montar `vmListaValidacao<dynamic>` e retornar via `ValidacaoGenerica`
+**Importante:** Os filtros novos são **adicionais** ao filtro
+`Conteudo` existente. Se `Conteudo` estiver preenchido, o
+comportamento atual é preservado integralmente. Os novos filtros
+só se aplicam quando `Conteudo` está vazio.
 
-**Query base com joins:**
+#### 2. ObterExamesPaciente
 
+```
+GET /Pacientes/ObterExamesPaciente?pacienteId={int}
+```
+
+**Arquivo:** `Areas/Controllers/PacientesController.cs`
+**Atributos:** `[TypeFilter(typeof(SessionFilter))]`, `[HttpGet]`,
+`[Route("Pacientes/ObterExamesPaciente")]`
+
+**Query:**
 ```csharp
-var query = _db.ExamesRealizados
+_db.ExamesRealizados
     .AsNoTracking()
+    .Where(e => e.PacienteId == pacienteId)
     .Include(e => e.Instituicao)
     .Include(e => e.Postos)
-    .Include(e => e.Pacientes)
-    .Include(e => e.TabelaExames)
-    .AsQueryable();
+    .Include(e => e.ClasseExames)
+    .OrderByDescending(e => e.DataIni)
+    .Select(e => new {
+        e.Id,
+        DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
+        DataFim = e.DataFim.HasValue
+            ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "-",
+        SiglaInstituicao = e.Instituicao.Sigla,
+        NomePosto = e.Postos.NomePosto.Length > 12
+            ? e.Postos.NomePosto.Substring(0, 9) + "..."
+            : e.Postos.NomePosto,
+        Folha = e.ClasseExames.RefExame ?? "-"
+    })
 ```
 
-**Aplicação de filtros (quando informados):**
+**Resposta:** `Json(new { sucesso = true, exames })`
 
-```csharp
-// Filtro por data — converte para range UTC
-if (!string.IsNullOrEmpty(dataExame))
-{
-    DateTime dataParsed = dataExame.Trim().FormataData("dd/MM/yyyy", true);
-    var (inicioUtc, fimUtc) = _geralController
-        .ConverterDataLocalParaRangeUtc(dataParsed);
-    query = query.Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc);
-}
+#### 3. ObterItensExame
 
-// Filtro por nome do paciente — case-insensitive
-if (!string.IsNullOrEmpty(nomePaciente))
-    query = query.Where(e => e.Pacientes.NomePaciente
-        .ToLower().Contains(nomePaciente.Trim().ToLower()));
-
-// Filtro por código do exame — correspondência exata
-if (codigoExame.HasValue)
-    query = query.Where(e => e.Id == codigoExame.Value);
-
-// Filtro por sigla da instituição — case-insensitive
-if (!string.IsNullOrEmpty(siglaInstituicao))
-    query = query.Where(e => e.Instituicao.Sigla
-        .ToLower().Contains(siglaInstituicao.Trim().ToLower()));
-
-// Filtro por nome da instituição — case-insensitive
-if (!string.IsNullOrEmpty(nomeInstituicao))
-    query = query.Where(e => e.Instituicao.Nome
-        .ToLower().Contains(nomeInstituicao.Trim().ToLower()));
-
-// Filtro por nome do posto — case-insensitive
-if (!string.IsNullOrEmpty(nomePosto))
-    query = query.Where(e => e.Postos.NomePosto
-        .ToLower().Contains(nomePosto.Trim().ToLower()));
+```
+GET /Pacientes/ObterItensExame?exameRealizadoId={int}
 ```
 
-**Projeção para o grid:**
+**Atributos:** `[TypeFilter(typeof(SessionFilter))]`, `[HttpGet]`,
+`[Route("Pacientes/ObterItensExame")]`
 
+**Query:**
 ```csharp
-foreach (var item in dados)
-{
-    listaGrid.Add(new
-    {
-        Id = item.Id,
-        TabelaExamesId = item.TabelaExamesId,
-        SiglaInstituicao = item.Instituicao.Sigla,
-        NomeInstituicao = item.Instituicao.Nome,
-        NomePosto = item.Postos.NomePosto,
-        NomePaciente = item.Pacientes.NomePaciente,
-        Nascimento = item.Pacientes.Nascimento,
-        Sequencial = item.Sequencial,
-        DataIni = item.DataIni  // UTC — formatação na view
-    });
-}
-```
-
----
-
-### Action ObterItensExame — Assinatura e Fluxo
-
-```csharp
-[TypeFilter(typeof(SessionFilter))]
-[HttpGet]
-[Route("ConsultarExames/ObterItensExame")]
-public async Task<IActionResult> ObterItensExame(int exameRealizadoId)
-```
-
-**Fluxo:**
-
-1. Buscar `ItensExamesRealizados` onde `ExameRealizadoId == exameRealizadoId`
-2. Usar `AsNoTracking()`
-3. Projetar campos necessários para JSON
-4. Retornar `Json(new { sucesso = true, itens = [...] })`
-
-```csharp
-var itens = await _db.ItensExamesRealizados
+_db.ItensExamesRealizados
     .AsNoTracking()
     .Where(i => i.ExameRealizadoId == exameRealizadoId)
     .OrderBy(i => i.OrdemItem)
-    .Select(i => new
-    {
-        i.ClasseExamesNome,
+    .Select(i => new {
         i.RefExame,
         i.RefItem,
-        i.ContaExame,
-        i.Descricao,
-        ValorItem = i.ValorItem.HasValue
-            ? i.ValorItem.Value.ToString("N2")
-            : "-",
-        i.Etiquetas
+        ContaExame = i.ContaExame.FormatarContaExameSem11(),
+        i.Descricao
     })
-    .ToListAsync();
-
-return Json(new { sucesso = true, itens });
 ```
 
----
+**Resposta:** `Json(new { sucesso = true, itens })`
 
-### Action ExcluirExame — Assinatura e Fluxo
+#### 4. ObterFolhasExame
 
+```
+GET /Pacientes/ObterFolhasExame
+```
+
+**Atributos:** `[TypeFilter(typeof(SessionFilter))]`, `[HttpGet]`,
+`[Route("Pacientes/ObterFolhasExame")]`
+
+**Query:**
 ```csharp
-[TypeFilter(typeof(SessionFilter))]
-[HttpGet]
-[Route("ConsultarExames/ExcluirExame")]
-public async Task<IActionResult> ExcluirExame(int id)
+_db.ClasseExames
+    .AsNoTracking()
+    .OrderBy(c => c.RefExame)
+    .Select(c => new { c.Id, c.RefExame })
 ```
 
-**Fluxo de execução:**
+**Resposta:** `Json(new { sucesso = true, folhas })`
 
-1. Buscar `ExamesRealizados` pelo `id`
-2. Buscar `ItensExamesRealizados` onde `ExameRealizadoId == id`
-3. **Validar:** verificar se TODOS os campos `Resultado` estão vazios/nulos
-4. Se algum `Resultado` preenchido → retornar erro (bloquear exclusão)
-5. Buscar `Requisitar` onde `ExameRealizadoId == id`
-6. Iniciar transação com `_db.Database.BeginTransactionAsync()`
-7. Remover `ItensExamesRealizados` → `RemoveRange`
-8. Remover `Requisitar` vinculados → `RemoveRange`
-9. Remover `ExamesRealizados` → `Remove`
-10. `SaveChangesAsync()` + `CommitAsync()`
-11. Em caso de erro → `RollbackAsync()` + log via `_eventLogHelper`
+### Frontend — Index.cshtml (Alterações)
 
-```csharp
-// Validação de resultados
-var itensExame = await _db.ItensExamesRealizados
-    .Where(i => i.ExameRealizadoId == id)
-    .ToListAsync();
-
-bool temResultado = itensExame
-    .Any(i => !string.IsNullOrWhiteSpace(i.Resultado));
-
-if (temResultado)
-    return Json(new
-    {
-        titulo = "Erro",
-        mensagem = "Este exame não pode ser excluído pois um ou mais "
-                 + "itens já possuem resultado lançado.",
-        sucesso = false
-    });
-
-// Transação de exclusão
-using var transaction = await _db.Database.BeginTransactionAsync();
-try
-{
-    _db.ItensExamesRealizados.RemoveRange(itensExame);
-
-    var requisicoes = await _db.Requisitar
-        .Where(r => r.ExameRealizadoId == id)
-        .ToListAsync();
-    _db.Requisitar.RemoveRange(requisicoes);
-
-    _db.ExamesRealizados.Remove(exame);
-
-    await _db.SaveChangesAsync();
-    await transaction.CommitAsync();
-
-    return Json(new
-    {
-        titulo = "Sucesso",
-        mensagem = "Exame excluído com sucesso!",
-        sucesso = true
-    });
-}
-catch (Exception ex)
-{
-    await transaction.RollbackAsync();
-    _eventLogHelper.LogEventViewer(
-        $"Erro ao excluir exame {id}: {ex.Message}", "wError");
-    return Json(new
-    {
-        titulo = "Erro",
-        mensagem = "Erro ao excluir o exame: " + ex.Message,
-        sucesso = false
-    });
-}
-```
-
----
-
-## Modelo de Dados
-
-### Entidades Envolvidas e Relacionamentos
-
-```mermaid
-erDiagram
-    ExamesRealizados ||--o{ ItensExamesRealizados : "1:N via ExameRealizadoId"
-    ExamesRealizados }o--|| Instituicao : "N:1 via InstituicaoId"
-    ExamesRealizados }o--|| Postos : "N:1 via PostoId"
-    ExamesRealizados }o--|| Pacientes : "N:1 via PacienteId"
-    ExamesRealizados }o--|| TabelaExames : "N:1 via TabelaExamesId"
-    Requisitar }o--o| ExamesRealizados : "N:1 via ExameRealizadoId (sem FK física)"
-
-    ExamesRealizados {
-        int Id PK
-        int PacienteId FK
-        int TabelaExamesId FK
-        int InstituicaoId FK
-        int PostoId FK
-        int Sequencial
-        DateTime DataIni "TIMESTAMPTZ (UTC)"
-    }
-
-    ItensExamesRealizados {
-        int Id PK
-        int ExameRealizadoId FK
-        string ClasseExamesNome
-        string RefExame
-        string RefItem
-        string ContaExame
-        string Descricao
-        string Resultado "campo validado na exclusão"
-        decimal ValorItem
-        int Etiquetas
-    }
-
-    Requisitar {
-        int Id PK
-        int ExameRealizadoId "vínculo lógico (sem FK física)"
-        int PacienteId
-        string Resultado
-    }
-
-    Instituicao {
-        int Id PK
-        string Sigla
-        string Nome
-    }
-
-    Postos {
-        int Id PK
-        string NomePosto
-    }
-
-    Pacientes {
-        int Id PK
-        string NomePaciente
-        DateTime Nascimento "TIMESTAMPTZ (UTC)"
-    }
-
-    TabelaExames {
-        int Id PK
-        string SiglaTabela
-        string NomeTabela
-    }
-```
-
-### Campos Exibidos no Grid Header
-
-| Coluna na View       | Origem                          | Tipo       |
-|----------------------|---------------------------------|------------|
-| Id (Código)          | `ExamesRealizados.Id`           | int        |
-| Tabela               | `ExamesRealizados.TabelaExamesId`| int       |
-| Sigla Instituição    | `Instituicao.Sigla`             | string     |
-| Nome Instituição     | `Instituicao.Nome`              | string     |
-| Nome Posto           | `Postos.NomePosto`              | string     |
-| Nome Paciente        | `Pacientes.NomePaciente`        | string     |
-| Data Nascimento      | `Pacientes.Nascimento`          | DateTime   |
-| Sequencial           | `ExamesRealizados.Sequencial`   | int        |
-| Data do Exame        | `ExamesRealizados.DataIni`      | DateTime   |
-
-### Campos Exibidos no Grid Detail
-
-| Coluna na View    | Origem                              | Tipo    |
-|-------------------|-------------------------------------|---------|
-| Classe            | `ItensExamesRealizados.ClasseExamesNome` | string |
-| Ref. Exame        | `ItensExamesRealizados.RefExame`    | string  |
-| Ref. Item         | `ItensExamesRealizados.RefItem`     | string  |
-| Conta Exame       | `ItensExamesRealizados.ContaExame`  | string  |
-| Descrição         | `ItensExamesRealizados.Descricao`   | string  |
-| Valor Item        | `ItensExamesRealizados.ValorItem`   | decimal |
-| Etiquetas (Qtd)   | `ItensExamesRealizados.Etiquetas`   | int     |
-
----
-
-## Estrutura da View
-
-### Index.cshtml
-
-**Arquivo:** `Views/ConsultarExames/Index.cshtml`
+#### Filtros Backend (HTML adicionado antes do grid)
 
 ```html
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-@using BLL
-@using static BLL.UtilBLL
-
-<!-- Partial de menu -->
-<partial name='Partials/_PartialMenuConsultarExames' />
-
-<!-- Área de filtros backend -->
-<div id="filtrosConsultarExames">
-    <form method="get" asp-action="Index" asp-controller="ConsultarExames">
-        <!-- Inputs: dataExame, nomePaciente, codigoExame,
-             siglaInstituicao, nomeInstituicao, nomePosto -->
-        <button type="submit">Pesquisar</button>
+<div id="filtrosPacientesExames"
+     style="margin-bottom: 10px; padding: 8px 12px;
+            border: 1px solid #ddd; border-radius: 6px;
+            background-color: #f9f9f9;">
+    <form method="get" asp-action="Index"
+          asp-controller="Pacientes"
+          style="display: flex; flex-wrap: wrap;
+                 align-items: center; gap: 8px;">
+        <!-- Data Inicial (padrão: hoje - 3 dias) -->
+        <!-- Data Final (padrão: hoje) -->
+        <!-- Nome do Paciente (text) -->
+        <!-- Folha de Exame (select carregado via AJAX) -->
+        <!-- Botão Pesquisar -->
     </form>
 </div>
-
-<!-- Grid Header (ExamesRealizados) -->
-<div class="table-responsive">
-    <table id="modeloTable" name="datatable"
-           data-order='[[ 0, "desc" ]]'
-           class="display compact order-column stripe table-hover nowrap">
-        <thead>...</thead>
-        <tbody>
-            @foreach (var item in ViewBag.ListaDados) { ... }
-        </tbody>
-        <tfoot>...</tfoot>
-    </table>
-</div>
-
-<!-- Grid Detail (ItensExamesRealizados) — inicia oculto -->
-<div id="detailContainer" style="display: none;">
-    <table id="detailTable"
-           class="display compact order-column stripe table-hover nowrap">
-        <thead>...</thead>
-        <tbody id="detailBody"></tbody>
-    </table>
-</div>
-
-@section Scripts {
-    <div class="toolbar">
-        <partial name='_PartialDatatables' />
-    </div>
-    <!-- Scripts específicos da tela -->
-}
 ```
 
-### Formatação de Datas na View
+#### JavaScript — Detail Inline
 
-Datas UTC são convertidas para exibição local usando `ToLocalString()`:
+O script será adicionado no bloco `<script>` existente da view,
+seguindo o padrão já implementado em `ConsultarExames/Index.cshtml`:
 
-```csharp
-// Data do Exame (DataIni) — somente data
-item.DataIni.ToLocalString("dd/MM/yyyy")
+- Handler delegado com namespace: `$(document).off('click.detailExames')
+  .on('click.detailExames', '#modeloTable tbody tr', handler)`
+- Ignora cliques na coluna de opções (`.grid_fundo_opcoes`)
+- Ignora cliques em linhas de detalhe (`.detail-row`,
+  `.detail-header-row`)
+- Remove detail anterior antes de abrir novo
+- Chama `ObterExamesPaciente` via `$.ajax`
+- Renderiza TRs de header e dados do exame
+- Ao clicar em uma linha de exame no detail, chama
+  `ObterItensExame` e renderiza sub-detail
 
-// Data de Nascimento — somente data
-item.Nascimento.ToLocalString("dd/MM/yyyy")
+#### CSS — Estilos do Detail (no próprio cshtml)
+
+```css
+<style>
+    tr.detail-row { ... }
+    tr.detail-header-row { ... }
+    tr.detail-parent-highlight { ... }
+    tr.detail-exame-row { ... }
+    tr.detail-item-row { ... }
+</style>
 ```
 
-### Coluna de Opções (Exclusão)
+Estilos seguem o padrão já existente em
+`Views/ConsultarExames/Index.cshtml`.
 
-```html
-<td class='grid_fundo_opcoes'>
-    <a id="@item.Id" class='grid_itens'
-       onclick="clickDeleteExame(this)"
-       title='Excluir'>
-        <i class='fa-sharp fa-solid fa-trash-can'></i>
-    </a>
-</td>
+## Data Models
+
+### Relacionamentos Reais (Investigados no Código)
+
+```
+Pacientes (1) ──── (N) ExamesRealizados
+    │                       │
+    │                       ├── FK: PacienteId → Pacientes.Id
+    │                       ├── FK: InstituicaoId → Instituicao.Id
+    │                       ├── FK: PostoId → Postos.Id
+    │                       ├── FK: ClasseExamesId → ClasseExames.Id
+    │                       ├── FK: MedicoId → Medicos.Id
+    │                       ├── FK: TabelaExamesId → TabelaExames.Id
+    │                       │
+    │                       └── (1) ──── (N) ItensExamesRealizados
+    │                                           │
+    │                                           ├── FK: ExameRealizadoId
+    │                                           ├── FK: PacienteId
+    │                                           ├── FK: ClasseExamesId
+    │                                           ├── FK: InstituicaoId
+    │                                           └── FK: TabelaExamesId
+    │
+ClasseExames (Folha de Exame)
+    ├── Id (PK)
+    ├── RefExame (nome/identificador da Folha)
+    └── (1) ──── (N) ExamesRealizados
 ```
 
----
+### JSON Responses
 
-## JavaScript — Comportamento da Tela
+#### ObterExamesPaciente Response
 
-### Exclusão via SweetAlert2
-
-Utiliza o padrão `clickConfirm` existente em `site.js`:
-
-```javascript
-function clickDeleteExame(x) {
-    return clickConfirm(x, null, "Excluir este exame?", null,
-                        "ConsultarExames/ExcluirExame");
-}
-```
-
-O `clickConfirm` já implementa:
-- Confirmação com SweetAlert2 (botões "Sim" / "Não")
-- Loading spinner durante a requisição
-- Exibição de mensagem de sucesso/erro
-- `location.reload()` em caso de sucesso
-
-### Master/Detail — Click na Linha do Header
-
-```javascript
-// Ao clicar em uma linha do grid header (exceto coluna de opções)
-$('#modeloTable tbody').on('click', 'tr', function (e) {
-    // Ignora cliques na coluna de opções
-    if ($(e.target).closest('.grid_fundo_opcoes').length) return;
-
-    var id = $(this).find('td:first').text();
-    carregarDetail(id);
-});
-
-function carregarDetail(exameRealizadoId) {
-    $.ajax({
-        url: 'ConsultarExames/ObterItensExame',
-        data: { exameRealizadoId: exameRealizadoId },
-        type: 'GET',
-        dataType: 'json',
-        success: function (data) {
-            if (data.sucesso) {
-                renderizarDetail(data.itens);
-                $('#detailContainer').show();
-            }
+```json
+{
+    "sucesso": true,
+    "exames": [
+        {
+            "id": 1234,
+            "dataIni": "15/05/2026",
+            "dataFim": "16/05/2026",
+            "siglaInstituicao": "LAB",
+            "nomePosto": "Posto Cent...",
+            "folha": "HEMOGRAMA"
         }
-    });
-}
-
-function renderizarDetail(itens) {
-    var tbody = $('#detailBody');
-    tbody.empty();
-    itens.forEach(function (item) {
-        tbody.append(
-            '<tr>' +
-            '<td>' + item.classeExamesNome + '</td>' +
-            '<td>' + item.refExame + '</td>' +
-            '<td>' + item.refItem + '</td>' +
-            '<td>' + item.contaExame + '</td>' +
-            '<td>' + item.descricao + '</td>' +
-            '<td>' + item.valorItem + '</td>' +
-            '<td>' + item.etiquetas + '</td>' +
-            '</tr>'
-        );
-    });
+    ]
 }
 ```
 
-### Comportamento: Somente Um Detail Aberto
+#### ObterItensExame Response
 
-Ao clicar em outra linha, o detail anterior é substituído pelo novo
-(a função `carregarDetail` limpa o tbody antes de popular).
+```json
+{
+    "sucesso": true,
+    "itens": [
+        {
+            "refExame": "HEMOGRAMA",
+            "refItem": "HEM001",
+            "contaExame": "01.02.03",
+            "descricao": "Hemoglobina"
+        }
+    ]
+}
+```
 
----
+#### ObterFolhasExame Response
 
-## Tratamento de Erros
+```json
+{
+    "sucesso": true,
+    "folhas": [
+        { "id": 1, "refExame": "BIOQUIMICA" },
+        { "id": 2, "refExame": "HEMOGRAMA" }
+    ]
+}
+```
 
-| Cenário                              | Tratamento                                    |
-|--------------------------------------|-----------------------------------------------|
-| Exame não encontrado (id inválido)   | Retorna JSON `{ sucesso: false, mensagem }`   |
-| Itens com resultado preenchido       | Bloqueia exclusão, retorna mensagem específica |
-| Exceção durante transação            | Rollback + log via `_eventLogHelper`          |
-| Falha na requisição AJAX (detail)    | Não exibe detail, mantém estado anterior      |
-| Sessão expirada                      | `SessionFilter` redireciona para login        |
+## Correctness Properties
 
-### Mensagens de Erro
+*A property is a characteristic or behavior that should hold true
+across all valid executions of a system — essentially, a formal
+statement about what the system should do. Properties serve as the
+bridge between human-readable specifications and machine-verifiable
+correctness guarantees.*
 
-- **Resultado preenchido:** "Este exame não pode ser excluído pois um ou
-  mais itens já possuem resultado lançado."
-- **Exame não encontrado:** "Exame não encontrado."
-- **Erro genérico:** "Erro ao excluir o exame: {mensagem da exceção}"
+### Property 1: Filtro de período retorna apenas pacientes com exames no range
 
-### Log de Erros
+*For any* par de datas (dataInicial, dataFinal) válido, todos os
+pacientes retornados pelo endpoint Index devem possuir pelo menos um
+`ExamesRealizados` cuja `DataIni` esteja dentro do range UTC
+correspondente ao período informado.
 
-Erros de exclusão são registrados via `_eventLogHelper.LogEventViewer()`
-com nível `"wError"`, seguindo o padrão de `RequisitarController`.
+**Validates: Requirements 4.3**
 
----
+### Property 2: Filtro de nome é case-insensitive
 
-## Estratégia de Testes
+*For any* string de busca `s`, todos os pacientes retornados pelo
+filtro de nome devem ter `NomePaciente` contendo `s` independentemente
+de maiúsculas/minúsculas (ou seja,
+`NomePaciente.ToLower().Contains(s.ToLower())` deve ser verdadeiro).
 
-### Por que PBT não se aplica
+**Validates: Requirements 4.4**
 
-Esta funcionalidade é composta por:
-- Operações CRUD simples (listagem com joins, exclusão com validação)
-- Renderização de UI (grids DataTables)
-- Wiring de controller (rotas, injeção de dependência)
+### Property 3: Filtro de folha retorna apenas pacientes vinculados
 
-Não há transformações de dados complexas, parsers, serializers ou
-algoritmos com espaço de entrada amplo. Testes baseados em exemplos
-e integração são mais adequados.
+*For any* `folhaId` válido, todos os pacientes retornados devem
+possuir pelo menos um `ExamesRealizados` com
+`ClasseExamesId == folhaId`.
 
-### Testes Unitários (Exemplos)
+**Validates: Requirements 4.6**
 
-| Cenário                                          | Tipo        |
-|--------------------------------------------------|-------------|
-| Index sem filtros retorna máximo 100 registros   | Exemplo     |
-| Index com filtro de data aplica range UTC        | Exemplo     |
-| Index com filtro de nome filtra case-insensitive | Exemplo     |
-| ObterItensExame retorna itens do exame correto   | Exemplo     |
-| ExcluirExame bloqueia quando há resultado        | Exemplo     |
-| ExcluirExame remove itens + requisitar + header  | Exemplo     |
-| ExcluirExame faz rollback em caso de exceção     | Exemplo     |
+### Property 4: Abreviação de NomePosto respeita limite de 12 caracteres
 
-### Testes de Integração
+*For any* string `nomePosto`, se `nomePosto.Length > 12` então o
+resultado da abreviação deve ter exatamente 12 caracteres e terminar
+com `"..."`; se `nomePosto.Length <= 12` então o resultado deve ser
+igual à string original.
 
-| Cenário                                          | Tipo        |
-|--------------------------------------------------|-------------|
-| Fluxo completo: listar → detalhar → excluir     | Integração  |
-| Transação de exclusão mantém consistência        | Integração  |
-| Filtros combinados retornam dados corretos       | Integração  |
+**Validates: Requirements 5.1, 5.4**
 
-### Validação de Build
+### Property 5: Exames são ordenados por DataIni decrescente
 
-- Compilar com `dotnet build "LabWebMvc.MVC/LabWebMvc.MVC.csproj"`
-- Resultado obrigatório: 0 erros, 0 avisos
+*For any* paciente com múltiplos exames, a lista retornada por
+`ObterExamesPaciente` deve estar ordenada de forma que cada
+`DataIni[i] >= DataIni[i+1]` (ordem não-crescente).
+
+**Validates: Requirements 7.4**
+
+### Property 6: Itens de exame são ordenados por OrdemItem
+
+*For any* exame com múltiplos itens, a lista retornada por
+`ObterItensExame` deve estar ordenada de forma que cada
+`OrdemItem[i] <= OrdemItem[i+1]` (ordem não-decrescente).
+
+**Validates: Requirements 6.3, 8.4**
+
+### Property 7: Folhas são ordenadas alfabeticamente por RefExame
+
+*For any* conjunto de folhas retornado por `ObterFolhasExame`, a
+sequência de `RefExame` deve estar em ordem alfabética não-decrescente.
+
+**Validates: Requirements 9.3**
+
+## Error Handling
+
+### Backend
+
+| Cenário                              | Tratamento                              |
+|--------------------------------------|-----------------------------------------|
+| `pacienteId` inválido (não existe)   | Retorna `{ sucesso: true, exames: [] }` |
+| `exameRealizadoId` inválido          | Retorna `{ sucesso: true, itens: [] }`  |
+| Exceção no banco                     | Log via `_eventLogHelper`, retorna      |
+|                                      | `{ sucesso: false, mensagem: "..." }`   |
+| Sessão expirada (SessionFilter)      | Redirect para login (padrão existente)  |
+| Parâmetros de data inválidos         | Ignora filtro, retorna sem filtrar data |
+
+### Frontend
+
+| Cenário                              | Tratamento                              |
+|--------------------------------------|-----------------------------------------|
+| AJAX retorna `sucesso: false`        | Não renderiza detail, exibe mensagem    |
+| AJAX retorna `exames: []`            | Exibe mensagem "Nenhum exame" no detail |
+| Erro de rede (AJAX fail)             | Exibe mensagem via `clickAviso`         |
+| Clique rápido duplo                  | Ignora se detail já está carregando     |
+
+## Testing Strategy
+
+### Abordagem
+
+Esta feature envolve lógica de filtro backend (queries EF Core) e
+apresentação frontend (detail inline via DOM). A estratégia combina:
+
+1. **Testes de integração** — Verificar endpoints com banco real
+2. **Testes manuais** — Verificar comportamento visual do detail
+3. **Code review** — Verificar padrões (AsNoTracking, SessionFilter,
+   namespace handlers, encoding)
+
+### PBT — Avaliação de Aplicabilidade
+
+As propriedades identificadas (filtros, ordenação, truncamento)
+envolvem queries ao banco de dados e lógica de apresentação. A
+maioria depende de estado do banco, tornando PBT com mocks complexo
+e de baixo valor agregado para este caso. A exceção é a **Property 4
+(abreviação de NomePosto)** que é uma função pura testável.
+
+**Decisão:** PBT aplicável apenas para a lógica de truncamento de
+string (Property 4). As demais propriedades serão validadas por
+testes de integração com exemplos representativos.
+
+### Testes Recomendados
+
+| Tipo        | Escopo                                          |
+|-------------|-------------------------------------------------|
+| Integração  | Endpoints retornam dados corretos com filtros   |
+| Integração  | Ordenação de exames e itens                     |
+| Unitário    | Abreviação de NomePosto (função pura)           |
+| Manual      | Detail inline abre/fecha corretamente           |
+| Manual      | Apenas um detail aberto por vez                 |
+| Manual      | Filtros preenchem valores padrão                |
+| Manual      | ComboBox de folhas carrega corretamente         |
+| Smoke       | Build compila com 0 erros e 0 avisos            |
+| Smoke       | Rotas existentes continuam respondendo          |
+| Regressão   | Grid existente mantém busca, paginação, ações   |
+
+### Configuração de Testes
+
+- Framework: xUnit (já existente no projeto, se disponível) ou
+  testes manuais documentados
+- Para Property 4: teste unitário com múltiplas strings de tamanhos
+  variados (0, 1, 11, 12, 13, 50, 100 caracteres)
+- Para integração: usar banco de desenvolvimento local com dados
+  de teste

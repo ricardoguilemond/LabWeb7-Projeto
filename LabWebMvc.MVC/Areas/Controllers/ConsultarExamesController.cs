@@ -86,9 +86,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             // Sem filtros: limitar a 100 registros
             if (!temFiltro)
-                query = query.OrderByDescending(e => e.Id).Take(100);
+                query = query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id).Take(100);
             else
-                query = query.OrderByDescending(e => e.Id);
+                query = query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id);
 
             var dados = await query.ToListAsync();
 
