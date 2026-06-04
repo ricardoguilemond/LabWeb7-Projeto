@@ -8,13 +8,13 @@
 }
 <script>
     $(document).ready(function () {
-        var ass = @ViewBag.ass1SN;
+        var ass = @Model.Assinatura1;
         if (ass == 0) $("#divFileAss1").hide();
-        ass = @ViewBag.ass2SN;
+        ass = @Model.Assinatura2;
         if (ass == 0) $("#divFileAss2").hide();
-        ass = @ViewBag.ass3SN;
+        ass = @Model.Assinatura3;
         if (ass == 0) $("#divFileAss3").hide();
-        ass = @ViewBag.ass4SN;
+        ass = @Model.Assinatura4;
         if (ass == 0) $("#divFileAss4").hide();
         //fileAss1
         $("[id='botaoAss10']").click(function () {
@@ -129,7 +129,7 @@
                 {
                     string mapaSigla = Utils.RetornaItem(i, "ListaTipoMapa", 1);
                     string mapaDescricao = Utils.RetornaItem(i, "ListaTipoMapa", 2);
-                    bool check = (mapaSigla == (string)ViewBag.TipoMapa);
+                    bool check = (mapaSigla == Model.TipoMapa);
                     <div style="display: inline-block;">
                         @Html.RadioButton("TipoMapa", mapaSigla, check)
                         @Html.Label(mapaDescricao)
@@ -146,7 +146,7 @@
                     int ass1Index = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
                     string ass1Sigla = Utils.RetornaItem(i, "ListaSN", 1);
                     string ass1Descricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (ass1Index == (int)ViewBag.ass1SN);
+                    bool check = (ass1Index == Model.Assinatura1);
                     string botao1 = "botaoAss1" + i.ToString();
                     <div style="display: inline-block;">
                         @Html.RadioButton("Assinatura1", ass1Index, check, new { @id = botao1 })
@@ -161,7 +161,7 @@
             <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                 <div id="divFileAss1" class="form-group">
                     @Html.Label("Primeira Assinatura (obrigatória) ::: Máximo 775x226 pixels (Largura_x_altura)")
-                    @Html.TextBoxFor(p => p.CaminhoImgAss1, new { @type = "file", @id = "fileAss1", @name = "fileAss1", @value = @ViewBag.PathImages })
+                    @Html.TextBoxFor(p => p.CaminhoImgAss1, new { @type = "file", @id = "fileAss1", @name = "fileAss1", @value = Model.PathImages })
                     @Html.Raw("<div id='imgsAss1'></div>")
                     @Html.HiddenFor(p => p.NomeAss1, new { @id = "nomeAss1" })
                     @Html.HiddenFor(p => p.CaminhoImgAss1, new { @id = "caminhoImgAss1" })
@@ -181,7 +181,7 @@
                     int ass2Index = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
                     string ass2Sigla = Utils.RetornaItem(i, "ListaSN", 1);
                     string ass2Descricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (ass2Index == (int)ViewBag.ass2SN);
+                    bool check = (ass2Index == Model.Assinatura2);
                     string botao2 = "botaoAss2" + i.ToString();
                     <div style="display: inline-block;">
                         @Html.RadioButton("Assinatura2", ass2Index, check, new { @id = botao2 })
@@ -195,7 +195,7 @@
             <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                 <div id="divFileAss2" class="form-group">
                     @Html.Label("Segunda Assinatura ::: Máximo 775x226 pixels (Largura_x_altura)")
-                    @Html.TextBoxFor(p => p.CaminhoImgAss2, new { @type = "file", @id = "fileAss2", @name = "fileAss2", @value = @ViewBag.PathImages })
+                    @Html.TextBoxFor(p => p.CaminhoImgAss2, new { @type = "file", @id = "fileAss2", @name = "fileAss2", @value = Model.PathImages })
                     @Html.Raw("<div id='imgsAss2'></div>")
                     @Html.HiddenFor(p => p.NomeAss2, new { @id = "nomeAss2" })
                     @Html.HiddenFor(p => p.CaminhoImgAss2, new { @id = "caminhoImgAss2" })
@@ -215,7 +215,7 @@
                     int ass3Index = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
                     string ass3Sigla = Utils.RetornaItem(i, "ListaSN", 1);
                     string ass3Descricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (ass3Index == (int)ViewBag.ass3SN);
+                    bool check = (ass3Index == Model.Assinatura3);
                     string botao3 = "botaoAss3" + i.ToString();
                     <div style="display: inline-block;">
                         @Html.RadioButton("Assinatura3", ass3Index, check, new { @id = botao3 })
@@ -229,7 +229,7 @@
             <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                 <div id="divFileAss3" class="form-group">
                     @Html.Label("Terceira Assinatura ::: Máximo 775x226 pixels (Largura_x_altura)")
-                    @Html.TextBoxFor(p => p.CaminhoImgAss3, new { @type = "file", @id = "fileAss3", @name = "fileAss3", @value = @ViewBag.PathImages })
+                    @Html.TextBoxFor(p => p.CaminhoImgAss3, new { @type = "file", @id = "fileAss3", @name = "fileAss3", @value = Model.PathImages })
                     @Html.Raw("<div id='imgsAss3'></div>")
                     @Html.HiddenFor(p => p.NomeAss3, new { @id = "nomeAss3" })
                     @Html.HiddenFor(p => p.CaminhoImgAss3, new { @id = "caminhoImgAss3" })
@@ -249,7 +249,7 @@
                     int ass4Index = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
                     string ass4Sigla = Utils.RetornaItem(i, "ListaSN", 1);
                     string ass4Descricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (ass4Index == (int)ViewBag.ass4SN);
+                    bool check = (ass4Index == Model.Assinatura4);
                     string botao4 = "botaoAss4" + i.ToString();
                     <div style="display: inline-block;">
                         @Html.RadioButton("Assinatura4", ass4Index, check, new { @id = botao4 })
@@ -263,7 +263,7 @@
             <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                 <div id="divFileAss4" class="form-group">
                     @Html.Label("Quarta Assinatura ::: Máximo 775x226 pixels (Largura_x_altura)")
-                    @Html.TextBoxFor(p => p.CaminhoImgAss4, new { @type = "file", @id = "fileAss4", @name = "fileAss4", @value = @ViewBag.PathImages })
+                    @Html.TextBoxFor(p => p.CaminhoImgAss4, new { @type = "file", @id = "fileAss4", @name = "fileAss4", @value = Model.PathImages })
                     @Html.Raw("<div id='imgsAss4'></div>")
                     @Html.HiddenFor(p => p.NomeAss4, new { @id = "nomeAss4" })
                     @Html.HiddenFor(p => p.CaminhoImgAss4, new { @id = "caminhoImgAss4" })

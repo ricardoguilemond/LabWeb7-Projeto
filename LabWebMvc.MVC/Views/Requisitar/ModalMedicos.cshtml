@@ -116,9 +116,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (ViewBag.ListaMedicos != null)
+                            @if (Model.ListaMedicos != null)
                             {
-                                @foreach (var item in ViewBag.ListaMedicos)
+                                @foreach (var item in Model.ListaMedicos)
                                 {
                                     <tr id="tr_@item.NomeMedico" name="trModal" title="Selecionar" style="width: 90%;">
                                         <td id="@item.NomeMedico" style="width:58%;">

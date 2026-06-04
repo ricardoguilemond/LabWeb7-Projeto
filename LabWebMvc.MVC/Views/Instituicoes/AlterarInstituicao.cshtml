@@ -129,7 +129,7 @@
             <div class="form-group">
                 @Html.Label("UF:")
                 <div style="display: inline-block;">
-                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF))
+                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF))
                 </div>
             </div>
             <div class="form-group">
@@ -146,11 +146,11 @@
             <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                 <div class="form-group">
                     @Html.Label("TIMBRE: Pequena imagem quadrada: 215x235 pixels (Largura_x_altura), para acompanhar os títulos dos relatórios")
-                    @Html.TextBoxFor(p => p.CaminhoImagemTimbre, new { @type = "file", @id = "fileTimbre", @name = "fileTimbre", @value = @ViewBag.PathImages })
+                    @Html.TextBoxFor(p => p.CaminhoImagemTimbre, new { @type = "file", @id = "fileTimbre", @name = "fileTimbre", @value = Model.PathImages })
                     @Html.Raw("<div id='imgsT'></div>")
-                    @if (!string.IsNullOrEmpty(ViewBag.NomeTimbre))
+                    @if (!string.IsNullOrEmpty(Model.NomeTimbre))
                     {
-                        <input id=@ViewBag.NomeTimbre type='button' name='excluirTimbre' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a function não vai funcionar --> *@
+                        <input id=@Model.NomeTimbre type='button' name='excluirTimbre' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a function não vai funcionar --> *@
                     }
                     @Html.HiddenFor(p => p.NomeTimbre, new { @id = "nomeTimbre" })
                     @Html.HiddenFor(p => p.CaminhoImagemTimbre, new { @id = "caminhoTimbre" })
@@ -160,11 +160,11 @@
             <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                 <div class="form-group">
                     @Html.Label("LOGOMARCA/BANNER: Imagem retangular: 670x120 pixels (Largura_x_altura), que substitui título e timbre nos relatórios")
-                    @Html.TextBoxFor(p => p.CaminhoImagemLogomarca, new { @type = "file", @id = "fileLogo", @name = "fileLogo", @value = @ViewBag.PathImages })
+                    @Html.TextBoxFor(p => p.CaminhoImagemLogomarca, new { @type = "file", @id = "fileLogo", @name = "fileLogo", @value = Model.PathImages })
                     @Html.Raw("<div id='imgsL'></div>")
-                    @if (!string.IsNullOrEmpty(ViewBag.NomeLogomarca))
+                    @if (!string.IsNullOrEmpty(Model.NomeLogomarca))
                     {
-                        <input id=@ViewBag.NomeLogomarca type='button' name='excluirLogomarca' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a funtion não vai funcionar --> *@
+                        <input id=@Model.NomeLogomarca type='button' name='excluirLogomarca' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a funtion não vai funcionar --> *@
                     }
                     @Html.HiddenFor(p => p.NomeLogomarca, new { @id = "nomeLogomarca" })
                     @Html.HiddenFor(p => p.CaminhoImagemLogomarca, new { @id = "caminhoLogomarca" })
@@ -184,7 +184,7 @@
                     int timbreIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
                     string timbreSigla = Utils.RetornaItem(i, "ListaSN", 1);
                     string timbreDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (timbreIndex == (int)ViewBag.TimbreSN);
+                    bool check = (timbreIndex == Model.TimbreSN);
                     <div style="display: inline-block;">
                         @Html.RadioButton("TimbreSN", timbreIndex, check)
                         @Html.Label(timbreDescricao)
@@ -198,7 +198,7 @@
                     int carimboIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
                     string carimboSigla = Utils.RetornaItem(i, "ListaSN", 1);
                     string carimboDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (carimboIndex == (int)ViewBag.CarimboSN);
+                    bool check = (carimboIndex == Model.CarimboSN);
                     <div style="display: inline-block;">
                         @Html.RadioButton("CarimboSN", carimboIndex, check)
                         @Html.Label(carimboDescricao)
@@ -236,7 +236,7 @@
                     int propIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
                     string propSigla = Utils.RetornaItem(i, "ListaSN", 1);
                     string propDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (propIndex == (int)ViewBag.PropagandaSN);
+                    bool check = (propIndex == (int)Model.Propaganda);
                     <div style="display: inline-block;">
                         @Html.RadioButton("Propaganda", propIndex, check)
                         @Html.Label(propDescricao)

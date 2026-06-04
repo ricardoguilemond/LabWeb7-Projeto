@@ -108,21 +108,21 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //Esse primeiro método é acionado quando carrega a tela do login
             string baseUrl = _captchaSettings.SiteKey;
             string secretKey = _captchaSettings.SecretKey;
-            ViewBag.KeySecretPublic = secretKey;   //passa a mesma chave para o HTML
-            ViewBag.UrlGoogleAPI = $"{baseUrl}{secretKey}";
+            vm.KeySecretPublic = secretKey;
+            vm.UrlGoogleAPI = $"{baseUrl}{secretKey}";
 
             ViewBag.TextoMenu = "Tentativa de acesso".MensagemStartUp();
-            ViewBag.TitleLogin = "Login";
-            ViewBag.Entrar = "Entrar";
-            ViewBag.EsqueceuSuaSenha = "Esqueceu sua senha?";
-            ViewBag.OlhoEmail = Utils.Utils.ImagemOlho;
+            vm.TitleLogin = "Login";
+            vm.Entrar = "Entrar";
+            vm.EsqueceuSuaSenha = "Esqueceu sua senha?";
+            vm.OlhoEmail = Utils.Utils.ImagemOlho;
 
             // Recupera a mensagem de erro de Login, se houver...
             if (TempData["MensagemErroLogin"] != null)
             {
-                ViewBag.MensagemErroLogin = TempData["MensagemErroLogin"];
+                vm.MensagemErroLogin = TempData["MensagemErroLogin"]?.ToString();
             }
-            return View();
+            return View(vm);
         }
 
         /*

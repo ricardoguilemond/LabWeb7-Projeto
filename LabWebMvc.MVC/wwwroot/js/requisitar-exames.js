@@ -56,11 +56,37 @@ $(document).ready(function () {
     };
 
     // Reseta flags e esvazia containers ao limpar campos manualmente
+    //Feito pelo Qoder em 31/05/2026 - utilitários para habilitar/desabilitar e resetar o campo de Posto.
+    function habilitarPosto(habilitar) {
+        $('#buscaNomePosto').prop('disabled', !habilitar);
+    }
+    function resetarPosto() {
+        $('#postoId').val('');
+        $('#buscaNomePosto').val('');
+        modaisCarregados.Posto = false;
+        $('#modalTriggerPosto').empty();
+    }
+    // Expostas globalmente para uso de outras Views (ex.: ModalInstituicoes, _PartialRequisitar).
+    window.habilitarPosto = habilitarPosto;
+    window.resetarPosto = resetarPosto;
+    //..Qoder
+
     $("#buscaSiglaInstituicao, #buscaNomeInstituicao").on('input', function () {
-        if ($(this).val().trim() === '') {
+        //Feito pelo Qoder em 31/05/2026 - habilita o Posto assim que houver texto em Sigla OU Nome (selecionar OU preencher).
+        var sigla = $('#buscaSiglaInstituicao').val().trim();
+        var nome = $('#buscaNomeInstituicao').val().trim();
+        if (sigla === '' && nome === '') {
+            // Ambos vazios -> reseta Instituição e Posto, desabilita o input do Posto.
             modaisCarregados.Instituicao = false;
             $('#modalTriggerInstituicao').empty();
+            $('#instituicaoId').val('');
+            resetarPosto();
+            habilitarPosto(false);
+        } else {
+            // Há texto em pelo menos um campo -> habilita o input de Posto.
+            habilitarPosto(true);
         }
+        //..Qoder
     });
     $("#buscaSiglaTabela, #buscaNomeTabela").on('input', function () {
         if ($(this).val().trim() === '') {
@@ -185,8 +211,19 @@ $(document).ready(function () {
                                 break;
 
                             case "buscaNomePosto":
+                                //Feito pelo Qoder em 31/05/2026 - exige Instituição selecionada antes de abrir o modal de Postos.
+                                var instIdPosto = parseInt($('#instituicaoId').val()) || 0;
+                                if (instIdPosto <= 0) {
+                                    clickAviso('Atenção', 'Selecione uma Instituição antes de escolher o Posto', 'falha');
+                                    setTimeout(function () {
+                                        var campoInst = document.getElementById('buscaSiglaInstituicao');
+                                        if (campoInst) campoInst.focus();
+                                    }, 100);
+                                    return;
+                                }
+                                //..Qoder
                                 if (!modaisCarregados.Posto) {
-                                    $('#modalTriggerPosto').load("ModalPostos", function () {
+                                    $('#modalTriggerPosto').load("ModalPostos?InstituicaoId=" + instIdPosto, function () {
                                         modaisCarregados.Posto = true;
                                         setTimeout(() => {
                                             ModalManager.abrir('modeloTableModalPostos');

@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ExtensionsMethods.Genericos
 {
@@ -173,6 +176,31 @@ namespace ExtensionsMethods.Genericos
             listaIP.AddRange(filtrados);
 
             return listaIP;
+        }
+
+        /* Normaliza uma string para uso como Sigla:
+         *  - Remove acentos (ÁÉÍÓÚÇ etc.)
+         *  - Converte para MAIÚSCULAS
+         *  - Remove qualquer caractere fora de [A-Z0-9 ._-]
+         *  - Trunca para o tamanho máximo (default 20)
+         * USO:
+         *      string sigla = GenericValidations.NormalizarSigla(vm.SiglaPosto);
+         */
+        public static string NormalizarSigla(string? entrada, int maxLength = 20)
+        {
+            if (string.IsNullOrWhiteSpace(entrada)) return string.Empty;
+
+            // 1) Remove acentos via NFD + filtro de marcas não-espaçadoras
+            string semAcento = string.Concat(
+                entrada.Normalize(NormalizationForm.FormD)
+                       .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            ).Normalize(NormalizationForm.FormC);
+
+            // 2) Maiúsculas + filtra apenas ASCII permitido
+            string sigla = Regex.Replace(semAcento.ToUpperInvariant(), @"[^A-Z0-9 ._\-]", "");
+
+            // 3) Trunca para o maxLength
+            return sigla.Length > maxLength ? sigla[..maxLength] : sigla;
         }
     }
 }

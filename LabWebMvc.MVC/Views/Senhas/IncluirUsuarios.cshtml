@@ -66,7 +66,7 @@
             <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                 <div class="form-group">
                     @Html.Label("Assinatura/Carimbo - Somente se o usuário for profissional credenciado para assinar Laudos")
-                    @Html.TextBoxFor(p => p.Assinatura, new { @type = "file", @id = "fileAssinatura", @name = "fileAssinatura", @value = @ViewBag.PathImages, @accept = "image/png, image/jpeg" })
+                    @Html.TextBoxFor(p => p.Assinatura, new { @type = "file", @id = "fileAssinatura", @name = "fileAssinatura", @value = Model.PathImages, @accept = "image/png, image/jpeg" })
                     @Html.Raw("<div id='imgsAssinatura'></div>")
                 </div>
             </fieldset>
@@ -112,7 +112,7 @@
             @*  //PODERÁ SER DESENVOLVIDO AINDA UMA TABELA CONTENDO FUNÇÕES GENÉRICAS DA LEI TRABALHISTA
         <div class="form-group">
         @Html.Label("*Função")
-        @Html.DropDownListFor(p => p.Funcao, new SelectList(ViewBag.Funcoes, "Value", "Text"), "Selecione...", new { @class = "form-control" })
+        @Html.DropDownListFor(p => p.Funcao, new SelectList(Model.Funcoes, "Value", "Text"), "Selecione...", new { @class = "form-control" })
         </div>
         *@
 

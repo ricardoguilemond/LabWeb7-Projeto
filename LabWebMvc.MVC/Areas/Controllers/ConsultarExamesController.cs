@@ -38,6 +38,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             int? codigoExame,
             string? siglaInstituicao,
             string? nomeInstituicao,
+            string? siglaPosto,
             string? nomePosto)
         {
             ICollection<dynamic> listaGrid = [];
@@ -55,6 +56,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                           || codigoExame.HasValue
                           || !string.IsNullOrEmpty(siglaInstituicao)
                           || !string.IsNullOrEmpty(nomeInstituicao)
+                          || !string.IsNullOrEmpty(siglaPosto)
                           || !string.IsNullOrEmpty(nomePosto);
 
             // Aplicação de filtros backend
@@ -81,8 +83,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .ToLower().Contains(nomeInstituicao.Trim().ToLower()));
 
             if (!string.IsNullOrEmpty(nomePosto))
-                query = query.Where(e => e.Postos.NomePosto
+                query = query.Where(e => e.Postos != null && e.Postos.NomePosto
                     .ToLower().Contains(nomePosto.Trim().ToLower()));
+
+            //Feito pelo Qoder em 21/04/2026 - filtro por Sigla Posto (D8)
+            if (!string.IsNullOrEmpty(siglaPosto))
+                query = query.Where(e => e.Postos != null && e.Postos.SiglaPosto
+                    .ToLower().Contains(siglaPosto.Trim().ToLower()));
+            //..Qoder
 
             // Sem filtros: limitar a 100 registros
             if (!temFiltro)
@@ -104,7 +112,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     TabelaExamesId = item.TabelaExamesId,
                     SiglaInstituicao = item.Instituicao.Sigla,
                     NomeInstituicao = item.Instituicao.Nome,
-                    NomePosto = item.Postos.NomePosto,
+                    SiglaPosto = item.Postos?.SiglaPosto ?? "",
+                    NomePosto = item.Postos?.NomePosto ?? "",
                     NomePaciente = item.Pacientes.NomePaciente,
                     Nascimento = item.Pacientes.Nascimento,
                     Sequencial = item.Sequencial,
@@ -112,15 +121,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 });
             }
 
-            var vmResposta = new vmListaValidacao<dynamic>
-            {
-                RetornoDeRota = "Index",
-                Titulo = "Consultar Exames",
-                TotalRegistros = totalRegistros,
-                TotalTabela = totalTabela,
-                ListaDados = listaGrid.Cast<dynamic>().ToList()
-            };
-            return _geralController.ValidacaoGenerica(vmResposta);
+            ViewBag.TextoMenu = new object[] { "Consultar Exames", false };
+            var vmIndex = new vmConsultarExames { ListaDados = listaGrid };
+            return View(vmIndex);
         }
         //..Kiro
 
@@ -187,6 +190,22 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             if (possuiResultado)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Exame possui resultados lançados e não pode ser excluído", action = "", sucesso = false });
+
+            //Feito pelo Qoder em 04/06/2026
+            // Verificar se existem fichas vinculadas ao exame antes de permitir a exclusão
+            bool possuiFichasInternas = await _db.FichasInternas.AnyAsync(f => f.ExamesRealizadosId == id);
+            bool possuiFichasLotes = await _db.FichasLotes.AnyAsync(f => f.ExamesRealizadosId == id);
+            bool possuiFichasPlanilhas = await _db.FichasPlanilhas.AnyAsync(f => f.ExamesRealizadosId == id);
+
+            if (possuiFichasInternas || possuiFichasLotes || possuiFichasPlanilhas)
+            {
+                string mensagem = "Exame possui fichas vinculadas e não pode ser excluído. Verifique:";
+                if (possuiFichasInternas) mensagem += " Fichas Internas;";
+                if (possuiFichasLotes) mensagem += " Fichas de Lotes;";
+                if (possuiFichasPlanilhas) mensagem += " Fichas de Planilhas;";
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = mensagem.TrimEnd(';'), action = "", sucesso = false });
+            }
+            //..Qoder
 
             var transaction = await _db.Database.BeginTransactionAsync();
             try

@@ -88,5 +88,7 @@ public partial class Instituicao
 
     public virtual ICollection<ItensExamesRealizadosAM> ItensExamesRealizadosAM { get; set; } = [];
 
+    public virtual ICollection<Postos> Postos { get; set; } = [];
+
     public virtual ICollection<Requisitar> Requisitar { get; set; } = [];
 }

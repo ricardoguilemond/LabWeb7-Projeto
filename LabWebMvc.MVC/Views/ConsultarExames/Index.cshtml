@@ -1,6 +1,8 @@
 ﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using BLL
 @using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmConsultarExames
 
 <partial name='Partials/_PartialMenuConsultarExames' />
 
@@ -32,6 +34,13 @@
         <input type="text" name="nomePosto" placeholder="Nome do posto" value="@Context.Request.Query["nomePosto"]"
                style="width: 140px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
 
+        @*Feito pelo Qoder em 21/04/2026 - filtro Sigla Posto (D8)*@
+        <label style="font: normal 13px calibri, arial, sans-serif;">Sigla Posto:</label>
+        <input type="text" name="siglaPosto" placeholder="Sigla" value="@Context.Request.Query["siglaPosto"]"
+               style="width: 90px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px; text-transform: uppercase;"
+               maxlength="20" oninput="this.value=this.value.toUpperCase()" />
+        @*..Qoder*@
+
         <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
             <i class="fa-sharp fa-solid fa-magnifying-glass"></i> Pesquisar
         </button>
@@ -47,6 +56,7 @@
                 <th>Tabela</th>
                 <th>Sigla Instituição</th>
                 <th>Nome Instituição</th>
+                <th>Sigla Posto</th>
                 <th>Nome Posto</th>
                 <th>Nome Paciente</th>
                 <th>Data Nascimento</th>
@@ -56,7 +66,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in ViewBag.ListaDados)
+            @foreach (var item in Model.ListaDados)
             {
                 @Html.Raw(
                          "<tr>" +
@@ -64,6 +74,7 @@
                          "<td>" + item.TabelaExamesId + "</td>" +
                          "<td>" + item.SiglaInstituicao + "</td>" +
                          "<td>" + item.NomeInstituicao + "</td>" +
+                         "<td>" + item.SiglaPosto + "</td>" +
                          "<td>" + item.NomePosto + "</td>" +
                          "<td>" + item.NomePaciente + "</td>" +
                          "<td>" + ((DateTime)item.Nascimento).ToLocalString("dd/MM/yyyy") + "</td>" +
@@ -82,6 +93,7 @@
                 <th>Tabela</th>
                 <th>Sigla Instituição</th>
                 <th>Nome Instituição</th>
+                <th>Sigla Posto</th>
                 <th>Nome Posto</th>
                 <th>Nome Paciente</th>
                 <th>Data Nascimento</th>
@@ -212,10 +224,9 @@
         // Linha de cabeçalho do detalhe
         var headerHtml = '<tr class="detail-header-row">' +
             '<td>Folha</td>' +
-            '<td>Ref. Exame</td>' +
-            '<td>Ref. Item</td>' +
+            '<td>Principal</td>' +
             '<td style="white-space:nowrap;">Conta Exame</td>' +
-            '<td colspan="3">Descrição</td>' +
+            '<td colspan="3">Descrição do Item</td>' +
             '<td style="white-space:nowrap; text-align:right;">Valor Item</td>' +
             '<td>Etiquetas</td>' +
             '<td style="text-align:center;">Ação</td>' +
@@ -227,7 +238,6 @@
         itens.forEach(function (item) {
             var rowHtml = '<tr class="detail-row">' +
                 '<td>' + (item.classeExamesNome || '-') + '</td>' +
-                '<td>' + (item.refExame || '-') + '</td>' +
                 '<td>' + (item.refItem || '-') + '</td>' +
                 '<td style="white-space:nowrap;">' + (item.contaExame || '-') + '</td>' +
                 '<td colspan="3">' + (item.descricao || '-') + '</td>' +

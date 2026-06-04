@@ -61,10 +61,17 @@
 
         function ajaxFunction(valorSelecionado) {
             if (valorSelecionado.length > 0) {
+                //Feito pelo Qoder em 31/05/2026 - envia InstituicaoId para que o controller filtre apenas os Postos da Instituição escolhida.
+                var instId = parseInt($('#instituicaoId').val()) || 0;
+                if (instId <= 0) {
+                    clickAviso('Atenção', 'Selecione uma Instituição antes de escolher o Posto', 'falha');
+                    return;
+                }
+                //..Qoder
                 $.ajax({
                     url: '@Url.Action("RetornoDoModalPostos", "Requisitar")',
                     type: "GET",
-                    data: { id: valorSelecionado }, // id aqui é o NomePosto (busca por Contains no controller)
+                    data: { id: valorSelecionado, InstituicaoId: instId }, // id aqui é o NomePosto (busca por Contains no controller)
                     cache: false,
                     dataType: "json",
                     success: function (data) {
@@ -144,9 +151,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (ViewBag.ListaPostos != null)
+                            @if (Model.ListaPostos != null)
                             {
-                                @foreach (var item in ViewBag.ListaPostos)
+                                @foreach (var item in Model.ListaPostos)
                                 {
                                     <tr id="tr_@item.NomePosto" name="trModal" title="Selecionar" style="width: 90%;">
                                         <td id="@item.NomePosto"><input id="chk_@item.NomePosto" name="input" type="checkbox" /> @item.NomePosto</td>

@@ -22,7 +22,12 @@ public partial class Requisitar
     public string? MaterialSaida { get; set; }
     public string? MaterialRetorno { get; set; }
     public string? Descricao { get; set; }
-    public string? Resultado { get; set; }
+    
+    //Feito pelo Qoder em 04/06/2026
+    // Campo Resultado removido: não era utilizado pelo usuário.
+    // O resultado relevante está na tabela ItensExamesRealizados (para laudos e relatórios).
+    // public string? Resultado { get; set; }  <-- REMOVIDO
+    
     public string? UnidadeMedida { get; set; }
     public string? Referencia { get; set; }
     public decimal? ValorItem { get; set; }

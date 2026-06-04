@@ -5,15 +5,15 @@
 @model vmRequisitar
 
 @*Feito pelo Kiro em 02/05/2026 — exibe mensagem de erro quando item sem valor é selecionado*@
-@if (ViewBag.MensagemErro != null)
+@if (Model.MensagemErro != null)
 {
     <tr class="tr-todo" name="itemLancarCupom">
-        <td colspan="2" class="td-descricao" style="color: red; font-size: 0.8em;">@ViewBag.MensagemErro</td>
+        <td colspan="2" class="td-descricao" style="color: red; font-size: 0.8em;">@Model.MensagemErro</td>
     </tr>
 }
 @*..Kiro*@
 
-@if (ViewBag.ListaCupom == null)
+@if (Model.ListaCupom == null)
 {
     <tr id='0' class="tr-todo" name="itemLancarCupom" title='Selecionar'>
         <td class="td-descricao"></td>
@@ -22,11 +22,11 @@
 }
 else
 {
-    @foreach (var item in ViewBag.ListaCupom)
+    @foreach (var item in Model.ListaCupom)
     {
         <tr id="@item.Id.ToString()" class="tr-todo" name='itemLancarCupom' title='Selecionar'>
             <td id="@item.Id.ToString()" class="td-descricao"> @item.Descricao </td>
-            <td class="td-valor"> @item.ValorItem.ToString("N2") </td>
+            <td class="td-valor"> @(item.ValorItem?.ToString("N2") ?? "0,00") </td>
         </tr>
     }
     
@@ -37,6 +37,6 @@ else
     </tr>
     <tr class="tr-todo tr-foot-fundo" name="itemLancarCupom">
         <td class="td-descricao td-negrito">R$</td>
-        <td class="td-valor td-negrito">@ViewBag.TotalCupom</td>
+        <td class="td-valor td-negrito">@Model.TotalCupom</td>
     </tr>
 }

@@ -32,7 +32,7 @@
                 {
                     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
                     <div class="d-flex justify-content-center">
-                        <h4 class="mb-3 fw-normal">@ViewBag.TitleLogin</h4>
+                        <h4 class="mb-3 fw-normal">@Model.TitleLogin</h4>
                     </div>
                     <div class="d-flex justify-content-center">
                         <div class="form-group">
@@ -42,11 +42,11 @@
                     <div class="d-flex justify-content-center">
                         <div class="form-group">
                             @Html.TextBoxFor(m => m.SenhaUsuario, new { @class = "form-control", @id = "idSenha", @type = "password", @placeholder = "Entre com sua senha", @data_Val = "false", @required = "required", @aria_label = "Entre com sua senha", @style = "width: 92%;" })
-                            <img class="olho" id="spnMostrarSenha" src=@ViewBag.OlhoEmail />
-                            @if (ViewBag.MensagemErroLogin != null)
+                            <img class="olho" id="spnMostrarSenha" src=@Model.OlhoEmail />
+                            @if (Model.MensagemErroLogin != null)
                             {
                                 <div id="mensagemErroLogin" class="text-danger mt-2" style="font-size: 14px; text-align: center;">
-                                    @ViewBag.MensagemErroLogin
+                                    @Model.MensagemErroLogin
                                 </div>
                             }
                         </div>
@@ -54,14 +54,14 @@
                     <!--
                     Captura do ReCaptcha
                     -->
-                    <div class="g-recaptcha" data-sitekey=@ViewBag.KeySecretPublic data-action="login" data-size="invisible"></div>
+                    <div class="g-recaptcha" data-sitekey=@Model.KeySecretPublic data-action="login" data-size="invisible"></div>
                     @Html.HiddenFor(m => m.GoogleCaptchaToken, new { @id = "GoogleCaptchaToken", @name = "GoogleCaptchaToken", @action = "login" })
                     <!--
                     Submeter Formulário
                     -->
                     <div class="d-flex justify-content-center">
                         <div class="form-group">
-                            <button type="submit" class="btn btn-lg btn-success w-100 btn-altura">@ViewBag.Entrar</button>
+                            <button type="submit" class="btn btn-lg btn-success w-100 btn-altura">@Model.Entrar</button>
                         </div>
                     </div>
                 }
@@ -69,7 +69,7 @@
                 {
                     <div class="d-flex justify-content-center">
                         <div class="form-group">
-                            <button type="submit" class="btn btn-link fw-normal btn-altura">@ViewBag.EsqueceuSuaSenha</button>
+                            <button type="submit" class="btn btn-link fw-normal btn-altura">@Model.EsqueceuSuaSenha</button>
                         </div>
                     </div>
                 }
@@ -123,10 +123,10 @@
         }
     });
 </script>
-<script src=@ViewBag.UrlGoogleAPI></script>
+<script src=@Model.UrlGoogleAPI></script>
 <script>
     grecaptcha.ready(function () {
-        grecaptcha.execute('@ViewBag.KeySecretPublic', { action: 'login' }).then(function (token) {
+        grecaptcha.execute('@Model.KeySecretPublic', { action: 'login' }).then(function (token) {
             $("#GoogleCaptchaToken").val(token);
         });
     });

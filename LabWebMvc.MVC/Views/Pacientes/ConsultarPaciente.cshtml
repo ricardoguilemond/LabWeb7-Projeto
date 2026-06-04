@@ -73,10 +73,10 @@
                 </div>
                 <div>
                     @Html.DropDownListFor(p => p.TipoDocumento, new SelectList(Utils.ListaDocumento(), "Index", "Nome"), new { @class = "border0", @disabled = "disabled" })
-                    @if (ViewBag.TipoDocumento == (int)TipoDocumento.CPF)
+                    @if (Model.TipoDocumento == (int)TipoDocumento.CPF)
                         @Html.TextBoxFor(p => p.CPF, new { @id = "cpf", @class = "campo", @disabled = "disabled", @style = "display-inline;" })
                     else
-                    if (ViewBag.TipoDocumento == (int)TipoDocumento.SUS)
+                    if (Model.TipoDocumento == (int)TipoDocumento.SUS)
                         @Html.TextBoxFor(p => p.Identidade, new { @id = "sus", @class = "campo", @disabled = "disabled", @style = "display-inline;" })
                     else
                         @Html.TextBoxFor(p => p.Identidade, new { @class = "campo", @disabled = "disabled", @style = "display-inline;" })

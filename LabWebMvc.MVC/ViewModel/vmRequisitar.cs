@@ -18,7 +18,9 @@ namespace LabWebMvc.MVC.ViewModel
         public int PostoId { get; set; }
         public bool ValidarPostoId(Db db)
         {
-            return PostoId <= 0 || db.Postos.Any(p => p.Id == PostoId);
+            //Feito pelo Qoder em 21/04/2026 - Posto deve pertencer à Instituicao selecionada
+            return PostoId <= 0 || db.Postos.Any(p => p.Id == PostoId && p.InstituicaoId == InstituicaoId);
+            //..Qoder
         }
 
         public int TabelaExamesId { get; set; }
@@ -29,7 +31,12 @@ namespace LabWebMvc.MVC.ViewModel
         public string? MaterialSaida { get; set; }
         public string? MaterialRetorno { get; set; }
         public string? Descricao { get; set; }
-        public string? Resultado { get; set; }
+        
+        //Feito pelo Qoder em 04/06/2026
+        // Campo Resultado removido: não era utilizado pelo usuário.
+        // O resultado relevante está na tabela ItensExamesRealizados (para laudos e relatórios).
+        // public string? Resultado { get; set; }  <-- REMOVIDO
+        
         public string? UnidadeMedida { get; set; }
         public string? Referencia { get; set; }
         public decimal? ValorItem { get; set; }
@@ -132,6 +139,13 @@ namespace LabWebMvc.MVC.ViewModel
         public ICollection<TabelaExames>? ListaTabelas { get; set; }
         public ICollection<Medicos>? ListaMedicos { get; set; }
         public ICollection<PlanoExames>? ListaCupom { get; set; }
+
+        /* Propriedades migradas de ViewBag (Cupom) */
+        public string? TotalCupom { get; set; }
+        public string? MensagemErro { get; set; }
+
+        /* Propriedade para grid Index (migrada de ViewBag.ListaDados) */
+        public ICollection<dynamic>? ListaDados { get; set; }
 
     }//Fim
 }

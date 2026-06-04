@@ -55,7 +55,7 @@
                 {
                     string sexo = Utils.RetornaItem(i, "Sexo", 1);  //index
                     string nome = Utils.RetornaItem(i, "Sexo", 2);
-                    bool check = (sexo == ViewBag.Sexo);
+                    bool check = (sexo == Model.Sexo);
 
                     <div style="display: inline-block;">
                         @Html.RadioButton("Sexo", sexo, check)
@@ -84,7 +84,7 @@
                     int index = Utils.RetornaItem(i, "EstadoCivil", 0).ToInt32();
                     string nome = Utils.RetornaItem(i, "EstadoCivil", 1);
                     //bool check = Utils.RetornaItem(i, "EstadoCivil", 2).ConvertStringToBool();
-                    bool check = (index == ViewBag.EstadoCivil);
+                    bool check = (index == Model.EstadoCivil);
 
                     <div style="display: inline-block;">
                         @Html.RadioButton("EstadoCivil", index, check)
@@ -135,7 +135,7 @@
             <div class="form-group">
                 @Html.Label("UF:")
                 <div style="display: inline-block;">
-                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF))
+                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF))
                 </div>
             </div>
             <div class="form-group">

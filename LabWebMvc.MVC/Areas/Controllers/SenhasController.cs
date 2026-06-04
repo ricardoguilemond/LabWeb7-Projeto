@@ -120,12 +120,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 listaGrid.Add(resultado);
             }
 
-            ViewBag.TotalRegistros = totalRegistros.ToString();
-            ViewBag.TotalTabela = totalTabela.ToString();
-            ViewBag.ListaDados = listaGrid;
-
             //Finalização da View
-            return _geralController.Validacao("Index,Senhas", "Cadastro de Usuários", totalRegistros, totalTabela, listaGrid);
+            ViewBag.TextoMenu = new object[] { "Cadastro de Usuários", false };
+            var vmIndex = new vmSenhas { ListaDados = listaGrid };
+            return View(vmIndex);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -450,7 +448,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         public IActionResult ResetarSenha(vmSenhas objLogin)
         {
-            ViewBag.TextoReset = "Foi enviado um Email para você com uma senha temporária.<br />" +
+            objLogin.TextoReset = "Foi enviado um Email para você com uma senha temporária.<br />" +
                                  "Verifique sua caixa de Emails e siga as instruções contidas nela.";
 
             /* Vamos verificar o Email do Reset de senha */
@@ -491,15 +489,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 else
                 {
                     if (validaLogin?.Senhas != null && validaLogin.Senhas.EmailConfirmado == (int)TipoEmailConfirmado.Sim && validaLogin.Senhas.LoginUsuario == objLogin.LoginUsuario)
-                        ViewBag.TextoReset = "Já foi enviado um Email para validação de login/senha. <br />" +
+                        objLogin.TextoReset = "Já foi enviado um Email para validação de login/senha. <br />" +
                                              "Por favor, confira sua caixa de emails (verifique lixeira e caixa de spams). <br />" +
                                              "Obrigado.";
                     else
-                        ViewBag.TextoReset = "Sua senha não foi recuperada, porque os dados que você informou não conferem com o cadastro.";
+                        objLogin.TextoReset = "Sua senha não foi recuperada, porque os dados que você informou não conferem com o cadastro.";
                 }
                 ViewBag.TextoMenu = "Recuperação de senha".MensagemStartUp();
             }
-            return View();
+            return View(objLogin);
         }
 
         /* REFERENTE A LOGIN */

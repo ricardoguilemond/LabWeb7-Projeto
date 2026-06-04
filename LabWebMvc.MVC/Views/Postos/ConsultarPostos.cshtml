@@ -56,6 +56,22 @@
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
+            @* Feito pelo Qoder em 21/04/2026 - Instituição e Sigla do Posto *@
+            <div class="wrapper">
+                <div>
+                    @Html.Label("Instituição (Sigla)")
+                    <input type="text" class="campo" disabled value="@Model.SiglaInstituicao" />
+                </div>
+                <div>
+                    @Html.Label("Instituição (Nome)")
+                    <input type="text" class="campo" disabled value="@Model.NomeInstituicao" />
+                </div>
+                <div>
+                    @Html.Label("Sigla do Posto")
+                    @Html.TextBoxFor(p => p.SiglaPosto, new { @class = "campo", @disabled = "disabled" })
+                </div>
+            </div>
+            @* ..Qoder *@
             <!-- Linha 1 -->
             <div class="wrapper">
                 <div>

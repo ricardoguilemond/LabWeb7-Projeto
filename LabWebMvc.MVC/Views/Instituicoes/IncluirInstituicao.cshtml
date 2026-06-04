@@ -115,7 +115,7 @@
                 <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                     <div class="form-group">
                         @Html.Label("TIMBRE: Pequena imagem quadrada: 215x235 pixels (Largura_x_altura), para acompanhar os títulos dos relatórios")
-                        @Html.TextBoxFor(p => p.CaminhoImagemTimbre, new { @type = "file", @id = "fileTimbre", @name = "fileTimbre", @value = @ViewBag.PathImages })
+                        @Html.TextBoxFor(p => p.CaminhoImagemTimbre, new { @type = "file", @id = "fileTimbre", @name = "fileTimbre", @value = Model.PathImages })
                         @Html.Raw("<div id='imgsT'></div>")
                     </div>
                 </fieldset>
@@ -123,7 +123,7 @@
                     <div class="form-group">
                         @Html.Label("Se cliente quer IMAGEM ao invés de texto! (recomendado)", null, new { @class = "" })
                         @Html.Label("LOGOMARCA/BANNER: Imagem retangular: 670x120 pixels (Largura_x_altura), que substitui título e timbre nos relatórios")
-                        @Html.TextBoxFor(p => p.CaminhoImagemLogomarca, new { @type = "file", @id = "fileLogo", @name = "fileLogo", @value = @ViewBag.PathImages })
+                        @Html.TextBoxFor(p => p.CaminhoImagemLogomarca, new { @type = "file", @id = "fileLogo", @name = "fileLogo", @value = Model.PathImages })
                         @Html.Raw("<div id='imgsL'></div>")
                     </div>
                 </fieldset>

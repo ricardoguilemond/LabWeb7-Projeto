@@ -8,8 +8,10 @@
         "postgresql://localhost:5432/LABWEB7"
       ],
       "env": {},
-      "disabled": true,
-      "autoApprove": ["query"]
+      "disabled": false,
+      "autoApprove": [
+        "query"
+      ]
     },
     "filesystem": {
       "command": "npx",
@@ -19,7 +21,7 @@
         "f:/Projetos dotNet/Web-Project/LabWeb7-Projeto"
       ],
       "env": {},
-      "disabled": true,
+      "disabled": false,
       "autoApprove": []
     }
   }

@@ -117,12 +117,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 listaGrid.Add(resultado);
             }
 
-            ViewBag.TotalRegistros = totalRegistros.ToString();
-            ViewBag.TotalTabela = totalTabela.ToString();
-            ViewBag.ListaDados = listaGrid;
-
-            //Finalização da View
-            return _geralController.Validacao("Index", "Cadastro de Instituições", totalRegistros, totalTabela, listaGrid);
+            ViewBag.TextoMenu = new object[] { "Cadastro de Instituições", false };
+            var vmIndex = new vmInstituicao { ListaDados = listaGrid };
+            return View(vmIndex);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -130,9 +127,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("IncluirInstituicao")]
         public IActionResult IncluirInstituicao()
         {
-            ViewBag.PathImages = Utils.Utils.GetLocalPathImagens();
-            //Finalização da View
-            return _geralController.Validacao("IncluirInstituicao", "Cadastro de Instituições");
+            var vm = new vmInstituicao
+            {
+                PathImages = Utils.Utils.GetLocalPathImagens()
+            };
+            ViewBag.TextoMenu = new object[] { "Cadastro de Instituições", false };
+            return View(vm);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -298,19 +298,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 };
                 vm.vmGeral = vmGeral;
                 /*
-                 * variáveis para uso em comparações que facilitam ir por ViewBag!
+                 * variáveis via ViewModel tipado
                  */
-                ViewBag.SessionUF = dados.UF;
-                ViewBag.TimbreSN = dados.TimbreSN;
-                ViewBag.CarimboSN = dados.CarimboSN;
-                ViewBag.PropagandaSN = dados.Propaganda;
-                ViewBag.NomeTimbre = dados.NomeTimbre;
-                ViewBag.NomeLogomarca = dados.NomeLogomarca;
+                vm.SessionUF = dados.UF;
             }
 
-            //Parâmetros auxiliares em ViewBag
+            //Parâmetros auxiliares
+            vm.PathImages = pathImages;
             ViewBag.TextoMenu = new object[] { "Alterar Cadastro de Instituições", false };
-            ViewBag.PathImages = pathImages;
             //Finalização da View
             _geralController.Validacao("AlterarInstituicao,Instituicoes", ViewBag.TextoMenu[0]);
             return View(vm); //na edição a vm precisa retornar para a View
@@ -420,12 +415,20 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             //Feito pelo Kiro em 20/04/2026
             // Verifica se a instituição possui vínculos antes de excluir
+            //Feito pelo Qoder em 21/04/2026 - inclui ExamesRealizadosAM (D5) e Postos vinculados
             bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.InstituicaoId == id)
                                || await _db.ExamesRealizados.AnyAsync(e => e.InstituicaoId == id)
+                               || await _db.ExamesRealizadosAM.AnyAsync(e => e.InstituicaoId == id)
                                || await _db.ExamesPendentes.AnyAsync(e => e.InstituicaoId == id);
 
             if (possuiVinculos)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Instituição possui exames, requisições ou fichas vinculadas e não pode ser excluída", action = "", sucesso = false });
+
+            // Bloqueia exclusão se houver Postos vinculados (FK Restrict)
+            bool possuiPostos = await _db.Postos.AnyAsync(p => p.InstituicaoId == id);
+            if (possuiPostos)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Instituição possui postos vinculados e não pode ser excluída", action = "", sucesso = false });
+            //..Qoder
             //..Kiro
 
             // Excluindo um registro da tabela
@@ -488,15 +491,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 };
                 vm.vmGeral = vmGeral;
                 /*
-                 * variáveis para uso em comparações que facilitam ir por ViewBag!
+                 * variáveis via ViewModel tipado
                  */
-                ViewBag.SessionUF = dados.UF;
+                vm.SessionUF = dados.UF;
             }
 
-            //Parâmetros auxiliares em ViewBag
+            //Parâmetros auxiliares
             ViewBag.TextoMenu = new object[] { "Consulta de Instituição", false };
-            ViewBag.NomeTimbre = vm.NomeTimbre;
-            ViewBag.NomeLogomarca = vm.NomeLogomarca;
             //Finalização para a View
             _geralController.Validacao("ConsultarInstituicao,Instituicoes", ViewBag.TextoMenu[0]);
             return PartialView(vm); //na edição a vm precisa retornar para a View

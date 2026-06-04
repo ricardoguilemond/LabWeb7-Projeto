@@ -179,7 +179,7 @@
     @{
         int i = 0;
     }
-    @if (ViewBag.ListaCupom == null)
+    @if (Model.ListaCupom == null)
     {
         <input type="hidden" name="ListaCupom[0].Id" value="0" />
         <input type="hidden" name="ListaCupom[0].Descricao" value="" />
@@ -187,9 +187,9 @@
     }
     else
     {
-        i = ViewBag.ListaCupom.Count;
+        i = Model.ListaCupom.Count;
 
-        @foreach (var item in ViewBag.ListaCupom)
+        @foreach (var item in Model.ListaCupom)
         {
             <input type="hidden" name="ListaCupom[@i].Id" value="@item.Id" />
             <input type="hidden" name="ListaCupom[@i].Descricao" value="@item.Descricao" />
@@ -237,7 +237,7 @@
     </div>
 </form>
 <div class="row">
-    <div id="conteudo"><partial name='Partials/_PartialRequisitar'></div>
+    <div id="conteudo"><partial name='Partials/_PartialRequisitar' model='new List<vmRequisitarSimplificado>()'></div>
 </div>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

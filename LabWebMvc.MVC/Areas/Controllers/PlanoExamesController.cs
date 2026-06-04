@@ -44,8 +44,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("FiltraFolhaExame")]
         public IActionResult FiltraFolhaExame(int numeroItemFolha)
         {
-            ViewBag.ItensExamePrincipal = numeroItemFolha;
-            return PartialView("Partials/_PartialPlanoConta");
+            var vm = new vmPlanoExames { ItensExamePrincipal = numeroItemFolha };
+            return PartialView("Partials/_PartialPlanoConta", vm);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -375,7 +375,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         StreamReader reader = new StreamReader(stream);
                         string myText = reader.ReadToEnd();  //meu texto pronto com os delimitadores
 
-                        ViewBag.Modelo = myText;  //leva o html montado para a view "ModeloPlanoExames.cshtml"
+                        vm.ModeloHtml = myText;  //leva o html montado para a view "ModeloPlanoExames.cshtml"
                     }
                 }
                 catch (Exception ex)

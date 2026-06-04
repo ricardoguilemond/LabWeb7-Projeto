@@ -38,5 +38,14 @@ namespace LabWebMvc.MVC.ViewModel
 
         /* Token retornado pelo ReCaptcha do Google Response */
         public string GoogleCaptchaToken { get; set; } = null!;
+
+        /* Propriedades para a View de Login (tipadas - migradas de ViewBag) */
+        public string? KeySecretPublic { get; set; }
+        public string? UrlGoogleAPI { get; set; }
+        public string TitleLogin { get; set; } = "Login";
+        public string Entrar { get; set; } = "Entrar";
+        public string EsqueceuSuaSenha { get; set; } = "Esqueceu sua senha?";
+        public string? OlhoEmail { get; set; }
+        public string? MensagemErroLogin { get; set; }
     }
 }

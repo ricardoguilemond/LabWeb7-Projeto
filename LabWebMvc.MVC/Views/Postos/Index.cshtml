@@ -10,6 +10,9 @@
         <thead>
             <tr>
                 <th>Id</th>
+                <th>Sigla Inst.</th>
+                <th>Nome Inst.</th>
+                <th>Sigla Posto</th>
                 <th>Nome do Posto/anexo</th>
                 <th>Responsável</th>
                 <th>Telefone</th>
@@ -17,11 +20,14 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in ViewBag.ListaDados)
+            @foreach (var item in Model.ListaDados)
             {
                 @Html.Raw(
                          "<tr>" +
                          "<td style='width: 03%;'>" + item.Id + "</td>" +
+                         "<td style='width: 08%;'>" + (item.SiglaInstituicao ?? "") + "</td>" +
+                         "<td style='width: 18%;'>" + (item.NomeInstituicao ?? "") + "</td>" +
+                         "<td style='width: 10%;'>" + (item.SiglaPosto ?? "") + "</td>" +
                          "<td style='width: 20%;'>" + item.NomePosto + "</td>" +
                          "<td style='width: 15%;'>" + item.Responsavel + "</td>" +
                          "<td style='width: 10%;'>" + item.Telefone + "</td>")
@@ -39,10 +45,12 @@
         <tfoot>
             <tr>
                 <th>Id</th>
+                <th>Sigla Inst.</th>
+                <th>Nome Inst.</th>
+                <th>Sigla Posto</th>
                 <th>Nome do Posto/anexo</th>
                 <th>Responsável</th>
                 <th>Telefone</th>
-                <th>Opções</th>
                 <th id="op">Opções</th>
             </tr>
         </tfoot>

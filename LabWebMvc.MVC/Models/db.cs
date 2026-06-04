@@ -1,4 +1,4 @@
-﻿﻿using ExtensionsMethods.EventViewerHelper;
+﻿﻿﻿using ExtensionsMethods.EventViewerHelper;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -1104,6 +1104,7 @@ public class Db : DbContext
 
             entity.HasOne(d => d.Postos).WithMany(p => p.ExamesRealizados)
                 .HasForeignKey(d => d.PostoId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("iExamesRealizados_Postos");
 
@@ -1160,6 +1161,7 @@ public class Db : DbContext
 
             entity.HasOne(d => d.Postos).WithMany(p => p.ExamesRealizadosAM)
                 .HasForeignKey(d => d.PostoId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("iExamesRealizadosAM_Postos");
 
@@ -2038,6 +2040,12 @@ public class Db : DbContext
             entity.HasKey(e => e.Id).HasName("iPostos1");
             entity.Property(e => e.Id).ValueGeneratedOnAdd(); //importante!
 
+            entity.Property(e => e.InstituicaoId).IsRequired();
+            entity.Property(e => e.SiglaPosto)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .IsRequired();
+
             entity.Property(e => e.Bairro)
                 .HasMaxLength(45)
                 .IsUnicode(false);
@@ -2073,6 +2081,11 @@ public class Db : DbContext
                 .HasMaxLength(2)
                 .IsUnicode(false)
                 .HasColumnName("UF");
+
+            entity.HasOne(d => d.Instituicao).WithMany(p => p.Postos)
+                .HasForeignKey(d => d.InstituicaoId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("iPostos_Instituicao");
         });
 
         modelBuilder.Entity<Rastreamentos>(entity =>
@@ -2170,9 +2183,10 @@ public class Db : DbContext
             entity.Property(e => e.Referencia)
                 .HasMaxLength(60)
                 .IsUnicode(false);
-            entity.Property(e => e.Resultado)
-                .HasMaxLength(30)
-                .IsUnicode(false);
+            //Feito pelo Qoder em 04/06/2026 - Campo Resultado removido do Model Requisitar
+            // entity.Property(e => e.Resultado)
+            //     .HasMaxLength(30)
+            //     .IsUnicode(false);
             entity.Property(e => e.UnidadeMedida)
                 .HasMaxLength(20)
                 .IsUnicode(false);

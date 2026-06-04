@@ -94,6 +94,11 @@ namespace LabWebMvc.MVC.ViewModel
         public string? CaminhoImagemTimbre { get; set; }
         public string? CaminhoImagemLogomarca { get; set; }
 
+        /* Propriedades migradas de ViewBag */
+        public string? SessionUF { get; set; }
+        public string? PathImages { get; set; }
+        public ICollection<dynamic>? ListaDados { get; set; }
+
         public virtual List<vmInstituicao>? ListaInstituicoes { get; set; }
 
         public virtual vmGeral vmGeral { get; set; } = null!;

@@ -133,7 +133,7 @@
                 <div class="form-group">
                     @Html.Label("UF:")
                     <div style="display: inline-block;">
-                        @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF))
+                        @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF))
                     </div>
                 </div>
                 <div class="form-group">

@@ -131,7 +131,7 @@
                 <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                     <div id="divFileAss1" class="form-group">
                         @Html.Label("Primeira Assinatura (obrigatória) ::: Máximo 775x226 pixels (Largura_x_altura)")
-                        @Html.TextBoxFor(p => p.CaminhoImgAss1, new { @type = "file", @id = "fileAss1", @name = "fileAss1", @value = @ViewBag.PathImages })
+                        @Html.TextBoxFor(p => p.CaminhoImgAss1, new { @type = "file", @id = "fileAss1", @name = "fileAss1", @value = Model.PathImages })
                         @Html.Raw("<div id='imgsAss1'></div>")
                         @Html.HiddenFor(p => p.NomeAss1, new { @id = "nomeAss1" })
                         @Html.HiddenFor(p => p.CaminhoImgAss1, new { @id = "caminhoImgAss1" })
@@ -165,7 +165,7 @@
                 <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                     <div id="divFileAss2" class="form-group">
                         @Html.Label("Segunda Assinatura ou Foto Marketing ::: Máximo 775x226 pixels (Largura_x_altura)")
-                        @Html.TextBoxFor(p => p.CaminhoImgAss2, new { @type = "file", @id = "fileAss2", @name = "fileAss2", @value = @ViewBag.PathImages })
+                        @Html.TextBoxFor(p => p.CaminhoImgAss2, new { @type = "file", @id = "fileAss2", @name = "fileAss2", @value = Model.PathImages })
                         @Html.Raw("<div id='imgsAss2'></div>")
                         @Html.HiddenFor(p => p.NomeAss2, new { @id = "nomeAss2" })
                         @Html.HiddenFor(p => p.CaminhoImgAss2, new { @id = "caminhoImgAss2" })
@@ -199,7 +199,7 @@
                 <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                     <div id="divFileAss3" class="form-group">
                         @Html.Label("Terceira Assinatura ou Foto Marketing ::: Máximo 775x226 pixels (Largura_x_altura)")
-                        @Html.TextBoxFor(p => p.CaminhoImgAss3, new { @type = "file", @id = "fileAss3", @name = "fileAss3", @value = @ViewBag.PathImages })
+                        @Html.TextBoxFor(p => p.CaminhoImgAss3, new { @type = "file", @id = "fileAss3", @name = "fileAss3", @value = Model.PathImages })
                         @Html.Raw("<div id='imgsAss3'></div>")
                         @Html.HiddenFor(p => p.NomeAss3, new { @id = "nomeAss3" })
                         @Html.HiddenFor(p => p.CaminhoImgAss3, new { @id = "caminhoImgAss3" })
@@ -233,7 +233,7 @@
                 <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                     <div id="divFileAss4" class="form-group">
                         @Html.Label("Quarta Assinatura ou Foto Marketing ::: Máximo 775x226 pixels (Largura_x_altura)")
-                        @Html.TextBoxFor(p => p.CaminhoImgAss4, new { @type = "file", @id = "fileAss4", @name = "fileAss4", @value = @ViewBag.PathImages })
+                        @Html.TextBoxFor(p => p.CaminhoImgAss4, new { @type = "file", @id = "fileAss4", @name = "fileAss4", @value = Model.PathImages })
                         @Html.Raw("<div id='imgsAss4'></div>")
                         @Html.HiddenFor(p => p.NomeAss4, new { @id = "nomeAss4" })
                         @Html.HiddenFor(p => p.CaminhoImgAss4, new { @id = "caminhoImgAss4" })

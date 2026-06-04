@@ -30,9 +30,21 @@
 
         function preencherFormularioInstituicao(vm) {
             var $conteudo = $("#conteudoInstituicao");
+            //Feito pelo Qoder em 31/05/2026 - se a Instituição mudou, reseta o Posto antes; em seguida habilita o input.
+            var idAnterior = parseInt($conteudo.find("#instituicaoId").val()) || 0;
+            var idNovo = parseInt(vm.instituicaoId) || 0;
+            if (idAnterior !== idNovo && typeof window.resetarPosto === 'function') {
+                window.resetarPosto();
+            }
+            //..Qoder
             $conteudo.find("#buscaSiglaInstituicao").val(vm.siglaInstituicao);
             $conteudo.find("#buscaNomeInstituicao").val(vm.nomeInstituicao);
             $conteudo.find("#instituicaoId").val(vm.instituicaoId);  //o valor "id" aqui é o Id da primary key retornado!
+            //Feito pelo Qoder em 31/05/2026 - habilita o input de Posto agora que há Instituição.
+            if (idNovo > 0 && typeof window.habilitarPosto === 'function') {
+                window.habilitarPosto(true);
+            }
+            //..Qoder
         }
 
         function ajaxFunction(valorSelecionado) {
@@ -115,9 +127,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (ViewBag.ListaIntituicoes != null)
+                            @if (Model.ListaInstituicoes != null)
                             {
-                                @foreach (var item in ViewBag.ListaIntituicoes)
+                                @foreach (var item in Model.ListaInstituicoes)
                                 {
                                     <tr id="tr_@item.Sigla" name="trModal" title="Selecionar" style="width: 90%;">
                                         <td id="@item.Sigla" style="width:10%;"><input id="chk_@item.Sigla" name="input" type="checkbox" /> @item.Sigla</td>

@@ -21,7 +21,24 @@
             <div id='conteudoPosto' class="modalPostos">
                 @Html.Label("Posto de Coleta: ", null, new { @class = "fm3", @style = "width: 8px;" })
                 <span style="font-size: 0.78em; color: #888; font-style: italic;">opcional</span>
-                @Html.TextBoxFor(p => p.VmPostos.NomePosto, new { @id = "buscaNomePosto", @class = "form-control fm3 upper", @placeholder = "Nome do Posto (opcional)", @style = "width: 60%;" })
+                @{
+                    //Feito pelo Qoder em 31/05/2026 - input de Posto inicia desabilitado quando não há Instituição selecionada.
+                    var postoSemInstituicao = (Model?.VmInstituicao?.Id ?? 0) <= 0;
+                    var postoAttrs = new Dictionary<string, object>
+                    {
+                        { "id", "buscaNomePosto" },
+                        { "class", "form-control fm3 upper" },
+                        { "placeholder", "Nome do Posto (opcional)" },
+                        { "style", "width: 60%;" }
+                    };
+                    if (postoSemInstituicao)
+                    {
+                        postoAttrs.Add("disabled", "disabled");
+                    } else {
+                        postoAttrs.Add("required", "required");
+                    }
+                }
+                @Html.TextBoxFor(p => p.VmPostos.NomePosto, postoAttrs)
                 <!-- Campo hidden para armazenar o Id do posto de coleta -->
                 @Html.HiddenFor(p => p.VmPostos.Id, new { @id = "postoId" })
                 @Html.DisplayFor(p => p.VmPostos.Id, new { @class = "form-control fm3 upper", @style = "width: 5%;" })

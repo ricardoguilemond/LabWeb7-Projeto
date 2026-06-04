@@ -10,6 +10,7 @@ using LabWebMvc.MVC.Mensagens;
 using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using static BLL.UtilBLL;
 
@@ -60,12 +61,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!string.IsNullOrEmpty(Conteudo))
             {
                 dados = await _db.Postos.AsNoTracking()
-                          .FiltrarPorConteudo(Conteudo, x => x.NomePosto, x => x.Endereco, x => x.Bairro, x => x.Cidade, x => x.Id.ToString())
+                          .Include(p => p.Instituicao)
+                          .FiltrarPorConteudo(Conteudo, x => x.SiglaPosto, x => x.NomePosto, x => x.Endereco, x => x.Bairro, x => x.Cidade, x => x.Id.ToString())
                           .OrderByDescending(x => x.Id)
                           .ToListAsync();
             }
             else
-                dados = await _db.Postos.AsNoTracking().OrderByDescending(o => o.Id).Take(registros).ToListAsync();
+                dados = await _db.Postos.AsNoTracking().Include(p => p.Instituicao).OrderByDescending(o => o.Id).Take(registros).ToListAsync();
 
             foreach (Postos item in dados)
             {
@@ -73,6 +75,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vmPostos resultado = new()
                 {
                     Id = item.Id,
+                    InstituicaoId = item.InstituicaoId,
+                    SiglaInstituicao = item.Instituicao?.Sigla,
+                    NomeInstituicao = item.Instituicao?.Nome,
+                    SiglaPosto = item.SiglaPosto,
                     NomePosto = item.NomePosto,
                     Logradouro = item.Logradouro,
                     Endereco = item.Endereco,
@@ -88,21 +94,37 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 listaGrid.Add(resultado);
             }
 
-            ViewBag.TotalRegistros = totalRegistros.ToString();
-            ViewBag.TotalTabela = totalTabela.ToString();
-            ViewBag.ListaDados = listaGrid;
-
-            //Finalização da View
-            return _geralController.Validacao("Index", "Cadastro de Postos de Coletas e Anexos", totalRegistros, totalTabela, listaGrid);
+            ViewBag.TextoMenu = new object[] { "Cadastro de Postos de Coletas e Anexos", false };
+            var vmIndex = new vmPostos { ListaDados = listaGrid };
+            return View(vmIndex);
         }
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("IncluirPostos")]
-        public IActionResult IncluirPostos()
+        public async Task<IActionResult> IncluirPostos()
         {
+            //Feito pelo Qoder em 21/04/2026 - lista de Instituicoes para o select
+            var instituicoes = await _db.Instituicao.AsNoTracking()
+                .OrderBy(i => i.Sigla)
+                .Select(i => new { i.Id, i.Sigla, i.Nome })
+                .ToListAsync();
+
+            var vm = new vmPostos
+            {
+                InstituicoesSigla = instituicoes
+                    .Select(i => new SelectListItem { Value = i.Id.ToString(), Text = i.Sigla })
+                    .ToList(),
+                InstituicoesNome = instituicoes
+                    .Select(i => new SelectListItem { Value = i.Id.ToString(), Text = i.Nome })
+                    .ToList(),
+                SessionUF = HttpContext.Session.GetString("SessionUF") ?? ""
+            };
+            //..Qoder
+
             //Finalização da View
-            return _geralController.Validacao("IncluirPostos", "Cadastro de Postos de Coletas e Anexos");
+            ViewBag.TextoMenu = new object[] { "Cadastro de Postos de Coletas e Anexos", false };
+            return View(vm);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -116,9 +138,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (string.IsNullOrEmpty(vm.NomePosto))
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Formulário possui campos obrigatórios vazios ou não havia nada para ser salvo" });
 
-            Postos? Postos = await _db.Postos.Where(s => s.NomePosto == vm.NomePosto.ToUpper()).SingleOrDefaultAsync();
-            if (Postos != null)
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto/anexo já cadastrado com este nome", action = "", sucesso = false });
+            //Feito pelo Qoder em 21/04/2026 - validação da Instituicao informada
+            if (vm.InstituicaoId <= 0 || !await _db.Instituicao.AnyAsync(i => i.Id == vm.InstituicaoId))
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Instituição informada é inválida", action = "", sucesso = false });
+
+            string siglaNormalizada = GenericValidations.NormalizarSigla(vm.SiglaPosto);
+            if (string.IsNullOrWhiteSpace(siglaNormalizada))
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Sigla do posto é obrigatória", action = "", sucesso = false });
+            //..Qoder
 
             Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(async () =>
@@ -137,6 +164,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         {
                             Id = proximoId,
                             //Colunas NÃO nulas:
+                            InstituicaoId = vm.InstituicaoId,
+                            SiglaPosto = siglaNormalizada,
                             NomePosto = vm.NomePosto.ToUpper(),
                             Responsavel = vm.Responsavel,
 
@@ -176,11 +205,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("AlterarPostos")]
         public async Task<IActionResult> AlterarPostos(vmPostos vm, int id)
         {
-            Postos dados = await _db.Postos.Where(c => c.Id == id).AsNoTracking().FirstAsync();
+            Postos dados = await _db.Postos.Where(c => c.Id == id).Include(p => p.Instituicao).AsNoTracking().FirstAsync();
 
             if (dados != null)
             {
                 vm.Id = dados.Id;
+                vm.InstituicaoId = dados.InstituicaoId;
+                vm.SiglaInstituicao = dados.Instituicao?.Sigla;
+                vm.NomeInstituicao = dados.Instituicao?.Nome;
+                vm.SiglaPosto = dados.SiglaPosto;
                 vm.NomePosto = dados.NomePosto.ToUpper();
                 vm.Logradouro = dados.Logradouro.ToCapitalize();
                 vm.Endereco = dados.Endereco.ToCapitalize();
@@ -201,10 +234,24 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 };
                 vm.vmGeral = vmGeral;
                 /*
-                 * variáveis para uso em comparações que facilitam ir por ViewBag!
+                 * variáveis via ViewModel tipado
                  */
-                ViewBag.SessionUF = dados.UF;
+                vm.SessionUF = dados.UF;
             }
+
+            //Feito pelo Qoder em 21/04/2026 - lista de Instituicoes para o select
+            var instituicoes = await _db.Instituicao.AsNoTracking()
+                .OrderBy(i => i.Sigla)
+                .Select(i => new { i.Id, i.Sigla, i.Nome })
+                .ToListAsync();
+
+            vm.InstituicoesSigla = instituicoes
+                .Select(i => new SelectListItem { Value = i.Id.ToString(), Text = i.Sigla })
+                .ToList();
+            vm.InstituicoesNome = instituicoes
+                .Select(i => new SelectListItem { Value = i.Id.ToString(), Text = i.Nome })
+                .ToList();
+            //..Qoder
 
             //Parâmetros auxiliares em ViewBag
             ViewBag.TextoMenu = new object[] { "Alterar Cadastro de Postos/anexos", false };
@@ -224,6 +271,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (vm == null || string.IsNullOrEmpty(vm.NomePosto))
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Formulário possui campos obrigatórios vazios ou não havia nada para ser salvo" });
 
+            //Feito pelo Qoder em 21/04/2026 - validação da Instituicao informada
+            if (vm.InstituicaoId <= 0 || !await _db.Instituicao.AnyAsync(i => i.Id == vm.InstituicaoId))
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Instituição informada é inválida", action = "", sucesso = false });
+
+            string siglaNormalizada = GenericValidations.NormalizarSigla(vm.SiglaPosto);
+            if (string.IsNullOrWhiteSpace(siglaNormalizada))
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Sigla do posto é obrigatória", action = "", sucesso = false });
+            //..Qoder
+
             Postos? Postos = await _db.Postos.Where(s => s.Id == id).SingleOrDefaultAsync();
             if (Postos == null)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Não foi possível salvar o registro neste momento", action = "", sucesso = false });
@@ -236,6 +292,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     try
                     {
                         //Colunas NÃO nulas:
+                        Postos.InstituicaoId = vm.InstituicaoId;
+                        Postos.SiglaPosto = siglaNormalizada;
                         Postos.NomePosto = vm.NomePosto.ToUpper();
                         Postos.Responsavel = vm.Responsavel.ToCapitalizeNotNull();
 
@@ -277,8 +335,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             //Feito pelo Kiro em 20/04/2026
             // Verifica se o posto possui vínculos antes de excluir
+            //Feito pelo Qoder em 21/04/2026 - inclui verificação em ExamesRealizadosAM (D5)
             bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.PostoId == id)
-                               || await _db.ExamesRealizados.AnyAsync(e => e.PostoId == id);
+                               || await _db.ExamesRealizados.AnyAsync(e => e.PostoId == id)
+                               || await _db.ExamesRealizadosAM.AnyAsync(e => e.PostoId == id);
+            //..Qoder
 
             if (possuiVinculos)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Posto possui requisições ou exames vinculados e não pode ser excluído", action = "", sucesso = false });
@@ -321,11 +382,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ConsultarPostos")]
         public async Task<ActionResult> ConsultarPostos(vmPostos vm, int id)
         {
-            Postos dados = await _db.Postos.Where(c => c.Id == id).AsNoTracking().FirstAsync();
+            Postos dados = await _db.Postos.Where(c => c.Id == id).Include(p => p.Instituicao).AsNoTracking().FirstAsync();
 
             if (dados != null)
             {
                 vm.Id = dados.Id;
+                vm.InstituicaoId = dados.InstituicaoId;
+                vm.SiglaInstituicao = dados.Instituicao?.Sigla;
+                vm.NomeInstituicao = dados.Instituicao?.Nome;
+                vm.SiglaPosto = dados.SiglaPosto;
                 vm.NomePosto = dados.NomePosto;
                 vm.Logradouro = dados.Logradouro;
                 vm.Endereco = dados.Endereco;
@@ -346,9 +411,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 };
                 vm.vmGeral = vmGeral;
                 /*
-                 * variáveis para uso em comparações que facilitam ir por ViewBag!
+                 * variáveis via ViewModel tipado
                  */
-                ViewBag.SessionUF = dados.UF;
+                vm.SessionUF = dados.UF;
             }
 
             //Parâmetros auxiliares em ViewBag

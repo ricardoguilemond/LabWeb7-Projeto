@@ -153,21 +153,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 listaGrid.Add(resultado);
             }
 
-            //ViewBag.TotalRegistros = totalRegistros.ToString();
-            //ViewBag.TotalTabela = totalTabela.ToString();
-            //ViewBag.ListaDados = listaGrid;
-
             //Finalização da View
-            var vmResposta = new vmListaValidacao<dynamic>
-            {
-                RetornoDeRota = "Index",
-                Titulo = "Cadastro de Pacientes",
-                TotalRegistros = totalRegistros,
-                TotalTabela = totalTabela,
-                ListaDados = listaGrid.Cast<dynamic>().ToList()
-            };
-            return _geralController.ValidacaoGenerica(vmResposta);
-            //return _geralController.Validacao("Index", "Cadastro de Pacientes", totalRegistros, totalTabela, listaGrid);
+            ViewBag.TextoMenu = new object[] { "Cadastro de Pacientes", false };
+            var vmIndex = new vmPacientes { ListaDados = listaGrid };
+            return View(vmIndex);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -175,8 +164,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("IncluirPaciente")]
         public IActionResult IncluirPaciente()
         {
-            //Finalização da View
-            return _geralController.Validacao("IncluirPaciente", "Cadastro de Pacientes");
+            var vm = new vmPacientes
+            {
+                SessionUF = HttpContext.Session.GetString("SessionUF") ?? ""
+            };
+            ViewBag.TextoMenu = new object[] { "Cadastro de Pacientes", false };
+            return View(vm);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -341,11 +334,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 };
                 vm.vmGeral = vmGeral;
                 /*
-                 * variáveis para uso em comparações que facilitam ir por ViewBag!
+                 * variáveis via ViewModel tipado
                  */
-                ViewBag.Sexo = dados.Sexo;
-                ViewBag.EstadoCivil = dados.EstadoCivil;
-                ViewBag.SessionUF = dados.UF;
+                vm.SessionUF = dados.UF;
             }
 
             //Parâmetros auxiliares em ViewBag
@@ -514,12 +505,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 };
                 vm.vmGeral = vmGeral;
                 /*
-                 * variáveis para uso em comparações que facilitam ir por ViewBag!
+                 * variáveis via ViewModel tipado
                  */
-                ViewBag.TipoDocumento = dados.TipoDocumento;
-                ViewBag.Sexo = dados.Sexo;
-                ViewBag.EstadoCivil = dados.EstadoCivil;
-                ViewBag.SessionUF = dados.UF;
+                vm.SessionUF = dados.UF;
             }
 
             //Parâmetros auxiliares em ViewBag

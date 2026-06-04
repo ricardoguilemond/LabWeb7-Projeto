@@ -10,7 +10,7 @@ public partial class ExamesRealizados
 
     public int InstituicaoId { get; set; }
 
-    public int PostoId { get; set; }
+    public int? PostoId { get; set; }
 
     public int MedicoId { get; set; }
 
@@ -64,7 +64,7 @@ public partial class ExamesRealizados
 
     public virtual Pacientes Pacientes { get; set; } = null!;
 
-    public virtual Postos Postos { get; set; } = null!;
+    public virtual Postos? Postos { get; set; }
 
     public virtual TabelaExames TabelaExames { get; set; } = null!;
 }

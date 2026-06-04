@@ -83,12 +83,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 listaGrid.Add(resultado);
             }
 
-            ViewBag.TotalRegistros = totalRegistros.ToString();
-            ViewBag.TotalTabela = totalTabela.ToString();
-            ViewBag.ListaDados = listaGrid;
-
-            //Finalização da View
-            return _geralController.Validacao("Index", "Cadastro de Médicos", totalRegistros, totalTabela, listaGrid);
+            ViewBag.TextoMenu = new object[] { "Cadastro de Médicos", false };
+            var vmIndex = new vmMedicos { ListaDados = listaGrid };
+            return View(vmIndex);
         }
 
         [TypeFilter(typeof(SessionFilter))]

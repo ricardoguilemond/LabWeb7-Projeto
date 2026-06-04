@@ -1,4 +1,5 @@
 ﻿using LabWebMvc.MVC.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 using static ExtensionsMethods.Genericos.Enumeradores;
 
@@ -57,5 +58,11 @@ namespace LabWebMvc.MVC.ViewModel
 
         /* Campos auxiliares de Imagens */
         public string? CaminhoImagemAssinatura { get; set; }
+
+        /* Propriedades migradas de ViewBag */
+        public string? PathImages { get; set; }
+        public List<SelectListItem> Funcoes { get; set; } = new();
+        public string? TextoReset { get; set; }
+        public ICollection<dynamic>? ListaDados { get; set; }
     }
 }

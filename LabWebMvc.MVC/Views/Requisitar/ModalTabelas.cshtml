@@ -123,9 +123,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (ViewBag.ListaTabelas != null)
+                            @if (Model.ListaTabelas != null)
                             {
-                                @foreach (var item in ViewBag.ListaTabelas)
+                                @foreach (var item in Model.ListaTabelas)
                                 {
                                     <tr id="tr_@item.SiglaTabela" name="trModal" title="Selecionar" style="width: 90%;">
                                         <td id="@item.SiglaTabela" style="width:10%;"><input id="chk_@item.SiglaTabela" name="input" type="checkbox" /> @item.SiglaTabela</td>

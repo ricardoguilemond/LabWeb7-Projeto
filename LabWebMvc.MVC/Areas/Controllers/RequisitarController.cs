@@ -71,20 +71,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             int totalRegistros = dados.Count();
 
-            ViewBag.TotalRegistros = totalRegistros.ToString();
-            ViewBag.TotalTabela = totalTabela.ToString();
-            ViewBag.ListaDados = dados;
-
-            //Finalização da View
-            var vmResposta = new vmListaValidacao<dynamic>
-            {
-                RetornoDeRota = "Index",
-                Titulo = "Requisição de Exames",
-                TotalRegistros = totalRegistros,
-                TotalTabela = totalTabela,
-                ListaDados = dados.Cast<dynamic>().ToList()
-            };
-            return _geralController.ValidacaoGenerica(vmResposta);
+            ViewBag.TextoMenu = new object[] { "Requisição de Exames", false };
+            var vmIndex = new vmRequisitar { ListaDados = dados.Cast<dynamic>().ToList() };
+            return View(vmIndex);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -339,7 +328,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     requisicao.RefItem = itemCupom.RefItem;
                     requisicao.ContaExame = itemCupom.ContaExame;
                     requisicao.InstituicaoId = vm.VmInstituicao.Id;
-                    requisicao.PostoId = vm.VmPostos.Id;
+                    requisicao.PostoId = vm.VmPostos?.Id;
                     requisicao.TabelaExamesId = vm.VmTabelaExames.Id;
                     requisicao.MedicoId = vm.VmMedicos.Id;
 
@@ -464,7 +453,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     PacienteId = vm.VmPacientes?.Id ?? 0,
                     TabelaExamesId = vm.VmTabelaExames?.Id ?? 0,
                     InstituicaoId = vm.VmInstituicao?.Id ?? 0,
-                    PostoId = vm.VmPostos?.Id ?? 0,
+                    PostoId = vm.VmPostos?.Id,
                     MedicoId = vm.VmMedicos?.Id ?? 0,
                     Sequencial = seq,
                     LaboratorioApoio = vm.LaboratorioApoio,
@@ -731,11 +720,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             vm.ListaPacientes = dados;
 
-            //Parâmetros auxiliares em ViewBag
-            ViewBag.ListaPacientes = dados;
             ViewBag.TextoMenu = new object[] { "Consulta Tabelas de Pacientes", false };
-            //Finalização para a View
-            _geralController.Validacao("ModalPacientes", "Tabela de Pacientes", ViewBag.TextoMenu[0]);
             return PartialView(vm);
         }
 
@@ -748,11 +733,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             dados = await _db.Instituicao.AsNoTracking().Take(1000).ToListAsync();
 
-            //Parâmetros auxiliares em ViewBag
-            ViewBag.ListaIntituicoes = dados;
+            vm.ListaInstituicoes = dados;
+
             ViewBag.TextoMenu = new object[] { "Consulta Instituições", false };
-            //Finalização para a View
-            _geralController.Validacao("ModalInstituicoes", "Instituições", ViewBag.TextoMenu[0]);
             return PartialView(vm);
         }
 
@@ -763,13 +746,21 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             ICollection<Postos> dados = [];
 
-            dados = await _db.Postos.AsNoTracking().Take(1000).ToListAsync();
+            //Feito pelo Qoder em 31/05/2026 - lista Postos somente da Instituicao escolhida.
+            //Sem Instituicao selecionada, retorna lista vazia (defesa em profundidade — o JS bloqueia a abertura).
+            if (vm.InstituicaoId > 0)
+            {
+                dados = await _db.Postos.AsNoTracking()
+                    .Where(p => p.InstituicaoId == vm.InstituicaoId)
+                    .OrderBy(p => p.SiglaPosto)
+                    .Take(1000)
+                    .ToListAsync();
+            }
+            //..Qoder
 
-            //Parâmetros auxiliares em ViewBag
-            ViewBag.ListaPostos = dados;
+            vm.ListaPostos = dados;
+
             ViewBag.TextoMenu = new object[] { "Consulta Postos de Coleta", false };
-            //Finalização para a View
-            _geralController.Validacao("ModalPostos", "Postos", ViewBag.TextoMenu[0]);
             return PartialView(vm);
         }
 
@@ -782,11 +773,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             dados = await _db.TabelaExames.AsNoTracking().Take(1000).ToListAsync();
 
-            //Parâmetros auxiliares em ViewBag
-            ViewBag.ListaTabelas = dados;
+            vm.ListaTabelas = dados;
+
             ViewBag.TextoMenu = new object[] { "Consulta Tabelas de Exames", false };
-            //Finalização para a View
-            _geralController.Validacao("ModalTabelas", "Tabela de Exames", ViewBag.TextoMenu[0]);
             return PartialView(vm);
         }
 
@@ -801,11 +790,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             vm.ListaMedicos = dados;
 
-            //Parâmetros auxiliares em ViewBag
-            ViewBag.ListaMedicos = dados;
             ViewBag.TextoMenu = new object[] { "Consulta Tabelas de Médicos", false };
-            //Finalização para a View
-            _geralController.Validacao("ModalMedicos", "Tabela de Médicos", ViewBag.TextoMenu[0]);
             return PartialView(vm);
         }
 
@@ -896,9 +881,19 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("RetornoDoModalPostos")]
         public async Task<JsonResult> RetornoDoModalPostos(vmRequisitar vm, string id)
         {
+            //Feito pelo Qoder em 31/05/2026 - exige Instituicao escolhida; sem ela, nem consulta o banco.
+            if (vm.InstituicaoId <= 0)
+                return Json(new { success = false, message = "Selecione uma Instituição antes de escolher o Posto." });
+            //..Qoder
+
             string busca = id.Trim().ToUpper();
 
-            var dados = await _db.Postos.Where(c => c.NomePosto.Contains(busca)).AsNoTracking().FirstOrDefaultAsync();
+            //Feito pelo Qoder em 21/04/2026 - busca limitada à Instituicao escolhida
+            var dados = await _db.Postos.AsNoTracking()
+                .Where(c => c.InstituicaoId == vm.InstituicaoId)
+                .Where(c => c.NomePosto.Contains(busca) || c.SiglaPosto.Contains(busca))
+                .FirstOrDefaultAsync();
+            //..Qoder
 
             if (dados == null)
                 return Json(new { success = false, message = "Posto de Coleta não encontrado." });
@@ -1032,10 +1027,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
             var lista = ListaAcumulativa.Instancia.ObterCupom(usuarioId);
             foreach (var item in lista) totalCupom += item.ValorItem;
 
-            ViewBag.TotalCupom = totalCupom?.ToString("N2");
-            ViewBag.ListaCupom = lista;
+            var vmCupom = new vmRequisitar();
+            vmCupom.TotalCupom = totalCupom?.ToString("N2");
+            vmCupom.ListaCupom = lista;
 
-            return PartialView("Partials/_PartialMontarItensCupom");
+            return PartialView("Partials/_PartialMontarItensCupom", vmCupom);
         }
         //..Qoder
 
@@ -1068,18 +1064,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 if (itemBuscado == null)
                 {
-                    ViewBag.TotalCupom = "0,00";
-                    ViewBag.ListaCupom = ListaAcumulativa.Instancia.ObterCupom(usuarioId);
-                    ViewBag.MensagemErro = "Item de exame não encontrado.";
-                    return PartialView("Partials/_PartialMontarItensCupom");
+                    vm.TotalCupom = "0,00";
+                    vm.ListaCupom = ListaAcumulativa.Instancia.ObterCupom(usuarioId);
+                    vm.MensagemErro = "Item de exame não encontrado.";
+                    return PartialView("Partials/_PartialMontarItensCupom", vm);
                 }
 
                 if (itemBuscado.ValorItem == null || itemBuscado.ValorItem <= 0)
                 {
-                    ViewBag.TotalCupom = "0,00";
-                    ViewBag.ListaCupom = ListaAcumulativa.Instancia.ObterCupom(usuarioId);
-                    ViewBag.MensagemErro = "Item sem valor definido, não pode ser selecionado.";
-                    return PartialView("Partials/_PartialMontarItensCupom");
+                    vm.TotalCupom = "0,00";
+                    vm.ListaCupom = ListaAcumulativa.Instancia.ObterCupom(usuarioId);
+                    vm.MensagemErro = "Item sem valor definido, não pode ser selecionado.";
+                    return PartialView("Partials/_PartialMontarItensCupom", vm);
                 }
 
                 dados = new List<PlanoExames> { itemBuscado };
@@ -1100,11 +1096,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     totalCupom += item.ValorItem;
                 }
             }
-            //Parâmetros auxiliares em ViewBag
-            ViewBag.TotalCupom = totalCupom?.ToString("N2");
-            ViewBag.ListaCupom = vm.ListaCupom;
+            //Parâmetros auxiliares no ViewModel
+            vm.TotalCupom = totalCupom?.ToString("N2");
 
-            return PartialView("Partials/_PartialMontarItensCupom");
+            return PartialView("Partials/_PartialMontarItensCupom", vm);
         }
         //..
 
@@ -1187,10 +1182,29 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!itens.Any())
                 return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para este paciente na data informada." });
 
-            // Verifica se algum item já possui resultado lançado
-            bool temResultado = itens.Any(r => !string.IsNullOrWhiteSpace(r.Resultado));
-            if (temResultado)
-                return Json(new { sucesso = false, mensagem = "Esta requisição não pode ser editada pois um ou mais exames já possuem resultado lançado." });
+            //Feito pelo Qoder em 04/06/2026
+            // Verifica se algum item na tabela ItensExamesRealizados possui resultado lançado.
+            // O campo Resultado da tabela Requisitar NÃO é utilizado pelo usuário, apenas o de ItensExamesRealizados é relevante para laudos e relatórios.
+            bool temResultadoItensExames = false;
+            var exameRealizadoIdsParaVerificacao = itens
+                .Where(r => r.ExameRealizadoId.HasValue && r.ExameRealizadoId.Value > 0)
+                .Select(r => r.ExameRealizadoId!.Value)
+                .Distinct()
+                .ToList();
+            
+            if (exameRealizadoIdsParaVerificacao.Any())
+            {
+                temResultadoItensExames = _db.ItensExamesRealizados
+                    .AsNoTracking()
+                    .Any(i => exameRealizadoIdsParaVerificacao.Contains(i.ExameRealizadoId) 
+                           && !string.IsNullOrWhiteSpace(i.Resultado));
+            }
+            
+            if (temResultadoItensExames)
+            {
+                return Json(new { sucesso = false, mensagem = "Esta requisição não pode ser editada pois existem resultados lançados nos itens de exames realizados." });
+            }
+            //..Qoder
 
             var primeiro = itens.First();
 
@@ -1320,10 +1334,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 totalCupom += item.ValorItem;
             }
 
-            ViewBag.TotalCupom = totalCupom?.ToString("N2");
-            ViewBag.ListaCupom = lista;
+            var vm = new vmRequisitar();
+            vm.TotalCupom = totalCupom?.ToString("N2");
+            vm.ListaCupom = lista;
 
-            return PartialView("Partials/_PartialMontarItensCupom");
+            return PartialView("Partials/_PartialMontarItensCupom", vm);
         }
         //..Kiro
 
@@ -1343,30 +1358,117 @@ namespace LabWebMvc.MVC.Areas.Controllers
             // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
             var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(vm.Data.Value.Date);
 
-            var itens = await _db.Requisitar
-                .Where(r => r.PacienteId == vm.IdPaciente
-                         && r.DataIni >= dataInicio
-                         && r.DataIni <= dataFim)
-                .ToListAsync();
+            //Feito pelo Qoder em 31/05/2026
+            // Filtro primário: ExameRealizadoId (header da sessão), quando informado.
+            // Garante que apenas os itens da sessão exibida no grid sejam excluídos,
+            // mesmo quando o paciente possui múltiplas sessões (ExamesRealizados) no mesmo dia.
+            // Fallback: filtro antigo por PacienteId + DataIni (compatibilidade).
+            IQueryable<Requisitar> query = _db.Requisitar;
+            if (vm.ExameRealizadoId.HasValue && vm.ExameRealizadoId.Value > 0)
+            {
+                query = query.Where(r => r.ExameRealizadoId == vm.ExameRealizadoId.Value);
+            }
+            else
+            {
+                query = query.Where(r => r.PacienteId == vm.IdPaciente
+                                      && r.DataIni >= dataInicio
+                                      && r.DataIni <= dataFim);
+                if (vm.TabelaExamesId > 0)
+                    query = query.Where(r => r.TabelaExamesId == vm.TabelaExamesId);
+            }
+
+            var itens = await query.ToListAsync();
+            //..Qoder
 
             if (!itens.Any())
                 return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para exclusão." });
 
-            // Verifica se algum item já possui resultado lançado
-            bool temResultado = itens.Any(r => !string.IsNullOrWhiteSpace(r.Resultado));
-            if (temResultado)
-                return Json(new { sucesso = false, mensagem = "Esta requisição não pode ser excluída pois um ou mais exames já possuem resultado lançado." });
+            //Feito pelo Qoder em 04/06/2026
+            // Verifica se algum item na tabela ItensExamesRealizados possui resultado lançado.
+            // O campo Resultado da tabela Requisitar NÃO é utilizado pelo usuário, apenas o de ItensExamesRealizados é relevante para laudos e relatórios.
+            bool temResultadoItensExames = false;
+            var exameRealizadoIdsParaVerificacao = itens
+                .Where(r => r.ExameRealizadoId.HasValue && r.ExameRealizadoId.Value > 0)
+                .Select(r => r.ExameRealizadoId!.Value)
+                .Distinct()
+                .ToList();
+            
+            if (exameRealizadoIdsParaVerificacao.Any())
+            {
+                temResultadoItensExames = await _db.ItensExamesRealizados
+                    .AnyAsync(i => exameRealizadoIdsParaVerificacao.Contains(i.ExameRealizadoId) 
+                                && !string.IsNullOrWhiteSpace(i.Resultado));
+            }
+            
+            if (temResultadoItensExames)
+            {
+                return Json(new { sucesso = false, mensagem = "Esta requisição não pode ser excluída pois existem resultados lançados nos itens de exames realizados." });
+            }
+            //..Qoder
 
             try
             {
                 using var transaction = await _db.Database.BeginTransactionAsync();
 
+                //Feito pelo Qoder em 31/05/2026
+                // Coleta os ExameRealizadoId distintos vinculados aos itens que serão excluídos.
+                // Esses Ids serão usados para cascata em ItensExamesRealizados e ExamesRealizados.
+                var exameRealizadoIds = itens
+                    .Where(r => r.ExameRealizadoId.HasValue && r.ExameRealizadoId.Value > 0)
+                    .Select(r => r.ExameRealizadoId!.Value)
+                    .Distinct()
+                    .ToList();
+                //..Qoder
+
                 _db.Requisitar.RemoveRange(itens);
                 await _db.SaveChangesAsync();
 
+                //Feito pelo Qoder em 31/05/2026
+                // Cascata 1: exclui ItensExamesRealizados vinculados aos mesmos ExameRealizadoId.
+                int itensHeaderRemovidos = 0;
+                int headersRemovidos = 0;
+                if (exameRealizadoIds.Any())
+                {
+                    var itensHeader = await _db.ItensExamesRealizados
+                        .Where(i => exameRealizadoIds.Contains(i.ExameRealizadoId))
+                        .ToListAsync();
+                    if (itensHeader.Any())
+                    {
+                        itensHeaderRemovidos = itensHeader.Count;
+                        _db.ItensExamesRealizados.RemoveRange(itensHeader);
+                        await _db.SaveChangesAsync();
+                    }
+
+                    // Cascata 2: para cada ExameRealizadoId, se não restar nenhum registro
+                    // em Requisitar referenciando-o, remove o header em ExamesRealizados.
+                    foreach (var exId in exameRealizadoIds)
+                    {
+                        bool aindaTemRequisitar = await _db.Requisitar
+                            .AnyAsync(r => r.ExameRealizadoId == exId);
+                        if (!aindaTemRequisitar)
+                        {
+                            var header = await _db.ExamesRealizados.FirstOrDefaultAsync(e => e.Id == exId);
+                            if (header != null)
+                            {
+                                _db.ExamesRealizados.Remove(header);
+                                headersRemovidos++;
+                            }
+                        }
+                    }
+                    if (headersRemovidos > 0)
+                        await _db.SaveChangesAsync();
+                }
+                //..Qoder
+
                 await transaction.CommitAsync();
 
-                return Json(new { sucesso = true, mensagem = $"{itens.Count} item(ns) de exame excluído(s) com sucesso." });
+                //Feito pelo Qoder em 31/05/2026 — mensagem detalhada da cascata.
+                var msg = $"{itens.Count} item(ns) de Requisitar excluído(s)";
+                if (itensHeaderRemovidos > 0) msg += $", {itensHeaderRemovidos} item(ns) de ItensExamesRealizados";
+                if (headersRemovidos > 0)     msg += $", {headersRemovidos} sessão(ões) de ExamesRealizados";
+                msg += ".";
+                return Json(new { sucesso = true, mensagem = msg });
+                //..Qoder
             }
             catch (Exception ex)
             {
@@ -1546,37 +1648,31 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // (DateTimeKind.Unspecified causa InvalidOperationException em timestamptz)
                 var (hojeInicio, hojeFim) = _geralController.ObterRangeDiaUtc();
 
-                //Feito pelo Kiro em 03/05/2026
-                // Agrupamento por ExameRealizadoId (quando disponível) ou PacienteId (legado).
-                // Cada ExameRealizadoId representa uma requisição única.
-                // Registros antigos sem ExameRealizadoId são agrupados por PacienteId (fallback).
-                var idsMaisRecentes = _db.Requisitar
+                // Feito pelo Qoder em 31/05/2026
+                // Consulta diretamente a tabela ExamesRealizados (header verdadeiro)
+                // em vez de agrupar a tabela Requisitar (itens). Cada linha do grid
+                // corresponde a um registro da tabela ExamesRealizados.
+                var lista = _db.ExamesRealizados
                     .AsNoTracking()
-                    .Where(r => r.DataIni >= hojeInicio && r.DataIni <= hojeFim)
-                    .GroupBy(r => r.ExameRealizadoId != null ? r.ExameRealizadoId : -r.PacienteId)
-                    .Select(g => g.Max(r => r.Id));
-                //..Kiro
-
-                // Query principal: projeta diretamente para o ViewModel sem Include
-                var lista = _db.Requisitar
-                    .AsNoTracking()
-                    .Where(r => idsMaisRecentes.Contains(r.Id))
-                    .Select(r => new vmRequisitarSimplificado
+                    .Where(e => e.DataIni >= hojeInicio && e.DataIni <= hojeFim)
+                    .Select(e => new vmRequisitarSimplificado
                     {
-                        Id                 = r.Id,
-                        PacienteId         = r.PacienteId,
-                        NomePaciente       = r.Pacientes != null ? r.Pacientes.NomePaciente ?? "N/A" : "N/A",
-                        Nascimento         = r.Pacientes != null ? r.Pacientes.Nascimento.ToString("dd/MM/yyyy") : "N/A",
-                        NomeInstituicao    = (r.Instituicao != null ? r.Instituicao.Sigla ?? "" : "") + " - " + (r.Instituicao != null ? r.Instituicao.Nome ?? "" : ""),
-                        NomePosto          = r.Posto != null ? r.Posto.NomePosto ?? "-" : "-",
-                        NomeTabela         = (r.TabelaExames != null ? r.TabelaExames.SiglaTabela ?? "" : "") + " - " + (r.TabelaExames != null ? r.TabelaExames.NomeTabela ?? "" : ""),
-                        LaboratorioApoio   = r.LaboratorioApoio ?? "-",
-                        DataIni            = r.DataIni.ToString("dd/MM/yyyy"),
-                        DataEntregaParcial = r.DataEntregaParcial != null ? r.DataEntregaParcial.Value.ToString("dd/MM/yyyy") : "",
-                        TabelaExamesId     = r.TabelaExamesId,
-                        ExameRealizadoId   = r.ExameRealizadoId
+                        Id                 = e.Id,
+                        ExameRealizadoId   = e.Id,
+                        PacienteId         = e.PacienteId,
+                        NomePaciente       = e.Pacientes != null ? e.Pacientes.NomePaciente ?? "N/A" : "N/A",
+                        Nascimento         = e.Pacientes != null ? e.Pacientes.Nascimento.ToString("dd/MM/yyyy") : "N/A",
+                        NomeInstituicao    = (e.Instituicao != null ? e.Instituicao.Sigla ?? "" : "") + " - " + (e.Instituicao != null ? e.Instituicao.Nome ?? "" : ""),
+                        NomePosto          = e.Postos != null ? e.Postos.SiglaPosto ?? "-" : "-",
+                        NomeTabela         = (e.TabelaExames != null ? e.TabelaExames.SiglaTabela ?? "" : "") + " - " + (e.TabelaExames != null ? e.TabelaExames.NomeTabela ?? "" : ""),
+                        LaboratorioApoio   = e.LaboratorioApoio ?? "-",
+                        DataIni            = e.DataIni.ToString("dd/MM/yyyy"),
+                        DataEntregaParcial = e.DataEntrega != null ? e.DataEntrega.Value.ToString("dd/MM/yyyy") : "",
+                        TabelaExamesId     = e.TabelaExamesId
                     })
+                    .OrderByDescending(v => v.ExameRealizadoId)
                     .ToList();
+                // ..Qoder
 
                 return Json(new { data = lista });
             }
@@ -1587,6 +1683,42 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
         }
         //..Kiro
+
+        // Feito pelo Qoder em 31/05/2026
+        // Retorna os itens da tabela Requisitar (detalhes de exames) vinculados
+        // a um ExameRealizadoId. Usado pela expansão master/detail do grid de
+        // Requisições de Hoje.
+        [HttpGet]
+        [Route("Requisitar/GetItensRequisicao")]
+        public IActionResult GetItensRequisicao(int exameRealizadoId)
+        {
+            try
+            {
+                var itens = _db.Requisitar
+                    .AsNoTracking()
+                    .Where(r => r.ExameRealizadoId == exameRealizadoId)
+                    .OrderBy(r => r.OrdemItem)
+                    .Select(r => new
+                    {
+                        r.Id,
+                        r.ClasseExamesNome,
+                        r.ContaExame,
+                        r.Descricao,
+                        ValorItem = r.ValorItem != null ? r.ValorItem.Value.ToString("N2") : "-",
+                        r.Etiquetas,
+                        r.OrdemItem
+                    })
+                    .ToList();
+
+                return Json(new { sucesso = true, itens });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("GetItensRequisicao ERRO: " + ex.Message + " | " + ex.StackTrace, "wError");
+                return Json(new { sucesso = false, mensagem = ex.Message });
+            }
+        }
+        // ..Qoder
 
         // Endpoint temporário de diagnóstico — remover após confirmação
         [HttpGet]

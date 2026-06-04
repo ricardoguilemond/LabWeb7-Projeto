@@ -72,5 +72,9 @@ namespace LabWebMvc.MVC.ViewModel
         public string? CaminhoImgAss2 { get; set; }
         public string? CaminhoImgAss3 { get; set; }
         public string? CaminhoImgAss4 { get; set; }
+
+        /* Propriedade migrada de ViewBag */
+        public string? PathImages { get; set; }
+        public ICollection<dynamic>? ListaDados { get; set; }
     }
 }

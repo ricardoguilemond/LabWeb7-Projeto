@@ -194,12 +194,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 listaGrid.Add(resultado);
             }
 
-            ViewBag.TotalRegistros = totalRegistros.ToString();
-            ViewBag.TotalTabela = totalTabela.ToString();
-            ViewBag.ListaDados = listaGrid;
-
-            //Finalização da View
-            return _geralController.Validacao("Index", "Cadastro de Folhas de Exames", totalRegistros, totalTabela, listaGrid);
+            ViewBag.TextoMenu = new object[] { "Cadastro de Folhas de Exames", false };
+            var vmIndex = new vmClasseExames { ListaDados = listaGrid };
+            return View(vmIndex);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -207,9 +204,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("IncluirClasseExames")]
         public IActionResult IncluirClasseExames()
         {
-            ViewBag.PathImages = Areas.Utils.Utils.GetLocalPathImagens();
-            //Finalização da View
-            return _geralController.Validacao("IncluirClasseExames", "Cadastro de Folha de Exames");
+            var vm = new vmClasseExames
+            {
+                PathImages = Areas.Utils.Utils.GetLocalPathImagens()
+            };
+            ViewBag.TextoMenu = new object[] { "Cadastro de Folha de Exames", false };
+            return View(vm);
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -355,18 +355,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.CaminhoImgAss3 = pathImages;      //pasta que contém imagens para upload
                 vm.CaminhoImgAss4 = pathImages;      //pasta que contém imagens para upload
                 /*
-                 * Campos auxiliares
+                 * Campos auxiliares - via ViewModel tipado
                  */
-                ViewBag.TipoMapa = dados.TipoMapa;
-                ViewBag.ass1SN = dados.Assinatura1;
-                ViewBag.ass2SN = dados.Assinatura2;
-                ViewBag.ass3SN = dados.Assinatura3;
-                ViewBag.ass4SN = dados.Assinatura4;
             }
 
-            //Parâmetros auxiliares em ViewBag
+            //Parâmetros auxiliares
+            vm.PathImages = pathImages;
             ViewBag.TextoMenu = new object[] { "Alterar Cadastro de Folha de Exames", false };
-            ViewBag.PathImages = pathImages;
             //Finalização da View
             _geralController.Validacao("AlterarClasseExames", ViewBag.TextoMenu[0]);
             return PartialView(vm);
@@ -635,12 +630,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.NomeAss4 = dados.NomeAss4;
             }
 
-            //Parâmetros auxiliares em ViewBag
+            //Parâmetros auxiliares
             ViewBag.TextoMenu = new object[] { "Consulta Folha de Exames", false };
-            ViewBag.Assinatura1 = vm.Assinatura1;
-            ViewBag.Assinatura2 = vm.Assinatura2;
-            ViewBag.Assinatura3 = vm.Assinatura3;
-            ViewBag.Assinatura4 = vm.Assinatura4;
 
             //Finalização para a View
             _geralController.Validacao("ConsultarClasseExames", ViewBag.TextoMenu[0]);

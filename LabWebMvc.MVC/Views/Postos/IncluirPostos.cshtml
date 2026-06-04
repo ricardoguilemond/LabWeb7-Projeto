@@ -8,6 +8,18 @@
 }
 <script>
     $(document).ready(function () {
+        // Sincroniza os dois dropdowns de Instituicao
+        $('#ddlInstSigla').on('change', function () {
+            var val = $(this).val();
+            $('#ddlInstNome').val(val);
+            $('#InstituicaoId').val(val);
+        });
+        $('#ddlInstNome').on('change', function () {
+            var val = $(this).val();
+            $('#ddlInstSigla').val(val);
+            $('#InstituicaoId').val(val);
+        });
+
         $('#clickSubmit').click(function (event) {
             event.preventDefault();
             $.ajax({
@@ -43,6 +55,34 @@
     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
     <div class="row">
         <div class="col-md-4">
+            @* Feito pelo Qoder em 21/04/2026 - selecção da Instituição e Sigla do Posto *@
+            <div class="form-group">
+                @Html.Label("*Instituição", null, new { @class = "" })
+                <div class="d-flex gap-2">
+                    <select id="ddlInstSigla" class="form-control" style="width: 30%;" required>
+                        <option value="">Sigla</option>
+                        @foreach (var item in Model.InstituicoesSigla)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                    <select id="ddlInstNome" class="form-control" style="width: 70%;">
+                        <option value="">Nome da Instituição</option>
+                        @foreach (var item in Model.InstituicoesNome)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                @Html.HiddenFor(p => p.InstituicaoId, new { @id = "InstituicaoId" })
+                @Html.ValidationMessageFor(p => p.InstituicaoId, null, new { @class = "has-error" })
+            </div>
+            <div class="form-group">
+                @Html.Label("*Sigla do Posto", null, new { @class = "" })
+                @Html.TextBoxFor(p => p.SiglaPosto, new { @class = "form-control", @placeholder = "Máx. 20 caracteres: A-Z 0-9 espaço . _ -", @required = "required", @maxlength = "20", @pattern = "[A-Z0-9 ._\\-]+", @oninput = "this.value=this.value.toUpperCase()" })
+                @Html.ValidationMessageFor(p => p.SiglaPosto, null, new { @class = "has-error" })
+            </div>
+            @* ..Qoder *@
             <div class="form-group">
                 @Html.Label("Nome completo do posto de coleta/anexo/etc", null, new { @class = "" })
                 @Html.TextBoxFor(p => p.NomePosto, new { @class = "form-control capitalize", @placeholder = "Entre com o nome completo do posto", @required = "required" })
@@ -87,7 +127,7 @@
             <div class="form-group">
                 @Html.Label("UF:")
                 <div style="display: inline-block;">
-                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF))
+                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF))
                 </div>
             </div>
             <!--

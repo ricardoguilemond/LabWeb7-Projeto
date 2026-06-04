@@ -221,7 +221,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         StreamReader reader = new(stream);
                         string myText = reader.ReadToEnd();  //meu texto pronto com os delimitadores
 
-                        ViewBag.Modelo = myText;  //leva o html montado para a view "ModeloPlanoExamesItens.cshtml"
+                        vm.ModeloHtml = myText;  //leva o html montado para a view "ModeloPlanoExamesItens.cshtml"
                     }
                 }
                 catch (Exception ex)
@@ -312,7 +312,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 else
                     vm.ValorItem = planoExames.ValorItem;
 
-                ViewBag.TipoContaExame = planoExames.ContaExame.Substring(7, 4) == "0000" ? TipoContaExame.Principal : TipoContaExame.Item;
+                vm.TipoContaExame = planoExames.ContaExame.Substring(7, 4) == "0000" ? (int)TipoContaExame.Principal : (int)TipoContaExame.Item;
             }
             catch (Exception ex)
             {

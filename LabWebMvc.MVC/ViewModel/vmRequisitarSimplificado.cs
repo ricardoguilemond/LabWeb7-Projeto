@@ -33,6 +33,13 @@
         // múltiplas requisições no mesmo dia com tabelas diferentes.
         public int TabelaExamesId { get; set; }
         //..Kiro
+
+        //Feito pelo Qoder em 31/05/2026
+        // ExameRealizadoId: identifica de forma única a sessão (header) de exame.
+        // Necessário para excluir/filtrar somente os itens de Requisitar vinculados
+        // àquela sessão, evitando apagar outras sessões do mesmo paciente no dia.
+        public int? ExameRealizadoId { get; set; }
+        //..Qoder
     }
 
 }

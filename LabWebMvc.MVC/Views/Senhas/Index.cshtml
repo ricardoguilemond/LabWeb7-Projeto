@@ -4,6 +4,7 @@
 @using static BLL.UtilBLL
 @using LabWebMvc.MVC.Interfaces
 @using LabWebMvc.MVC.ViewModel
+@model vmSenhas
 
 @*USO/EXEMPLOS: https://datatables.net/examples/basic_init/alt_pagination.html*@
 @*Estilo/Style = display (refere-se ao estilo "Base" do componente datatables) que eu achei mais elegante*@
@@ -111,7 +112,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in ViewBag.ListaDados)
+            @foreach (var item in Model.ListaDados)
             {
                 @Html.Raw(
                          "<tr>" +

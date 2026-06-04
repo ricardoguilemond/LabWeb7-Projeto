@@ -163,9 +163,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (ViewBag.ListaPacientes != null)
+                            @if (Model.ListaPacientes != null)
                             {
-                                @foreach (var item in ViewBag.ListaPacientes)
+                                @foreach (var item in Model.ListaPacientes)
                                 {
                                     <tr id="tr_@item.NomePaciente" name="trModal" title="Selecionar" style="width: 90%;">
                                         <td id="@item.NomePaciente" style="width:58%;"><input id="chk_@item.NomePaciente" name="input" type="checkbox" /> @item.NomePaciente</td>

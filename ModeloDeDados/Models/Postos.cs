@@ -7,6 +7,10 @@ public partial class Postos
 {
     public int Id { get; set; }
 
+    public int InstituicaoId { get; set; }
+
+    public string SiglaPosto { get; set; } = null!;
+
     public string NomePosto { get; set; } = null!;
 
     public string Responsavel { get; set; } = null!;
@@ -28,6 +32,8 @@ public partial class Postos
     public string? CEP { get; set; }
 
     public string? Telefone { get; set; }
+
+    public virtual Instituicao Instituicao { get; set; } = null!;
 
     public virtual ICollection<ExamesRealizados> ExamesRealizados { get; set; } = new List<ExamesRealizados>();
 

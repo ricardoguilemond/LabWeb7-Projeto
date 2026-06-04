@@ -111,6 +111,12 @@ namespace LabWebMvc.MVC.ViewModel
 
         public virtual vmGeral vmGeral { get; set; } = null!;
 
+        /* Auxiliar para pre-selecao de UF e comparacoes na View */
+        public string? SessionUF { get; set; }
+
+        /* Propriedade para grid Index (migrada de ViewBag.ListaDados) */
+        public ICollection<dynamic>? ListaDados { get; set; }
+
         /*
     public virtual ICollection<ExamesExportados> ExamesExportados { get; } = new List<ExamesExportados>();
 

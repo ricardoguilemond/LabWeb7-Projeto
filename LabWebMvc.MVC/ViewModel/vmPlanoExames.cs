@@ -94,6 +94,10 @@ namespace LabWebMvc.MVC.ViewModel
         public List<SelectListItem> TabelaIdList { get; set; } = new();
         public List<SelectListItem> TabelaNomeList { get; set; } = new();
 
+        /* Propriedades migradas de ViewBag */
+        public string? ModeloHtml { get; set; }
+        public int ItensExamePrincipal { get; set; }
+
     }
 
 
