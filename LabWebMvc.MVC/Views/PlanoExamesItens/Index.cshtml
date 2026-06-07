@@ -116,6 +116,9 @@
         @Html.DropDownListFor(x => x.PlanoExames.ExameId, Model.PlanoExames.FolhaNomeList, new { @id = "nome_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
     </div>
 </div>
+<div style="margin: 8px 0; padding: 6px 12px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404;">
+    <i class="fa-solid fa-circle-info"></i> Todo item de exame que receber valor/preço será exibido na recepção para ser lançado em exames dos pacientes.
+</div>
 <div class="table-responsive">
     <table id="modeloTable" name="datatable" data-order='[[ 3, "asc" ]]' class="display compact order-column table-striped table-hover nowrap">
         @await Html.PartialAsync("Partials/_PartialPlanoContaItem", Model)

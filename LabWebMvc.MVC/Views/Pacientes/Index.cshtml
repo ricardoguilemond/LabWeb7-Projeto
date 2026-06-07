@@ -289,7 +289,7 @@
                 }
             },
             error: function () {
-                clickAviso('Erro de Rede', 'Não foi possível carregar os exames do paciente. Verifique sua conexão.', 'critica', null);
+                clickAviso('Erro de Rede', 'Não foi possível carregar os exames do paciente. Talvez seja necessário refazer login.', 'critica', null);
                 $row.removeClass('detail-parent-highlight');
             },
             complete: function () {
@@ -411,7 +411,7 @@
                 }
             },
             error: function () {
-                clickAviso('Erro de Rede', 'Não foi possível carregar os itens do exame. Verifique sua conexão.', 'critica', null);
+                clickAviso('Erro de Rede', 'Não foi possível carregar os itens do exame. Talvez seja necessário refazer login.', 'critica', null);
             },
             complete: function () {
                 _carregandoDetailItens = false;

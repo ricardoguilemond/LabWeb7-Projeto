@@ -1,0 +1,334 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.Areas.Utils
+@inject LabWebMvc.MVC.Models.Db _dbSituacao
+
+<partial name='Partials/_PartialMenuResultadoExames' />
+
+@*Feito pelo Kiro em 06/06/2026*@
+<!-- Filtros Backend -->
+<div id="filtrosResultadoExames" style="margin-bottom: 10px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background-color: #f9f9f9;">
+    <form method="get" asp-action="Index" asp-controller="ResultadoExames" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+        <label style="font: normal 13px calibri, arial, sans-serif;">Data Inicial:</label>
+        <input type="text" name="dataInicial" id="filtroDataInicial" placeholder="dd/MM/yyyy"
+               value="@Context.Request.Query["dataInicial"]"
+               style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Data Final:</label>
+        <input type="text" name="dataFinal" id="filtroDataFinal" placeholder="dd/MM/yyyy"
+               value="@Context.Request.Query["dataFinal"]"
+               style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Paciente:</label>
+        <input type="text" name="nomePaciente" placeholder="Nome do paciente"
+               value="@Context.Request.Query["nomePaciente"]"
+               style="width: 160px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Código:</label>
+        <input type="text" name="codigoExame" placeholder="Id"
+               value="@Context.Request.Query["codigoExame"]"
+               style="width: 70px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Sigla Inst.:</label>
+        <input type="text" name="siglaInstituicao" placeholder="Sigla"
+               value="@Context.Request.Query["siglaInstituicao"]"
+               style="width: 80px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
+            <i class="fa-sharp fa-solid fa-magnifying-glass"></i> Pesquisar
+        </button>
+    </form>
+</div>
+@*..Kiro*@
+
+<!-- Grid Header (ExamesRealizados liberados) -->
+<div class="table-responsive">
+    <table id="modeloTable" name="datatable" data-order='[]' class="display compact order-column stripe table-hover nowrap">
+        <thead>
+            <tr>
+                <th>Cód.Exame</th>
+                <th>Paciente</th>
+                <th>Sigla Inst.</th>
+                <th>Tabela</th>
+                <th>Posto</th>
+                <th>Seq</th>
+                <th>Data Liberação</th>
+                <th>Médico</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in ViewBag.ListaDados)
+            {
+                string statusTexto = SituacaoExamesCache.ObterDescricao((int)item.Situacao, _dbSituacao);
+                string statusCor = ((int)item.Situacao) switch
+                {
+                    0 => "color:red; font-weight:bold;",
+                    1 => "color:blue; font-weight:bold;",
+                    2 => "color:green; font-weight:bold;",
+                    3 => "color:darkgreen; font-weight:bold;",
+                    5 => "color:orange; font-weight:bold;",
+                    6 => "color:darkred; font-weight:bold;",
+                    7 => "color:gray; font-weight:bold;",
+                    11 => "color:gray; font-weight:bold;",
+                    _ => "color:red; font-weight:bold;"
+                };
+                @Html.Raw(
+                         "<tr>" +
+                         "<td>" + item.Id + "</td>" +
+                         "<td>" + item.NomePaciente + "</td>" +
+                         "<td>" + item.SiglaInstituicao + "</td>" +
+                         "<td>" + item.SiglaTabela + "</td>" +
+                         "<td>" + item.NomePosto + "</td>" +
+                         "<td>" + item.Sequencial + "</td>" +
+                         "<td>" + (item.DataFim != null ? ((DateTime)item.DataFim).ToLocalString("dd/MM/yyyy") : "-") + "</td>" +
+                         "<td>" + item.NomeMedico + " " + item.CRM + "</td>" +
+                         "<td style='" + statusCor + "'>" + statusTexto + "</td>" +
+                         "</tr>")
+                ;
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Cód.Exame</th>
+                <th>Paciente</th>
+                <th>Sigla Inst.</th>
+                <th>Tabela</th>
+                <th>Posto</th>
+                <th>Seq</th>
+                <th>Data Liberação</th>
+                <th>Médico</th>
+                <th>Status</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+@section Scripts {
+    <div class="toolbar"><partial name='_PartialDatatables' /></div>
+}
+
+<!-- Painel Informativo do Exame Selecionado -->
+<div id="painelInfoExame" style="display:none; margin-top:10px; padding:8px 12px; border:1px solid #69c38a; border-radius:6px; background-color:#e8f5e9; font-size:13px; line-height:1.6;">
+</div>
+
+<!-- Grid de Itens Editável -->
+<div id="gridItensContainer" style="display:none; margin-top:10px; margin-bottom:150px;">
+    <table class="table table-sm table-bordered" style="font-size:13px;">
+        <thead style="background-color:#d4edda;">
+            <tr>
+                <th style="width:12%;">Folha</th>
+                <th style="width:20%;">Descrição</th>
+                <th style="width:20%;">Resultado</th>
+                <th style="width:12%;">Unidade</th>
+                <th style="width:24%;">Referência</th>
+                <th style="width:12%;">Conta Exame</th>
+            </tr>
+        </thead>
+        <tbody id="gridItensBody">
+        </tbody>
+    </table>
+</div>
+
+<style>
+    /*Feito pelo Kiro em 06/06/2026*/
+    @@media (max-width: 768px) {
+        #filtrosResultadoExames form {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        #filtrosResultadoExames input {
+            width: 100% !important;
+        }
+    }
+    tr.detail-parent-highlight {
+        background-color: #fff3cd !important;
+    }
+    tr.detail-parent-highlight td {
+        background-color: #fff3cd !important;
+    }
+    #gridItensBody tr:hover {
+        background-color: #f0f8f0;
+    }
+    #gridItensBody .input-resultado:focus {
+        border-color: #69c38a !important;
+        outline: none;
+        box-shadow: 0 0 3px rgba(105, 195, 138, 0.5);
+    }
+    /*..Kiro*/
+</style>
+<script>
+    //Feito pelo Kiro em 06/06/2026
+    $(document).ready(function () {
+        $("#filtroDataInicial, #filtroDataFinal").mask("99/99/9999", { placeholder: " ", autoclear: false });
+
+        // Valores padrão (últimos 30 dias)
+        var dataIniInput = $("#filtroDataInicial");
+        var dataFimInput = $("#filtroDataFinal");
+
+        if (!dataIniInput.val()) {
+            var hoje = new Date();
+            var trintaDiasAtras = new Date(hoje);
+            trintaDiasAtras.setDate(hoje.getDate() - 30);
+            dataIniInput.val(formatarDataBR(trintaDiasAtras));
+        }
+        if (!dataFimInput.val()) {
+            dataFimInput.val(formatarDataBR(new Date()));
+        }
+    });
+
+    function formatarDataBR(data) {
+        var dia = String(data.getDate()).padStart(2, '0');
+        var mes = String(data.getMonth() + 1).padStart(2, '0');
+        var ano = data.getFullYear();
+        return dia + '/' + mes + '/' + ano;
+    }
+
+    // Clique na linha do grid header para carregar itens do exame
+    $(document).ready(function () {
+        $('#modeloTable tbody').on('click', 'tr', function (e) {
+            if ($(e.target).closest('.grid_fundo_opcoes').length) return;
+
+            var $row = $(this);
+            var exameId = $.trim($row.find('td:first').text());
+            if (!exameId) return;
+
+            // Highlight
+            $('#modeloTable tbody tr').removeClass('detail-parent-highlight');
+            $row.addClass('detail-parent-highlight');
+
+            carregarItensExame(exameId);
+        });
+    });
+
+    function carregarItensExame(exameRealizadoId) {
+        $.ajax({
+            url: '/ResultadoExames/ObterItensExame',
+            data: { exameRealizadoId: exameRealizadoId },
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.sucesso) {
+                    renderizarPainelInfo(data.info);
+                    renderizarGridItens(data.itens);
+                } else {
+                    clickAviso('Erro', data.mensagem, 'critica', null);
+                }
+            },
+            error: function () {
+                clickAviso('Erro de Rede', 'Não foi possível carregar os itens do exame. Talvez seja necessário refazer login.', 'critica', null);
+            }
+        });
+    }
+
+    function renderizarPainelInfo(info) {
+        var html = '<strong>Exame Nº ' + info.exameId + '</strong> | ' +
+            'Paciente: ' + info.nomePaciente + ' (' + info.pacienteId + ') | ' +
+            'Nasc: ' + info.nascimento + ' | ' +
+            'CPF: ' + info.cpf + ' | ' +
+            'Médico: ' + info.nomeMedico + ' CRM: ' + info.crm + '<br/>' +
+            'Instituição: ' + info.siglaInstituicao + ' - ' + info.nomeInstituicao + ' | ' +
+            'Tabela: ' + info.siglaTabela + ' | ' +
+            'Posto: ' + info.nomePosto + ' | ' +
+            'Seq: ' + info.sequencial + ' | ' +
+            'Data Exame: ' + info.dataIni + ' | ' +
+            'Liberação: ' + info.dataFim + ' | ' +
+            'Impressões: ' + info.totalImpresso;
+        $('#painelInfoExame').html(html).show();
+    }
+
+    function renderizarGridItens(itens) {
+        var tbody = '';
+        var folhaAnterior = '';
+        itens.forEach(function (item) {
+            if (item.ehPrincipal) {
+                // Item Principal — cabeçalho visual (sem input, cor diferente)
+                // Também serve como separador de grupo se a folha mudou
+                folhaAnterior = item.folha || item.descricao || '';
+                tbody += '<tr class="linha-cabecalho" style="background-color:#ffe0b2; font-weight:bold; pointer-events:none;">' +
+                    '<td colspan="6" style="padding-left:8px; color:#bf360c;">' + (item.descricao || item.folha || '-') + '</td>' +
+                    '</tr>';
+            } else {
+                // Se a folha mudou e não veio Principal antes, inserir separador automático
+                if (item.folha && item.folha !== folhaAnterior) {
+                    folhaAnterior = item.folha;
+                    tbody += '<tr class="linha-cabecalho" style="background-color:#cce5ff; font-weight:bold; pointer-events:none;">' +
+                        '<td colspan="6" style="padding-left:8px;">' + folhaAnterior + '</td>' +
+                        '</tr>';
+                }
+                tbody += '<tr data-item-id="' + item.id + '">' +
+                    '<td style="font-size:12px; color:#555;">' + (item.folha || '-') + '</td>' +
+                    '<td style="font-size:12px;">' + (item.descricao || '-') + '</td>' +
+                    '<td><input type="text" class="input-resultado" value="' + (item.resultado || '') + '" ' +
+                        'style="width:100%; border:1px solid #ccc; border-radius:3px; padding:2px 4px; font-size:12px;" /></td>' +
+                    '<td style="font-size:12px;">' + (item.unidadeMedida || '') + '</td>' +
+                    '<td style="font-size:12px;">' + (item.referencia || '') + '</td>' +
+                    '<td style="font-size:11px; color:#888;">' + (item.contaExame || '') + '</td>' +
+                    '</tr>';
+            }
+        });
+
+        $('#gridItensBody').html(tbody);
+        $('#gridItensContainer').show();
+
+        // Foco no primeiro input de resultado VAZIO (ou no primeiro se todos preenchidos)
+        var $primeiroVazio = $('#gridItensBody tr:not(.linha-cabecalho) .input-resultado').filter(function() {
+            return $(this).val() === '';
+        }).first();
+        if ($primeiroVazio.length) {
+            $primeiroVazio.focus();
+        } else {
+            $('#gridItensBody tr:not(.linha-cabecalho):first .input-resultado').focus();
+        }
+    }
+
+    // Handler ENTER no campo Resultado — salva e avança
+    $(document).ready(function () {
+        $(document).off('keydown.resultadoExames').on('keydown.resultadoExames', '.input-resultado', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                var $tr = $(this).closest('tr');
+                salvarItemResultado($tr);
+
+                // Avançar para próxima linha editável (pular cabeçalhos)
+                var $next = $tr.nextAll('tr:not(.linha-cabecalho)').first();
+                if ($next.length) {
+                    $next.find('.input-resultado').focus().select();
+                }
+            }
+        });
+    });
+
+    function salvarItemResultado($tr) {
+        var itemId = $tr.data('item-id');
+        var resultado = $tr.find('.input-resultado').val();
+
+        $.ajax({
+            url: '/ResultadoExames/SalvarResultado',
+            type: 'POST',
+            data: { itemId: itemId, resultado: resultado },
+            dataType: 'json',
+            success: function (data) {
+                if (data.sucesso) {
+                    $tr.find('.input-resultado').css('border-color', '#28a745');
+                    setTimeout(function () { $tr.find('.input-resultado').css('border-color', '#ccc'); }, 1000);
+                    // Atualizar Status no grid header para "Em Análise"
+                    var $highlightedRow = $('#modeloTable tbody tr.detail-parent-highlight');
+                    if ($highlightedRow.length) {
+                        var $statusCell = $highlightedRow.find('td:last');
+                        if ($statusCell.text() === 'Pendente') {
+                            $statusCell.text('Em Análise').css({ 'color': 'blue', 'font-weight': 'bold' });
+                        }
+                    }
+                } else {
+                    clickAviso('Erro', data.mensagem, 'critica', null);
+                }
+            },
+            error: function () {
+                clickAviso('Erro', 'Falha ao salvar resultado.', 'critica', null);
+            }
+        });
+    }
+    //..Kiro
+</script>

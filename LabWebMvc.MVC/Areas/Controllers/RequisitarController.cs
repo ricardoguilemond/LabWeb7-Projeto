@@ -386,36 +386,150 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 await _db.SaveChangesAsync();
 
                 // Insere itens vinculados ao novo header
+                // Regra de expansão: se o item do cupom é um Principal (ContaExame termina em "0000"),
+                // buscar seus sub-itens no PlanoExames e inseri-los como ItensExamesRealizados.
+                // Os sub-itens são os que receberão resultados de exame.
                 int ordemItem = 0;
                 var itensExames = new List<ItensExamesRealizados>();
 
                 foreach (var item in listaRequisitar)
                 {
-                    itensExames.Add(new ItensExamesRealizados
+                    string contaExame = item.ContaExame ?? "";
+                    bool ehPrincipal = contaExame.Length >= 4 && contaExame.Substring(contaExame.Length - 4) == "0000";
+
+                    if (ehPrincipal)
                     {
-                        PacienteId = vm.VmPacientes!.Id,
-                        ClasseExamesId = item.ClasseExamesId,
-                        ClasseExamesNome = item.ClasseExamesNome,
-                        ExameRealizadoId = exame.Id,
-                        TabelaExamesId = vm.VmTabelaExames!.Id,
-                        OrdemItem = ++ordemItem,
-                        RefExame = item.RefExame!,
-                        RefItem = item.RefItem!,
-                        ContaExame = item.ContaExame,
-                        Descricao = item.Descricao,
-                        ValorItem = item.ValorItem,
-                        Etiquetas = item.Etiquetas,
-                        InstituicaoId = vm.VmInstituicao!.Id,
-                        Sequencial = exame.Sequencial,
-                        LaboratorioApoio = item.LaboratorioApoio,
-                        ControleApoio = item.ControleApoio,
-                        LaboratorioExterno = item.LaboratorioExterno,
-                        MaterialSaida = item.MaterialSaida,
-                        MaterialRetorno = item.MaterialRetorno,
-                        DataEntregaParcial = item.DataEntregaParcial,
-                        Liberado = 0,
-                        Baixado = 0
-                    });
+                        //Feito pelo Kiro em 07/06/2026
+                        // Expansão automática: buscar sub-itens do PlanoExames para este Principal
+                        string prefixoPrincipal = contaExame.Substring(0, contaExame.Length - 4); // ex: "1102001" de "11020010000"
+                        var subItens = await _db.PlanoExames
+                            .AsNoTracking()
+                            .Where(p => p.TabelaExamesId == vm.VmTabelaExames!.Id
+                                     && p.ContaExame.StartsWith(prefixoPrincipal)
+                                     && p.ContaExame != contaExame
+                                     && !p.ContaExame.EndsWith("0000000")) // excluir folha geral
+                            .OrderBy(p => p.ContaExame)
+                            .ToListAsync();
+
+                        if (subItens.Any())
+                        {
+                            // Inserir o Principal como agrupador (sem resultado, apenas referência de preço)
+                            itensExames.Add(new ItensExamesRealizados
+                            {
+                                PacienteId = vm.VmPacientes!.Id,
+                                ClasseExamesId = item.ClasseExamesId,
+                                ClasseExamesNome = item.ClasseExamesNome,
+                                ExameRealizadoId = exame.Id,
+                                TabelaExamesId = vm.VmTabelaExames!.Id,
+                                OrdemItem = ++ordemItem,
+                                RefExame = item.RefExame!,
+                                RefItem = item.RefItem!,
+                                ContaExame = item.ContaExame,
+                                Descricao = item.Descricao,
+                                ValorItem = item.ValorItem,
+                                Etiquetas = item.Etiquetas,
+                                InstituicaoId = vm.VmInstituicao!.Id,
+                                Sequencial = exame.Sequencial,
+                                LaboratorioApoio = item.LaboratorioApoio,
+                                ControleApoio = item.ControleApoio,
+                                LaboratorioExterno = item.LaboratorioExterno,
+                                MaterialSaida = item.MaterialSaida,
+                                MaterialRetorno = item.MaterialRetorno,
+                                DataEntregaParcial = item.DataEntregaParcial,
+                                Liberado = 0,
+                                Baixado = 0
+                            });
+
+                            // Inserir cada sub-item expandido
+                            foreach (var sub in subItens)
+                            {
+                                itensExames.Add(new ItensExamesRealizados
+                                {
+                                    PacienteId = vm.VmPacientes!.Id,
+                                    ClasseExamesId = item.ClasseExamesId,
+                                    ClasseExamesNome = item.ClasseExamesNome,
+                                    ExameRealizadoId = exame.Id,
+                                    TabelaExamesId = vm.VmTabelaExames!.Id,
+                                    OrdemItem = ++ordemItem,
+                                    RefExame = sub.RefExame ?? item.RefExame!,
+                                    RefItem = sub.RefItem ?? item.RefItem!,
+                                    ContaExame = sub.ContaExame,
+                                    Descricao = sub.Descricao,
+                                    ValorItem = sub.ValorItem,
+                                    Etiquetas = sub.Etiquetas,
+                                    InstituicaoId = vm.VmInstituicao!.Id,
+                                    Sequencial = exame.Sequencial,
+                                    LaboratorioApoio = item.LaboratorioApoio,
+                                    ControleApoio = item.ControleApoio,
+                                    LaboratorioExterno = sub.LaboratorioExterno,
+                                    MaterialSaida = item.MaterialSaida,
+                                    MaterialRetorno = item.MaterialRetorno,
+                                    DataEntregaParcial = item.DataEntregaParcial,
+                                    Liberado = 0,
+                                    Baixado = 0
+                                });
+                            }
+                        }
+                        else
+                        {
+                            // Principal sem sub-itens — salvar normalmente
+                            itensExames.Add(new ItensExamesRealizados
+                            {
+                                PacienteId = vm.VmPacientes!.Id,
+                                ClasseExamesId = item.ClasseExamesId,
+                                ClasseExamesNome = item.ClasseExamesNome,
+                                ExameRealizadoId = exame.Id,
+                                TabelaExamesId = vm.VmTabelaExames!.Id,
+                                OrdemItem = ++ordemItem,
+                                RefExame = item.RefExame!,
+                                RefItem = item.RefItem!,
+                                ContaExame = item.ContaExame,
+                                Descricao = item.Descricao,
+                                ValorItem = item.ValorItem,
+                                Etiquetas = item.Etiquetas,
+                                InstituicaoId = vm.VmInstituicao!.Id,
+                                Sequencial = exame.Sequencial,
+                                LaboratorioApoio = item.LaboratorioApoio,
+                                ControleApoio = item.ControleApoio,
+                                LaboratorioExterno = item.LaboratorioExterno,
+                                MaterialSaida = item.MaterialSaida,
+                                MaterialRetorno = item.MaterialRetorno,
+                                DataEntregaParcial = item.DataEntregaParcial,
+                                Liberado = 0,
+                                Baixado = 0
+                            });
+                        }
+                        //..Kiro
+                    }
+                    else
+                    {
+                        // Item normal (não é Principal) — salvar diretamente
+                        itensExames.Add(new ItensExamesRealizados
+                        {
+                            PacienteId = vm.VmPacientes!.Id,
+                            ClasseExamesId = item.ClasseExamesId,
+                            ClasseExamesNome = item.ClasseExamesNome,
+                            ExameRealizadoId = exame.Id,
+                            TabelaExamesId = vm.VmTabelaExames!.Id,
+                            OrdemItem = ++ordemItem,
+                            RefExame = item.RefExame!,
+                            RefItem = item.RefItem!,
+                            ContaExame = item.ContaExame,
+                            Descricao = item.Descricao,
+                            ValorItem = item.ValorItem,
+                            Etiquetas = item.Etiquetas,
+                            InstituicaoId = vm.VmInstituicao!.Id,
+                            Sequencial = exame.Sequencial,
+                            LaboratorioApoio = item.LaboratorioApoio,
+                            ControleApoio = item.ControleApoio,
+                            LaboratorioExterno = item.LaboratorioExterno,
+                            MaterialSaida = item.MaterialSaida,
+                            MaterialRetorno = item.MaterialRetorno,
+                            DataEntregaParcial = item.DataEntregaParcial,
+                            Liberado = 0,
+                            Baixado = 0
+                        });
+                    }
                 }
 
                 _db.ItensExamesRealizados.AddRange(itensExames);
