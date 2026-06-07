@@ -60,7 +60,7 @@
                 <th>Nome Posto</th>
                 <th>Nome Paciente</th>
                 <th>Data Nascimento</th>
-                <th>Sequencial</th>
+                <th>Seq</th>
                 <th>Data do Exame</th>
                 <th>Opções</th>
             </tr>
@@ -71,7 +71,7 @@
                 @Html.Raw(
                          "<tr>" +
                          "<td>" + item.Id + "</td>" +
-                         "<td>" + item.TabelaExamesId + "</td>" +
+                         "<td>" + item.SiglaTabela + "</td>" +
                          "<td>" + item.SiglaInstituicao + "</td>" +
                          "<td>" + item.NomeInstituicao + "</td>" +
                          "<td>" + item.SiglaPosto + "</td>" +
@@ -97,7 +97,7 @@
                 <th>Nome Posto</th>
                 <th>Nome Paciente</th>
                 <th>Data Nascimento</th>
-                <th>Sequencial</th>
+                <th>Seq</th>
                 <th>Data do Exame</th>
                 <th id="op">Opções</th>
             </tr>

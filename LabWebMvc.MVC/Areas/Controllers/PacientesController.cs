@@ -558,8 +558,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         .AsNoTracking()
                         .Where(e => e.PacienteId == pacienteId && e.DataIni >= dataLimite12Meses)
                         .OrderByDescending(e => e.DataIni)
+                        .ThenByDescending(e => e.Id)
                         .Include(e => e.Instituicao)
                         .Include(e => e.Postos)
+                        .Include(e => e.Medicos)
                         .Include(e => e.ItensExamesRealizados)
                             .ThenInclude(i => i.ClasseExames)
                         .ToListAsync();
@@ -570,9 +572,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
                         DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
                         SiglaInstituicao = e.Instituicao?.Sigla ?? "",
-                        NomePosto = (e.Postos?.NomePosto ?? "").Length > 12
-                            ? (e.Postos?.NomePosto ?? "").Substring(0, 9) + "..."
-                            : e.Postos?.NomePosto ?? "",
+                        NomePosto = e.Postos != null
+                            ? (e.Postos.SiglaPosto ?? "") + "-" + (e.Postos.NomePosto ?? "")
+                            : "",
+                        NomeMedico = (e.Medicos?.NomeMedico ?? "").Length > 25
+                            ? (e.Medicos?.NomeMedico ?? "").Substring(0, 22) + "..."
+                            : e.Medicos?.NomeMedico ?? "",
+                        CRM = e.Medicos?.CRM ?? "",
                         Folha = e.ItensExamesRealizados
                             .FirstOrDefault()?.ClasseExames?.RefExame ?? "",
                         Itens = e.ItensExamesRealizados
@@ -601,9 +607,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .AsNoTracking()
                     .Where(e => e.PacienteId == pacienteId)
                     .OrderByDescending(e => e.DataIni)
+                    .ThenByDescending(e => e.Id)
                     .Take(maximoExames)
                     .Include(e => e.Instituicao)
                     .Include(e => e.Postos)
+                    .Include(e => e.Medicos)
                     .Include(e => e.ItensExamesRealizados)
                         .ThenInclude(i => i.ClasseExames)
                     .ToListAsync();
@@ -641,9 +649,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
                     DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
                     SiglaInstituicao = e.Instituicao?.Sigla ?? "",
-                    NomePosto = (e.Postos?.NomePosto ?? "").Length > 12
-                        ? (e.Postos?.NomePosto ?? "").Substring(0, 9) + "..."
-                        : e.Postos?.NomePosto ?? "",
+                    NomePosto = e.Postos != null
+                        ? (e.Postos.SiglaPosto ?? "") + "-" + (e.Postos.NomePosto ?? "")
+                        : "",
+                    NomeMedico = (e.Medicos?.NomeMedico ?? "").Length > 25
+                        ? (e.Medicos?.NomeMedico ?? "").Substring(0, 22) + "..."
+                        : e.Medicos?.NomeMedico ?? "",
+                    CRM = e.Medicos?.CRM ?? "",
                     Folha = e.ItensExamesRealizados
                         .FirstOrDefault()?.ClasseExames?.RefExame ?? "",
                     Itens = e.ItensExamesRealizados

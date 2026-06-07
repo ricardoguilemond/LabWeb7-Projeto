@@ -109,7 +109,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 listaGrid.Add(new
                 {
                     Id = item.Id,
-                    TabelaExamesId = item.TabelaExamesId,
+                    SiglaTabela = item.TabelaExames?.SiglaTabela ?? "",
                     SiglaInstituicao = item.Instituicao.Sigla,
                     NomeInstituicao = item.Instituicao.Nome,
                     SiglaPosto = item.Postos?.SiglaPosto ?? "",

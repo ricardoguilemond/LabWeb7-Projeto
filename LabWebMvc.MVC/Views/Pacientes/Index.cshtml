@@ -331,14 +331,16 @@
 
             // Itens do exame (sub-linhas)
             if (exame.itens && exame.itens.length > 0) {
-                // Header dos itens (com Folha)
+                // Header dos itens (com Folha e Médico)
+                var medicoInfo = (exame.nomeMedico || '') + (exame.crm ? ' CRM: ' + exame.crm : '');
                 var itensHeaderHtml = '<tr class="detail-item-row" style="font-weight:bold;">' +
                     '<td></td>' +
                     '<td style="padding-left:20px;">Folha</td>' +
                     '<td>Ref. Exame</td>' +
                     '<td>Ref. Item</td>' +
                     '<td>Conta Exame</td>' +
-                    '<td colspan="4">Descrição</td>' +
+                    '<td>Descrição</td>' +
+                    '<td colspan="3" style="text-align:right;">Médico: ' + medicoInfo + '</td>' +
                     '</tr>';
                 $lastInserted.after(itensHeaderHtml);
                 $lastInserted = $lastInserted.next();
@@ -474,6 +476,13 @@
             success: function (data) {
                 if (data.sucesso && data.exames && data.exames.length > 0) {
                     renderizarExamesPaciente($row, data.exames, 0, 0);
+                    // Adicionar link "Recolher exames mostrados" ao final
+                    var $ultimaLinha = $('#modeloTable tbody tr.detail-row:last, #modeloTable tbody tr.detail-item-row:last').last();
+                    var recolherHtml = '<tr class="detail-row detail-recolher-row" data-paciente-id="' + pacienteId + '">' +
+                        '<td colspan="9" style="text-align:center; padding:6px; color:#1a73e8; font-style:italic; cursor:pointer; pointer-events:auto;">' +
+                        '<i class="fa-solid fa-angles-up"></i> Recolher exames mostrados' +
+                        '</td></tr>';
+                    $ultimaLinha.after(recolherHtml);
                 } else if (data.sucesso && (!data.exames || data.exames.length === 0)) {
                     var msgHtml = '<tr class="detail-row">' +
                         '<td colspan="9" style="text-align:center; color:#888; font-style:italic;">Nenhum exame encontrado nos últimos 12 meses.</td>' +
@@ -489,5 +498,24 @@
             }
         });
     }
+
+    // Handler de clique no link "Recolher exames mostrados"
+    $(document).ready(function () {
+        $(document).off('click.recolherExames').on('click.recolherExames', '.detail-recolher-row', function (e) {
+            var $recolherRow = $(this);
+            var pacienteId = $recolherRow.data('paciente-id');
+            if (!pacienteId) return;
+
+            var $parentRow = $('#modeloTable tbody tr.detail-parent-highlight');
+            if (!$parentRow.length) return;
+
+            // Remover detail atual
+            $('#modeloTable tbody tr.detail-item-row').remove();
+            $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
+
+            // Recarregar com regra inteligente (modo normal)
+            carregarExamesPaciente($parentRow, pacienteId);
+        });
+    });
     //..Kiro
 </script>

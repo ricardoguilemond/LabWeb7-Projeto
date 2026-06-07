@@ -2,7 +2,6 @@
 using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
-using Google.Api;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.Impressoras;
@@ -13,7 +12,6 @@ using LabWebMvc.MVC.Mensagens;
 using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -65,7 +63,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             if (string.IsNullOrEmpty(Conteudo)) registros = 100; //quando não tem dados para filtrar
 
-            totalTabela = _db.Requisitar.AsNoTracking().AsEnumerable().Count();
+            totalTabela = await _db.Requisitar.AsNoTracking().CountAsync();
 
             dados = await _db.Requisitar.AsNoTracking().OrderByDescending(o => o.Id).Take(registros).ToListAsync();
 
@@ -112,38 +110,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             if (vm.ListaCupom == null || !vm.ListaCupom.Any())
                 return new ApiResult(false, "Nenhum exame foi adicionado ao Cupom.", null, null);
-
-            return null;
-        }
-
-        private IActionResult? ValidarDados(vmRequisitar vm, string redirecionaUrl)
-        {
-            if (vm.VmPacientes.Id <= 0)
-            {
-                if (string.IsNullOrEmpty(vm.VmPacientes.NomePaciente))
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "O nome do Paciente é obrigatório.", action = redirecionaUrl, sucesso = false });
-
-                if (vm.VmPacientes.Nascimento == DateTime.MinValue)
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "A data de nascimento do Paciente é obrigatória.", action = redirecionaUrl, sucesso = false });
-
-                if (string.IsNullOrEmpty(vm.VmPacientes.CPF) && string.IsNullOrEmpty(vm.VmPacientes.CarteiraSUS) && string.IsNullOrEmpty(vm.VmPacientes.Identidade))
-                    return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Um documento de registro nacional do Paciente é obrigatório.", action = redirecionaUrl, sucesso = false });
-            }
-
-            if (string.IsNullOrEmpty(vm.VmMedicos.CRM) && string.IsNullOrEmpty(vm.VmMedicos.NomeMedico))
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "O nome e o CRM do Médico são obrigatórios. Ou coloque CRM=0 'Sem Médico'", action = redirecionaUrl, sucesso = false });
-
-            if (string.IsNullOrEmpty(vm.VmInstituicao.Sigla) || string.IsNullOrEmpty(vm.VmInstituicao.Nome))
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "A sigla e o nome da Instituição são obrigatórios.", action = redirecionaUrl, sucesso = false });
-
-            if (string.IsNullOrEmpty(vm.VmTabelaExames.SiglaTabela) || string.IsNullOrEmpty(vm.VmTabelaExames.NomeTabela))
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "A sigla e o nome da Tabela de Exames são obrigatórios.", action = redirecionaUrl, sucesso = false });
-
-            if (string.IsNullOrEmpty(vm.ContaExame) || string.IsNullOrEmpty(vm.Descricao) || vm.ValorItem <= 0)
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Alguma divergência em um dos dados de exames estão invalidando o lançamento. Verifique o valor.", action = redirecionaUrl, sucesso = false });
-
-            if (vm.ListaCupom == null || !vm.ListaCupom.Any())
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Nenhum exame foi adicionado ao Cupom.", action = redirecionaUrl, sucesso = false });
 
             return null;
         }
@@ -224,58 +190,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
             paciente.Observacao = vm.VmPacientes.Observacao.Safe();
 
             return paciente;
-        }
-
-        private Pacientes CriarPaciente(vmRequisitar vm)
-        {
-            if (vm.VmPacientes.Id > 0) //paciente já existe
-            {
-                // Retorna apenas o Id para vinculação no EF
-                return new Pacientes { Id = vm.VmPacientes.Id };
-            }
-            else
-            {
-                // Cria um novo paciente com todos os dados
-                return new Pacientes
-                {
-                    IdPacienteExterno = vm.VmPacientes.IdPacienteExterno.Safe(),
-                    NomePaciente = vm.VmPacientes.NomePaciente.ToUpper(),
-                    Nascimento = _geralController.ConverterLocalParaUtc(vm.VmPacientes.Nascimento),
-                    NomeSocial = vm.VmPacientes.NomeSocial.SafeUpper(),
-                    NomeMae = vm.VmPacientes.NomeMae.SafeUpper(),
-                    NomePai = vm.VmPacientes.NomePai.SafeUpper(),
-                    TipoDocumento = vm.VmPacientes.TipoDocumento,
-                    CPF = vm.VmPacientes.CPF.ApenasNumeros(),
-                    Identidade = vm.VmPacientes.Identidade.ApenasNumeros(),
-                    Emissor = vm.VmPacientes.Emissor,
-                    CarteiraSUS = vm.VmPacientes.CarteiraSUS.Safe(),
-                    EstadoCivil = vm.VmPacientes.EstadoCivil,
-                    Sexo = vm.VmPacientes.Sexo.Safe(),
-                    Cor = vm.VmPacientes.Cor.Safe(),
-                    EtniaIndigena = vm.VmPacientes.EtniaIndigena.SafeUpper(),
-                    TipoSanguineo = vm.VmPacientes.TipoSanguineo.Safe(),
-                    DUM = vm.VmPacientes.DUM.HasValue ? _geralController.ConverterLocalParaUtc(vm.VmPacientes.DUM.Value) : null,
-                    TempoGestacao = vm.VmPacientes.TempoGestacao,
-                    Profissao = vm.VmPacientes.Profissao.SafeUpper(),
-                    Naturalidade = vm.VmPacientes.Naturalidade.SafeUpper(),
-                    Nacionalidade = vm.VmPacientes.Nacionalidade.SafeUpper(),
-                    DataEntradaBrasil = vm.VmPacientes.DataEntradaBrasil.HasValue ? _geralController.ConverterLocalParaUtc(vm.VmPacientes.DataEntradaBrasil.Value) : null,
-                    Logradouro = vm.VmPacientes.Logradouro.SafeUpper(),
-                    Endereco = vm.VmPacientes.Endereco.SafeUpper(),
-                    Numero = vm.VmPacientes.Numero.Safe(),
-                    Complemento = vm.VmPacientes.Complemento.Safe(),
-                    Bairro = vm.VmPacientes.Bairro.SafeUpper(),
-                    Cidade = vm.VmPacientes.Cidade.SafeUpper(),
-                    UF = vm.VmPacientes.UF.Safe(),
-                    CEP = vm.VmPacientes.CEP.ApenasNumeros(),
-                    Email = vm.VmPacientes.Email.SafeLower(),
-                    Telefone = vm.VmPacientes.Telefone.ApenasNumeros(),
-                    Observacao = vm.VmPacientes.Observacao.Safe(),
-                    DataEntrada = _geralController.ObterDataHoraUtc(),
-                    DataRegistro = _geralController.ObterDataHoraUtc(),
-                    StatusBaixa = 0  //ativo
-                };
-            }
         }
 
         private Medicos CriarMedico(vmRequisitar vm)
@@ -521,6 +435,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [HttpPost]
         [Route("SalvarRequisicao")]
         [Produces("application/json")]
+        [TypeFilter(typeof(SessionFilter))]
         public async Task<IActionResult> SalvarRequisicao(vmRequisitar vm, int registroID)
         {
             string? usuarioId = HttpContext.Session.GetString("SessionEmail");
@@ -796,6 +711,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         /* Manipulando as variáveis do Modal para Instituições, Não mostra References mas está sendo utilizado */
 
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("RetornoDoModalPacientes")]
         public async Task<JsonResult> RetornoDoModalPacientes(vmRequisitar vm, string id)
@@ -853,6 +769,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //..
 
         /* Manipulando as variáveis do Modal para Instituições, Não mostra References mas está sendo utilizado */
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("RetornoDoModalInstituicoes")]
         public async Task<JsonResult> RetornoDoModalInstituicoes(vmRequisitar vm, string id)
@@ -877,6 +794,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //..
 
         /* Manipulando as variáveis do Modal para Postos de Coletas, Não mostra References mas está sendo utilizado */
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("RetornoDoModalPostos")]
         public async Task<JsonResult> RetornoDoModalPostos(vmRequisitar vm, string id)
@@ -910,6 +828,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //..
 
         /* Manipulando as variáveis do Modal para Médicos (RETORNO PARA OS CAMPOS DO MÉDICO ESCOLHIDO), Não mostra References mas está sendo utilizado */
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("RetornoDoModalMedico")]
         public async Task<JsonResult> RetornoDoModalMedico(vmRequisitar vm, string id)
@@ -934,6 +853,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //..
 
         /* Manipulando as variáveis do Modal para Tabela de Preço, Não mostra References mas está sendo utilizado */
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("RetornoDoModalTabela")]
         public async Task<JsonResult> RetornoDoModalTabela(vmRequisitar vm, string id)
@@ -962,6 +882,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //..
 
         //ESTE MÉTODO NÃO ESTÁ APARECENDO O APONTAMENTO DE "0 references", MAS ELE É SIM UTILIZADO no _PartialLancarExames.cshtml!!!
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("PartialLancarExames")]
         public async Task<ActionResult> PartialLancarExames(int tabelaExamesId)
@@ -991,6 +912,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         }
         //..
 
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("IncluirExameCupom")]
         public async Task<ActionResult> IncluirExameCupom(vmPlanoExames vm, string id)
@@ -1013,6 +935,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         }
 
         //Feito pelo Qoder em 21/04/2026 — remove um item específico do cupom ao desselecionar a linha no grid
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("RemoverExameCupom")]
         public ActionResult RemoverExameCupom(vmPlanoExames vm, string id)
@@ -1037,6 +960,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         //..
 
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("PartialMontarItensCupom")]
         public async Task<ActionResult> PartialMontarItensCupom(vmRequisitar vm, string id)   //monta apenas os registros dentro do grid do Cupom
@@ -1141,6 +1065,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         /// Carrega todos os dados de uma requisição do paciente na data para edição no formulário.
         /// Bloqueia o carregamento se qualquer item já possuir resultado lançado.
         /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Requisitar/CarregarRequisicaoParaEdicao")]
         public IActionResult CarregarRequisicaoParaEdicao(int pacienteId, string data, int tabelaExamesId = 0)
@@ -1276,6 +1201,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         /// correspondentes por ContaExame + TabelaExamesId, popula a ListaAcumulativa,
         /// e retorna a partial _PartialMontarItensCupom renderizada.
         /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Requisitar/CarregarCupomEdicao")]
         public async Task<ActionResult> CarregarCupomEdicao(int pacienteId, string data)
@@ -1348,6 +1274,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         /// Bloqueia a exclusão se qualquer item já possuir resultado lançado.
         /// Mantém o cadastro do paciente e do médico intactos.
         /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
         [HttpPost]
         [Route("Requisitar/ExcluirRequisicao")]
         public async Task<IActionResult> ExcluirRequisicao([FromBody] CupomRequisicaoViewModel vm)
@@ -1479,6 +1406,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //..Kiro
 
         //Imprimir Cupom
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Requisitar/CupomRequisicao")]   //Rota de uma chamada javascript para imprimir o cupom de requisição
         public IActionResult CupomRequisicao([FromQuery] CupomRequisicaoViewModel vm)
@@ -1638,6 +1566,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         // Otimização de performance: query única com projeção direta + AsNoTracking.
         // Antes: 2 roundtrips ao banco, 4 Includes (JOINs completos), GroupBy em memória.
         // Agora: 1 roundtrip, subquery para MAX(Id) por paciente, projeção sem Include.
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Requisitar/GetLancamentosHoje")]
         public IActionResult GetLancamentosHoje()
@@ -1688,6 +1617,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         // Retorna os itens da tabela Requisitar (detalhes de exames) vinculados
         // a um ExameRealizadoId. Usado pela expansão master/detail do grid de
         // Requisições de Hoje.
+        [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Requisitar/GetItensRequisicao")]
         public IActionResult GetItensRequisicao(int exameRealizadoId)
@@ -1719,67 +1649,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
         }
         // ..Qoder
-
-        // Endpoint temporário de diagnóstico — remover após confirmação
-        [HttpGet]
-        [Route("Requisitar/DiagnosticoHoje")]
-        public IActionResult DiagnosticoHoje()
-        {
-            var dataServidorStr = _geralController.ObterDataHoraServidor();
-            var dtNow = DateTime.Now;
-            var dtToday = DateTime.Today;
-            var dtUtcNow = DateTime.UtcNow;
-
-            DateTime dataServidor;
-            DateTime.TryParseExact(dataServidorStr, "dd/MM/yyyy HH:mm:ss",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None, out dataServidor);
-
-            // Range do dia em UTC — necessário para comparar com colunas timestamptz no Npgsql 8.x
-            var (hojeInicioUtc, hojeProximoDiaUtc) = _geralController.ObterRangeDiaUtc();
-
-            // Total de registros sem filtro de data
-            int totalSemFiltro = _db.Requisitar.Count();
-
-            // As 5 últimas datas gravadas na tabela (brutas, com Kind)
-            var ultimasDatas = _db.Requisitar
-                .OrderByDescending(r => r.Id)
-                .Take(5)
-                .Select(r => new { r.Id, r.DataIni })
-                .AsEnumerable()
-                .Select(r => new {
-                    r.Id,
-                    DataIniStr = r.DataIni.ToString("yyyy-MM-dd HH:mm:ss"),
-                    Kind = r.DataIni.Kind.ToString(),
-                    Date = r.DataIni.Date.ToString("yyyy-MM-dd")
-                })
-                .ToList();
-
-            // Filtra usando range UTC
-            var hojeLocal = DateTime.Today;
-            int totalHojeLINQ = _db.Requisitar
-                .Where(r => r.DataIni >= hojeInicioUtc && r.DataIni < hojeProximoDiaUtc)
-                .Count();
-            int totalHojeMemoria = _db.Requisitar
-                .AsEnumerable()
-                .Count(r => r.DataIni.Date == hojeLocal);
-
-            return Json(new
-            {
-                dataServidorStr,
-                dataServidor = dataServidor.ToString("dd/MM/yyyy HH:mm:ss"),
-                dtNow = dtNow.ToString("dd/MM/yyyy HH:mm:ss"),
-                dtToday = dtToday.ToString("dd/MM/yyyy"),
-                dtUtcNow = dtUtcNow.ToString("dd/MM/yyyy HH:mm:ss"),
-                hojeInicio = hojeInicioUtc.ToString("yyyy-MM-dd"),
-                hojeProximoDia = hojeProximoDiaUtc.ToString("yyyy-MM-dd"),
-                totalSemFiltro,
-                totalHojeLINQ,
-                totalHojeMemoria,
-                ultimasDatas
-            });
-        }
-
 
 
     }//Fim
