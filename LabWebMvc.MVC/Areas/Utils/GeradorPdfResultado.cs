@@ -82,7 +82,7 @@ namespace LabWebMvc.MVC.Areas.Utils
         private const double MargemEsquerda = 40;
         private const double MargemDireita = 40;
         private const double MargemTopo = 30;
-        private const double ReservaRodape = 155;
+        private const double ReservaRodape = 165;
         private const double LarguraPagina = 595.28;
         private const double AlturaPagina = 841.89;
         private const double AreaUtil = LarguraPagina - MargemEsquerda - MargemDireita;
@@ -93,9 +93,11 @@ namespace LabWebMvc.MVC.Areas.Utils
         private readonly XFont _fontSubtitulo = new("Arial", 10, XFontStyle.Regular);
         private readonly XFont _fontNormal = new("Arial", 9, XFontStyle.Regular);
         private readonly XFont _fontNormalBold = new("Arial", 9, XFontStyle.Bold);
-        private readonly XFont _fontDadosPaciente = new("Arial", 11, XFontStyle.Regular);
-        private readonly XFont _fontDadosPacienteBold = new("Arial", 11, XFontStyle.Bold);
-        private readonly XFont _fontFolha = new("Arial", 18, XFontStyle.Bold);
+        private readonly XFont _fontDadosPaciente = new("Arial", 9, XFontStyle.Regular);
+        private readonly XFont _fontDadosPacienteBold = new("Arial", 9, XFontStyle.Bold);
+        private readonly XFont _fontDadosLabel = new("Arial", 9, XFontStyle.Italic);
+        private readonly XFont _fontCodigoExame = new("Arial", 12, XFontStyle.Bold);
+        private readonly XFont _fontFolha = new("Arial", 14, XFontStyle.Bold);
         private readonly XFont _fontPrincipal = new("Arial", 10, XFontStyle.Bold);
         private readonly XFont _fontItem = new("Arial", 9, XFontStyle.Bold);
         private readonly XFont _fontItemNormal = new("Arial", 9, XFontStyle.Regular);
@@ -250,87 +252,127 @@ namespace LabWebMvc.MVC.Areas.Utils
             gfx.DrawLine(penVerde, MargemEsquerda, y, LarguraPagina - MargemDireita, y);
             y += 10;
 
-            // --- ZONA 2: Dados do Paciente e Exame (duas colunas) ---
-            double colEsquerdaW = AreaUtil * 0.58;
+            // --- ZONA 2: Dados do Paciente e Exame (modelo 2004 — labels itálico, dados bold) ---
+            //Feito pelo Kiro em 26/06/2025
+            double colEsquerdaW = AreaUtil * 0.60;
             double colDireitaX = MargemEsquerda + colEsquerdaW + 10;
             double colDireitaW = AreaUtil - colEsquerdaW - 10;
             double yInicioZona2 = y;
 
-            // Coluna esquerda
-            string idPaciente = $"( {dados.PacienteId} )    Nome: {dados.NomePaciente}";
-            gfx.DrawString(idPaciente, _fontDadosPacienteBold, XBrushes.Black,
-                new XRect(MargemEsquerda, y, colEsquerdaW, 14), XStringFormats.TopLeft);
-            y += 15;
+            // Larguras fixas para alinhamento dos ":" (labels alinhados à direita no bloco)
+            double labelWidthEsq = 115; // coluna esquerda — todos os ":" ficam na posição 115
+            double labelWidthDir = 145; // coluna direita — labels mais à direita, próximos dos valores
+
+            // === Coluna esquerda — labels em itálico alinhados à direita, valores em bold ===
+
+            // Linha 1: ( código )  Nome: NOME DO PACIENTE
+            // O "(código)" fica antes do label; label "Nome:" alinhado com os demais
+            string codigoPaciente = $"( {dados.PacienteId} )";
+            double codPacW = gfx.MeasureString(codigoPaciente, _fontDadosPaciente).Width + 4;
+            gfx.DrawString(codigoPaciente, _fontDadosPaciente, XBrushes.Black,
+                new XRect(MargemEsquerda, y, codPacW, 13), XStringFormats.TopLeft);
+            gfx.DrawString("Nome:", _fontDadosLabel, XBrushes.Black,
+                new XRect(MargemEsquerda + codPacW, y, labelWidthEsq - codPacW, 13), XStringFormats.TopRight);
+            gfx.DrawString(dados.NomePaciente, _fontDadosPacienteBold, XBrushes.Black,
+                new XRect(MargemEsquerda + labelWidthEsq + 2, y, colEsquerdaW - labelWidthEsq - 2, 13), XStringFormats.TopLeft);
+            y += 14;
+
+            // Linha 2: Data Nascimento: dd/MM/yyyy (XX anos), Sexo: X
+            string sexoExibir = !string.IsNullOrWhiteSpace(dados.Sexo)
+                ? dados.Sexo
+                : InferirSexoPeloNome(dados.NomePaciente);
 
             string idadeTexto = "";
             if (dados.Nascimento.HasValue)
             {
                 int idade = CalcularIdade(dados.Nascimento.Value);
-                idadeTexto = $"Data Nascimento: {dados.Nascimento.Value:dd/MM/yyyy} ({idade} anos), Sexo: {dados.Sexo}";
+                idadeTexto = $"{dados.Nascimento.Value:dd/MM/yyyy} ({idade} anos), Sexo: {sexoExibir}";
             }
             else
             {
-                idadeTexto = $"Sexo: {dados.Sexo}";
+                idadeTexto = !string.IsNullOrWhiteSpace(sexoExibir) ? $"Sexo: {sexoExibir}" : "";
             }
-            gfx.DrawString(idadeTexto, _fontDadosPaciente, XBrushes.Black,
-                new XRect(MargemEsquerda, y, colEsquerdaW, 14), XStringFormats.TopLeft);
-            y += 15;
+            gfx.DrawString("Data Nascimento:", _fontDadosLabel, XBrushes.Black,
+                new XRect(MargemEsquerda, y, labelWidthEsq, 13), XStringFormats.TopRight);
+            gfx.DrawString(idadeTexto, _fontDadosPacienteBold, XBrushes.Black,
+                new XRect(MargemEsquerda + labelWidthEsq + 2, y, colEsquerdaW - labelWidthEsq - 2, 13), XStringFormats.TopLeft);
+            y += 14;
 
-            string medicoTexto = $"Médico Solicitante: Dr(a). {dados.NomeMedico}";
-            gfx.DrawString(medicoTexto, _fontDadosPaciente, XBrushes.Black,
-                new XRect(MargemEsquerda, y, colEsquerdaW, 14), XStringFormats.TopLeft);
-            y += 15;
+            // Linha 3: Médico Solicitante: Dr(a). NOME
+            gfx.DrawString("Médico Solicitante:", _fontDadosLabel, XBrushes.Black,
+                new XRect(MargemEsquerda, y, labelWidthEsq, 13), XStringFormats.TopRight);
+            gfx.DrawString($"Dr(a). {dados.NomeMedico}", _fontDadosPacienteBold, XBrushes.Black,
+                new XRect(MargemEsquerda + labelWidthEsq + 2, y, colEsquerdaW - labelWidthEsq - 2, 13), XStringFormats.TopLeft);
+            y += 14;
 
-            string convenioTexto = $"Convênio Origem: {dados.SiglaInstituicao} - {dados.SequencialFormatado} / {dados.NomeInstituicao}";
-            gfx.DrawString(convenioTexto, _fontDadosPaciente, XBrushes.Black,
-                new XRect(MargemEsquerda, y, colEsquerdaW, 14), XStringFormats.TopLeft);
-            y += 15;
+            // Linha 4: Convênio Origem: SIGLA - SEQ / NOME
+            string convenioValor = $"{dados.SiglaInstituicao} - {dados.SequencialFormatado} / {dados.NomeInstituicao}";
+            gfx.DrawString("Convênio Origem:", _fontDadosLabel, XBrushes.Black,
+                new XRect(MargemEsquerda, y, labelWidthEsq, 13), XStringFormats.TopRight);
+            gfx.DrawString(convenioValor, _fontDadosPacienteBold, XBrushes.Black,
+                new XRect(MargemEsquerda + labelWidthEsq + 2, y, colEsquerdaW - labelWidthEsq - 2, 13), XStringFormats.TopLeft);
+            y += 14;
 
+            // Linha 5: Procedência: CIDADE / UF
             if (!string.IsNullOrWhiteSpace(dados.Procedencia))
             {
-                string procedenciaTexto = $"Procedência: {dados.Procedencia}";
-                gfx.DrawString(procedenciaTexto, _fontDadosPaciente, XBrushes.Black,
-                    new XRect(MargemEsquerda, y, colEsquerdaW, 14), XStringFormats.TopLeft);
-                y += 15;
+                gfx.DrawString("Procedência:", _fontDadosLabel, XBrushes.Black,
+                    new XRect(MargemEsquerda, y, labelWidthEsq, 13), XStringFormats.TopRight);
+                gfx.DrawString(dados.Procedencia, _fontDadosPacienteBold, XBrushes.Black,
+                    new XRect(MargemEsquerda + labelWidthEsq + 2, y, colEsquerdaW - labelWidthEsq - 2, 13), XStringFormats.TopLeft);
+                y += 14;
             }
 
-            // Coluna direita (alinhada à direita)
+            // === Coluna direita — labels em itálico alinhados à direita, valores à direita ===
             double yDir = yInicioZona2;
-            gfx.DrawString($"Código do Exame: {dados.ExameId}", _fontDadosPaciente, XBrushes.Black,
-                new XRect(colDireitaX, yDir, colDireitaW, 14), XStringFormats.TopRight);
-            yDir += 15;
 
+            // Linha 1: Código do Exame: XXXXX (número em fonte grande alinhado totalmente à direita)
+            gfx.DrawString("Código do Exame:", _fontDadosLabel, XBrushes.Black,
+                new XRect(colDireitaX, yDir, labelWidthDir, 13), XStringFormats.TopRight);
+            gfx.DrawString(dados.ExameId.ToString(), _fontCodigoExame, XBrushes.Black,
+                new XRect(colDireitaX, yDir - 2, colDireitaW, 15), XStringFormats.TopRight);
+            yDir += 16;
+
+            // Linha 2: Código de Coleta
             if (!string.IsNullOrWhiteSpace(dados.ControleApoioFormatado))
             {
-                gfx.DrawString($"Código de Coleta: {dados.ControleApoioFormatado}", _fontDadosPaciente, XBrushes.Black,
-                    new XRect(colDireitaX, yDir, colDireitaW, 14), XStringFormats.TopRight);
-                yDir += 15;
+                gfx.DrawString("Código de Coleta:", _fontDadosLabel, XBrushes.Black,
+                    new XRect(colDireitaX, yDir, labelWidthDir, 13), XStringFormats.TopRight);
+                gfx.DrawString(dados.ControleApoioFormatado, _fontDadosPaciente, XBrushes.Black,
+                    new XRect(colDireitaX + labelWidthDir + 2, yDir, colDireitaW - labelWidthDir - 2, 13), XStringFormats.TopRight);
+                yDir += 14;
             }
 
+            // Linha 3: Data do Exame/Coleta
             if (!string.IsNullOrWhiteSpace(dados.DataExameColeta))
             {
-                gfx.DrawString($"Data do Exame/Coleta: {dados.DataExameColeta}", _fontDadosPaciente, XBrushes.Black,
-                    new XRect(colDireitaX, yDir, colDireitaW, 14), XStringFormats.TopRight);
-                yDir += 15;
+                gfx.DrawString("Data do Exame/Coleta:", _fontDadosLabel, XBrushes.Black,
+                    new XRect(colDireitaX, yDir, labelWidthDir, 13), XStringFormats.TopRight);
+                gfx.DrawString(dados.DataExameColeta, _fontDadosPaciente, XBrushes.Black,
+                    new XRect(colDireitaX + labelWidthDir + 2, yDir, colDireitaW - labelWidthDir - 2, 13), XStringFormats.TopRight);
+                yDir += 14;
             }
 
+            // Linha 4: Laudo Liberado em
             if (!string.IsNullOrWhiteSpace(dados.DataLaudoLiberado))
             {
-                gfx.DrawString($"Laudo Liberado em: {dados.DataLaudoLiberado}", _fontDadosPaciente, XBrushes.Black,
-                    new XRect(colDireitaX, yDir, colDireitaW, 14), XStringFormats.TopRight);
-                yDir += 15;
+                gfx.DrawString("Laudo Liberado em:", _fontDadosLabel, XBrushes.Black,
+                    new XRect(colDireitaX, yDir, labelWidthDir, 13), XStringFormats.TopRight);
+                gfx.DrawString(dados.DataLaudoLiberado, _fontDadosPaciente, XBrushes.Black,
+                    new XRect(colDireitaX + labelWidthDir + 2, yDir, colDireitaW - labelWidthDir - 2, 13), XStringFormats.TopRight);
+                yDir += 14;
             }
 
-            gfx.DrawString($"Laudo Impresso em: {dados.DataImpressao}", _fontDadosPaciente, XBrushes.Black,
-                new XRect(colDireitaX, yDir, colDireitaW, 14), XStringFormats.TopRight);
-            yDir += 15;
+            // Linha 5: Laudo Impresso em
+            gfx.DrawString("Laudo Impresso em:", _fontDadosLabel, XBrushes.Black,
+                new XRect(colDireitaX, yDir, labelWidthDir, 13), XStringFormats.TopRight);
+            gfx.DrawString(dados.DataImpressao, _fontDadosPaciente, XBrushes.Black,
+                new XRect(colDireitaX + labelWidthDir + 2, yDir, colDireitaW - labelWidthDir - 2, 13), XStringFormats.TopRight);
+            yDir += 14;
+            //..Kiro
 
             // Usar o maior Y entre as duas colunas
-            y = Math.Max(y, yDir) + 8;
-
-            // Linha separadora
-            gfx.DrawLine(penVerde, MargemEsquerda, y, LarguraPagina - MargemDireita, y);
-            y += 10;
+            y = Math.Max(y, yDir) + 12;
 
             return y;
         }
@@ -341,18 +383,17 @@ namespace LabWebMvc.MVC.Areas.Utils
 
         private double DesenharTituloFolha(XGraphics gfx, string nomeFolha, double y)
         {
-            // Barra vertical verde à esquerda (3px de largura) — conectada à linha horizontal acima
-            var penBarra = new XPen(_corVerde, 3);
-            gfx.DrawLine(penBarra, MargemEsquerda, y - 10, MargemEsquerda, y + 28);
+            // Moldura completa (caixa) em volta do título da folha — conectada à linha horizontal acima
+            double alturaBox = 24;
+            var penCaixa = new XPen(_corVerde, 1.5);
+            gfx.DrawRectangle(penCaixa, MargemEsquerda, y - 2, AreaUtil, alturaBox);
 
-            // Nome da folha em font grande bold
+            // Nome da folha em font bold centralizado dentro da caixa (reduzido 20%: de 18pt para 14pt)
             gfx.DrawString(nomeFolha, _fontFolha, XBrushes.Black,
-                new XRect(MargemEsquerda + 10, y, AreaUtil - 10, 24), XStringFormats.CenterLeft);
-            y += 28;
+                new XRect(MargemEsquerda, y, AreaUtil, alturaBox - 4), XStringFormats.Center);
+            y += alturaBox + 4;
 
             // Sub-cabeçalho de colunas — alinhados com as posições reais dos dados
-            // "Valores Obtidos / Unidade de Medida" alinha com a coluna Resultado (posição 300)
-            y += 4;
             gfx.DrawString("Valores Obtidos /Unidade de Medida", _fontPequena, _brushCinzaEscuro,
                 new XRect(300, y, 150, 10), XStringFormats.TopLeft);
             gfx.DrawString("Valores de Referência", _fontPequena, _brushCinzaEscuro,
@@ -454,10 +495,12 @@ namespace LabWebMvc.MVC.Areas.Utils
                 if (string.IsNullOrWhiteSpace(conteudo))
                     return y;
 
-                // Alinhamento conforme AlinhaLaudo: 0=esquerda, 1=direita
+                // Alinhamento conforme AlinhaLaudo: padrão = direita
+                // Se AlinhaLaudo == 1 (explicitamente esquerda no Delphi antigo), usa esquerda
+                // Se AlinhaLaudo == 0 ou null/vazio, usa direita (novo padrão do cliente)
                 var formatoLaudo = item.AlinhaLaudo == 1
-                    ? XStringFormats.TopRight
-                    : XStringFormats.TopLeft;
+                    ? XStringFormats.TopLeft
+                    : XStringFormats.TopRight;
 
                 double maxLarguraLaudo = AreaUtil - 40;
 
@@ -560,21 +603,17 @@ namespace LabWebMvc.MVC.Areas.Utils
 
             // Texto 1: Laudo liberado...
             string textoLiberacao = $"Laudo liberado na \"Data do Exame\" e Impresso por ADMINISTRADOR DO SISTEMA em {dados.DataImpressao} às {dados.HoraImpressao} horas.";
-            gfx.DrawString(textoLiberacao, _fontRodape, _brushCinzaEscuro,
-                new XRect(MargemEsquerda, yRodape, AreaUtil, 11), XStringFormats.TopLeft);
-            yRodape += 12;
+            yRodape = DesenharTextoComQuebraAutomatica(gfx, textoLiberacao, _fontRodape, _brushCinzaEscuro, MargemEsquerda, yRodape, AreaUtil, 11);
 
             // Texto 2
             string textoResp = "As amostras enviadas para análises dos exames são de responsabilidade do Laboratório ou Convênio de origem.";
-            gfx.DrawString(textoResp, _fontRodape, _brushCinzaEscuro,
-                new XRect(MargemEsquerda, yRodape, AreaUtil, 11), XStringFormats.TopLeft);
-            yRodape += 12;
+            yRodape = DesenharTextoComQuebraAutomatica(gfx, textoResp, _fontRodape, _brushCinzaEscuro, MargemEsquerda, yRodape, AreaUtil, 11);
 
             // Texto 3
             string textoPrazo = "Exames possuem datas PREVISTAS para resultado, todavia a data pode ser alterada de acordo com a necessidade aplicada nas análises.";
-            gfx.DrawString(textoPrazo, _fontRodape, _brushCinzaEscuro,
-                new XRect(MargemEsquerda, yRodape, AreaUtil, 11), XStringFormats.TopLeft);
-            yRodape += 16;
+            yRodape = DesenharTextoComQuebraAutomatica(gfx, textoPrazo, _fontRodape, _brushCinzaEscuro, MargemEsquerda, yRodape, AreaUtil, 11);
+
+            yRodape += 4;
 
             // Barra verde no fundo
             var brushBarraVerde = new XSolidBrush(_corBarraVerde);
@@ -603,6 +642,56 @@ namespace LabWebMvc.MVC.Areas.Utils
             // Sistema LabWeb7 (centralizado abaixo)
             gfx.DrawString("Sistema LabWeb7 (Desde 2005) Ricardo Guilemond", _fontRodape, XBrushes.Gray,
                 new XRect(MargemEsquerda, yRodape, AreaUtil, 9), XStringFormats.TopCenter);
+        }
+
+        /// <summary>
+        /// Desenha um texto com quebra automática de linha quando excede a largura disponível.
+        /// Mede a largura real do texto usando XGraphics.MeasureString e quebra por palavras.
+        /// Retorna o Y atualizado após todas as linhas desenhadas.
+        /// </summary>
+        private double DesenharTextoComQuebraAutomatica(XGraphics gfx, string texto, XFont font, XSolidBrush brush,
+            double x, double y, double larguraMaxima, double alturaLinha)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return y + alturaLinha;
+
+            var palavras = texto.Split(' ');
+            var linhaAtual = new StringBuilder();
+
+            foreach (var palavra in palavras)
+            {
+                string teste = linhaAtual.Length > 0
+                    ? linhaAtual + " " + palavra
+                    : palavra;
+
+                var tamanho = gfx.MeasureString(teste, font);
+
+                if (tamanho.Width > larguraMaxima && linhaAtual.Length > 0)
+                {
+                    // Imprimir a linha atual e começar nova
+                    gfx.DrawString(linhaAtual.ToString(), font, brush,
+                        new XRect(x, y, larguraMaxima, alturaLinha), XStringFormats.TopLeft);
+                    y += alturaLinha;
+                    linhaAtual.Clear();
+                    linhaAtual.Append(palavra);
+                }
+                else
+                {
+                    if (linhaAtual.Length > 0)
+                        linhaAtual.Append(' ');
+                    linhaAtual.Append(palavra);
+                }
+            }
+
+            // Última linha
+            if (linhaAtual.Length > 0)
+            {
+                gfx.DrawString(linhaAtual.ToString(), font, brush,
+                    new XRect(x, y, larguraMaxima, alturaLinha), XStringFormats.TopLeft);
+                y += alturaLinha;
+            }
+
+            return y;
         }
 
         #endregion
@@ -653,6 +742,51 @@ namespace LabWebMvc.MVC.Areas.Utils
                 idade--;
             return idade;
         }
+
+        //Feito pelo Kiro em 26/06/2025
+        /// <summary>
+        /// Infere o sexo (M/F) a partir da terminação do primeiro nome.
+        /// Baseado no algoritmo do sistema Delphi (FGlobal.NomeSexo).
+        /// </summary>
+        private static string InferirSexoPeloNome(string nomeCompleto)
+        {
+            if (string.IsNullOrWhiteSpace(nomeCompleto))
+                return "";
+
+            // Pegar apenas o primeiro nome
+            string primeiroNome = nomeCompleto.Trim().Split(' ')[0].ToUpper();
+            if (string.IsNullOrEmpty(primeiroNome))
+                return "";
+
+            // Terminais masculinos (verificar do mais longo para o mais curto)
+            string[] masculino = { "NOEL", "NUEL", "ARD", "MIR", "ELY", "AEL", "AUL", "ARK", "IUS",
+                "AN", "ON", "IN", "IM", "EU", "UE", "EY", "ME", "EL", "OS", "OR",
+                "ES", "EZ", "UR", "US", "VI", "PE", "AS", "RE", "EB", "AH", "IZ",
+                "IS", "RI", "ID", "UA", "AL",
+                "O", "C", "K", "U" };
+
+            // Terminais femininos (verificar do mais longo para o mais curto)
+            string[] feminino = { "QUEL", "CHEL", "EIA", "SSA",
+                "LY", "EN", "LE", "TE", "AS", "NE", "MI", "EA", "ÊS", "CE", "GE",
+                "A" };
+
+            // Verificar masculino primeiro
+            foreach (var term in masculino)
+            {
+                if (primeiroNome.EndsWith(term))
+                    return "M";
+            }
+
+            // Verificar feminino
+            foreach (var term in feminino)
+            {
+                if (primeiroNome.EndsWith(term))
+                    return "F";
+            }
+
+            return "";
+        }
+        //..Kiro
 
         private static List<string> QuebrarTexto(string texto, int maxChars)
         {

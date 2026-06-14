@@ -342,7 +342,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     ControleApoioFormatado = controleFormatado,
                     SequencialFormatado = sequencialFormatado,
                     DataExameColeta = exame.DataIni.ToLocalString("dd/MM/yyyy"),
-                    DataLaudoLiberado = exame.DataFim?.ToLocalString("dd/MM/yyyy") ?? "",
+                    DataLaudoLiberado = exame.DataFim?.ToLocalString("dd/MM/yyyy") ?? dataImpressaoLocal.ToString("dd/MM/yyyy"),
                     DataImpressao = dataImpressaoLocal.ToString("dd/MM/yyyy"),
                     HoraImpressao = dataImpressaoLocal.ToString("HH:mm"),
 
