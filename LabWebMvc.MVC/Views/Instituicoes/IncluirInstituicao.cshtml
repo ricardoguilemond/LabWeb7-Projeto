@@ -1,4 +1,4 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using LabWebMvc.MVC.Areas.Utils
 @using static BLL.UtilBLL
 @using LabWebMvc.MVC.ViewModel
@@ -40,182 +40,184 @@
 </script>
 @using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))
 {
-    <div class="row">
-        <div class="col-md-4">
-            <form asp-action="Instituicoes">
-                @Html.AntiForgeryToken()
-                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
-                <div class="form-group">
-                    @Html.Label("Nome Completo da Instituição (por favor, sem abreviações!)", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Nome, new { @class = "form-control capitalize", @placeholder = "Entre com o nome completo da instituição", @required = "required" })
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    <style>
+        .cadastro-clean .form-control { font-size: 12px !important; }
+        .cadastro-clean select.form-control { font-size: 12px !important; }
+    </style>
+    <div class="cadastro-clean" style="max-width: 700px; margin: 20px 0; padding: 24px; border: 1px solid #d4edda; border-radius: 8px; background-color: #fff;">
+        <h4 style="color: #333; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0;">
+            <i class="fa-solid fa-building" style="color: #69c38a;"></i> Incluir Instituição
+        </h4>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Nome Completo da Instituição (por favor, sem abreviações!)</label>
+                @Html.TextBoxFor(p => p.Nome, new { @class = "form-control capitalize", @placeholder = "Entre com o nome completo da instituição", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Entre com a Sigla</label>
+                @Html.TextBoxFor(p => p.Sigla, new { @class = "form-control capitalize", @placeholder = "Entre com a sigla da instituição", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">CNPJ</label>
+                @Html.TextBoxFor(p => p.CNPJ, new { @class = "form-control capitalize", @placeholder = "Entre com o CNPJ da instituição", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">E-mail</label>
+                @Html.TextBoxFor(p => p.Email, new { @class = "form-control lowercase", @style = "color: blue; border: 1px solid #69c38a; border-radius: 6px;", @placeholder = "e-mail", @type = "email", @required = "required" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Telefone com DDD</label>
+                @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+                @* @Html.ValidationMessageFor(p => p.Telefone, null, new { @class = "has-error" }) *@
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">CEP</label>
+                @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Logradouro (Rua, Av, Estrada etc)</label>
+                @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Endereço completo</label>
+                @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Número</label>
+                @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Complemento</label>
+                @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Bairro</label>
+                @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Cidade</label>
+                @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">UF:</label>
+                <div style="display: inline-block;">
+                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF), new { @style = "border: 1px solid #69c38a; border-radius: 6px;" })
                 </div>
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Título para Relatórios</label>
+                @Html.TextBoxFor(p => p.TituloTimbre, new { @class = "form-control", @placeholder = "Título do Timbre para Relatórios", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Subtítulos para relatórios</label>
+                @Html.TextBoxFor(p => p.SubTituloTimbre, new { @class = "form-control", @placeholder = "Subtítulo do Timbre para Relatórios", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <!--
+                Carregamento das imagens
+            -->
+            <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                 <div class="form-group">
-                    @Html.Label("Entre com a Sigla", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Sigla, new { @class = "form-control capitalize", @placeholder = "Entre com a sigla da instituição", @required = "required" })
+                    <label style="font-size: 13px; color: #333;">TIMBRE: Pequena imagem quadrada: 215x235 pixels (Largura_x_altura), para acompanhar os títulos dos relatórios</label>
+                    @Html.TextBoxFor(p => p.CaminhoImagemTimbre, new { @type = "file", @id = "fileTimbre", @name = "fileTimbre", @value = Model.PathImages })
+                    @Html.Raw("<div id='imgsT'></div>")
                 </div>
+            </fieldset>
+            <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
                 <div class="form-group">
-                    @Html.Label("CNPJ", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.CNPJ, new { @class = "form-control capitalize", @placeholder = "Entre com o CNPJ da instituição", @required = "required" })
+                    <label style="font-size: 13px; color: #333;">Se cliente quer IMAGEM ao invés de texto! (recomendado)</label>
+                    <label style="font-size: 13px; color: #333;">LOGOMARCA/BANNER: Imagem retangular: 670x120 pixels (Largura_x_altura), que substitui título e timbre nos relatórios</label>
+                    @Html.TextBoxFor(p => p.CaminhoImagemLogomarca, new { @type = "file", @id = "fileLogo", @name = "fileLogo", @value = Model.PathImages })
+                    @Html.Raw("<div id='imgsL'></div>")
                 </div>
-                <div class="form-group">
-                    @Html.Label("E-mail", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Email, new { @class = "form-control lowercase", @style = "color: blue;", @placeholder = "e-mail", @type = "email", @required = "required" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Telefone com DDD", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD", @required = "required" })
-                    @* @Html.ValidationMessageFor(p => p.Telefone, null, new { @class = "has-error" }) *@
-                </div>
-                <div class="form-group">
-                    @Html.Label("CEP", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Logradouro (Rua, Av, Estrada etc)", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Endereço completo", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Número", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Complemento", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Bairro", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Cidade", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("UF:")
+            </fieldset>
+            <!--
+                Fim do carregamento das imagens
+            -->
+            <div class="form-group">
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">*Usa imagem timbre nos relatórios? S/N </label>
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int timbreIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string timbreSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string timbreDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (timbreIndex == 0);
                     <div style="display: inline-block;">
-                        @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: ViewBag.SessionUF))
+                        @Html.RadioButton("TimbreSN", timbreIndex, check)
+                        @Html.Label(timbreDescricao)
                     </div>
-                </div>
-                <div class="form-group">
-                    @Html.Label("Título para Relatórios", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.TituloTimbre, new { @class = "form-control", @placeholder = "Título do Timbre para Relatórios" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Subtítulos para relatórios", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.SubTituloTimbre, new { @class = "form-control", @placeholder = "Subtítulo do Timbre para Relatórios" })
-                </div>
-                <!--
-                    Carregamento das imagens
-                -->
-                <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
-                    <div class="form-group">
-                        @Html.Label("TIMBRE: Pequena imagem quadrada: 215x235 pixels (Largura_x_altura), para acompanhar os títulos dos relatórios")
-                        @Html.TextBoxFor(p => p.CaminhoImagemTimbre, new { @type = "file", @id = "fileTimbre", @name = "fileTimbre", @value = Model.PathImages })
-                        @Html.Raw("<div id='imgsT'></div>")
+                }
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">*Usa carimbo CRBio no final dos relatórios? S/N </label>
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int carimboIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string carimboSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string carimboDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (carimboIndex == 0);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("CarimboSN", carimboIndex, check)
+                        @Html.Label(carimboDescricao)
                     </div>
-                </fieldset>
-                <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
-                    <div class="form-group">
-                        @Html.Label("Se cliente quer IMAGEM ao invés de texto! (recomendado)", null, new { @class = "" })
-                        @Html.Label("LOGOMARCA/BANNER: Imagem retangular: 670x120 pixels (Largura_x_altura), que substitui título e timbre nos relatórios")
-                        @Html.TextBoxFor(p => p.CaminhoImagemLogomarca, new { @type = "file", @id = "fileLogo", @name = "fileLogo", @value = Model.PathImages })
-                        @Html.Raw("<div id='imgsL'></div>")
+                }
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Nome do Contato</label>
+                @Html.TextBoxFor(p => p.Contato, new { @class = "form-control", @placeholder = "Nome do contato principal", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Nome de usuário do FTP</label>
+                @Html.TextBoxFor(p => p.UsuarioCaminhoFTP, new { @class = "form-control", @placeholder = "Nome Usuário do FTP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Email do usuário de FTP</label>
+                @Html.TextBoxFor(p => p.UsuarioEmailFTP, new { @class = "form-control", @placeholder = "Email Usuário do FTP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Número da porta do FTP (padrão: 21)</label>
+                @Html.TextBoxFor(p => p.UsuarioPortaFTP, new { @class = "form-control", @placeholder = "Número Porta do FTP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Senha do FTP</label>
+                @Html.TextBoxFor(p => p.UsuarioSenhaFTP, new { @class = "form-control", @placeholder = "Senha do FTP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Valor do Exame de Lâminas da Citologia</label>
+                @Html.TextBoxFor(p => p.ValorExameCitologia, new { @class = "form-control", @placeholder = "Valor para o Exame de Citologia (Lâminas)", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Permite imprimir textos/avisos nos rodapés de relatórios? S/N </label>
+                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                {
+                    int propIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                    string propSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                    string propDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                    bool check = (propIndex == 0);
+                    <div style="display: inline-block;">
+                        @Html.RadioButton("Propaganda", propIndex, check)
+                        @Html.Label(propDescricao)
                     </div>
-                </fieldset>
-                <!--
-                    Fim do carregamento das imagens
-                -->
-                <div class="form-group">
-                </div>
-                <div class="form-group">
-                    @Html.Label("*Usa imagem timbre nos relatórios? S/N ")
-                    @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                    {
-                        int timbreIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
-                        string timbreSigla = Utils.RetornaItem(i, "ListaSN", 1);
-                        string timbreDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                        bool check = (timbreIndex == 0);
-                        <div style="display: inline-block;">
-                            @Html.RadioButton("TimbreSN", timbreIndex, check)
-                            @Html.Label(timbreDescricao)
-                        </div>
-                    }
-                </div>
-                <div class="form-group">
-                    @Html.Label("*Usa carimbo CRBio no final dos relatórios? S/N ")
-                    @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                    {
-                        int carimboIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
-                        string carimboSigla = Utils.RetornaItem(i, "ListaSN", 1);
-                        string carimboDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                        bool check = (carimboIndex == 0);
-                        <div style="display: inline-block;">
-                            @Html.RadioButton("CarimboSN", carimboIndex, check)
-                            @Html.Label(carimboDescricao)
-                        </div>
-                    }
-                </div>
-                <div class="form-group">
-                    @Html.Label("Nome do Contato", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.Contato, new { @class = "form-control", @placeholder = "Nome do contato principal", @required = "required" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Nome de usuário do FTP", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.UsuarioCaminhoFTP, new { @class = "form-control", @placeholder = "Nome Usuário do FTP" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Email do usuário de FTP", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.UsuarioEmailFTP, new { @class = "form-control", @placeholder = "Email Usuário do FTP" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Número da porta do FTP (padrão: 21)", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.UsuarioPortaFTP, new { @class = "form-control", @placeholder = "Número Porta do FTP" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Senha do FTP", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.UsuarioSenhaFTP, new { @class = "form-control", @placeholder = "Senha do FTP" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Valor do Exame de Lâminas da Citologia", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.ValorExameCitologia, new { @class = "form-control", @placeholder = "Valor para o Exame de Citologia (Lâminas)" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Permite imprimir textos/avisos nos rodapés de relatórios? S/N ")
-                    @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                    {
-                        int propIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
-                        string propSigla = Utils.RetornaItem(i, "ListaSN", 1);
-                        string propDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                        bool check = (propIndex == 0);
-                        <div style="display: inline-block;">
-                            @Html.RadioButton("Propaganda", propIndex, check)
-                            @Html.Label(propDescricao)
-                        </div>
-                    }
-                </div>
-                <div class="form-group">
-                    @Html.Label("Primeira linha de texto ou aviso de rodapé", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.AvisoRodape1, new { @class = "form-control", @placeholder = "Aviso do Rodapé (primeira linha)" })
-                </div>
-                <div class="form-group">
-                    @Html.Label("Segunda linha de texto ou aviso de rodapé", null, new { @class = "" })
-                    @Html.TextBoxFor(p => p.AvisoRodape2, new { @class = "form-control", @placeholder = "Aviso do Rodapé (segunda linha)" })
-                </div>
-                <!--
-                Submeter Formulário
-                -->
-                <div class="form-group botao-centralizado">
-                    <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
-                        Salvar
-                    </button>
-                </div>
-            </form>
-        </div>
+                }
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Primeira linha de texto ou aviso de rodapé</label>
+                @Html.TextBoxFor(p => p.AvisoRodape1, new { @class = "form-control", @placeholder = "Aviso do Rodapé (primeira linha)", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <div class="form-group">
+                <label style="font-size: 13px; color: #333;">Segunda linha de texto ou aviso de rodapé</label>
+                @Html.TextBoxFor(p => p.AvisoRodape2, new { @class = "form-control", @placeholder = "Aviso do Rodapé (segunda linha)", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            </div>
+            <!--
+            Submeter Formulário
+            -->
+            <div class="form-group botao-centralizado" style="margin-top: 20px;">
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde" style="border-radius: 6px;">
+                    Salvar
+                </button>
+            </div>
     </div>
 }
 @section Scripts {

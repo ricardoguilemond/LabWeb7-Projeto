@@ -1,4 +1,4 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using LabWebMvc.MVC.Areas.Utils
 @using static BLL.UtilBLL
 @using LabWebMvc.MVC.ViewModel
@@ -40,17 +40,22 @@
 
 @using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))  //@id-"form" é obrigatório para campos chegarem do doutro lado
 {
-    <div class="row">
-        <div class="col-md-4">
-            @Html.AntiForgeryToken()
-            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    <style>
+        .cadastro-clean .form-control { font-size: 12px !important; }
+        .cadastro-clean select.form-control { font-size: 12px !important; }
+    </style>
+    <div class="cadastro-clean" style="max-width: 600px; margin: 20px 0; padding: 24px; border: 1px solid #d4edda; border-radius: 8px; background-color: #fff;">
+        <h4 style="color: #333; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0;">
+            <i class="fa-solid fa-user-pen" style="color: #69c38a;"></i> Alterar Paciente
+        </h4>
             <div class="form-group">
-                @Html.Label("*Nome paciente:")
-                @Html.TextBoxFor(p => p.NomePaciente, new { @class = "form-control capitalize", @placeholder = "Entre com o nome completo do paciente", @required = "required" })
+                <label style="font-size: 13px; color: #333;">*Nome paciente:</label>
+                @Html.TextBoxFor(p => p.NomePaciente, new { @class = "form-control capitalize", @placeholder = "Entre com o nome completo do paciente", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Sexo:")
+                <label style="font-size: 13px; color: #333;">Sexo:</label>
                 @for (int i = 0; i < Utils.ListaGenero().Count; i++)
                 {
                     string sexo = Utils.RetornaItem(i, "Sexo", 1);  //index
@@ -64,21 +69,21 @@
                 }
             </div>
             <div class="form-group">
-                @Html.Label("Tipo de Documento:")
-                @Html.DropDownListFor(p => p.vmGeral.TipoDocumento, new SelectList(Utils.ListaDocumento(), "Index", "Nome", selectedValue: 0))
+                <label style="font-size: 13px; color: #333;">Tipo de Documento:</label>
+                @Html.DropDownListFor(p => p.vmGeral.TipoDocumento, new SelectList(Utils.ListaDocumento(), "Index", "Nome", selectedValue: 0), new { @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("O documento será também o Login do paciente no Site/App", null, new { style = "color: red" })
-                @Html.TextBoxFor(p => p.CPF, new { @class = "form-control", @placeholder = "Entre com o documento", @required = "required" })
-                @Html.Label("Órgão Emissor:")
-                @Html.DropDownListFor(p => p.vmGeral.TipoOrgaoEmissor, new SelectList(Utils.ListaOrgaoEmissor(), "Index", "Nome", selectedValue: 0))
+                <label style="font-size: 13px; color: red;">O documento será também o Login do paciente no Site/App</label>
+                @Html.TextBoxFor(p => p.CPF, new { @class = "form-control", @placeholder = "Entre com o documento", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+                <label style="font-size: 13px; color: #333;">Órgão Emissor:</label>
+                @Html.DropDownListFor(p => p.vmGeral.TipoOrgaoEmissor, new SelectList(Utils.ListaOrgaoEmissor(), "Index", "Nome", selectedValue: 0), new { @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("*Data Nascimento:")
-                @Html.TextBoxFor(p => p.Nascimento, "{0:dd/MM/yyyy}", new { @class = "form-control", @type = "text", @readonly = "readonly" })
+                <label style="font-size: 13px; color: #333;">*Data Nascimento:</label>
+                @Html.TextBoxFor(p => p.Nascimento, "{0:dd/MM/yyyy}", new { @class = "form-control", @type = "text", @readonly = "readonly", @style = "border: 1px solid #69c38a; border-radius: 6px; background-color: #f9f9f9;" })
             </div>
             <div class="form-group">
-                @Html.Label("Estado Civil:")
+                <label style="font-size: 13px; color: #333;">Estado Civil:</label>
                 @for (int i = 0; i < Utils.ListaEstadoCivil().Count; i++)
                 {
                     int index = Utils.RetornaItem(i, "EstadoCivil", 0).ToInt32();
@@ -93,83 +98,82 @@
                 }
             </div>
             <div class="form-group">
-                @Html.Label("Naturalidade:")
-                @Html.TextBoxFor(p => p.Naturalidade, new { @class = "form-control capitalize", @placeholder = "Naturalidade" })
+                <label style="font-size: 13px; color: #333;">Naturalidade:</label>
+                @Html.TextBoxFor(p => p.Naturalidade, new { @class = "form-control capitalize", @placeholder = "Naturalidade", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Nacionalidade:")
-                @Html.TextBoxFor(p => p.Nacionalidade, new { @class = "form-control capitalize", @placeholder = "Nacionalidade" })
+                <label style="font-size: 13px; color: #333;">Nacionalidade:</label>
+                @Html.TextBoxFor(p => p.Nacionalidade, new { @class = "form-control capitalize", @placeholder = "Nacionalidade", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Profissão:")
-                @Html.TextBoxFor(p => p.Profissao, new { @class = "form-control capitalize", @placeholder = "Profissão" })
+                <label style="font-size: 13px; color: #333;">Profissão:</label>
+                @Html.TextBoxFor(p => p.Profissao, new { @class = "form-control capitalize", @placeholder = "Profissão", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("CEP:")
-                @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP" })
+                <label style="font-size: 13px; color: #333;">CEP:</label>
+                @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Logradouro (Rua, Av, Estrada etc)", null, new { @class = "" })
-                @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav" })
+                <label style="font-size: 13px; color: #333;">Logradouro (Rua, Av, Estrada etc)</label>
+                @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Endereço completo", null, new { @class = "" })
-                @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço" })
+                <label style="font-size: 13px; color: #333;">Endereço completo</label>
+                @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Número:")
-                @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número" })
+                <label style="font-size: 13px; color: #333;">Número:</label>
+                @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Complemento:")
-                @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote" })
+                <label style="font-size: 13px; color: #333;">Complemento:</label>
+                @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Bairro:")
-                @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro" })
+                <label style="font-size: 13px; color: #333;">Bairro:</label>
+                @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Cidade/Município:")
-                @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município" })
+                <label style="font-size: 13px; color: #333;">Cidade/Município:</label>
+                @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("UF:")
+                <label style="font-size: 13px; color: #333;">UF:</label>
                 <div style="display: inline-block;">
-                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF))
+                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF), new { @style = "border: 1px solid #69c38a; border-radius: 6px;" })
                 </div>
             </div>
             <div class="form-group">
-                @Html.Label("Telefone com DDD:")
-                @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD" })
+                <label style="font-size: 13px; color: #333;">Telefone com DDD:</label>
+                @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
                 @Html.ValidationMessageFor(p => p.Telefone, null, new { @class = "has-error" })
             </div>
             <div class="form-group">
-                @Html.Label("e-mail:")
-                @Html.TextBoxFor(p => p.Email, new { @class = "form-control lowercase", @style = "color: blue;", @placeholder = "e-mail", @type = "email" })
+                <label style="font-size: 13px; color: #333;">e-mail:</label>
+                @Html.TextBoxFor(p => p.Email, new { @class = "form-control lowercase", @style = "color: blue; border: 1px solid #69c38a; border-radius: 6px;", @placeholder = "e-mail", @type = "email" })
             </div>
             <div class="form-group">
-                @Html.Label("DUM:")
-                @Html.TextBoxFor(p => p.DUM, new { @class = "form-control", @type = "date", @placeholder = "DUM" })
+                <label style="font-size: 13px; color: #333;">DUM:</label>
+                @Html.TextBoxFor(p => p.DUM, new { @class = "form-control", @type = "date", @placeholder = "DUM", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Tempo de Gestação:")
+                <label style="font-size: 13px; color: #333;">Tempo de Gestação:</label>
                 <div style="display: inline-block;">
-                    @Html.DropDownListFor(p => p.vmGeral.TipoTempoGestacao, new SelectList(Utils.ListaTempoGestacao(), "Index", "Nome", selectedValue: "10"))
+                    @Html.DropDownListFor(p => p.vmGeral.TipoTempoGestacao, new SelectList(Utils.ListaTempoGestacao(), "Index", "Nome", selectedValue: "10"), new { @style = "border: 1px solid #69c38a; border-radius: 6px;" })
                 </div>
             </div>
             <div class="form-group">
-                @Html.Label("Observação:")
-                @Html.TextAreaFor(p => p.Observacao, new { @class = "form-control capitalize mediumTextBox", @placeholder = "Observação" })
+                <label style="font-size: 13px; color: #333;">Observação:</label>
+                @Html.TextAreaFor(p => p.Observacao, new { @class = "form-control capitalize mediumTextBox", @placeholder = "Observação", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <!--
             Submeter Formulário
             -->
-            <div class="form-group botao-centralizado">
-                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+            <div class="form-group botao-centralizado" style="margin-top: 20px;">
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde" style="border-radius: 6px;">
                     Salvar
                 </button>
             </div>
-        </div>
     </div>
 }
 

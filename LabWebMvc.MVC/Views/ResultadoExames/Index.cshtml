@@ -35,6 +35,20 @@
                value="@Context.Request.Query["siglaInstituicao"]"
                style="width: 80px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
 
+        <label style="font: normal 13px calibri, arial, sans-serif;">Status:</label>
+        @{
+            string filtroStatus = Context.Request.Query["status"].ToString();
+        }
+        @Html.Raw("<select name=\"status\" onchange=\"this.form.submit()\" style=\"width: 110px; height: 32px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;\">" +
+            "<option value=\"\">Todos</option>" +
+            "<option value=\"0\"" + (filtroStatus == "0" ? " selected" : "") + ">Pendente</option>" +
+            "<option value=\"1\"" + (filtroStatus == "1" ? " selected" : "") + ">Em Análise</option>" +
+            "<option value=\"3\"" + (filtroStatus == "3" ? " selected" : "") + ">Impresso</option>" +
+            "<option value=\"5\"" + (filtroStatus == "5" ? " selected" : "") + ">A Repetir</option>" +
+            "<option value=\"6\"" + (filtroStatus == "6" ? " selected" : "") + ">Material Inválido</option>" +
+            "<option value=\"7\"" + (filtroStatus == "7" ? " selected" : "") + ">Pend. Cadastral</option>" +
+            "</select>")
+
         <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
             <i class="fa-sharp fa-solid fa-magnifying-glass"></i> Pesquisar
         </button>
@@ -61,21 +75,43 @@
         <tbody>
             @foreach (var item in ViewBag.ListaDados)
             {
-                string statusTexto = SituacaoExamesCache.ObterDescricao((int)item.Situacao, _dbSituacao);
-                string statusCor = ((int)item.Situacao) switch
+                int situacao = (int)item.Situacao;
+                int totalImp = (int)item.TotalImpresso;
+
+                // Montar texto e cor do Status com contagem de impressões
+                string statusTexto;
+                string statusCor;
+
+                if (situacao == 1 && totalImp > 0)
                 {
-                    0 => "color:red; font-weight:bold;",
-                    1 => "color:blue; font-weight:bold;",
-                    2 => "color:green; font-weight:bold;",
-                    3 => "color:darkgreen; font-weight:bold;",
-                    5 => "color:orange; font-weight:bold;",
-                    6 => "color:darkred; font-weight:bold;",
-                    7 => "color:gray; font-weight:bold;",
-                    11 => "color:gray; font-weight:bold;",
-                    _ => "color:red; font-weight:bold;"
-                };
+                    // Cenário crítico: foi impresso mas resultado alterado depois
+                    statusTexto = $"Impresso({totalImp}), Em Análise";
+                    statusCor = "color:#CC6600; font-weight:bold;"; // Laranja escuro — alerta
+                }
+                else if (situacao == 3)
+                {
+                    // Impresso normalmente — exibir contagem
+                    statusTexto = totalImp > 0 ? $"Impresso({totalImp})" : "Impresso";
+                    statusCor = "color:darkgreen; font-weight:bold;";
+                }
+                else
+                {
+                    statusTexto = SituacaoExamesCache.ObterDescricao(situacao, _dbSituacao);
+                    statusCor = situacao switch
+                    {
+                        0 => "color:red; font-weight:bold;",
+                        1 => "color:blue; font-weight:bold;",
+                        2 => "color:green; font-weight:bold;",
+                        5 => "color:orange; font-weight:bold;",
+                        6 => "color:darkred; font-weight:bold;",
+                        7 => "color:gray; font-weight:bold;",
+                        11 => "color:gray; font-weight:bold;",
+                        _ => "color:red; font-weight:bold;"
+                    };
+                }
+
                 @Html.Raw(
-                         "<tr>" +
+                         "<tr data-situacao='" + situacao + "' data-total-impresso='" + totalImp + "'>" +
                          "<td>" + item.Id + "</td>" +
                          "<td>" + item.NomePaciente + "</td>" +
                          "<td>" + item.SiglaInstituicao + "</td>" +
@@ -329,13 +365,39 @@
                 if (data.sucesso) {
                     $tr.find('.input-resultado').css('border-color', '#28a745');
                     setTimeout(function () { $tr.find('.input-resultado').css('border-color', '#ccc'); }, 1000);
-                    // Atualizar Status no grid header para "Em Análise"
+
+                    // Atualizar Status no grid header com base na situação retornada
                     var $highlightedRow = $('#modeloTable tbody tr.detail-parent-highlight');
                     if ($highlightedRow.length) {
                         var $statusCell = $highlightedRow.find('td:last');
-                        if ($statusCell.text() === 'Pendente') {
-                            $statusCell.text('Em Análise').css({ 'color': 'blue', 'font-weight': 'bold' });
+                        var situacao = data.situacao;
+                        var totalImp = data.totalImpresso;
+
+                        var novoTexto = '';
+                        var novaCor = '';
+
+                        if (situacao === 1 && totalImp > 0) {
+                            // Crítico: impresso mas alterado depois
+                            novoTexto = 'Impresso(' + totalImp + '), Em Análise';
+                            novaCor = '#CC6600';
+                        } else if (situacao === 3) {
+                            novoTexto = totalImp > 0 ? 'Impresso(' + totalImp + ')' : 'Impresso';
+                            novaCor = 'darkgreen';
+                        } else if (situacao === 1) {
+                            novoTexto = 'Em Análise';
+                            novaCor = 'blue';
+                        } else if (situacao === 0) {
+                            novoTexto = 'Pendente';
+                            novaCor = 'red';
                         }
+
+                        if (novoTexto) {
+                            $statusCell.text(novoTexto).css({ 'color': novaCor, 'font-weight': 'bold' });
+                        }
+
+                        // Atualizar data-attributes
+                        $highlightedRow.attr('data-situacao', situacao);
+                        $highlightedRow.attr('data-total-impresso', totalImp);
                     }
                 } else {
                     clickAviso('Erro', data.mensagem, 'critica', null);
@@ -359,18 +421,24 @@
                     return response.blob().then(function(blob) {
                         var url = URL.createObjectURL(blob);
                         window.open(url, '_blank');
-                        // Atualizar status no grid header para "Impresso"
+
+                        // Calcular o TotalImpresso real: pegar do painel info e somar 1
+                        var painelHtml = $('#painelInfoExame').html();
+                        var matchImp = painelHtml.match(/Impressões:\s*(\d+)/);
+                        var totalImpNovo = matchImp ? parseInt(matchImp[1]) + 1 : 1;
+
+                        // Atualizar status no grid header para "Impresso(N)"
                         var $highlightedRow = $('#modeloTable tbody tr.detail-parent-highlight');
                         if ($highlightedRow.length) {
                             var $statusCell = $highlightedRow.find('td:last');
-                            $statusCell.text('Impresso').css({ 'color': 'darkgreen', 'font-weight': 'bold' });
+                            $highlightedRow.attr('data-total-impresso', totalImpNovo);
+                            $highlightedRow.attr('data-situacao', '3');
+                            $statusCell.text('Impresso(' + totalImpNovo + ')').css({ 'color': 'darkgreen', 'font-weight': 'bold' });
                         }
+
                         // Atualizar TotalImpresso no painel info
-                        var painelHtml = $('#painelInfoExame').html();
-                        var match = painelHtml.match(/Impressões:\s*(\d+)/);
-                        if (match) {
-                            var novoTotal = parseInt(match[1]) + 1;
-                            $('#painelInfoExame').html(painelHtml.replace(/Impressões:\s*\d+/, 'Impressões: ' + novoTotal));
+                        if (matchImp) {
+                            $('#painelInfoExame').html(painelHtml.replace(/Impressões:\s*\d+/, 'Impressões: ' + totalImpNovo));
                         }
                     });
                 } else {

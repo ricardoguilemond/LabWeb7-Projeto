@@ -1,0 +1,123 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
+@using static BLL.UtilBLL
+
+@*Feito pelo Kiro em 14/06/2026*@
+<div style="max-width: 700px; margin: 20px auto; padding: 20px;">
+    <h4 style="color: #333; margin-bottom: 16px;">
+        <i class="fa-solid fa-broom"></i> Compactar Requisições
+    </h4>
+
+    <div style="background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
+        <strong>Informativo:</strong><br/>
+        Esta operação remove registros da tabela de <strong>Requisições</strong> que foram utilizados
+        como backup temporário durante o cadastro de exames de pacientes.<br/><br/>
+        Os registros removidos <strong>NÃO afetam</strong> o Arquivo-Morto existente.<br/>
+        Apenas requisições cujo exame já foi baixado ou não existe mais serão compactadas.
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <label style="font-size: 13px;">Limpar requisições até a data:</label>
+        <input type="text" id="dataLimiteCompactacao" placeholder="dd/MM/yyyy"
+               style="width: 120px; padding: 4px 8px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+    </div>
+
+    <div id="infoElegiveis" style="font-size: 13px; margin-bottom: 16px; color: #555;">
+        Total de registros elegíveis: <strong id="totalElegiveis">carregando...</strong>
+    </div>
+
+    <button type="button" id="btnCompactar" class="btn btn-warning btn-sm" style="font-size: 13px;">
+        <i class="fa-solid fa-broom"></i> Compactar
+    </button>
+</div>
+@*..Kiro*@
+
+<script>
+    //Feito pelo Kiro em 14/06/2026
+    $(document).ready(function () {
+        // Máscara de data
+        $("#dataLimiteCompactacao").mask("99/99/9999", { placeholder: " ", autoclear: false });
+
+        // Default: hoje - 12 meses
+        var hoje = new Date();
+        var dataDefault = new Date(hoje.getFullYear() - 1, hoje.getMonth(), hoje.getDate());
+        var dia = String(dataDefault.getDate()).padStart(2, '0');
+        var mes = String(dataDefault.getMonth() + 1).padStart(2, '0');
+        var ano = dataDefault.getFullYear();
+        $("#dataLimiteCompactacao").val(dia + '/' + mes + '/' + ano);
+
+        // Carregar contagem ao iniciar
+        carregarContagem();
+
+        // Recarregar contagem ao mudar data
+        $("#dataLimiteCompactacao").on('change blur', function () {
+            carregarContagem();
+        });
+
+        // Botão compactar
+        $(document).off('click.compactar').on('click.compactar', '#btnCompactar', function () {
+            var dataLimite = $("#dataLimiteCompactacao").val();
+            var total = $("#totalElegiveis").text();
+
+            if (total === '0' || total === 'carregando...') {
+                clickAviso('Informação', 'Não há registros elegíveis para compactação.', 'aviso', null);
+                return;
+            }
+
+            Swal.fire({
+                title: 'Confirmar Compactação',
+                html: 'Deseja remover <strong>' + total + '</strong> registros de requisições até <strong>' + dataLimite + '</strong>?<br><br>Esta ação não pode ser desfeita.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sim, compactar',
+                cancelButtonText: 'Cancelar'
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    $("#btnCompactar").prop('disabled', true).text('Compactando...');
+                    $.ajax({
+                        url: '/Manutencao/ExecutarCompactacao',
+                        type: 'POST',
+                        data: { dataLimite: dataLimite },
+                        dataType: 'json',
+                        success: function (data) {
+                            $("#btnCompactar").prop('disabled', false).html('<i class="fa-solid fa-broom"></i> Compactar');
+                            if (data.sucesso) {
+                                clickAviso('Sucesso', data.mensagem, 'sucesso', null);
+                                carregarContagem();
+                            } else {
+                                clickAviso('Erro', data.mensagem, 'critica', null);
+                            }
+                        },
+                        error: function () {
+                            $("#btnCompactar").prop('disabled', false).html('<i class="fa-solid fa-broom"></i> Compactar');
+                            clickAviso('Erro', 'Falha na comunicação com o servidor.', 'critica', null);
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    function carregarContagem() {
+        var dataLimite = $("#dataLimiteCompactacao").val();
+        $.ajax({
+            url: '/Manutencao/ContarRequisicoes',
+            data: { dataLimite: dataLimite },
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.sucesso) {
+                    $("#totalElegiveis").text(data.total.toLocaleString('pt-BR'));
+                } else {
+                    $("#totalElegiveis").text('erro');
+                }
+            },
+            error: function () {
+                $("#totalElegiveis").text('erro');
+            }
+        });
+    }
+    //..Kiro
+</script>

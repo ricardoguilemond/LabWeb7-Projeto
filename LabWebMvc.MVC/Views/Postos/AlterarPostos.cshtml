@@ -1,4 +1,4 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using static BLL.UtilBLL
 @using LabWebMvc.MVC.ViewModel
 @using LabWebMvc.MVC.Areas.Utils
@@ -53,17 +53,23 @@
 
 @using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))  //@id-"form" é obrigatório para campos chegarem do doutro lado
 {
-    <div class="row">
-        <div class="col-md-4">
+    <style>
+        .cadastro-clean .form-control { font-size: 12px !important; }
+        .cadastro-clean select.form-control { font-size: 12px !important; }
+    </style>
+    <div class="cadastro-clean" style="max-width: 600px; margin: 20px 0; padding: 24px; border: 1px solid #d4edda; border-radius: 8px; background-color: #fff;">
+        <h4 style="color: #333; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0;">
+            <i class="fa-solid fa-location-dot" style="color: #69c38a;"></i> Alterar Posto de Coleta
+        </h4>
             @Html.AntiForgeryToken()
             @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
             @* Feito pelo Qoder em 21/04/2026 - selecção da Instituição e Sigla do Posto *@
             @{ var instIdAtual = Model.InstituicaoId.ToString(); }
             <div class="form-group">
-                @Html.Label("*Instituição", null, new { @class = "" })
+                <label style="font-size: 13px; color: #333;">*Instituição</label>
                 <div class="d-flex gap-2">
-                    <select id="ddlInstSigla" class="form-control" style="width: 30%;" required>
+                    <select id="ddlInstSigla" class="form-control" style="width: 30%; border: 1px solid #69c38a; border-radius: 6px;" required>
                         <option value="">Sigla</option>
                         @foreach (var item in Model.InstituicoesSigla)
                         {
@@ -77,7 +83,7 @@
                             }
                         }
                     </select>
-                    <select id="ddlInstNome" class="form-control" style="width: 70%;">
+                    <select id="ddlInstNome" class="form-control" style="width: 70%; border: 1px solid #69c38a; border-radius: 6px;">
                         <option value="">Nome da Instituição</option>
                         @foreach (var item in Model.InstituicoesNome)
                         {
@@ -96,65 +102,64 @@
                 @Html.ValidationMessageFor(p => p.InstituicaoId, null, new { @class = "has-error" })
             </div>
             <div class="form-group">
-                @Html.Label("*Sigla do Posto", null, new { @class = "" })
-                @Html.TextBoxFor(p => p.SiglaPosto, new { @class = "form-control", @placeholder = "Máx. 20 caracteres: A-Z 0-9 espaço . _ -", @required = "required", @maxlength = "20", @pattern = "[A-Z0-9 ._\\-]+", @oninput = "this.value=this.value.toUpperCase()" })
+                <label style="font-size: 13px; color: #333;">*Sigla do Posto</label>
+                @Html.TextBoxFor(p => p.SiglaPosto, new { @class = "form-control", @placeholder = "Máx. 20 caracteres: A-Z 0-9 espaço . _ -", @required = "required", @maxlength = "20", @pattern = "[A-Z0-9 ._\\-]+", @oninput = "this.value=this.value.toUpperCase()", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
                 @Html.ValidationMessageFor(p => p.SiglaPosto, null, new { @class = "has-error" })
             </div>
             @* ..Qoder *@
 
             <div class="form-group">
-                @Html.Label("*Nome do Posto/anexo")
-                @Html.TextBoxFor(p => p.NomePosto, new { @class = "form-control capitalize", @readonly = "readonly" })
+                <label style="font-size: 13px; color: #333;">*Nome do Posto/anexo</label>
+                @Html.TextBoxFor(p => p.NomePosto, new { @class = "form-control capitalize", @readonly = "readonly", @style = "border: 1px solid #69c38a; border-radius: 6px; background-color: #f9f9f9;" })
             </div>
             <div class="form-group">
-                @Html.Label("*Responsável")
-                @Html.TextBoxFor(p => p.Responsavel, new { @class = "form-control capitalize", @placeholder = "Entre com o nome do responsável", @required = "required" })
+                <label style="font-size: 13px; color: #333;">*Responsável</label>
+                @Html.TextBoxFor(p => p.Responsavel, new { @class = "form-control capitalize", @placeholder = "Entre com o nome do responsável", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Telefone ou celular com DDD")
+                <label style="font-size: 13px; color: #333;">Telefone ou celular com DDD</label>
                 @Html.ValidationMessageFor(p => p.Telefone, null, new { @class = "has-error" })
-                @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD" })
+                @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("CEP")
-                @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP" })
+                <label style="font-size: 13px; color: #333;">CEP</label>
+                @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Logradouro (Rua/Trav)")
-                @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav" })
+                <label style="font-size: 13px; color: #333;">Logradouro (Rua/Trav)</label>
+                @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Endereço")
-                @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço" })
+                <label style="font-size: 13px; color: #333;">Endereço</label>
+                @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Número")
-                @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número" })
+                <label style="font-size: 13px; color: #333;">Número</label>
+                @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Complemento")
-                @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote" })
+                <label style="font-size: 13px; color: #333;">Complemento</label>
+                @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Bairro")
-                @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro" })
+                <label style="font-size: 13px; color: #333;">Bairro</label>
+                @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("Cidade/Município")
-                @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município" })
+                <label style="font-size: 13px; color: #333;">Cidade/Município</label>
+                @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
             </div>
             <div class="form-group">
-                @Html.Label("UF:")
+                <label style="font-size: 13px; color: #333;">UF:</label>
                 <div style="display: inline-block;">
                     @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF))
                 </div>
             </div>
-            <div class="form-group botao-centralizado">
-                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+            <div class="form-group botao-centralizado" style="margin-top: 20px;">
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde" style="border-radius: 6px;">
                     Salvar
                 </button>
             </div>
-        </div>
     </div>
 }
 @section Scripts {

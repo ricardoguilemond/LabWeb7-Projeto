@@ -42,7 +42,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             string? dataFinal,
             string? nomePaciente,
             int? codigoExame,
-            string? siglaInstituicao)
+            string? siglaInstituicao,
+            int? status)
         {
             var query = _db.ExamesRealizados
                 .AsNoTracking()
@@ -58,7 +59,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                           || !string.IsNullOrEmpty(dataFinal)
                           || !string.IsNullOrEmpty(nomePaciente)
                           || codigoExame.HasValue
-                          || !string.IsNullOrEmpty(siglaInstituicao);
+                          || !string.IsNullOrEmpty(siglaInstituicao)
+                          || status.HasValue;
 
             // Filtros backend
             if (!string.IsNullOrEmpty(dataInicial))
@@ -86,6 +88,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 query = query.Where(e => e.Instituicao.Sigla
                     .ToLower().Contains(siglaInstituicao.Trim().ToLower()));
 
+            if (status.HasValue)
+                query = query.Where(e => e.Situacao == status.Value);
             // Sem filtros: limitar a 100 registros
             if (!temFiltro)
                 query = query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id).Take(100);
@@ -110,7 +114,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     DataFim = item.DataFim,
                     NomeMedico = item.Medicos?.NomeMedico ?? "",
                     CRM = item.Medicos?.CRM ?? "",
-                    Situacao = item.Situacao
+                    Situacao = item.Situacao,
+                    TotalImpresso = item.TotalImpresso
                 });
             }
 
@@ -213,20 +218,27 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     return Json(new { sucesso = false, mensagem = "Item não encontrado." });
 
                 item.Resultado = resultado?.Trim();
-                
-                // Melhoria sobre Delphi: marcar "Em Análise" (Situacao=1) ao primeiro lançamento
-                if (!string.IsNullOrEmpty(resultado))
+
+                var exame = await _db.ExamesRealizados.FindAsync(item.ExameRealizadoId);
+                if (exame != null)
                 {
-                    var exame = await _db.ExamesRealizados.FindAsync(item.ExameRealizadoId);
-                    if (exame != null && exame.Situacao == 0)
+                    if (!string.IsNullOrWhiteSpace(resultado))
                     {
-                        exame.Situacao = 1; // Em Análise
+                        // Primeiro lançamento: Pendente → Em Análise
+                        if (exame.Situacao == 0)
+                            exame.Situacao = 1; // Em Análise
+                    }
+                    else
+                    {
+                        // Resultado apagado: se estava Impresso → volta para Em Análise
+                        if (exame.Situacao == 3)
+                            exame.Situacao = 1; // Em Análise (exame alterado após impressão)
                     }
                 }
 
                 await _db.SaveChangesAsync();
 
-                return Json(new { sucesso = true, mensagem = "Resultado salvo." });
+                return Json(new { sucesso = true, mensagem = "Resultado salvo.", situacao = exame?.Situacao ?? 0, totalImpresso = exame?.TotalImpresso ?? 0 });
             }
             catch (Exception ex)
             {
