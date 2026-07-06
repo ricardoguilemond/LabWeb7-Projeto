@@ -1,4 +1,4 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using static BLL.UtilBLL
 @using ExtensionsMethods.Genericos
 @using LabWebMvc.MVC.ViewModel
@@ -14,7 +14,8 @@
           "<th>Descrição do item</th>" +
           "<th>Valor Custo R$</th>" +
           "<th>Valor Cobrar/Paciente R$</th>" +
-          "<th>Lucro Variante por Item (%)</th>" +
+          "<th>Margem sobre o custo (%)</th>" +
+          "<th>Margem Bruta (%)</th>" +
           "<th>Opções</th>" +
           "</tr>" +
           "</thead>" +
@@ -22,9 +23,11 @@
 
 @foreach (var item in Model.ListaDados)
 {
-    /* Lucro Variante para cada linha do grid! */
-    string? lucroVariante = UtilsMath.CalcLucroVariante(item.ValorCusto, item.ValorItem, 4, "%");
-    TempData["linhaLucroVariante"] = lucroVariante;
+    /* Margens para cada linha do grid! */
+    string? margemSobreCusto = UtilsMath.CalcMargemSobreCusto(item.ValorCusto, item.ValorItem, 4, "%");
+    string? margemBruta = UtilsMath.CalcMargemBruta(item.ValorCusto, item.ValorItem, 4, "%");
+    TempData["linhaMargemSobreCusto"] = margemSobreCusto;
+    TempData["linhaMargemBruta"] = margemBruta;
 
     /* armazena para serem salvos os valores alterados */
     vmPlanoExames plano = new vmPlanoExames()
@@ -87,7 +90,8 @@
     @Html.Raw("<td style='width: 10%;'>")
     <input type="text" name="ValorItem" value="@plano.ValorItem" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorItem@(plano.Id)" style="width: 100px;" data-grupo="@grupoConta" data-tipo="@tipoLinha" @disabledAttr />
     @Html.Raw("</td>")
-    @Html.Raw("<td id=" + plano.Id + " class='linhaLucroVariante' style='width: 15%;'>" + @TempData["linhaLucroVariante"] + "&nbsp;</td>")
+    @Html.Raw("<td id='" + plano.Id + "' class='linhaMargemSobreCusto' style='width: 12%;'>" + @TempData["linhaMargemSobreCusto"] + "&nbsp;</td>")
+    @Html.Raw("<td id='margemBruta" + plano.Id + "' class='linhaMargemBruta' style='width: 10%;'>" + @TempData["linhaMargemBruta"] + "&nbsp;</td>")
     @Html.Raw("<td class='grid_fundo_opcoes'>" +
               "<a id=" + plano.Id + " class='grid_itens' onclick=clickSalva(this) title='Salvar os valores da linha'><i class='fa-solid fa-check'></i></a>" +
               "<a id=" + plano.Id + " class='grid_itens' onclick=clickAlterar(this) title='Alterar em todas as instituições'><i class='fa-sharp fa-solid fa-file-pen'></i></a>" +
@@ -106,7 +110,8 @@
           "<th>Descrição do item</th>" +
           "<th>Valor Custo R$</th>" +
           "<th>Valor Cobrar/Paciente R$</th>" +
-          "<th>Lucro Variante por Item (%)</th>" +
+          "<th>Margem sobre o custo (%)</th>" +
+          "<th>Margem Bruta (%)</th>" +
           "<th id='op'>Opções</th>" +
           "</tr>" +
           "</tfoot>")

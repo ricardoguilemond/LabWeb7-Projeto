@@ -57,15 +57,24 @@
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            setTimeout(function () {
+                restaurarEstadoGrid('Medicos');
+            }, 500);
+        });
+    </script>
 }
 <script>
     //ACTIONS ICONS
     function clickConsulta(x) {
+        salvarEstadoGrid('Medicos', x.id);
         var url = "ConsultarMedico?id=" + x.id;
         window.open(url, "_self")
         //window.location.href = '@Url.Action("ConsultarMedico", "Medicos")?id=' + x.id;
     }
     function clickAlterar(x) { //OK
+        salvarEstadoGrid('Medicos', x.id);
         window.location.href = '@Url.Action("AlterarMedico", "Medicos")?id=' + x.id;
     }
     function clickDelete(x) {

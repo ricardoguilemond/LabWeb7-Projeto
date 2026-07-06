@@ -17,6 +17,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
     [Route("Manutencao")]
     public class ManutencaoController : BaseController
     {
+        private readonly IWebHostEnvironment _env;
+
         public ManutencaoController(
             IDbFactory dbFactory,
             IValidadorDeSessao validador,
@@ -24,9 +26,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
-            IConnectionService connectionService)
+            IConnectionService connectionService,
+            IWebHostEnvironment env)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
+            _env = env;
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -108,6 +112,37 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 return Json(new { sucesso = false, mensagem = "Erro ao compactar requisições. Detalhe: " + ex.Message });
             }
         }
+
+        //Feito pelo Kiro em 03/07/2026
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpGet]
+        [Route("ImportarReferencias")]
+        public IActionResult ImportarReferenciasView()
+        {
+            ViewBag.TextoMenu = new object[] { "Carga de Dados", false };
+            return View("ImportarReferencias");
+        }
+        //..Kiro
+
+        //Feito pelo Kiro em 11/07/2025
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("ImportarReferencias")]
+        public async Task<IActionResult> ImportarReferencias(string? pastaOrigem)
+        {
+            try
+            {
+                var importador = new ImportadorReferenciaExames(_db, _env, _geralController);
+                var resultado = await importador.ExecutarAsync(pastaOrigem);
+                return Json(new { sucesso = true, resultado });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[Manutenção] Erro na importação de referências: " + ex.Message, "wError");
+                return Json(new { sucesso = false, mensagem = "Erro ao importar referências. Detalhe: " + ex.Message });
+            }
+        }
+        //..Kiro
     }
     //..Kiro
 }

@@ -51,6 +51,8 @@ public partial class PlanoExames
 
     public int AlinhaLaudo { get; set; }
 
+    public int? GraficoNoItem { get; set; }
+
     public int Seleciona { get; set; }
 
     public int NaoMostrar { get; set; }

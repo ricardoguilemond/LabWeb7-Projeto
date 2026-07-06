@@ -69,6 +69,15 @@ else
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            setTimeout(function () {
+                restaurarFolhaEGrid('PlanoExames', function () {
+                    restaurarEstadoGrid('PlanoExames');
+                });
+            }, 500);
+        });
+    </script>
 
     <script type="text/javascript">
         //Declara os dois boxes com o default, e vamos sempre atualizar os dois Ids.
@@ -83,13 +92,16 @@ else
         function clickModelo(x) {
             //"x" é a linha toda da tag (tem que passar a linha TODA de "x")
             //x.id é somente o "id" na tag da linha
+            salvarEstadoGrid('PlanoExames', x.id);
             window.location.href = '@Url.Action("ModeloPlanoExames", "PlanoExames")?registroID=' + x.id;
         };
         function clickConsulta(x) {
+            salvarEstadoGrid('PlanoExames', x.id);
             var url = "ConsultarPlanoExames?id=" + x.id;
             window.open(url, "_self")
         }
         function clickAlterar(x) { //OK
+            salvarEstadoGrid('PlanoExames', x.id);
             window.location.href = '@Url.Action("AlterarPlanoExames", "PlanoExames")?id=' + x.id;
         }
         function clickDelete(x) {

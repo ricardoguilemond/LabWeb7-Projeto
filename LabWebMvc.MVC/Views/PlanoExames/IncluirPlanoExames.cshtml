@@ -9,6 +9,7 @@
 }
 <script>
     $(document).ready(function () {
+        initBtnVoltar();
         var numeroItemFolha = $(".itemFolhaExame").val(); //declara no carregamento da página, o número da folha que está DEFAULT no ComboBox!
         $('.itemFolhaExame').change(function (event) {//class from RadioButton
             event.preventDefault();
@@ -162,6 +163,15 @@
                     @Html.TextBoxFor(p => p.MapaHorizontal, new { @id = "MapaHorizontal", @class = "form-control uppercase", @style = "width: 100px;" })
                 </div>
                 <div class="form-group">
+                    @Html.Label("Resultado Mínimo Permitido")
+                    @Html.TextBoxFor(p => p.ResultadoMinimo, new { @class = "form-control", @type = "number", @step = "any", @style = "width: 150px;" })
+                    @Html.Label("Resultado Máximo Permitido")
+                    @Html.TextBoxFor(p => p.ResultadoMaximo, new { @class = "form-control", @type = "number", @step = "any", @style = "width: 150px;" })
+                    <div style="font-size: 0.8em; color: #666;">
+                        Intervalo numérico aceito no lançamento de resultados.
+                    </div>
+                </div>
+                <div class="form-group">
                     <fieldset class="borda_redonda" style="padding: 6px;">
                         @{
                             ICollection<int> listaEtiquetas = new HashSet<int>();
@@ -206,7 +216,19 @@
                     @Html.Label("Prazo Entrega em Dias")
                     @Html.TextBoxFor(p => p.PrazoResultadoDias, new { @class = "form-control" })
                 </div>
-                <div class="form-group botao-centralizado">
+                <div class="form-group">
+                    <div style="display: inline-block;">
+                        @Html.CheckBoxFor(p => p.GraficoNoItemBool)
+                        @Html.Label("Mostrar gráfico evolutivo no item de exame")
+                    </div>
+                    <div style="font-size: 0.8em; color: #666;">
+                        Disponível apenas para resultados numéricos ou percentuais.
+                    </div>
+                </div>
+                <div class="form-group" style="text-align: center;">
+                    <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
+                        <i class="fa-solid fa-arrow-left"></i> Voltar
+                    </button>
                     <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
                         Salvar
                     </button>

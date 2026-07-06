@@ -115,7 +115,7 @@
             @foreach (var item in Model.ListaDados)
             {
                 @Html.Raw(
-                         "<tr>" +
+                         "<tr data-id='" + item.Id + "'>" +
                          "<td style='width: 03%;'>" + item.Id + "</td>" +
                          "<td style='width: 10%;'>" + item.Email + "</td>" +
                          "<td style='width: 07%;'>" + item.NomeUsuario + "</td>" +
@@ -127,9 +127,9 @@
                          "<td style='width: 03%; text-align: center;'>" + UtilBLL.RetornaSN(item.Administrador) + "</td>" +
                          "<td style='width: 03%; text-align: center;'>" + UtilBLL.RetornaSN(item.EmailConfirmado) + "</td>" +
                          "<td class='grid_fundo_opcoes'>" +
-                         "<a id='" + item.Email + "' name='senha' data-toggle='tooltip' title='Incluir Usuário' onclick='clickIncluir(this)'><i class='fa fa-add'></i>&nbsp;&nbsp;</a>" +
-                         "<a id='" + item.Email + "' name='senha' data-toggle='tooltip' title='Alterar Senha' onclick='clickSenha(this)'><i class='fa-solid fa-lock-open'></i>&nbsp;&nbsp;</a>" +
-                         "<a id='" + item.Email + "' name='senha' data-toggle='tooltip' title='Excluir Usuário' onclick='clickDelete(this)'><i class='fa fa-trash'></i>&nbsp;&nbsp;</a>" +
+                         "<a id='" + item.Email + "' data-id='" + item.Id + "' name='senha' data-toggle='tooltip' title='Incluir Usuário' onclick='clickIncluir(this)'><i class='fa fa-add'></i>&nbsp;&nbsp;</a>" +
+                         "<a id='" + item.Email + "' data-id='" + item.Id + "' name='senha' data-toggle='tooltip' title='Alterar Senha' onclick='clickSenha(this)'><i class='fa-solid fa-lock-open'></i>&nbsp;&nbsp;</a>" +
+                         "<a id='" + item.Email + "' data-id='" + item.Id + "' name='senha' data-toggle='tooltip' title='Excluir Usuário' onclick='clickDelete(this)'><i class='fa fa-trash'></i>&nbsp;&nbsp;</a>" +
                          // "♥ " +
                          "</td>" +
                          "</tr>")
@@ -156,6 +156,13 @@
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            setTimeout(function () {
+                restaurarEstadoGrid('Senhas');
+            }, 500);
+        });
+    </script>
 }
 <script>
     $(document).ready(function () {
@@ -198,11 +205,13 @@
 
     //ACTIONS ICONS
     function clickSenha(x) {
+        salvarEstadoGrid('Senhas', x.getAttribute('data-id'));
         //alert("Alterar Senha: " + x.id); //este parâmetro é o "id" da tag e não o id do item!
         //window.location.href = '@Url.Action(@PartialFiltro.ActionButton, @PartialFiltro.ControllerButton)/' + x.id;
         window.location.href = '@Url.Action("AlterarSenha", "Senhas")?Email=' + x.id;     //funciona, mas os parâmetros precisam ficar ocultos ou criptografados!
     }
     function clickIncluir(x) {
+        salvarEstadoGrid('Senhas', x.getAttribute('data-id'));
         //alert("IncluirRegistro: " + x.id);
         //window.location.href = '@Url.Action(@PartialFiltro.ActionButton, @PartialFiltro.ControllerButton)/' + x.id;
         window.location.href = '@Url.Action("IncluirUsuarios", "Senhas")'; 

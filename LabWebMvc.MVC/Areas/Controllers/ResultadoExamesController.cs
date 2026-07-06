@@ -11,6 +11,7 @@ using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using static BLL.UtilBLL;
 
 namespace LabWebMvc.MVC.Areas.Controllers
@@ -19,6 +20,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
     public class ResultadoExamesController : BaseController
     {
         private readonly IWebHostEnvironment _env;
+        private readonly IExameReferenciaCache _exameReferenciaCache;
 
         public ResultadoExamesController(
             IDbFactory dbFactory,
@@ -28,10 +30,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             Imagem imagem,
             ExclusaoService exclusaoService,
             IConnectionService connectionService,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IExameReferenciaCache exameReferenciaCache)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _env = env;
+            _exameReferenciaCache = exameReferenciaCache;
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -217,9 +221,32 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 if (item == null)
                     return Json(new { sucesso = false, mensagem = "Item não encontrado." });
 
+                var exame = await _db.ExamesRealizados.FindAsync(item.ExameRealizadoId);
+
+                // Validação de intervalo numérico/percentual configurado no Plano de Exames
+                if (exame != null && !string.IsNullOrWhiteSpace(resultado))
+                {
+                    var plano = await _db.PlanoExames
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p => p.ContaExame == item.ContaExame
+                                               && p.TabelaExamesId == exame.TabelaExamesId);
+
+                    if (plano != null && (plano.ResultadoMinimo.HasValue || plano.ResultadoMaximo.HasValue))
+                    {
+                        var valorResultado = ParseValorResultado(resultado);
+                        if (valorResultado.HasValue)
+                        {
+                            if (plano.ResultadoMinimo.HasValue && valorResultado.Value < plano.ResultadoMinimo.Value)
+                                return Json(new { sucesso = false, mensagem = $"O resultado {resultado} está abaixo do mínimo permitido ({plano.ResultadoMinimo.Value})." });
+
+                            if (plano.ResultadoMaximo.HasValue && valorResultado.Value > plano.ResultadoMaximo.Value)
+                                return Json(new { sucesso = false, mensagem = $"O resultado {resultado} está acima do máximo permitido ({plano.ResultadoMaximo.Value})." });
+                        }
+                    }
+                }
+
                 item.Resultado = resultado?.Trim();
 
-                var exame = await _db.ExamesRealizados.FindAsync(item.ExameRealizadoId);
                 if (exame != null)
                 {
                     if (!string.IsNullOrWhiteSpace(resultado))
@@ -317,12 +344,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // Montar lista de assinaturas ativas
                 var listaAssinaturas = MontarAssinaturas(assinaturas);
 
-                // Carregar AlinhaLaudo do PlanoExames para cada item (por ContaExame + TabelaExamesId)
+                // Carregar AlinhaLaudo e flag de gráfico do PlanoExames para cada item (por ContaExame + TabelaExamesId)
                 var contasExame = itens.Select(i => i.ContaExame).Distinct().ToList();
                 var planoExamesDict = await _db.PlanoExames
                     .AsNoTracking()
                     .Where(p => p.TabelaExamesId == exame.TabelaExamesId && contasExame.Contains(p.ContaExame))
-                    .ToDictionaryAsync(p => p.ContaExame, p => p.AlinhaLaudo);
+                    .ToDictionaryAsync(
+                        p => p.ContaExame,
+                        p => new { p.AlinhaLaudo, p.GraficoNoItem });
 
                 // Montar DTO para o helper
                 var dadosPdf = new DadosPdfResultado
@@ -370,15 +399,80 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         EhPrincipal = i.ContaExame.Length >= 11
                             && i.ContaExame.Substring(i.ContaExame.Length - 4) == "0000"
                             && i.ContaExame.Substring(4, 3) != "000",
-                        AlinhaLaudo = planoExamesDict.TryGetValue(i.ContaExame, out int alinha) ? alinha : 0
+                        AlinhaLaudo = planoExamesDict.TryGetValue(i.ContaExame, out var plano) ? plano.AlinhaLaudo : 0
                     }).ToList(),
 
                     // Assinaturas
                     Assinaturas = listaAssinaturas,
 
-                    // Caminho laudos fixos
+                    // Caminho laudos fixos — fallback temporário (será removido na etapa 11)
                     CaminhoLaudos = System.IO.Path.Combine(_env.ContentRootPath, "Laudos")
                 };
+
+                //Feito pelo Kiro em 11/07/2025
+                // Montar referências do cache para o DTO
+                var referenciasDic = new Dictionary<string, List<ExameReferenciaItem>>();
+                foreach (var conta in contasExame)
+                {
+                    var refs = _exameReferenciaCache.ObterReferencias(conta);
+                    if (refs != null && refs.Count > 0)
+                        referenciasDic[conta] = refs;
+                }
+                if (referenciasDic.Count > 0)
+                    dadosPdf.ReferenciasPorContaExame = referenciasDic;
+                //..Kiro
+
+                // Montar histórico evolutivo dos itens configurados para exibir gráfico
+                var itensGrafico = itens
+                    .Where(i => planoExamesDict.TryGetValue(i.ContaExame, out var plano)
+                             && plano.GraficoNoItem == 1)
+                    .ToList();
+
+                if (itensGrafico.Count > 0)
+                {
+                    var historicoDict = new Dictionary<string, List<DadoHistoricoExame>>();
+                    var fusoLocal = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+
+                    foreach (var itemGrafico in itensGrafico)
+                    {
+                        var anteriores = await _db.ItensExamesRealizados
+                            .AsNoTracking()
+                            .Include(i => i.ExamesRealizados)
+                            .Where(i => i.PacienteId == exame.PacienteId
+                                     && i.ContaExame == itemGrafico.ContaExame
+                                     && i.ExameRealizadoId != exame.Id
+                                     && i.ExamesRealizados.DataIni <= exame.DataIni)
+                            .OrderByDescending(i => i.ExamesRealizados.DataIni)
+                            .Take(5)
+                            .Select(i => new { i.Resultado, i.ExamesRealizados.DataIni })
+                            .ToListAsync();
+
+                        var pontos = anteriores
+                            .Select(h => new { h.DataIni, Valor = ParseValorResultado(h.Resultado) })
+                            .Where(h => h.Valor.HasValue)
+                            .ToList();
+
+                        var valorAtual = ParseValorResultado(itemGrafico.Resultado);
+                        if (valorAtual.HasValue)
+                            pontos.Add(new { DataIni = exame.DataIni, Valor = valorAtual });
+
+                        var pontosOrdenados = pontos
+                            .OrderBy(p => p.DataIni)
+                            .Take(6)
+                            .Select(p => new DadoHistoricoExame
+                            {
+                                DataExame = TimeZoneInfo.ConvertTimeFromUtc(p.DataIni, fusoLocal),
+                                Valor = p.Valor!.Value
+                            })
+                            .ToList();
+
+                        if (pontosOrdenados.Count >= 2)
+                            historicoDict[itemGrafico.ContaExame] = pontosOrdenados;
+                    }
+
+                    if (historicoDict.Count > 0)
+                        dadosPdf.HistoricoPorContaExame = historicoDict;
+                }
 
                 // Gerar PDF via helper (PdfSharpCore - MIT)
                 var geradorPdf = new GeradorPdfResultado();
@@ -543,6 +637,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (exame == null)
                 return Json(new { sucesso = false, mensagem = "Exame não encontrado." });
 
+            // Só permite baixar para Arquivo-Morto se o laudo já foi impresso ao menos 1 vez
+            if (exame.TotalImpresso < 1)
+                return Json(new { sucesso = false, mensagem = "Este exame ainda não foi impresso. É necessário imprimir o laudo pelo menos uma vez antes de baixar para Arquivo-Morto." });
+
             // Proteção de concorrência: se já está sendo baixado por outro terminal
             if (exame.Situacao == 11)
                 return Json(new { sucesso = false, mensagem = "Exame está sendo baixado por outro terminal. Aguarde." });
@@ -671,6 +769,22 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
         }
         //..Kiro
+
+        private static decimal? ParseValorResultado(string? resultado)
+        {
+            if (string.IsNullOrWhiteSpace(resultado))
+                return null;
+
+            var primeiroToken = resultado.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(primeiroToken))
+                return null;
+
+            var limpo = new string(primeiroToken.Where(c => char.IsDigit(c) || c == ',' || c == '.' || c == '-').ToArray());
+            if (decimal.TryParse(limpo, NumberStyles.Any, CultureInfo.GetCultureInfo("pt-BR"), out var valor))
+                return valor;
+
+            return null;
+        }
     }
     //..Kiro
 }

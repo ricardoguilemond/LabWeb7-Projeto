@@ -114,6 +114,12 @@ namespace LabWebMvc.MVC
             //Para o modelo de exportação de pacientes
             services.AddScoped<ServicoExportacaoPacientes>();
             //
+            //Feito pelo Kiro em 11/07/2025
+            //Cache em memória para referências de exames (migração Delphi)
+            services.AddMemoryCache();
+            services.AddScoped<IExameReferenciaCache, ExameReferenciaCache>();
+            //..Kiro
+            //
             //services.AddControllersWithViews();
             //..
             //Evita que um campo string de View Model (formulário) dê erro de validação quando for nulo!

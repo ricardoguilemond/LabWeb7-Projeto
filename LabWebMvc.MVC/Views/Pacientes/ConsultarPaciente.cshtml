@@ -46,9 +46,10 @@
 </style>
 <script>
     $(document).ready(function () {
+        initBtnVoltar();
         $(".close").click(function (event) {
             event.preventDefault();
-            window.location.href = 'Pacientes';
+            window.history.back();
         });
     });
 </script>
@@ -163,6 +164,11 @@
                     @Html.TextAreaFor(p => p.Observacao, new { @class = "campo obs", @disabled = "disabled" })
                 </div>
             </div>
+        </div>
+        <div class="modal-footer" style="justify-content: center;">
+            <button type="button" id="btnVoltar" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
         </div>
     </div>
 </div>

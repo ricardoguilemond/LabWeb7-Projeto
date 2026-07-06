@@ -40,24 +40,83 @@ namespace LabWebMvc.MVC.Areas.Controllers
             ViewBag.TextoMenu = action.MensagemStartUp();
         }
 
-        private void CalculaLucroVariante(ICollection<PlanoExames> dados)
+        private static bool EhFolha(string contaExame)
         {
-            decimal totalCustoVariante = dados.Sum(s => s.ValorCusto).GetValueOrDefault();
-            decimal totalItemVariante = dados.Sum(s => s.ValorItem).GetValueOrDefault(); ;
-            string totalLucroVariante = Convert.ToString(UtilsMath.CalcLucroVarianteDec(totalCustoVariante, totalItemVariante)) + " %";
+            return contaExame.Length >= 11 && contaExame.Substring(4, 7) == "0000000";
+        }
+
+        private static bool EhItem(string contaExame)
+        {
+            return contaExame.Length >= 11 && contaExame.Substring(7, 4) != "0000" && !EhFolha(contaExame);
+        }
+
+        private static bool EhPrincipal(string contaExame)
+        {
+            return contaExame.Length >= 11 && contaExame.Substring(7, 4) == "0000" && !EhFolha(contaExame);
+        }
+
+        private static bool TemValor(PlanoExames p)
+        {
+            return p.ValorCusto.GetValueOrDefault() > 0 || p.ValorItem.GetValueOrDefault() > 0;
+        }
+
+        private void CalculaMargens(ICollection<PlanoExames> dados)
+        {
+            // Regra de prioridade hierárquica para o total financeiro da folha:
+            // 1. Se a Folha tem valor -> usar apenas a Folha (Principais e Itens são amostragem).
+            // 2. Senao, para cada grupo (Principal + seus Itens):
+            //    a. Se o Principal tem valor -> usar apenas o Principal (Itens sao amostragem).
+            //    b. Senao -> somar os Itens do grupo (exame lancado item a item).
+            // Isso evita duplicar valores financeiros no total da folha.
+            var dadosParaCalculo = new List<PlanoExames>();
+
+            var folha = dados.FirstOrDefault(d => EhFolha(d.ContaExame));
+            bool folhaTemValor = folha != null && TemValor(folha);
+
+            if (folhaTemValor)
+            {
+                dadosParaCalculo.Add(folha!);
+            }
+            else
+            {
+                // Agrupa por Principal (7 primeiros digitos do ContaExame), excluindo a folha
+                var grupos = dados
+                    .Where(d => !EhFolha(d.ContaExame))
+                    .GroupBy(d => d.ContaExame.Length >= 7 ? d.ContaExame.Substring(0, 7) : d.ContaExame);
+
+                foreach (var grupo in grupos)
+                {
+                    var principal = grupo.FirstOrDefault(g => EhPrincipal(g.ContaExame));
+                    var itens = grupo.Where(g => EhItem(g.ContaExame)).ToList();
+
+                    bool principalTemValor = principal != null && TemValor(principal);
+
+                    if (principalTemValor)
+                        dadosParaCalculo.Add(principal!);
+                    else
+                        dadosParaCalculo.AddRange(itens);
+                }
+            }
+
+            decimal totalCustoVariante = dadosParaCalculo.Sum(s => s.ValorCusto).GetValueOrDefault();
+            decimal totalItemVariante = dadosParaCalculo.Sum(s => s.ValorItem).GetValueOrDefault();
+            string totalMargemSobreCusto = Convert.ToString(UtilsMath.CalcMargemSobreCustoDec(totalCustoVariante, totalItemVariante)) + " %";
+            string totalMargemBruta = Convert.ToString(UtilsMath.CalcMargemBrutaDec(totalCustoVariante, totalItemVariante)) + " %";
 
             TempData.Clear();
 
             TempData["TotalCustoVariante"] = totalCustoVariante.ToString("N4");
             TempData["TotalItemVariante"] = totalItemVariante.ToString("N4");
-            TempData["TotalLucroVariante"] = totalLucroVariante;
+            TempData["TotalMargemSobreCusto"] = totalMargemSobreCusto;
+            TempData["TotalMargemBruta"] = totalMargemBruta;
 
             TempData["Summary"] = "<tr class='summary'>" +
-                                  "<th colspan='5' style='text-align:left'><i style='color: #646464;'>Sumário da margem de lucro >>> </i></th>" +
+                                  "<th colspan='5' style='text-align:left'><i style='color: #646464;'>Sumário da margem >>> </i></th>" +
                                   "<th class='summary_item'>R$ " + totalCustoVariante.ToString("N4") + "</th>" +
                                   "<th class='summary_item'>R$ " + totalItemVariante.ToString("N4") + "</th>" +
-                                  "<th class='summary_item'><i style='color: #646464;'>Lucro Variante Total:</i>&nbsp;" + totalLucroVariante +
-                                  "<a href='#' title='(valor cobrar * 100 / valor custo) - 100'>&nbsp;&nbsp;[Ver Fórmula]</a></th>" +
+                                  "<th class='summary_item'><i style='color: #646464;'>Margem sobre o custo Total:</i>&nbsp;" + totalMargemSobreCusto +
+                                  "<a href='#' title='((valor cobrar - valor custo) / valor custo) * 100'>&nbsp;&nbsp;[Ver Fórmula]</a></th>" +
+                                  "<th class='summary_item'><i style='color: #646464;'>Margem Bruta Total:</i>&nbsp;" + totalMargemBruta + "</th>" +
                                   "<th></th>" +
                                   "</tr>";
 
@@ -87,7 +146,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 TabelaNomeList = tabelas.Select(t => new SelectListItem { Text = t.NomeTabela, Value = t.Id.ToString() }).ToList()
             };
 
-            // Carrega os dados da tabela
+            // Carrega os dados da tabela (sem a folha, que e apenas cabecalho)
             var dados = await _db.PlanoExames
                 .Where(s => !s.ContaExame.EndsWith("0000000") && s.ExameId == numeroItemFolha && s.TabelaExamesId == numeroTabela)
                 .OrderByDescending(o => o.Id)
@@ -106,8 +165,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
             ViewBag.TotalTabela = totalTabela.ToString();
             ViewBag.ListaDados = dados;
 
-            // Calcula lucro variante
-            CalculaLucroVariante(dados);
+            // Carrega o registro da Folha para o calculo do sumario (prioridade hierarquica)
+            var folhaRegistro = await _db.PlanoExames
+                .Where(s => s.ContaExame.EndsWith("0000000") && s.ExameId == numeroItemFolha && s.TabelaExamesId == numeroTabela)
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
+
+            var dadosParaCalculo = new List<PlanoExames>(dados);
+            if (folhaRegistro != null)
+                dadosParaCalculo.Add(folhaRegistro);
+
+            // Calcula margens sobre o custo e margem bruta (com prioridade hierarquica Folha > Principal > Itens)
+            CalculaMargens(dadosParaCalculo);
 
             //Feito pelo Kiro em 20/04/2026
             // Prepara resposta
@@ -408,8 +477,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             decimal? valorCustoSalvar = string.IsNullOrEmpty(valorCusto) ? 0 : valorCusto.ToDecimalInvariant();
             decimal? valorItemSalvar = string.IsNullOrEmpty(valorItem) ? 0 : valorItem.ToDecimalInvariant();
-            string linhaLucro = UtilsMath.CalcLucroVariante(valorCustoSalvar, valorItemSalvar, 4, "%");
-            string linhaLucroVariante = linhaLucro;
+            string linhaMargemSobreCusto = UtilsMath.CalcMargemSobreCusto(valorCustoSalvar, valorItemSalvar, 4, "%");
+            string linhaMargemBruta = UtilsMath.CalcMargemBruta(valorCustoSalvar, valorItemSalvar, 4, "%");
 
             PlanoExames planoExames = await _db.PlanoExames.Where(x => x.Id == id).SingleAsync();
             if (planoExames == null)
@@ -437,18 +506,26 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                             //Para conseguir atualizar o sumário no Grid após salvar o item
                             ICollection<PlanoExames> dados = await _db.PlanoExames.Where(s => !s.ContaExame.EndsWith("0000000") && s.ExameId == idFolha && s.TabelaExamesId == idTabela).AsNoTracking().OrderByDescending(o => o.Id).ToListAsync();
-                            CalculaLucroVariante(dados);
 
-                            TempData["linhaLucroVariante"] = linhaLucroVariante;
+                            // Carrega tambem o registro da Folha para o calculo (prioridade hierarquica)
+                            var folhaRegistro = await _db.PlanoExames.Where(s => s.ContaExame.EndsWith("0000000") && s.ExameId == idFolha && s.TabelaExamesId == idTabela).AsNoTracking().FirstOrDefaultAsync();
+                            var dadosParaCalculo = new List<PlanoExames>(dados);
+                            if (folhaRegistro != null)
+                                dadosParaCalculo.Add(folhaRegistro);
+
+                            CalculaMargens(dadosParaCalculo);
+
+                            TempData["linhaMargemSobreCusto"] = linhaMargemSobreCusto;
+                            TempData["linhaMargemBruta"] = linhaMargemBruta;
                             TempData.Keep();
 
-                            return Json(new { titulo = Mensagens_pt_BR.Salvou, mensagem = "A linha do registro foi salva", id = id, sumario = TempData["Summary"], linhaLucroVariante = linhaLucroVariante });
+                            return Json(new { titulo = Mensagens_pt_BR.Salvou, mensagem = "A linha do registro foi salva", id = id, sumario = TempData["Summary"], linhaMargemSobreCusto = linhaMargemSobreCusto, linhaMargemBruta = linhaMargemBruta });
                         }
                         catch (Exception ex)
                         {
                             await transaction.RollbackAsync();
                             _eventLog.LogEventViewer("[PlanoExamesItens] Salvar Item Grid - Erro: " + ex.Message, "wError");
-                            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Falhou a gravação na linha do registro", id = id, sumario = TempData["Summary"], linhaLucroVariante = TempData["linhaLucroVariante"] });
+                            return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Falhou a gravação na linha do registro", id = id, sumario = TempData["Summary"], linhaMargemSobreCusto = TempData["linhaMargemSobreCusto"], linhaMargemBruta = TempData["linhaMargemBruta"] });
                         }
                     }
                 });
@@ -457,7 +534,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             catch (Exception ex)
             {
                 _eventLog.LogEventViewer("[PlanoExamesItens] Salvar Item Grid - Erro geral: " + ex.Message, "wError");
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Falhou a gravação na linha do registro", id = id, sumario = TempData["Summary"], linhaLucroVariante = TempData["linhaLucroVariante"] });
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Falhou a gravação na linha do registro", id = id, sumario = TempData["Summary"], linhaMargemSobreCusto = TempData["linhaMargemSobreCusto"], linhaMargemBruta = TempData["linhaMargemBruta"] });
             }
         }
 

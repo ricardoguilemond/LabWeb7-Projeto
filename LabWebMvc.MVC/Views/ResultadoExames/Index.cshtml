@@ -263,6 +263,12 @@
                 if (data.sucesso) {
                     renderizarPainelInfo(data.info);
                     renderizarGridItens(data.itens);
+                    // Só exibe o botão de Arquivo-Morto se o laudo já foi impresso ao menos 1 vez
+                    if (data.info.totalImpresso > 0) {
+                        $('#btnBaixarAM').show();
+                    } else {
+                        $('#btnBaixarAM').hide();
+                    }
                     $('#botoesAcao').show(); //Feito pelo Kiro em 14/06/2025
                 } else {
                     clickAviso('Erro', data.mensagem, 'critica', null);

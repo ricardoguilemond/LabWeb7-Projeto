@@ -1714,6 +1714,7 @@ public class Db : DbContext
             entity.Property(e => e.Descricao)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+            entity.Property(e => e.GraficoNoItem);
             entity.Property(e => e.ICH)
                 .HasColumnType("decimal(18, 2)")
                 .HasColumnName("ICH");

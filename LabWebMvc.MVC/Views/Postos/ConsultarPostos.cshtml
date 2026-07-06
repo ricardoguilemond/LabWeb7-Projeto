@@ -41,9 +41,10 @@
 </style>
 <script>
     $(document).ready(function () {
+        initBtnVoltar();
         $(".close").click(function (event) {
             event.preventDefault();
-            window.location.href = 'Postos';
+            window.history.back();
         });
     });
 </script>
@@ -90,6 +91,11 @@
             <!-- Linha 2 -->
             <div class="wrapper">
             </div>
+        </div>
+        <div class="modal-footer" style="justify-content: center;">
+            <button type="button" id="btnVoltar" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
         </div>
     </div>
 </div>

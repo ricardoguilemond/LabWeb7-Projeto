@@ -8,6 +8,7 @@
 }
 <script>
     $(document).ready(function () {
+        initBtnVoltar();
         $("#divFileAss1").hide();
         $("#divFileAss2").hide();
         $("#divFileAss3").hide();
@@ -246,8 +247,11 @@
                 <div class="form-group">
                     <!-- Salto de Linha -->
                 </div>
-                <div class="form-group">
-                    <input id="clickSubmit" type="submit" value="Salvar" class="btn btn-lg btn-success w-100 btn-altura" />
+                <div class="form-group" style="text-align: center;">
+                    <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
+                        <i class="fa-solid fa-arrow-left"></i> Voltar
+                    </button>
+                    <input id="clickSubmit" type="submit" value="Salvar" class="btn btn-lg btn-success btn-altura" />
                     <i id="setaGravacao"></i>
                 </div>
             </form>

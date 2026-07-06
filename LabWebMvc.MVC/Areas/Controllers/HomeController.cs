@@ -318,6 +318,19 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
                     //..
 
+                    //Feito pelo Kiro em 11/07/2025
+                    // Carregar/recarregar cache de referências de exames a cada login
+                    var exameRefCache = HttpContext.RequestServices.GetService<IExameReferenciaCache>();
+                    if (exameRefCache != null)
+                    {
+                        var connStr = _connectionService.GetConnectionString();
+                        var matchDb = System.Text.RegularExpressions.Regex.Match(connStr ?? "", @"Database=([^;]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        string nomeBanco = matchDb.Success ? matchDb.Groups[1].Value : "";
+                        if (!string.IsNullOrWhiteSpace(nomeBanco))
+                            await exameRefCache.CarregarCacheAsync(nomeBanco);
+                    }
+                    //..Kiro
+
                     //Retorna OK, após Login validado!
                     return RedirectToAction("Index", "Home", new { mensagem = vm?.LoginUsuario != null ? vm.LoginUsuario.MensagemStartUp(false) : "" });
                 }

@@ -1,0 +1,86 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
+@using static BLL.UtilBLL
+
+@*Feito pelo Kiro em 03/07/2026*@
+<div style="max-width: 700px; margin: 20px 0; padding: 20px;">
+    <h4 style="color: #333; margin-bottom: 16px;">
+        <i class="fa-solid fa-file-import" style="color: #69c38a;"></i> Importação de Referências para Laudos
+    </h4>
+
+    <div style="background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
+        <strong>Informativo:</strong><br/>
+        Esta operação importa os arquivos de referência (.DOC) da pasta <strong>Laudos/</strong> 
+        para o banco de dados.<br/><br/>
+        Após a importação, as referências de exames passarão a ser lidas diretamente
+        do banco de dados (com cache em memória), eliminando a dependência dos arquivos físicos.<br/><br/>
+        <strong>Importante:</strong> Documentos já importados anteriormente <strong>não serão sobrescritos</strong>.
+        A operação pode ser executada múltiplas vezes com segurança (idempotente).
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <label style="font-size: 13px; white-space: nowrap;">Pasta de origem:</label>
+        <input type="text" id="caminhoImportacao" value="Laudos"
+               style="width: 100%; padding: 4px 8px; border: 1px solid #69c38a; border-radius: 6px; font-size: 12px;" />
+    </div>
+
+    <div id="resultadoImportacao" style="display:none; font-size: 13px; margin-bottom: 16px; padding: 12px; border: 1px solid #d4edda; border-radius: 6px; background-color: #e8f5e9;">
+    </div>
+
+    <button type="button" id="btnImportar" class="btn btn-success btn-sm" style="font-size: 13px;">
+        <i class="fa-solid fa-file-import"></i> Importar Referências
+    </button>
+</div>
+@*..Kiro*@
+
+<script>
+    //Feito pelo Kiro em 03/07/2026
+    $(document).ready(function () {
+        $(document).off('click.importarRef').on('click.importarRef', '#btnImportar', function () {
+            Swal.fire({
+                title: 'Confirmar Importação',
+                html: 'Deseja importar os arquivos de referência (.DOC) da pasta Laudos para o banco de dados?<br><br>Documentos já existentes não serão sobrescritos.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sim, importar',
+                cancelButtonText: 'Cancelar'
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    $("#btnImportar").prop('disabled', true).text('Importando...');
+                    $.ajax({
+                        url: '/Manutencao/ImportarReferencias',
+                        type: 'POST',
+                        data: { pastaOrigem: $('#caminhoImportacao').val() },
+                        dataType: 'json',
+                        success: function (data) {
+                            $("#btnImportar").prop('disabled', false).html('<i class="fa-solid fa-file-import"></i> Importar Referências');
+                            if (data.sucesso) {
+                                var r = data.resultado;
+                                var html = '<strong>Importação concluída!</strong><br/>' +
+                                    'Arquivos lidos: <strong>' + r.totalLidos + '</strong><br/>' +
+                                    'Importados: <strong>' + r.importados + '</strong><br/>' +
+                                    'Ignorados (já existentes): <strong>' + r.ignorados + '</strong>';
+                                if (r.avisos && r.avisos.length > 0) {
+                                    html += '<br/><br/><strong style="color:#CC6600;">Avisos:</strong><br/>' + r.avisos.join('<br/>');
+                                }
+                                if (r.erros && r.erros.length > 0) {
+                                    html += '<br/><br/><strong style="color:red;">Erros:</strong><br/>' + r.erros.join('<br/>');
+                                }
+                                $('#resultadoImportacao').html(html).show();
+                            } else {
+                                clickAviso('Erro', data.mensagem, 'critica', null);
+                            }
+                        },
+                        error: function () {
+                            $("#btnImportar").prop('disabled', false).html('<i class="fa-solid fa-file-import"></i> Importar Referências');
+                            clickAviso('Erro', 'Falha na comunicação com o servidor.', 'critica', null);
+                        }
+                    });
+                }
+            });
+        });
+    });
+    //..Kiro
+</script>

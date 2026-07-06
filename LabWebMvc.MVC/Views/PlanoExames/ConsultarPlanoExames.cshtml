@@ -35,9 +35,10 @@
 </style>
 <script>
     $(document).ready(function () {
+        initBtnVoltar();
         $(".close").click(function (event) {
             event.preventDefault();
-            window.location.href = 'PlanoExames';
+            window.history.back();
         });
     });
 </script>
@@ -94,6 +95,11 @@
                     @Html.TextBoxFor(p => p.PrazoResultadoDias, new { @class = "campo", @disabled = "disabled" })
                 </div>
             </div>
+        </div>
+        <div class="modal-footer" style="justify-content: center;">
+            <button type="button" id="btnVoltar" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
         </div>
     </div>
 </div>

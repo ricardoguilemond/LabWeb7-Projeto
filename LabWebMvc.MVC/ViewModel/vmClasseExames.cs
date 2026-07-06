@@ -75,6 +75,6 @@ namespace LabWebMvc.MVC.ViewModel
 
         /* Propriedade migrada de ViewBag */
         public string? PathImages { get; set; }
-        public ICollection<dynamic>? ListaDados { get; set; }
+        public ICollection<dynamic> ListaDados { get; set; } = [];
     }
 }

@@ -68,14 +68,23 @@
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            setTimeout(function () {
+                restaurarEstadoGrid('ClasseExames');
+            }, 500);
+        });
+    </script>
 }
 <script>
     //ACTIONS ICONS
     function clickConsulta(x) {
+        salvarEstadoGrid('ClasseExames', x.id);
         var url = "ConsultarClasseExames?id=" + x.id;
         window.open(url, "_self")
     }
     function clickAlterar(x) { //OK
+        salvarEstadoGrid('ClasseExames', x.id);
         window.location.href = '@Url.Action("AlterarClasseExames", "ClasseExames")?id=' + x.id;
     }
     function clickDelete(x) {

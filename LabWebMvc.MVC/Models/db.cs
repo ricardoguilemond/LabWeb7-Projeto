@@ -487,6 +487,10 @@ public class Db : DbContext
 
     public virtual DbSet<Assinaturas> Assinaturas { get; set; }
 
+    //Feito pelo Kiro em 11/07/2025
+    public virtual DbSet<ExameReferencia> ExameReferencia { get; set; }
+    //..Kiro
+
     public virtual DbSet<ClasseExames> ClasseExames { get; set; }
 
     public virtual DbSet<ControleConcorrencia> ControleConcorrencia { get; set; }
@@ -2432,6 +2436,26 @@ public class Db : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
         });
+
+        //Feito pelo Kiro em 11/07/2025
+        modelBuilder.Entity<ExameReferencia>(entity =>
+        {
+            entity.ToTable("ExameReferencia");
+            entity.HasKey(e => e.Id).HasName("iExameReferencia1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.ContaExame).HasMaxLength(11).IsUnicode(false);
+            entity.Property(e => e.FormatoOrigem).HasMaxLength(10).IsUnicode(false);
+            entity.Property(e => e.UsuarioAlteracao).HasMaxLength(100).IsUnicode(false);
+            entity.Property(e => e.DataCriacao).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.DataAlteracao).HasColumnType("timestamp with time zone");
+
+            entity.HasOne(d => d.TabelaExames)
+                .WithMany()
+                .HasForeignKey(d => d.TabelaExamesId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("iExameReferencia_TabelaExames");
+        });
+        //..Kiro
 
     }
 }

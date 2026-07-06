@@ -63,6 +63,6 @@ namespace LabWebMvc.MVC.ViewModel
         public string? PathImages { get; set; }
         public List<SelectListItem> Funcoes { get; set; } = new();
         public string? TextoReset { get; set; }
-        public ICollection<dynamic>? ListaDados { get; set; }
+        public ICollection<dynamic> ListaDados { get; set; } = [];
     }
 }

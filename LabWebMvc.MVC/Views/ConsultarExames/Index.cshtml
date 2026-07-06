@@ -10,8 +10,11 @@
 <!-- Filtros Backend -->
 <div id="filtrosConsultarExames" style="margin-bottom: 10px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background-color: #f9f9f9;">
     <form method="get" asp-action="Index" asp-controller="ConsultarExames" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
-        <label style="font: normal 13px calibri, arial, sans-serif;">Data Exame:</label>
-        <input type="text" name="dataExame" placeholder="dd/MM/yyyy" value="@Context.Request.Query["dataExame"]"
+        <label style="font: normal 13px calibri, arial, sans-serif;">DE:</label>
+        <input type="text" name="dataExameDe" placeholder="dd/MM/yyyy" value="@ViewBag.DataExameDe"
+               style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+        <label style="font: normal 13px calibri, arial, sans-serif;">PARA:</label>
+        <input type="text" name="dataExamePara" placeholder="dd/MM/yyyy" value="@ViewBag.DataExamePara"
                style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
 
         <label style="font: normal 13px calibri, arial, sans-serif;">Paciente:</label>
@@ -136,6 +139,32 @@
     tr.detail-parent-highlight td {
         background-color: #fff3cd !important;
     }
+    /* Moldura preta ao redor do registro selecionado (somente o retangulo externo) */
+    /* #modeloTable aumenta especificidade para vencer CSS do DataTables */
+    #modeloTable tr.group-border-top td:not(:last-child) {
+        border-top: 2px solid #000 !important;
+    }
+    #modeloTable tr.group-border-top td:first-child {
+        border-left: 2px solid #000 !important;
+    }
+    #modeloTable tr.group-border-top td:nth-last-child(2) {
+        border-right: 2px solid #000 !important;
+    }
+    #modeloTable tr.group-border-side td:first-child {
+        border-left: 2px solid #000 !important;
+    }
+    #modeloTable tr.group-border-side td:last-child {
+        border-right: 2px solid #000 !important;
+    }
+    #modeloTable tr.group-border-bottom td {
+        border-bottom: 2px solid #000 !important;
+    }
+    #modeloTable tr.group-border-bottom td:first-child {
+        border-left: 2px solid #000 !important;
+    }
+    #modeloTable tr.group-border-bottom td:last-child {
+        border-right: 2px solid #000 !important;
+    }
 </style>
 <script>
     //Feito pelo Kiro em 17/05/2026
@@ -145,7 +174,7 @@
 
     // Máscara de data no campo de filtro
     $(document).ready(function () {
-        $("input[name='dataExame']").mask("99/99/9999", { placeholder: " ", autoclear: false });
+        $("input[name='dataExameDe'], input[name='dataExamePara']").mask("99/99/9999", { placeholder: " ", autoclear: false });
     });
 
     // Master/Detail inline — click na linha do grid header
@@ -161,7 +190,7 @@
 
             // Remove detalhe anterior (se existir)
             $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
-            $('#modeloTable tbody tr.detail-parent-highlight').removeClass('detail-parent-highlight');
+            $('#modeloTable tbody tr.detail-parent-highlight').removeClass('detail-parent-highlight group-border-top');
 
             // Destaca a linha header clicada
             $row.addClass('detail-parent-highlight');
@@ -221,8 +250,11 @@
         // 7 colunas de detalhe: Classe, Ref.Exame, Ref.Item, ContaExame, Descrição, ValorItem, Etiquetas
         // O grid header tem 10 colunas. Usamos colspan nas últimas para preencher.
 
+        // Aplica moldura preta na linha principal (topo do grupo)
+        $headerRow.addClass('group-border-top');
+
         // Linha de cabeçalho do detalhe
-        var headerHtml = '<tr class="detail-header-row">' +
+        var headerHtml = '<tr class="detail-header-row group-border-side">' +
             '<td>Folha</td>' +
             '<td>Principal</td>' +
             '<td style="white-space:nowrap;">Conta Exame</td>' +
@@ -230,13 +262,14 @@
             '<td style="white-space:nowrap; text-align:right;">Valor Item</td>' +
             '<td>Etiquetas</td>' +
             '<td style="text-align:center;">Ação</td>' +
+            '<td colspan="1"></td>' +
             '</tr>';
         $headerRow.after(headerHtml);
 
         // Linhas de detalhe
         var $lastInserted = $headerRow.next();
         itens.forEach(function (item) {
-            var rowHtml = '<tr class="detail-row">' +
+            var rowHtml = '<tr class="detail-row group-border-side">' +
                 '<td>' + (item.classeExamesNome || '-') + '</td>' +
                 '<td>' + (item.refItem || '-') + '</td>' +
                 '<td style="white-space:nowrap;">' + (item.contaExame || '-') + '</td>' +
@@ -246,6 +279,7 @@
                 '<td style="pointer-events:auto; text-align:center;">' +
                 '<a class="grid_itens" style="cursor:pointer; color:#dc3545;" title="Cancelar item" onclick="clickExcluirItemExame(' + item.id + ', ' + exameRealizadoId + ')"><i class="fa-sharp fa-solid fa-xmark"></i></a>' +
                 '</td>' +
+                '<td colspan="1"></td>' +
                 '</tr>';
             $lastInserted.after(rowHtml);
             $lastInserted = $lastInserted.next();
@@ -259,7 +293,7 @@
             if (!isNaN(num)) total += num;
         });
         var totalFormatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        var totalHtml = '<tr class="detail-row" style="font-weight:bold;">' +
+        var totalHtml = '<tr class="detail-row group-border-bottom" style="font-weight:bold;">' +
             '<td colspan="7"></td>' +
             '<td style="text-align:right; pointer-events:none;">Total: R$ ' + totalFormatado + '</td>' +
             '<td colspan="2"></td>' +

@@ -11,6 +11,7 @@
        AQUI CARREGAMOS TODOS OS OBJETOS SÍNCRONOS, QUE SÃO CARREGADOS IMEDIATAMENTE APÓS CARREGAR A PÁGINA OU APÓS UM POST.
     */
     $(document).ready(function () {
+        initBtnVoltar();
         // Sincroniza os dois dropdowns de Instituicao
         $('#ddlInstSigla').on('change', function () {
             var val = $(this).val();
@@ -155,7 +156,10 @@
                     @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF))
                 </div>
             </div>
-            <div class="form-group botao-centralizado" style="margin-top: 20px;">
+            <div class="form-group" style="margin-top: 20px; text-align: center;">
+                <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar
+                </button>
                 <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde" style="border-radius: 6px;">
                     Salvar
                 </button>

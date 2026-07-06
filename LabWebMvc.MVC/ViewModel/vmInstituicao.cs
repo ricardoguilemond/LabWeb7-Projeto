@@ -97,7 +97,7 @@ namespace LabWebMvc.MVC.ViewModel
         /* Propriedades migradas de ViewBag */
         public string? SessionUF { get; set; }
         public string? PathImages { get; set; }
-        public ICollection<dynamic>? ListaDados { get; set; }
+        public ICollection<dynamic> ListaDados { get; set; } = [];
 
         public virtual List<vmInstituicao>? ListaInstituicoes { get; set; }
 

@@ -4,12 +4,13 @@ namespace ExtensionsMethods.Genericos
 {
     public static class UtilsMath
     {
-        /* LucroVarianteCalc(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4)
-         * Calcula lucro variante e retorna valor com decimal para outros cálculos
-         * "primeiroValor" é o valor inicial, "segundoValor" é o valor final que foi aumentado ou descrecido do inicial
+        /* MargemSobreCustoCalc(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4)
+         * Calcula a margem sobre o custo e retorna valor decimal para outros cálculos.
+         * Fórmula: ((Venda - Custo) / Custo) * 100
+         * "primeiroValor" é o custo, "segundoValor" é o valor de venda.
          */
 
-        public static decimal CalcLucroVarianteDec(decimal primeiroValor = 0, decimal segundoValor = 0, int quantDecimais = 4)
+        public static decimal CalcMargemSobreCustoDec(decimal primeiroValor = 0, decimal segundoValor = 0, int quantDecimais = 4)
         {
             decimal ret = Convert.ToDecimal("0.00");
             string retCusto = "100.00".ToDecimalInvariant().ToString("N4");
@@ -19,42 +20,79 @@ namespace ExtensionsMethods.Genericos
             return Convert.ToDecimal(((segundoValor * 100 / primeiroValor) - 100).ToString("N" + quantDecimais.ToString()));
         }
 
-        /* LucroVariante(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4)
-         * Calcula lucro variante e retorna string apenas para mostragem
-         * "primeiroValor" é o valor inicial, "segundoValor" é o valor final que foi aumentado ou descrecido do inicial
+        /* MargemSobreCusto(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4)
+         * Calcula a margem sobre o custo e retorna string para mostragem.
+         * Fórmula: ((Venda - Custo) / Custo) * 100
+         * "primeiroValor" é o custo, "segundoValor" é o valor de venda.
          */
 
-        public static string CalcLucroVariante(decimal? primeiroValor, decimal? segundoValor, int quantDecimais)
+        public static string CalcMargemSobreCusto(decimal? primeiroValor, decimal? segundoValor, int quantDecimais)
         {
-            string? lucroVariante = string.Empty;
+            string? margemSobreCusto = string.Empty;
             if (string.IsNullOrEmpty(primeiroValor.ToString()) && string.IsNullOrEmpty(segundoValor.ToString()) || primeiroValor == 0 && segundoValor == 0)
                 return "";
             else if (primeiroValor == 0)
-                return "100,0000";     //primeiro valor 0, então evita divisão por zero e considera apenas o degundo valor dando um lucro de 100%
+                return "100,0000";     //custo zero, então evita divisão por zero e considera apenas a venda dando uma margem de 100%
 
             if (segundoValor != null && primeiroValor != null)
-                lucroVariante = ((segundoValor * 100 / primeiroValor) - 100).GetValueOrDefault().ToString("N" + quantDecimais.ToString());
+                margemSobreCusto = ((segundoValor * 100 / primeiroValor) - 100).GetValueOrDefault().ToString("N" + quantDecimais.ToString());
 
-            return lucroVariante;
+            return margemSobreCusto;
         }
 
-        /* LucroVariante(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4, string simboloPercent = "%")
-         * Calcula lucro variante e retorna string apenas para mostragem, considerando o símbolo de percentual no valor de texto
-         * "primeiroValor" é o valor inicial, "segundoValor" é o valor final que foi aumentado ou descrecido do inicial
+        /* MargemSobreCusto(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4, string simboloPercent = "%")
+         * Calcula a margem sobre o custo e retorna string para mostragem, considerando o símbolo de percentual no valor de texto.
+         * Fórmula: ((Venda - Custo) / Custo) * 100
+         * "primeiroValor" é o custo, "segundoValor" é o valor de venda.
          */
 
-        public static string CalcLucroVariante(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4, string simboloPercent = "%")
+        public static string CalcMargemSobreCusto(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4, string simboloPercent = "%")
         {
-            string? lucroVariante = string.Empty;
+            string? margemSobreCusto = string.Empty;
             if (string.IsNullOrEmpty(primeiroValor.ToString()) && string.IsNullOrEmpty(segundoValor.ToString()) || primeiroValor == 0 && segundoValor == 0)
                 return "";
             else if (primeiroValor == 0)
-                return "100,0000";     //primeiro valor 0, então evita divisão por zero e considera apenas o degundo valor dando um lucro de 100%
+                return "100,0000 " + simboloPercent;     //custo zero, então evita divisão por zero e considera apenas a venda dando uma margem de 100%
 
             if (segundoValor != null && primeiroValor != null)
-                lucroVariante = ((segundoValor * 100 / primeiroValor) - 100).GetValueOrDefault().ToString("N" + quantDecimais.ToString()) + " " + simboloPercent;
+                margemSobreCusto = ((segundoValor * 100 / primeiroValor) - 100).GetValueOrDefault().ToString("N" + quantDecimais.ToString()) + " " + simboloPercent;
 
-            return lucroVariante;
+            return margemSobreCusto;
+        }
+
+        /* MargemBrutaCalc(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4)
+         * Calcula a margem bruta e retorna valor decimal para outros cálculos.
+         * Fórmula: ((Venda - Custo) / Venda) * 100
+         * "primeiroValor" é o custo, "segundoValor" é o valor de venda.
+         */
+
+        public static decimal CalcMargemBrutaDec(decimal primeiroValor = 0, decimal segundoValor = 0, int quantDecimais = 4)
+        {
+            string retCusto = "-100.00".ToDecimalInvariant().ToString("N4");
+            string retVenda = "100.00".ToDecimalInvariant().ToString("N4");
+            if (segundoValor == Convert.ToDecimal("0.00")) return Convert.ToDecimal(retCusto);
+            if (primeiroValor == Convert.ToDecimal("0.00")) return Convert.ToDecimal(retVenda);
+            return Convert.ToDecimal(((segundoValor - primeiroValor) * 100 / segundoValor).ToString("N" + quantDecimais.ToString()));
+        }
+
+        /* MargemBruta(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4, string simboloPercent = "%")
+         * Calcula a margem bruta e retorna string para mostragem, considerando o símbolo de percentual no valor de texto.
+         * Fórmula: ((Venda - Custo) / Venda) * 100
+         * "primeiroValor" é o custo, "segundoValor" é o valor de venda.
+         */
+
+        public static string CalcMargemBruta(decimal? primeiroValor, decimal? segundoValor, int quantDecimais = 4, string simboloPercent = "%")
+        {
+            string? margemBruta = string.Empty;
+            if (string.IsNullOrEmpty(primeiroValor.ToString()) && string.IsNullOrEmpty(segundoValor.ToString()) || primeiroValor == 0 && segundoValor == 0)
+                return "";
+            else if (segundoValor == 0)
+                return "-100,0000 " + simboloPercent;     //venda zero, então evita divisão por zero e considera apenas o custo dando uma margem de -100%
+
+            if (segundoValor != null && primeiroValor != null)
+                margemBruta = ((segundoValor - primeiroValor) * 100 / segundoValor).GetValueOrDefault().ToString("N" + quantDecimais.ToString()) + " " + simboloPercent;
+
+            return margemBruta;
         }
     }
 }

@@ -25,6 +25,7 @@ public partial class PlanoExames
     public int Etiquetas { get; set; }
     public byte[]? Laudo { get; set; }
     public int AlinhaLaudo { get; set; }
+    public int? GraficoNoItem { get; set; }
     public int Seleciona { get; set; }
     public int NaoMostrar { get; set; }
     public string? MapaHorizontal { get; set; }

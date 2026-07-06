@@ -108,6 +108,13 @@
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            setTimeout(function () {
+                restaurarEstadoGrid('Pacientes');
+            }, 500);
+        });
+    </script>
 }
 <style>
     /*Feito pelo Kiro em 17/05/2026*/
@@ -170,6 +177,7 @@
 <script>
     //ACTIONS ICONS
     function clickConsulta(x) {
+        salvarEstadoGrid('Pacientes', x.id);
         var url = "ConsultarPaciente?id=" + x.id;
         window.open(url, "_self")
         //window.location.href = '@Url.Action("ConsultarPaciente", "Pacientes")?id=' + x.id;
@@ -179,6 +187,7 @@
         //window.location.href = '@Url.Action("ExamesPaciente", "Pacientes")?id=' + x.id;
     }
     function clickAlterar(x) { //OK
+        salvarEstadoGrid('Pacientes', x.id);
         window.location.href = '@Url.Action("AlterarPaciente", "Pacientes")?id=' + x.id;
     }
     function clickDelete(x) {

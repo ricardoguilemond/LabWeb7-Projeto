@@ -8,6 +8,7 @@
 }
 <script>
     $(document).ready(function () {
+        initBtnVoltar();
         $('#clickSubmit').click(function (event) {
             event.preventDefault();
             $.ajax({
@@ -169,7 +170,10 @@
             <!--
             Submeter Formulário
             -->
-            <div class="form-group botao-centralizado" style="margin-top: 20px;">
+            <div class="form-group" style="margin-top: 20px; text-align: center;">
+                <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar
+                </button>
                 <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde" style="border-radius: 6px;">
                     Salvar
                 </button>

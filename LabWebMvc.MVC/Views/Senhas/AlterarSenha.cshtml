@@ -2,6 +2,7 @@
 @model vmSenhas
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        initBtnVoltar();
         document.getElementById('clickSubmit').addEventListener('click', function (event) {
             //event.preventDefault() : permite que a função "CallMethodJson" no Javascript possa ser modificada no caminho, desviando uma rota por exemplo.
             event.preventDefault();  //OBRIGATÓRIO AQUI! Cancela o evento se ele for cancelável, ou seja, que a ação padrão que pertence ao evento não ocorrerá.
@@ -61,7 +62,10 @@
                     <!--
                     Submeter Formulário
                     -->
-                    <div class="form-group botao-centralizado">
+                    <div class="form-group" style="text-align: center;">
+                        <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
+                            <i class="fa-solid fa-arrow-left"></i> Voltar
+                        </button>
                         <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
                             Salvar
                         </button>

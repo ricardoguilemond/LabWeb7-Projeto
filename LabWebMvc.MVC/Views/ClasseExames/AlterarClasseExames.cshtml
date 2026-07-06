@@ -8,6 +8,7 @@
 }
 <script>
     $(document).ready(function () {
+        initBtnVoltar();
         var ass = @Model.Assinatura1;
         if (ass == 0) $("#divFileAss1").hide();
         ass = @Model.Assinatura2;
@@ -279,7 +280,10 @@
             <!--
             Submeter Formulário
             -->
-            <div class="form-group botao-centralizado">
+            <div class="form-group" style="text-align: center;">
+                <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar
+                </button>
                 <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
                     Salvar
                 </button>

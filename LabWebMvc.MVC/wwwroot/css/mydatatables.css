@@ -333,3 +333,138 @@ table thead tr th .dt-column-order { /* usando table porque não funcionou com #
         color: black !important;
         font-weight: 500 !important;
     }
+
+
+/* ============================================================================
+   MODERNIZAÇÃO VISUAL DOS DATATABLES — Overrides CSS (apenas aparência)
+   Feito pelo Kiro em 03/07/2026
+   Nenhuma funcionalidade alterada. Apenas refinamento estético.
+   ============================================================================ */
+
+/* --- Header: cantos arredondados no topo, verde mais suave --- */
+#modeloTableRequisitar thead tr:first-child th:first-child,
+#modeloTable thead tr:first-child th:first-child,
+#modeloTableCompacta thead tr:first-child th:first-child,
+#modeloTableModal thead tr:first-child th:first-child {
+    border-top-left-radius: 6px;
+}
+
+#modeloTableRequisitar thead tr:first-child th:last-child,
+#modeloTable thead tr:first-child th:last-child,
+#modeloTableCompacta thead tr:first-child th:last-child,
+#modeloTableModal thead tr:first-child th:last-child {
+    border-top-right-radius: 6px;
+}
+
+/* --- Header: cor verde mais moderna e suave --- */
+#modeloTableRequisitar thead th,
+#modeloTable thead th,
+#modeloTableCompacta thead th,
+#modeloTableModal thead th,
+table thead tr th {
+    background-color: #5fb87a !important;
+    border-bottom: 2px solid #4a9d65 !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    letter-spacing: 0.3px;
+}
+
+/* --- Body: zebra com verde ultra-suave --- */
+#modeloTableRequisitar tbody tr:nth-child(odd),
+#modeloTable tbody tr:nth-child(odd),
+#modeloTableCompacta tbody tr:nth-child(odd),
+#modeloTableModal tbody tr:nth-child(odd) {
+    background-color: #fff;
+}
+
+#modeloTableRequisitar tbody tr:nth-child(even),
+#modeloTable tbody tr:nth-child(even),
+#modeloTableCompacta tbody tr:nth-child(even),
+#modeloTableModal tbody tr:nth-child(even) {
+    background-color: #f6fdf8;
+}
+
+/* --- Body: hover em verde claro com transição suave --- */
+#modeloTableRequisitar tbody tr:hover,
+#modeloTable tbody tr:hover,
+#modeloTableCompacta tbody tr:hover,
+#modeloTableModal tbody tr:hover {
+    background-color: #e0f5e7 !important;
+    transition: background-color 0.2s ease;
+}
+
+/* --- Body: bordas entre linhas mais discretas --- */
+#modeloTableRequisitar tbody td,
+#modeloTable tbody td,
+#modeloTableCompacta tbody td,
+#modeloTableModal tbody td {
+    border-bottom: 1px solid #e8e8e8 !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+}
+
+/* --- Footer: cinza claro em vez de verde --- */
+#modeloTableRequisitar tfoot th,
+#modeloTable tfoot th,
+#modeloTableCompacta tfoot th,
+#modeloTableModal tfoot th {
+    background-color: #f0f0f0 !important;
+    border-top: 1px solid #ddd !important;
+    font-size: 11px !important;
+}
+
+/* --- Footer: inputs de filtro com bordas arredondadas verdes --- */
+#modeloTableRequisitar tfoot th input,
+#modeloTable tfoot th input,
+#modeloTableCompacta tfoot th input,
+#modeloTableModal tfoot th input {
+    border: 1px solid #69c38a !important;
+    border-radius: 4px !important;
+    padding: 2px 6px !important;
+    font-size: 11px !important;
+    outline: none;
+}
+
+#modeloTableRequisitar tfoot th input:focus,
+#modeloTable tfoot th input:focus,
+#modeloTableCompacta tfoot th input:focus,
+#modeloTableModal tfoot th input:focus {
+    border-color: #4a9d65 !important;
+    box-shadow: 0 0 3px rgba(105, 195, 138, 0.4);
+}
+
+/* --- Paginação: botões com bordas arredondadas --- */
+.dt-paging-button {
+    border-radius: 4px !important;
+}
+
+/* --- Campo de busca global: bordas arredondadas --- */
+#modeloTableRequisitar_filter input,
+#modeloTable_filter input,
+#modeloTableCompacta_filter input,
+#modeloTableModal_filter input {
+    border: 1px solid #69c38a !important;
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    font-size: 12px !important;
+}
+
+#modeloTableRequisitar_filter input:focus,
+#modeloTable_filter input:focus,
+#modeloTableCompacta_filter input:focus,
+#modeloTableModal_filter input:focus {
+    border-color: #4a9d65 !important;
+    outline: none;
+    box-shadow: 0 0 4px rgba(105, 195, 138, 0.4);
+}
+
+/* --- "Mostrar X resultados" e "Exibindo" — tipografia refinada --- */
+.dt-length,
+.dt-info,
+div.dataTables_length,
+div.dataTables_info {
+    font-size: 12px !important;
+    color: #555 !important;
+}
+
+/* ..Kiro */

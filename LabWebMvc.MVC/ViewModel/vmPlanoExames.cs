@@ -56,6 +56,12 @@ namespace LabWebMvc.MVC.ViewModel
         public int Etiquetas { get; set; }
         public byte[]? Laudo { get; set; }
         public int AlinhaLaudo { get; set; }
+        public int? GraficoNoItem { get; set; }
+        public bool GraficoNoItemBool
+        {
+            get => GraficoNoItem == 1;
+            set => GraficoNoItem = value ? 1 : null;
+        }
         public int Seleciona { get; set; }             //se é exame de rotina (1=rotina, 0=não é rotina)
         public int NaoMostrar { get; set; }            //se mostra ou não para lançamento na recepção
 

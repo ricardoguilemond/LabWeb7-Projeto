@@ -128,6 +128,15 @@
     <div class="toolbar"><partial name='_PartialDatatables' /></div>
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/jquery.maskMoney.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            setTimeout(function () {
+                restaurarTabelaEFolhaEGrid('PlanoExamesItens', function () {
+                    restaurarEstadoGrid('PlanoExamesItens');
+                });
+            }, 500);
+        });
+    </script>
     <script type="text/javascript">
         //Declara os dois boxes com o default, e vamos sempre atualizar os dois Ids.
         var TabelaId = 1;
@@ -152,14 +161,17 @@
         function clickModelo(x) {
             //"x" é a linha toda da tag (tem que passar a linha TODA de "x")
             //x.id é somente o "id" na tag da linha
+            salvarEstadoGrid('PlanoExamesItens', x.id);
             window.location.href = '@Url.Action("ModeloPlanoExamesItens", "PlanoExamesItens")?registroID=' + x.id;
         };
         function clickConsulta(x) {
+            salvarEstadoGrid('PlanoExamesItens', x.id);
             var url = "ConsultarPlanoExamesItens?id=" + x.id;
             window.open(url, "_self")
         }
         //Feito pelo Kiro em 20/04/2026
         function clickAlterar(x) {
+            salvarEstadoGrid('PlanoExamesItens', x.id);
             var id = x.id;
             var valorCusto = $('#valorCusto' + id).val();
             var valorItem = $('#valorItem' + id).val();
@@ -203,7 +215,8 @@
 
                     //Json: Substitui certo na posição do summary
                     $('#summary').html(data['sumario']);   //atualiza o sumário pelo tbody
-                    $('#' + data['id']).html(data['linhaLucroVariante']);  //atualiza o valor de uma única linha do grid que está num "<td>"
+                    $('#' + data['id']).html(data['linhaMargemSobreCusto']);  //atualiza a margem sobre o custo da linha
+                    $('#margemBruta' + data['id']).html(data['linhaMargemBruta']);  //atualiza a margem bruta da linha
 
                     if (sucesso == true) tipo = 'sucesso';
                     //success: Javascript ::: aqui acontece todas as mensagens de sucesso e não sucesso

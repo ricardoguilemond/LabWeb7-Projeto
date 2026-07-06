@@ -268,6 +268,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                     Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta,
                                     Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas,
                                     AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo,
+                                    GraficoNoItem = DefinirFlagGrafico(vm),
                                     Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona,
                                     NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar,
 
@@ -445,6 +446,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.Etiqueta = planoExames.Etiqueta;
                 vm.Etiquetas = planoExames.Etiquetas;
                 vm.AlinhaLaudo = planoExames.AlinhaLaudo;
+                vm.GraficoNoItem = planoExames.GraficoNoItem;
                 vm.Seleciona = planoExames.Seleciona;
                 vm.NaoMostrar = planoExames.NaoMostrar;
 
@@ -527,6 +529,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                 plano.Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta;
                                 plano.Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas;
                                 plano.AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo;
+                                plano.GraficoNoItem = DefinirFlagGrafico(vm);
                                 plano.Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona;
                                 plano.NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar;
                                 plano.PrazoResultadoDias = string.IsNullOrEmpty(vm.PrazoResultadoDias.ToString()) ? 15 : vm.PrazoResultadoDias;
@@ -617,6 +620,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Registro não foi excluído", action = "", sucesso = false });
 
             return Json(new { titulo = Mensagens_pt_BR.Sucesso, mensagem = "Registro foi excluído", action = "", sucesso = true });
+        }
+
+        private static int? DefinirFlagGrafico(vmPlanoExames vm)
+        {
+            return vm.GraficoNoItem == 1 ? 1 : null;
         }
     }
 }

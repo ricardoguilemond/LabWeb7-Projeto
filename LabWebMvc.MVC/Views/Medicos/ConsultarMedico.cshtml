@@ -40,9 +40,10 @@
 </style>
 <script>
     $(document).ready(function () {
+        initBtnVoltar();
         $(".close").click(function (event) {
             event.preventDefault();
-            window.location.href = 'Medicos';
+            window.history.back();
         });
     });
 </script>
@@ -81,6 +82,11 @@
                     @Html.TextBoxFor(p => p.Email, new { @class = "campo email", @disabled = "disabled" })
                 </div>
             </div>
+        </div>
+        <div class="modal-footer" style="justify-content: center;">
+            <button type="button" id="btnVoltar" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
         </div>
     </div>
 </div>

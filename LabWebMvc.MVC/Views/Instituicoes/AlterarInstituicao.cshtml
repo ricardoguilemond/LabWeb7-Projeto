@@ -11,6 +11,7 @@
        AQUI CARREGAMOS TODOS OS OBJETOS SÍNCRONOS, QUE SÃO CARREGADOS IMEDIATAMENTE APÓS CARREGAR A PÁGINA OU APÓS UM POST.
     */
     $(document).ready(function () {
+        initBtnVoltar();
         $('[name="excluirTimbre"]').click(function (event) {
             event.preventDefault();
             var arrSigla = $('#form').serializeArray()[1];
@@ -241,7 +242,7 @@
                     int propIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
                     string propSigla = Utils.RetornaItem(i, "ListaSN", 1);
                     string propDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (propIndex == (int)Model.Propaganda);
+                    bool check = (propIndex == (Model.Propaganda ?? 0));
                     <div style="display: inline-block;">
                         @Html.RadioButton("Propaganda", propIndex, check)
                         @Html.Label(propDescricao)
@@ -259,7 +260,10 @@
             <!--
             Submeter Formulário
             -->
-            <div class="form-group botao-centralizado" style="margin-top: 20px;">
+            <div class="form-group" style="margin-top: 20px; text-align: center;">
+                <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar
+                </button>
                 <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde" style="border-radius: 6px;">
                     Salvar
                 </button>

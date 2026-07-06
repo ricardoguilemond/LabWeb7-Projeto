@@ -33,7 +33,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [HttpGet]
         [Route("ConsultarExames")]
         public async Task<IActionResult> Index(
-            string? dataExame,
+            string? dataExameDe,
+            string? dataExamePara,
             string? nomePaciente,
             int? codigoExame,
             string? siglaInstituicao,
@@ -51,21 +52,32 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Include(e => e.TabelaExames)
                 .AsQueryable();
 
-            bool temFiltro = !string.IsNullOrEmpty(dataExame)
-                          || !string.IsNullOrEmpty(nomePaciente)
+            // Defaults: DE = 3 dias atras, PARA = ontem (hoje nao aparece por padrao)
+            DateTime hojeLocal = DateTime.Now.Date;
+            DateTime dataDe = hojeLocal.AddDays(-3);
+            DateTime dataPara = hojeLocal.AddDays(-1);
+
+            // Parse se fornecido pelo usuario
+            if (!string.IsNullOrEmpty(dataExameDe))
+                dataDe = dataExameDe.Trim().FormataData("dd/MM/yyyy", true);
+            if (!string.IsNullOrEmpty(dataExamePara))
+                dataPara = dataExamePara.Trim().FormataData("dd/MM/yyyy", true);
+
+            // Converte para range UTC (necessario para timestamptz no Npgsql 8.x)
+            var (inicioDeUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataDe);
+            var (_, fimParaUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataPara);
+            query = query.Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc);
+
+            // Passa as datas efetivas para a view
+            ViewBag.DataExameDe = dataDe.ToString("dd/MM/yyyy");
+            ViewBag.DataExamePara = dataPara.ToString("dd/MM/yyyy");
+
+            bool temOutroFiltro = !string.IsNullOrEmpty(nomePaciente)
                           || codigoExame.HasValue
                           || !string.IsNullOrEmpty(siglaInstituicao)
                           || !string.IsNullOrEmpty(nomeInstituicao)
                           || !string.IsNullOrEmpty(siglaPosto)
                           || !string.IsNullOrEmpty(nomePosto);
-
-            // Aplicação de filtros backend
-            if (!string.IsNullOrEmpty(dataExame))
-            {
-                DateTime dataParsed = dataExame.Trim().FormataData("dd/MM/yyyy", true);
-                var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataParsed);
-                query = query.Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc);
-            }
 
             if (!string.IsNullOrEmpty(nomePaciente))
                 query = query.Where(e => e.Pacientes.NomePaciente
@@ -92,8 +104,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .ToLower().Contains(siglaPosto.Trim().ToLower()));
             //..Qoder
 
-            // Sem filtros: limitar a 100 registros
-            if (!temFiltro)
+            // Sem outros filtros alem da data: limitar a 100 registros
+            if (!temOutroFiltro)
                 query = query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id).Take(100);
             else
                 query = query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id);

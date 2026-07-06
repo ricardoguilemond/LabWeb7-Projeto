@@ -1,0 +1,113 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
+@using static BLL.UtilBLL
+
+@*Feito pelo Kiro em 14/07/2025*@
+<div class="groupButtton">
+    <button class="myButton">
+        <a asp-action="Incluir" asp-controller="ExameReferencia"><i class="fa-sharp fa-solid fa-square-plus"></i> Incluir Referência</a>
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table id="modeloTable" name="datatable" data-order='[[ 0, "desc" ]]' class="display compact order-column stripe table-hover nowrap">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Conta Exame</th>
+                <th>Descrição</th>
+                <th>Tabela</th>
+                <th>Formato</th>
+                <th>Atualizado em</th>
+                <th>Usuário</th>
+                <th>Opções</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in (IEnumerable<dynamic>)ViewBag.ListaDados)
+            {
+                @Html.Raw(
+                         "<tr>" +
+                         "<td style='width: 03%;'>" + item.Id + "</td>" +
+                         "<td style='width: 08%;'>" + item.ContaExame + "</td>" +
+                         "<td style='width: 20%;'>" + item.Descricao + "</td>" +
+                         "<td style='width: 10%;'>" + item.Tabela + "</td>" +
+                         "<td style='width: 05%;'>" + item.FormatoOrigem + "</td>" +
+                         "<td style='width: 10%;'>" + item.DataAlteracao + "</td>" +
+                         "<td style='width: 08%;'>" + item.UsuarioAlteracao + "</td>" +
+                         "<td class='grid_fundo_opcoes'>" +
+                         "<a id=" + item.Id + " class='grid_itens' onclick=clickEditar(this) title='Editar'><i class='fa-sharp fa-solid fa-file-pen'></i> </a>" +
+                         "<a id=" + item.Id + " class='grid_itens' onclick=clickExcluir(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>" +
+                         "</td>" +
+                         "</tr>")
+                ;
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Id</th>
+                <th>Conta Exame</th>
+                <th>Descrição</th>
+                <th>Tabela</th>
+                <th>Formato</th>
+                <th>Atualizado em</th>
+                <th>Usuário</th>
+                <th id="op">Opções</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+@*..Kiro*@
+
+@section Scripts {
+    <div class="toolbar"><partial name='_PartialDatatables' /></div>
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            setTimeout(function () {
+                restaurarEstadoGrid('ExameReferencia');
+            }, 500);
+        });
+    </script>
+}
+
+<script>
+    //Feito pelo Kiro em 14/07/2025
+    function clickEditar(x) {
+        salvarEstadoGrid('ExameReferencia', x.id);
+        window.location.href = '/ExameReferencia/Editar?id=' + x.id;
+    }
+
+    function clickExcluir(x) {
+        Swal.fire({
+            title: 'Confirmar Exclusão',
+            html: 'Deseja excluir esta referência de laudo?<br><br>Esta ação não pode ser desfeita.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar'
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/ExameReferencia/Excluir',
+                    type: 'POST',
+                    data: { id: x.id },
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.sucesso) {
+                            clickAviso('Sucesso', data.mensagem, 'sucesso', '/ExameReferencia');
+                        } else {
+                            clickAviso('Erro', data.mensagem, 'critica', null);
+                        }
+                    },
+                    error: function () {
+                        clickAviso('Erro', 'Falha na comunicação com o servidor.', 'critica', null);
+                    }
+                });
+            }
+        });
+    }
+    //..Kiro
+</script>
