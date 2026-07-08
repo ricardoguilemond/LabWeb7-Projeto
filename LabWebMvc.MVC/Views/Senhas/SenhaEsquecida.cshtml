@@ -5,9 +5,9 @@
 }
 <div class="col-md-12">
     <section id="LoginForm">
-        <div class="row d-flex justify-content-center col-12">
-            <div class="col-4 border border-primary rounded m-20">
-                <div class="d-flex justify-content-center mt-2">
+        <div class="row d-flex col-12">
+            <div class="col-4 card-secao m-20">
+                <div class="mt-2">
                     <i class="fa-solid fa-user fa-2x"></i>
                 </div>
                 @using (Html.BeginForm("ResetarSenha", "Senhas", new { @class = "form-horizontal", role = "form" }, FormMethod.Post))
@@ -15,7 +15,7 @@
                     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
                     //Para o retorno das mensagens de controller
                     //text-muted cor mais clara para o texto de label
-                    <div class="d-flex justify-content-center">
+                    <div>
                         <h4 class="mb-3 fw-normal">Recuperação de senha</h4>
                     </div>
                     <div class="form-group ">

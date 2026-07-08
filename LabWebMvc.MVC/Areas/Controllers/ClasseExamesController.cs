@@ -103,7 +103,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                 QCH = 0,
                                 Etiqueta = 0,
                                 Etiquetas = 0,
-                                AlinhaLaudo = 0,
                                 Seleciona = 0,
                                 NaoMostrar = 0
                             };
@@ -119,7 +118,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             planoExames.QCH = 0;
                             planoExames.Etiqueta = 0;
                             planoExames.Etiquetas = 0;
-                            planoExames.AlinhaLaudo = 0;
                             planoExames.Seleciona = 0;
                             planoExames.NaoMostrar = 0;
 

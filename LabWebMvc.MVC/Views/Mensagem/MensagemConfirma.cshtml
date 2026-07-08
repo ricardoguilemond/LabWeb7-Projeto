@@ -10,7 +10,7 @@
 <div id="myModal" class="modal fade" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-verde-escuro">
                 <h5 class="modal-title">@Html.Raw(icon) @ViewData["TituloModal"]</h5>
                 <form method="post" asp-action="RespostaConfirmacao" asp-controller="Mensagem">
                     <input type="hidden" name="returnAction" value="@ViewData["ReturnAction"]" />

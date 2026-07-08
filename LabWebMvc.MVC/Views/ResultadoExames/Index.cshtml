@@ -8,8 +8,12 @@
 
 @*Feito pelo Kiro em 06/06/2026*@
 <!-- Filtros Backend -->
-<div id="filtrosResultadoExames" style="margin-bottom: 10px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background-color: #f9f9f9;">
-    <form method="get" asp-action="Index" asp-controller="ResultadoExames" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+<div id="filtrosResultadoExames" class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-magnifying-glass"></i> Filtros de Pesquisa
+    </div>
+    <div class="card-secao-body">
+        <form method="get" asp-action="Index" asp-controller="ResultadoExames" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
         <label style="font: normal 13px calibri, arial, sans-serif;">Data Inicial:</label>
         <input type="text" name="dataInicial" id="filtroDataInicial" placeholder="dd/MM/yyyy"
                value="@Context.Request.Query["dataInicial"]"
@@ -52,13 +56,19 @@
         <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
             <i class="fa-sharp fa-solid fa-magnifying-glass"></i> Pesquisar
         </button>
-    </form>
+        </form>
+    </div>
 </div>
 @*..Kiro*@
 
 <!-- Grid Header (ExamesRealizados liberados) -->
-<div class="table-responsive">
-    <table id="modeloTable" name="datatable" data-order='[]' class="display compact order-column stripe table-hover nowrap">
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-flask-vial"></i> Resultados de Exames
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive">
+            <table id="modeloTable" name="datatable" data-order='[]' class="display compact order-column stripe table-hover nowrap">
         <thead>
             <tr>
                 <th>Cód.Exame</th>
@@ -138,7 +148,9 @@
                 <th>Status</th>
             </tr>
         </tfoot>
-    </table>
+            </table>
+        </div>
+    </div>
 </div>
 
 @section Scripts {

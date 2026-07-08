@@ -1,107 +1,126 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using BLL
 @using static BLL.UtilBLL
 
 @*Feito pelo Kiro em 14/07/2025*@
 <link href="~/lib/quill/quill.snow.css" rel="stylesheet">
 
-<div style="max-width: 900px; margin: 20px 0; padding: 20px;">
-    <h4 style="color: #333; margin-bottom: 16px;">
-        <i class="fa-solid fa-file-lines"></i> Referência de Laudo
-    </h4>
-
-    <div style="background-color: #f8fff8; border: 1px solid #69c38a; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 12px;">
-            <div>
-                <label style="font-size: 13px; font-weight: bold;">Conta Exame:</label><br />
-                <input type="text" id="txtContaExame" maxlength="11" placeholder="11000000000"
-                       value="@(ViewBag.Editando ? ViewBag.Registro.ContaExame : "")"
-                       @(ViewBag.Editando ? "readonly" : "")
-                       style="width: 140px; padding: 4px 8px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;
-                              @(ViewBag.Editando ? "background-color: #eee;" : "")" />
+<div class="lab-form-container lab-form-narrow lab-refined">
+    <div class="card-secao card-secao-w-lg">
+        <div class="card-secao-header">
+            <i class="fa-solid fa-file-lines"></i> Referência de Laudo
+        </div>
+        <div class="card-secao-body">
+            <div class="field-row">
+                <div class="field-group w-md">
+                    <label>Conta Exame</label>
+                    <input type="text" id="txtContaExame" maxlength="11" placeholder="11000000000"
+                           value="@(ViewBag.Editando ? ViewBag.Registro.ContaExame : (ViewBag.ContaExamePre ?? ""))"
+                           @(ViewBag.Editando ? "readonly" : "")
+                           class="form-control @(ViewBag.Editando ? "field-readonly" : "")" />
+                </div>
+                <div class="field-group w-xl">
+                    <label>Descrição</label>
+                    <input type="text" id="txtDescricaoExame"
+                           value="@(ViewBag.DescricaoExame)"
+                           readonly
+                           class="form-control field-readonly" />
+                </div>
             </div>
-            <div>
-                <label style="font-size: 13px; font-weight: bold;">Descrição:</label><br />
-                <input type="text" id="txtDescricaoExame"
-                       value="@(ViewBag.DescricaoExame)"
-                       readonly
-                       style="width: 320px; padding: 4px 8px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px; background-color: #eee;" />
-            </div>
-            <div>
-                <label style="font-size: 13px; font-weight: bold;">Tabela:</label><br />
-                <select id="cmbTabela" style="width: 200px; padding: 4px 8px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px; height: 28px;">
-                    @foreach (var tab in (IEnumerable<dynamic>)ViewBag.Tabelas)
-                    {
-                        if (ViewBag.Editando && ViewBag.Registro.TabelaExamesId == tab.Id)
+            <div class="field-row">
+                <div class="field-group w-lg">
+                    <label>Tabela</label>
+                    <select id="cmbTabela" class="form-control">
+                        @foreach (var tab in (IEnumerable<dynamic>)ViewBag.Tabelas)
                         {
-                            @Html.Raw("<option value='" + tab.Id + "' selected>" + tab.NomeTabela + "</option>")
+                            bool selecionada = false;
+                            if (ViewBag.Editando && ViewBag.Registro.TabelaExamesId == tab.Id)
+                            {
+                                selecionada = true;
+                            }
+                            else if (!ViewBag.Editando && ViewBag.TabelaExamesIdPre != null && ViewBag.TabelaExamesIdPre == tab.Id)
+                            {
+                                selecionada = true;
+                            }
+
+                            if (selecionada)
+                            {
+                                @Html.Raw("<option value='" + tab.Id + "' selected>" + tab.NomeTabela + "</option>")
+                            }
+                            else
+                            {
+                                @Html.Raw("<option value='" + tab.Id + "'>" + tab.NomeTabela + "</option>")
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="field-group w-sm">
+                    <label>Alinhamento</label>
+                    <select id="cmbAlinhamento" class="form-control">
+                        @if (ViewBag.Editando && ViewBag.Registro.AlinhaLaudo == 1)
+                        {
+                            @Html.Raw("<option value='0'>Esquerda</option>")
+                            @Html.Raw("<option value='1' selected>Direita</option>")
                         }
                         else
                         {
-                            @Html.Raw("<option value='" + tab.Id + "'>" + tab.NomeTabela + "</option>")
+                            @Html.Raw("<option value='0' selected>Esquerda</option>")
+                            @Html.Raw("<option value='1'>Direita</option>")
                         }
-                    }
-                </select>
-            </div>
-            <div>
-                <label style="font-size: 13px; font-weight: bold;">Alinhamento:</label><br />
-                <select id="cmbAlinhamento" style="width: 140px; padding: 4px 8px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px; height: 28px;">
-                    @if (ViewBag.Editando && ViewBag.Registro.AlinhaLaudo == 1)
-                    {
-                        @Html.Raw("<option value='0'>Esquerda</option>")
-                        @Html.Raw("<option value='1' selected>Direita</option>")
-                    }
-                    else
-                    {
-                        @Html.Raw("<option value='0' selected>Esquerda</option>")
-                        @Html.Raw("<option value='1'>Direita</option>")
-                    }
-                </select>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Abas -->
-    <div style="margin-bottom: 20px;">
-        <div style="display: flex; gap: 0;">
-            <button type="button" id="tabEditor" class="tab-btn tab-ativa" onclick="trocarAba('editor')">
-                <i class="fa-solid fa-pen-to-square"></i> Editor
-            </button>
-            <button type="button" id="tabUpload" class="tab-btn" onclick="trocarAba('upload')">
-                <i class="fa-solid fa-file-arrow-up"></i> Upload Word
-            </button>
+    <div class="card-secao card-secao-w-lg">
+        <div class="card-secao-header">
+            <i class="fa-solid fa-pen-to-square"></i> Editor de Conteúdo
         </div>
+        <div class="card-secao-body">
+            <!-- Abas -->
+            <div style="margin-bottom: 16px;">
+                <div style="display: flex; gap: 0;">
+                    <button type="button" id="tabEditor" class="tab-btn tab-ativa" onclick="trocarAba('editor')">
+                        <i class="fa-solid fa-pen-to-square"></i> Editor
+                    </button>
+                    <button type="button" id="tabUpload" class="tab-btn" onclick="trocarAba('upload')">
+                        <i class="fa-solid fa-file-arrow-up"></i> Upload Word
+                    </button>
+                </div>
 
-        <!-- Aba Editor -->
-        <div id="abaEditor" style="border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; padding: 16px;">
-            <div id="editorQuill" style="height: 300px;">@Html.Raw(ViewBag.ConteudoHtml ?? "")</div>
-        </div>
+                <!-- Aba Editor -->
+                <div id="abaEditor" style="border: 1px solid var(--lab-border, #ddd); border-top: none; border-radius: 0 0 var(--lab-radius, 8px) var(--lab-radius, 8px); padding: 16px;">
+                    <div id="editorQuill" style="height: 300px;">@Html.Raw(ViewBag.ConteudoHtml ?? "")</div>
+                </div>
 
-        <!-- Aba Upload -->
-        <div id="abaUpload" style="border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; padding: 16px; display: none;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <input type="file" id="inputArquivo" accept=".doc,.docx,.rtf" style="font-size: 13px;" />
-                <button type="button" id="btnEnviarArquivo" class="btn btn-info btn-sm" style="font-size: 13px;">
-                    <i class="fa-solid fa-upload"></i> Enviar
+                <!-- Aba Upload -->
+                <div id="abaUpload" style="border: 1px solid var(--lab-border, #ddd); border-top: none; border-radius: 0 0 var(--lab-radius, 8px) var(--lab-radius, 8px); padding: 16px; display: none;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="file" id="inputArquivo" accept=".doc,.docx,.rtf" class="form-control" style="font-size: 13px; flex: 1;" />
+                        <button type="button" id="btnEnviarArquivo" class="btn btn-info btn-sm lab-btn">
+                            <i class="fa-solid fa-upload"></i> Enviar
+                        </button>
+                    </div>
+                    <div class="field-hint">Formatos aceitos: .DOC, .DOCX, .RTF</div>
+                </div>
+            </div>
+
+            <!-- Botão Voltar + Salvar (aba Editor) -->
+            <div class="form-group" style="margin-top: 16px;">
+                <button type="button" id="btnVoltar" class="btn btn-secondary btn-sm lab-btn" style="margin-right: 8px;">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar
+                </button>
+                <button type="button" id="btnSalvar" class="btn btn-success btn-sm lab-btn">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar
                 </button>
             </div>
-            <p style="font-size: 12px; color: #666; margin-top: 8px;">Formatos aceitos: .DOC, .DOCX, .RTF</p>
+
+            <div class="field-hint">
+                <i class="fa-solid fa-circle-info"></i> Para que a alteração reflita na impressão de laudos, efetue login novamente.
+            </div>
         </div>
     </div>
-
-    <!-- Botão Voltar + Salvar (aba Editor) -->
-    <div style="text-align: center; margin: 15px 0;">
-        <button type="button" id="btnVoltar" class="btn btn-secondary btn-sm" style="font-size: 13px; margin-right: 8px;">
-            <i class="fa-solid fa-arrow-left"></i> Voltar
-        </button>
-        <button type="button" id="btnSalvar" class="btn btn-success btn-sm" style="font-size: 13px;">
-            <i class="fa-solid fa-floppy-disk"></i> Salvar
-        </button>
-    </div>
-
-    <p style="font-size: 12px; color: #888; margin-top: 10px;">
-        <i class="fa-solid fa-circle-info"></i> Para que a alteração reflita na impressão de laudos, efetue login novamente.
-    </p>
 </div>
 
 <input type="hidden" id="hiddenId" value="@(ViewBag.Editando ? ViewBag.Registro.Id : 0)" />
@@ -132,22 +151,36 @@
     /*..Kiro*/
 </style>
 
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="~/lib/quill/quill.min.js"></script>
 <script>
     //Feito pelo Kiro em 14/07/2025
-    initBtnVoltar();
-    var quill = new Quill('#editorQuill', {
-        theme: 'snow',
-        modules: {
-            toolbar: [
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'header': [1, 2, 3, false] }],
-                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                [{ 'align': [] }],
-                ['clean']
-            ]
+    try {
+        initBtnVoltar();
+    } catch (ex) {
+        console.error('Erro em initBtnVoltar():', ex);
+    }
+
+    var quill;
+    try {
+        if (typeof Quill === 'undefined') {
+            throw new Error('Biblioteca Quill não foi carregada.');
         }
-    });
+        quill = new Quill('#editorQuill', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'header': [1, 2, 3, false] }],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                    [{ 'align': [] }],
+                    ['clean']
+                ]
+            }
+        });
+    } catch (ex) {
+        console.error('Erro ao inicializar Quill:', ex);
+        clickAviso('Erro', 'Não foi possível carregar o editor. Recarregue a página ou verifique o console.', 'critica', null);
+    }
 
     function trocarAba(aba) {
         if (aba === 'editor') {
@@ -167,6 +200,11 @@
 
     // Salvar (aba Editor)
     $(document).off('click.salvarRef').on('click.salvarRef', '#btnSalvar', function () {
+        if (!quill) {
+            clickAviso('Erro', 'O editor não foi inicializado corretamente.', 'critica', null);
+            return;
+        }
+
         var id = parseInt($("#hiddenId").val()) || 0;
         var contaExame = $("#txtContaExame").val().trim();
         var tabelaExamesId = parseInt($("#cmbTabela").val());

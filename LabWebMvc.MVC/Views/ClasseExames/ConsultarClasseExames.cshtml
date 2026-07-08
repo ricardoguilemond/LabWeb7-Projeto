@@ -1,53 +1,18 @@
-﻿@using static BLL.UtilBLL
+@using static BLL.UtilBLL
 @using LabWebMvc.MVC.ViewModel
 @model vmClasseExames
 @{
     Layout = "_Layout";
 }
 <style>
-    label {
-        color: gray;
-    }
-
-    .wrapper {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr; /* até 3 colunas em cada wrapper */
-    }
-
-    .campo {
-        display: inline-flex;
-        border: none;
-        background-color: inherit;
-        color: black;
-        font-size: small;
-    }
-
-    .border0 {
-        border: none;
-        appearance: none; /* retira qualquer símbolo e formatação do drop down */
-        -webkit-appearance: none;
-        background-color: inherit;
-    }
-
-    .email {
-        width: 200px;
-        color: blue;
-    }
-
-    .width300 {
-        width: 300px;
-    }
-
     img {
         opacity: 0.2;
     }
-
     .container {
         position: relative;
         text-align: center;
         color: red;
     }
-    /* Centered text */
     .textoRotaciona {
         position: absolute;
         top: 20%;
@@ -74,102 +39,113 @@
 <div id="myModal" class="modal">
     <!-- Modal content -->
     <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header bg-verde-escuro">
             <h5 class="modal-title">@ViewBag.TextoMenu[0]</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
-        <div class="modal-body">
-            <!-- Linha 1 -->
-            <div class="wrapper">
-                <div>
-                    @Html.Label(null, "Nome da Folha de Exames", new { @class = "" })
-                    @Html.TextBoxFor(p => p.RefExame, new { @class = "campo width300", @disabled = "disabled" })
+        <div class="modal-body lab-refined">
+            <div class="card-secao card-secao-w-xl">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-clipboard-list"></i> Dados da Folha de Exames
                 </div>
-                <div>
-                    @Html.Label("Instituição")
-                    @Html.TextBoxFor(p => p.LaboratorioExterno, new { @class = "campo", @disabled = "disabled" })
-                </div>
-                <div>
-                    @Html.Label("Qde.Etiquetas")
-                    @Html.TextBoxFor(p => p.Etiquetas, new { @class = "campo", @disabled = "disabled" })
+                <div class="card-secao-body">
+                    <div class="field-row">
+                        <div class="field-group w-xl">
+                            <label>Nome da Folha de Exames</label>
+                            <div class="field-readonly">@Model.RefExame</div>
+                        </div>
+                        <div class="field-group w-md">
+                            <label>Instituição</label>
+                            <div class="field-readonly">@Model.LaboratorioExterno</div>
+                        </div>
+                        <div class="field-group w-xs">
+                            <label>Qde.Etiquetas</label>
+                            <div class="field-readonly">@Model.Etiquetas</div>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group w-md">
+                            <label>Tipo Mapa de Trabalho</label>
+                            <div class="field-readonly">@Model.GetMapaTrabalho</div>
+                        </div>
+                        <div class="field-group w-md">
+                            <label>Planilha</label>
+                            <div class="field-readonly">@Model.Planilha</div>
+                        </div>
+                        <div class="field-group w-sm">
+                            <label>MHI (Índice que define a ordem das Folhas no Mapa Horizontal)</label>
+                            <div class="field-readonly">@Model.MHI</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <!-- Linha 2 -->
-            <div class="wrapper">
-                <div>
-                    @Html.Label("Tipo Mapa de Trabalho")
-                    @Html.TextBoxFor(p => p.GetMapaTrabalho, new { @class = "campo", @disabled = "disabled" })
+
+            <div class="card-secao card-secao-w-xl">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-signature"></i> Assinaturas
                 </div>
-                <div>
-                    @Html.Label("Planilha")
-                    @Html.TextBoxFor(p => p.Planilha, new { @class = "campo", @disabled = "disabled" })
+                <div class="card-secao-body">
+                    @if (ViewBag.Assinatura1 == 1)
+                    {
+                        <div class="field-row">
+                            <div class="field-group w-full">
+                                <label>Assinatura[1] Obrigatória</label>
+                                <div class="container">
+                                    @Html.Raw("<div id='imgsAss1'></div>")
+                                    @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
+                                    @Html.HiddenFor(p => p.ImgAss1, new { @id = "bytesAss1" })
+                                </div>
+                                <div class="field-hint">Nome da imagem: @Model.NomeAss1</div>
+                            </div>
+                        </div>
+                    }
+                    @if (ViewBag.Assinatura2 == 1)
+                    {
+                        <div class="field-row">
+                            <div class="field-group w-full">
+                                <label>Assinatura[2]</label>
+                                <div class="container">
+                                    @Html.Raw("<div id='imgsAss2'></div>")
+                                    @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
+                                    @Html.HiddenFor(p => p.ImgAss2, new { @id = "bytesAss2" })
+                                </div>
+                                <div class="field-hint">Nome da imagem: @Model.NomeAss2</div>
+                            </div>
+                        </div>
+                    }
+                    @if (ViewBag.Assinatura3 == 1)
+                    {
+                        <div class="field-row">
+                            <div class="field-group w-full">
+                                <label>Assinatura[3]</label>
+                                <div class="container">
+                                    @Html.Raw("<div id='imgsAss3'></div>")
+                                    @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
+                                    @Html.HiddenFor(p => p.ImgAss3, new { @id = "bytesAss3" })
+                                </div>
+                                <div class="field-hint">Nome da imagem: @Model.NomeAss3</div>
+                            </div>
+                        </div>
+                    }
+                    @if (ViewBag.Assinatura4 == 1)
+                    {
+                        <div class="field-row">
+                            <div class="field-group w-full">
+                                <label>Assinatura[4]</label>
+                                <div class="container">
+                                    @Html.Raw("<div id='imgsAss4'></div>")
+                                    @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
+                                    @Html.HiddenFor(p => p.ImgAss4, new { @id = "bytesAss4" })
+                                </div>
+                                <div class="field-hint">Nome da imagem: @Model.NomeAss4</div>
+                            </div>
+                        </div>
+                    }
                 </div>
-                <div>
-                    @Html.Label("MHI (Índice que define a ordem das Folhas no Mapa Horizontal - Landscape/paisagem)")
-                    @Html.TextBoxFor(p => p.MHI, new { @class = "campo", @disabled = "disabled" })
-                </div>
-            </div>
-            <hr class="new1" />
-            <div class="wrapper">
-                @if (ViewBag.Assinatura1 == 1)
-                {
-                    <div class="container">
-                        @Html.Label("Assinatura[1] Obrigatória")
-                        @Html.Raw("<div id='imgsAss1'></div>")
-                        @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
-                        @Html.HiddenFor(p => p.ImgAss1, new { @id = "bytesAss1" })
-                        <div class="form-inline">
-                            @Html.Label("Nome da imagem: ", null, new { @class = "campo" })
-                            @Html.TextBoxFor(p => p.NomeAss1, new { @class = "campo", @disabled = "disabled" })
-                        </div>
-                    </div>
-                }
-                @if (ViewBag.Assinatura2 == 1)
-                {
-                    <div class="container">
-                        @Html.Label("Assinatura[2]")
-                        @Html.Raw("<div id='imgsAss2'></div>")
-                        @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
-                        @Html.HiddenFor(p => p.ImgAss2, new { @id = "bytesAss2" })
-                        <div class="form-inline">
-                            @Html.Label("Nome da imagem: ", null, new { @class = "campo" })
-                            @Html.TextBoxFor(p => p.NomeAss2, new { @class = "campo", @disabled = "disabled" })
-                        </div>
-                    </div>
-                }
-            </div>
-            <hr class="new1" />
-            <div class="wrapper">
-                @if (ViewBag.Assinatura3 == 1)
-                {
-                    <div class="container">
-                        @Html.Label("Assinatura[3]")
-                        @Html.Raw("<div id='imgsAss3'></div>")
-                        @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
-                        @Html.HiddenFor(p => p.ImgAss3, new { @id = "bytesAss3" })
-                        <div class="form-inline">
-                            @Html.Label("Nome da imagem: ", null, new { @class = "campo" })
-                            @Html.TextBoxFor(p => p.NomeAss3, new { @class = "campo", @disabled = "disabled" })
-                        </div>
-                    </div>
-                }
-                @if (ViewBag.Assinatura4 == 1)
-                {
-                    <div class="container">
-                        @Html.Label("Assinatura[4]")
-                        @Html.Raw("<div id='imgsAss4'></div>")
-                        @Html.Raw("<div class='textoRotaciona'>NÃO COPIAR</div>")
-                        @Html.HiddenFor(p => p.ImgAss4, new { @id = "bytesAss4" })
-                        <div class="form-inline">
-                            @Html.Label("Nome da imagem: ", null, new { @class = "campo" })
-                            @Html.TextBoxFor(p => p.NomeAss4, new { @class = "campo", @disabled = "disabled" })
-                        </div>
-                    </div>
-                }
             </div>
         </div>
         <div class="modal-footer" style="justify-content: center;">
-            <button type="button" id="btnVoltar" class="btn btn-secondary">
+            <button type="button" id="btnVoltar" class="btn btn-secondary lab-btn">
                 <i class="fa-solid fa-arrow-left"></i> Voltar
             </button>
         </div>
@@ -179,8 +155,6 @@
 <script src="@Url.Content("~/js/site.js")" type="text/javascript"></script>
 <!-- Fim da página do Modal -->
 <Script>
-    //Carrega a imagem do Timbre que vem da base de dados em bytes[]
-    //Válido para PNG, JPG, BMP, o gif salva na tabela, mas não mostra aqui
     var arrayAss1 = "data:image/png;base64," + $("#bytesAss1").val();
     if (arrayAss1 != null && arrayAss1 != "data:image/png;base64,")
         $("#imgsAss1").fadeIn("fast").html("<img src='" + arrayAss1 + "' style='width:300px; height:215px;' onContextMenu = 'return false;' />");
@@ -196,6 +170,4 @@
     var arrayAss4 = "data:image/png;base64," + $("#bytesAss4").val();
     if (arrayAss4 != null && arrayAss4 != "data:image/png;base64,")
         $("#imgsAss4").fadeIn("fast").html("<img src='" + arrayAss4 + "' style='width:300px; height:215px;' onContextMenu = 'return false;' />");
-
 </Script>
-

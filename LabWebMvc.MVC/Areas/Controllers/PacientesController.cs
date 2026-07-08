@@ -45,8 +45,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [HttpGet]
         [Route("Pacientes")]
         public async Task<IActionResult> Index(string? Conteudo, int registros = 50,
-            string? dataInicial = null, string? dataFinal = null,
-            string? nomePaciente = null, int? folhaId = null)
+            string? nomePaciente = null, string? cpf = null, string? dataNascimento = null)
         {
             // ViewBag.TextoMenu = new object[] { "Cadastro de Pacientes", false };
 
@@ -88,30 +87,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
             else
             {
                 //Feito pelo Kiro em 17/05/2026
-                // Filtros backend de exames — só se aplicam quando Conteudo está vazio
-                bool temFiltroExames = !string.IsNullOrEmpty(dataInicial)
-                                    || !string.IsNullOrEmpty(dataFinal)
-                                    || !string.IsNullOrEmpty(nomePaciente)
-                                    || folhaId.HasValue;
+                // Filtros backend de paciente — só se aplicam quando Conteudo está vazio
+                bool temFiltroPaciente = !string.IsNullOrEmpty(nomePaciente)
+                                      || !string.IsNullOrEmpty(cpf)
+                                      || !string.IsNullOrEmpty(dataNascimento);
 
-                if (temFiltroExames)
+                if (temFiltroPaciente)
                 {
                     var query = _db.Pacientes.AsNoTracking().AsQueryable();
-
-                    // Filtro por período (DataIni dos ExamesRealizados dentro do range UTC)
-                    if (!string.IsNullOrEmpty(dataInicial))
-                    {
-                        DateTime dataIniParsed = dataInicial.Trim().FormataData("dd/MM/yyyy", true);
-                        var (inicioUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataIniParsed);
-                        query = query.Where(p => p.ExamesRealizados.Any(e => e.DataIni >= inicioUtc));
-                    }
-
-                    if (!string.IsNullOrEmpty(dataFinal))
-                    {
-                        DateTime dataFimParsed = dataFinal.Trim().FormataData("dd/MM/yyyy", true);
-                        var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataFimParsed);
-                        query = query.Where(p => p.ExamesRealizados.Any(e => e.DataIni <= fimUtc));
-                    }
 
                     // Filtro por nome do paciente (case-insensitive)
                     if (!string.IsNullOrEmpty(nomePaciente))
@@ -119,10 +102,19 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         query = query.Where(p => p.NomePaciente.ToLower().Contains(nomePaciente.Trim().ToLower()));
                     }
 
-                    // Filtro por folha de exame (via ItensExamesRealizados.ClasseExamesId)
-                    if (folhaId.HasValue)
+                    // Filtro por CPF (com ou sem formatação)
+                    if (!string.IsNullOrEmpty(cpf))
                     {
-                        query = query.Where(p => p.ExamesRealizados.Any(e => e.ItensExamesRealizados.Any(i => i.ClasseExamesId == folhaId.Value)));
+                        string cpfLimpo = cpf.Trim().Replace(".", "").Replace("-", "");
+                        query = query.Where(p => (p.CPF ?? "").Replace(".", "").Replace("-", "").Contains(cpfLimpo));
+                    }
+
+                    // Filtro por data de nascimento
+                    if (!string.IsNullOrEmpty(dataNascimento))
+                    {
+                        DateTime dataNascParsed = dataNascimento.Trim().FormataData("dd/MM/yyyy", true);
+                        var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataNascParsed);
+                        query = query.Where(p => p.Nascimento >= inicioUtc && p.Nascimento <= fimUtc);
                     }
 
                     dados = await query.OrderByDescending(o => o.Id).ToListAsync();
@@ -520,35 +512,81 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //Feito pelo Kiro em 17/05/2026
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
-        [Route("Pacientes/ObterFolhasExame")]
-        public IActionResult ObterFolhasExame()
-        {
-            try
-            {
-                var folhas = _db.ClasseExames
-                    .AsNoTracking()
-                    .OrderBy(c => c.RefExame)
-                    .Select(c => new { c.Id, c.RefExame })
-                    .ToList();
-
-                return Json(new { sucesso = true, folhas });
-            }
-            catch (Exception ex)
-            {
-                _eventLogHelper.LogEventViewer("[Pacientes] ObterFolhasExame - Erro: " + ex.Message, "wError");
-                return Json(new { sucesso = false, mensagem = "Erro ao obter folhas de exame" });
-            }
-        }
-        //..Kiro
-
-        //Feito pelo Kiro em 17/05/2026
-        [TypeFilter(typeof(SessionFilter))]
-        [HttpGet]
         [Route("Pacientes/ObterExamesPaciente")]
-        public async Task<IActionResult> ObterExamesPaciente(int pacienteId, bool expandir = false)
+        public async Task<IActionResult> ObterExamesPaciente(int pacienteId, bool expandir = false,
+            string? dataInicial = null, string? dataFinal = null)
         {
             try
             {
+                bool temFiltroData = !string.IsNullOrEmpty(dataInicial) || !string.IsNullOrEmpty(dataFinal);
+
+                if (temFiltroData)
+                {
+                    // Filtro por período informado no detail — exibe todos os exames do range
+                    const int limiteMaximo = 200;
+                    var query = _db.ExamesRealizados
+                        .AsNoTracking()
+                        .Where(e => e.PacienteId == pacienteId);
+
+                    if (!string.IsNullOrEmpty(dataInicial))
+                    {
+                        DateTime dataIniParsed = dataInicial.Trim().FormataData("dd/MM/yyyy", true);
+                        var (inicioUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataIniParsed);
+                        query = query.Where(e => e.DataIni >= inicioUtc);
+                    }
+
+                    if (!string.IsNullOrEmpty(dataFinal))
+                    {
+                        DateTime dataFimParsed = dataFinal.Trim().FormataData("dd/MM/yyyy", true);
+                        var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataFimParsed);
+                        query = query.Where(e => e.DataIni <= fimUtc);
+                    }
+
+                    int totalExamesFiltrados = await query.CountAsync();
+
+                    var dadosFiltrados = await query
+                        .OrderByDescending(e => e.DataIni)
+                        .ThenByDescending(e => e.Id)
+                        .Take(limiteMaximo)
+                        .Include(e => e.Instituicao)
+                        .Include(e => e.Postos)
+                        .Include(e => e.Medicos)
+                        .Include(e => e.ItensExamesRealizados)
+                            .ThenInclude(i => i.ClasseExames)
+                        .ToListAsync();
+
+                    var examesFiltrados = dadosFiltrados.Select(e => new
+                    {
+                        e.Id,
+                        MedicoId = e.MedicoId,
+                        DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
+                        DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
+                        SiglaInstituicao = e.Instituicao?.Sigla ?? "",
+                        NomePosto = e.Postos != null
+                            ? (e.Postos.SiglaPosto ?? "") + "-" + (e.Postos.NomePosto ?? "")
+                            : "",
+                        NomeMedico = (e.Medicos?.NomeMedico ?? "").Length > 25
+                            ? (e.Medicos?.NomeMedico ?? "").Substring(0, 22) + "..."
+                            : e.Medicos?.NomeMedico ?? "",
+                        CRM = e.Medicos?.CRM ?? "",
+                        Folha = e.ItensExamesRealizados
+                            .FirstOrDefault()?.ClasseExames?.RefExame ?? "",
+                        Itens = e.ItensExamesRealizados
+                            .OrderBy(i => i.OrdemItem)
+                            .Select(i => new
+                            {
+                                Folha = i.ClasseExames?.RefExame ?? "",
+                                i.RefExame,
+                                i.RefItem,
+                                ContaExame = i.ContaExame.FormatarContaExameSem11(),
+                                Descricao = i.Descricao ?? ""
+                            }).ToList()
+                    }).ToList();
+
+                    int examesOcultosFiltrados = totalExamesFiltrados > limiteMaximo ? totalExamesFiltrados - limiteMaximo : 0;
+                    return Json(new { sucesso = true, exames = examesFiltrados, totalExames = totalExamesFiltrados, examesOcultos = examesOcultosFiltrados });
+                }
+
                 if (expandir)
                 {
                     // Modo expandido: exames dos últimos 12 meses (sem limite de quantidade)
@@ -569,6 +607,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     var examesExpandidos = dadosExpandidos.Select(e => new
                     {
                         e.Id,
+                        MedicoId = e.MedicoId,
                         DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
                         DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
                         SiglaInstituicao = e.Instituicao?.Sigla ?? "",
@@ -646,6 +685,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 var exames = examesExibidos.Select(e => new
                 {
                     e.Id,
+                    MedicoId = e.MedicoId,
                     DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
                     DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
                     SiglaInstituicao = e.Instituicao?.Sigla ?? "",
@@ -676,38 +716,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 _eventLogHelper.LogEventViewer("[Pacientes] ObterExamesPaciente - Erro: " + ex.Message, "wError");
                 return Json(new { sucesso = false, mensagem = "Erro ao obter exames do paciente" });
-            }
-        }
-        //..Kiro
-
-        //Feito pelo Kiro em 17/05/2026
-        [TypeFilter(typeof(SessionFilter))]
-        [HttpGet]
-        [Route("Pacientes/ObterItensExame")]
-        public async Task<IActionResult> ObterItensExame(int exameRealizadoId)
-        {
-            try
-            {
-                var dados = await _db.ItensExamesRealizados
-                    .AsNoTracking()
-                    .Where(i => i.ExameRealizadoId == exameRealizadoId)
-                    .OrderBy(i => i.OrdemItem)
-                    .ToListAsync();
-
-                var itens = dados.Select(i => new
-                {
-                    i.RefExame,
-                    i.RefItem,
-                    ContaExame = i.ContaExame.FormatarContaExameSem11(),
-                    Descricao = i.Descricao ?? ""
-                }).ToList();
-
-                return Json(new { sucesso = true, itens });
-            }
-            catch (Exception ex)
-            {
-                _eventLogHelper.LogEventViewer("[Pacientes] ObterItensExame - Erro: " + ex.Message, "wError");
-                return Json(new { sucesso = false, mensagem = "Erro ao obter itens do exame" });
             }
         }
         //..Kiro

@@ -1,4 +1,5 @@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
 @using static BLL.UtilBLL
 @using LabWebMvc.MVC.ViewModel
 @using LabWebMvc.MVC.Areas.Utils
@@ -6,6 +7,94 @@
 @{
     Layout = "_Layout";
 }
+<style>
+    .card-secao {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .card-secao-header {
+        background: #f5f7fa;
+        border-bottom: 1px solid #e0e0e0;
+        border-radius: 10px 10px 0 0;
+        padding: 8px 16px;
+        font-size: 0.9em;
+        font-weight: 600;
+        color: #444;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .card-secao-header i {
+        color: #2c7a7a;
+    }
+    .card-secao-body {
+        padding: 16px;
+    }
+    .field-row {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+    .field-row:last-child {
+        margin-bottom: 0;
+    }
+    .field-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .field-group label {
+        font-size: 0.82em;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .field-group input[type="text"],
+    .field-group input[type="number"],
+    .field-group select {
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.9em;
+        transition: border-color 0.2s;
+    }
+    .field-group input[type="text"]:focus,
+    .field-group input[type="number"]:focus,
+    .field-group select:focus {
+        border-color: #2c7a7a;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(44,122,122,0.12);
+    }
+    .field-readonly {
+        background-color: #f0f4f8 !important;
+        border: 1px solid #d6dee6 !important;
+        color: #444;
+        font-weight: 500;
+    }
+    .field-hint {
+        font-size: 0.78em;
+        color: #888;
+        margin-top: 3px;
+    }
+    .radio-group {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        padding-top: 4px;
+    }
+    .radio-group label {
+        font-weight: normal;
+        text-transform: none;
+        letter-spacing: normal;
+        margin-left: 4px;
+        cursor: pointer;
+    }
+</style>
 <script>
     $(document).ready(function () {
         initBtnVoltar();
@@ -36,81 +125,169 @@
 
 @using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))
 {
-    <div class="row">
-        <div class="col-md-4">
+    <div class="lab-form-container lab-form-narrow lab-refined">
             @Html.AntiForgeryToken()
             @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-            <div class="form-group">
-                @Html.Label("Descrição do Item:")
-                <div style="display: inline-block; font-weight: 500;">@Model.Descricao</div>
-                @{
-                    var geral = new vmGeral();
-                    geral.Aviso = Utils.AvisoHtml("Aviso", "A alteração de preços será aplicada em <b>todas as instituições</b> do plano para este item.");
-                    @Html.Raw(geral.Aviso)
-                }
+            <!-- Cabeçalho: Item + Aviso -->
+            <div class="lab-titulo">
+                <i class="fa-solid fa-vial"></i> @Model.Descricao
             </div>
-            <div class="form-group">
-                @Html.Label("Descrição")
-                @Html.TextBoxFor(p => p.Descricao, new { @class = "form-control" })
-            </div>
-            <div class="form-group">
-                @Html.Label("Valor de Custo (R$)")
-                @Html.TextBoxFor(p => p.ValorCusto, new { @class = "form-control", @placeholder = "0,0000" })
-            </div>
-            <div class="form-group">
-                @Html.Label("Valor do Item (R$)")
-                @Html.TextBoxFor(p => p.ValorItem, new { @class = "form-control", @placeholder = "0,0000" })
-            </div>
-            <div class="form-group">
-                <fieldset class="borda_redonda" style="padding: 6px;">
-                    @{
-                        ICollection<int> listaEtiquetas = new HashSet<int>();
-                    }
-                    @for (int i = 0; i <= 10; i++)
-                    {
-                        listaEtiquetas.Add(i);
-                    }
-                    @Html.Label("Quantidade de Etiquetas (Máximo de 10)")
-                    @Html.DropDownListFor(p => p.Etiquetas, new SelectList(listaEtiquetas, "Value"), new { style = "width:50px", size = "1" })
-                </fieldset>
-            </div>
-            <div class="form-group">
-                @Html.Label("Colocar na lista de itens de rotina?")
-                @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                {
-                    int rotinaIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();
-                    string rotinaDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (rotinaIndex == Model.Seleciona);
-                    <div style="display: inline-block;">
-                        @Html.RadioButton("Seleciona", rotinaIndex, check)
-                        @Html.Label(rotinaDescricao)
+            @{
+                var geral = new vmGeral();
+                geral.Aviso = Utils.AvisoHtml("Aviso", "A alteração será aplicada em <b>todas as instituições</b> do plano para este item.");
+                @Html.Raw(geral.Aviso)
+            }
+
+            <!-- Seção: Informações do Item (readonly) -->
+            <div class="card-secao card-secao-w-xl">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-circle-info"></i> Informações do Item
+                </div>
+                <div class="card-secao-body">
+                    <div class="field-row">
+                        <div class="field-group w-sm">
+                            <label>Código da Conta</label>
+                            <input type="text" class="form-control field-readonly" value="@Model.ContaExame.FormatarContaExameSem11()" readonly />
+                        </div>
+                        <div class="field-group w-xl">
+                            <label>Tabela de Preços</label>
+                            <input type="text" class="form-control field-readonly" value="@ViewBag.NomeTabela" readonly />
+                        </div>
                     </div>
-                }
-            </div>
-            <div class="form-group">
-                @Html.Label("Mostrar este item na recepção?")
-                @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                {
-                    int recepcaoIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();
-                    string recepcaoDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (recepcaoIndex == Model.NaoMostrar);
-                    <div style="display: inline-block;">
-                        @Html.RadioButton("NaoMostrar", recepcaoIndex, check)
-                        @Html.Label(recepcaoDescricao)
+                    <div class="field-row">
+                        <div class="field-group w-xl">
+                            <label>Nome da Folha</label>
+                            <input type="text" class="form-control field-readonly" value="@Model.RefExame" readonly />
+                        </div>
+                        <div class="field-group w-xl">
+                            <label>Conta Principal</label>
+                            <input type="text" class="form-control field-readonly" value="@Model.RefItem" readonly />
+                        </div>
                     </div>
-                }
+                </div>
             </div>
-            <div class="form-group" style="text-align: center;">
-                <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
+
+            <!-- Seção: Dados do Exame -->
+            <div class="card-secao card-secao-w-xl">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-pen-to-square"></i> Dados do Exame
+                </div>
+                <div class="card-secao-body">
+                    <div class="field-row">
+                        <div class="field-group w-xl">
+                            <label>Descrição</label>
+                            @Html.TextBoxFor(p => p.Descricao, new { @class = "form-control" })
+                        </div>
+                        <div class="field-group w-md">
+                            <label>Unidade de Medida</label>
+                            @Html.TextBoxFor(p => p.UnidadeMedida, new { @class = "form-control", @maxlength = "20" })
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group w-xl">
+                            <label>Referência</label>
+                            @Html.TextBoxFor(p => p.Referencia, new { @class = "form-control", @maxlength = "60" })
+                            <div class="field-hint">Texto livre exibido ao lado do resultado no laudo (ex.: 70 a 110 mg/dL).</div>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group w-xs">
+                            <label>Sinonímia / Sigla</label>
+                            @Html.TextBoxFor(p => p.MapaHorizontal, new { @class = "form-control", @maxlength = "6", @style = "text-transform: uppercase;" })
+                            <div class="field-hint">Máx. 6 caracteres. Substitui a descrição no mapa horizontal.</div>
+                        </div>
+                        <div class="field-group w-lg">
+                            <label>Laudo Fixo</label>
+                            <div>
+                                <a href="@Url.Action("Editar", "ExameReferencia", new { contaExame = Model.ContaExame, tabelaExamesId = Model.TabelaExamesId })" class="btn btn-info btn-sm lab-btn" target="_blank">
+                                    <i class="fa-solid fa-file-lines"></i> Editar Laudo Fixo
+                                </a>
+                            </div>
+                            <div class="field-hint">O laudo fixo e o alinhamento são editados na tela de Referência de Laudo.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção: Valores -->
+            <div class="card-secao card-secao-w-xl">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-dollar-sign"></i> Valores
+                </div>
+                <div class="card-secao-body">
+                    <div class="field-row">
+                        <div class="field-group w-sm">
+                            <label>Valor de Custo (R$)</label>
+                            @Html.TextBoxFor(p => p.ValorCusto, new { @class = "form-control", @placeholder = "0,0000" })
+                        </div>
+                        <div class="field-group w-sm">
+                            <label>Valor do Item (R$)</label>
+                            @Html.TextBoxFor(p => p.ValorItem, new { @class = "form-control", @placeholder = "0,0000" })
+                        </div>
+                        <div class="field-group w-xs">
+                            @{
+                                ICollection<int> listaEtiquetas = new HashSet<int>();
+                                for (int i = 0; i <= 10; i++) { listaEtiquetas.Add(i); }
+                            }
+                            <label>Etiquetas (máx. 10)</label>
+                            @Html.DropDownListFor(p => p.Etiquetas, new SelectList(listaEtiquetas, "Value"), new { @class = "form-control" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção: Configurações -->
+            <div class="card-secao card-secao-w-xl">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-sliders"></i> Configurações
+                </div>
+                <div class="card-secao-body">
+                    <div class="field-row">
+                        <div class="field-group w-md">
+                            <label>Colocar na lista de itens de rotina?</label>
+                            <div class="radio-group">
+                                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                                {
+                                    int rotinaIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();
+                                    string rotinaDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                                    bool check = (rotinaIndex == Model.Seleciona);
+                                    <div style="display: inline-flex; align-items: center;">
+                                        @Html.RadioButton("Seleciona", rotinaIndex, check)
+                                        <label>@rotinaDescricao</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="field-group w-md">
+                            <label>Mostrar este item na recepção?</label>
+                            <div class="radio-group">
+                                @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                                {
+                                    int recepcaoIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();
+                                    string recepcaoDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                                    bool check = (recepcaoIndex == Model.NaoMostrar);
+                                    <div style="display: inline-flex; align-items: center;">
+                                        @Html.RadioButton("NaoMostrar", recepcaoIndex, check)
+                                        <label>@recepcaoDescricao</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div style="text-align: center; padding: 8px 0 20px 0;">
+                <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary lab-btn" style="margin-right: 10px;">
                     <i class="fa-solid fa-arrow-left"></i> Voltar
                 </button>
-                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
-                    Salvar em Todas as Instituições
+                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde lab-btn">
+                    <i class="fa-solid fa-check"></i> Salvar em Todas as Instituições
                 </button>
             </div>
         </div>
-    </div>
 }
 @section Scripts {
     @{

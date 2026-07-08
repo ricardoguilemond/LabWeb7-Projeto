@@ -8,38 +8,42 @@
 <partial name='Partials/_PartialMenuPacientes' />
 
 @*Feito pelo Kiro em 17/05/2026*@
-<!-- Filtros Backend de Exames -->
-<div id="filtrosPacientesExames" style="margin-bottom: 10px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background-color: #f9f9f9;">
+<!-- Filtros Backend de Paciente -->
+<div id="filtrosPacientes" class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-filter"></i> Filtros de Busca
+    </div>
+    <div class="card-secao-body">
     <form method="get" asp-action="Index" asp-controller="Pacientes" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
-        <label style="font: normal 13px calibri, arial, sans-serif;">Data Inicial:</label>
-        <input type="text" name="dataInicial" id="filtroDataInicial" placeholder="dd/MM/yyyy"
-               value="@Context.Request.Query["dataInicial"]"
-               style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
-
-        <label style="font: normal 13px calibri, arial, sans-serif;">Data Final:</label>
-        <input type="text" name="dataFinal" id="filtroDataFinal" placeholder="dd/MM/yyyy"
-               value="@Context.Request.Query["dataFinal"]"
-               style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
-
         <label style="font: normal 13px calibri, arial, sans-serif;">Paciente:</label>
         <input type="text" name="nomePaciente" placeholder="Nome do paciente"
                value="@Context.Request.Query["nomePaciente"]"
-               style="width: 160px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+               style="width: 180px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
 
-        <label style="font: normal 13px calibri, arial, sans-serif;">Folha:</label>
-        <select name="folhaId" id="filtroFolhaId"
-                style="width: 150px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px; height: 24px;">
-            <option value="">Todas</option>
-        </select>
+        <label style="font: normal 13px calibri, arial, sans-serif;">CPF:</label>
+        <input type="text" name="cpf" id="filtroCpf" placeholder="000.000.000-00"
+               value="@Context.Request.Query["cpf"]"
+               style="width: 130px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+        <label style="font: normal 13px calibri, arial, sans-serif;">Nascimento:</label>
+        <input type="text" name="dataNascimento" id="filtroDataNascimento" placeholder="dd/MM/yyyy"
+               value="@Context.Request.Query["dataNascimento"]"
+               style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
 
         <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
             <i class="fa-sharp fa-solid fa-magnifying-glass"></i> Pesquisar
         </button>
     </form>
+    </div>
 </div>
 @*..Kiro*@
 
-<div class="table-responsive">
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-user-pen"></i> Pacientes Cadastrados
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive">
     <table id="modeloTable" name="datatable" data-order='[[ 0, "desc" ]]' class="display compact order-column stripe table-hover nowrap">
         <thead>
             <tr>
@@ -104,6 +108,8 @@
             </tr>
         </tfoot>
     </table>
+        </div>
+    </div>
 </div>
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>
@@ -119,12 +125,11 @@
 <style>
     /*Feito pelo Kiro em 17/05/2026*/
     @@media (max-width: 768px) {
-        #filtrosPacientesExames form {
+        #filtrosPacientes form {
             flex-direction: column;
             align-items: flex-start;
         }
-        #filtrosPacientesExames input,
-        #filtrosPacientesExames select {
+        #filtrosPacientes input {
             width: 100% !important;
         }
     }
@@ -143,7 +148,6 @@
         background-color: #d4edda !important;
         font-size: 13px;
         font-weight: bold;
-        pointer-events: none;
     }
     tr.detail-header-row td {
         padding: 5px 8px !important;
@@ -157,7 +161,6 @@
     }
     tr.detail-exame-row {
         pointer-events: auto;
-        cursor: pointer;
     }
     tr.detail-exame-row:hover td {
         background-color: #e2f0e2 !important;
@@ -171,6 +174,16 @@
         padding: 3px 8px !important;
         border-top: none !important;
         color: #444;
+    }
+    .link-medico-detail {
+        color: #1a73e8;
+        text-decoration: underline;
+        cursor: pointer;
+        pointer-events: auto;
+    }
+    .link-medico-detail:hover {
+        color: #0d47a1;
+        text-decoration: underline;
     }
     /*..Kiro*/
 </style>
@@ -197,28 +210,10 @@
     };
 
     //Feito pelo Kiro em 17/05/2026
-    // Filtros de exames — máscara de data, valores padrão e carregamento de folhas
+    // Máscaras dos filtros de paciente
     $(document).ready(function () {
-        // Máscara de data nos campos de filtro
-        $("#filtroDataInicial, #filtroDataFinal").mask("99/99/9999", { placeholder: " ", autoclear: false });
-
-        // Valores padrão (hoje - 3 e hoje) se os campos estiverem vazios
-        var dataIniInput = $("#filtroDataInicial");
-        var dataFimInput = $("#filtroDataFinal");
-
-        if (!dataIniInput.val()) {
-            var hoje = new Date();
-            var tresDiasAtras = new Date(hoje);
-            tresDiasAtras.setDate(hoje.getDate() - 3);
-            dataIniInput.val(formatarDataBR(tresDiasAtras));
-        }
-        if (!dataFimInput.val()) {
-            var hoje = new Date();
-            dataFimInput.val(formatarDataBR(hoje));
-        }
-
-        // Carregar ComboBox de Folhas via AJAX
-        carregarFolhasExame();
+        $("#filtroDataNascimento").mask("99/99/9999", { placeholder: " ", autoclear: false });
+        $("#filtroCpf").mask("999.999.999-99", { placeholder: " ", autoclear: false });
     });
 
     function formatarDataBR(data) {
@@ -226,25 +221,6 @@
         var mes = String(data.getMonth() + 1).padStart(2, '0');
         var ano = data.getFullYear();
         return dia + '/' + mes + '/' + ano;
-    }
-
-    function carregarFolhasExame() {
-        var select = $("#filtroFolhaId");
-        var folhaAtual = '@Context.Request.Query["folhaId"]';
-
-        $.ajax({
-            url: '/Pacientes/ObterFolhasExame',
-            type: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                if (data.sucesso && data.folhas) {
-                    data.folhas.forEach(function (folha) {
-                        var selected = (folhaAtual && folha.id == folhaAtual) ? ' selected' : '';
-                        select.append('<option value="' + folha.id + '"' + selected + '>' + folha.refExame + '</option>');
-                    });
-                }
-            }
-        });
     }
     //..Kiro
 
@@ -278,12 +254,39 @@
         });
     });
 
-    function carregarExamesPaciente($row, pacienteId) {
+    // Handler do filtro inline de datas no detail de exames
+    $(document).ready(function () {
+        $(document).off('click.filtrarDetailExames').on('click.filtrarDetailExames', '#btnFiltrarDetailExames', function (e) {
+            e.stopPropagation();
+
+            var $parentRow = $('#modeloTable tbody tr.detail-parent-highlight');
+            if (!$parentRow.length) return;
+
+            var pacienteId = $.trim($parentRow.find('td:first').text());
+            if (!pacienteId) return;
+
+            var dataInicial = $('#detailDataInicial').val();
+            var dataFinal = $('#detailDataFinal').val();
+
+            // Fechar detail atual
+            $('#modeloTable tbody tr.detail-item-row').remove();
+            $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
+
+            // Recarregar com filtro de datas
+            carregarExamesPaciente($parentRow, pacienteId, dataInicial, dataFinal);
+        });
+    });
+
+    function carregarExamesPaciente($row, pacienteId, dataInicial, dataFinal) {
         _carregandoDetailExames = true;
+
+        var requestData = { pacienteId: pacienteId };
+        if (dataInicial) requestData.dataInicial = dataInicial;
+        if (dataFinal) requestData.dataFinal = dataFinal;
 
         $.ajax({
             url: '/Pacientes/ObterExamesPaciente',
-            data: { pacienteId: pacienteId },
+            data: requestData,
             type: 'GET',
             dataType: 'json',
             success: function (data) {
@@ -308,11 +311,25 @@
     }
 
     function renderizarExamesPaciente($row, exames, examesOcultos, totalExames) {
-        // Linha de cabeçalho do detail
+        // Linha de cabeçalho do detail com filtro inline de datas
         var headerHtml = '<tr class="detail-header-row">' +
-            '<td colspan="9"><strong>Exames Realizados</strong></td>' +
+            '<td colspan="9">' +
+            '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">' +
+            '<strong>Exames Realizados</strong>' +
+            '<label style="font-weight:normal; margin:0;">Data Inicial:</label>' +
+            '<input type="text" id="detailDataInicial" placeholder="dd/MM/yyyy" style="width:100px; padding-left:4px; border:1px solid #69c38a; border-radius:4px; font-size:12px; height:22px;" />' +
+            '<label style="font-weight:normal; margin:0;">Data Final:</label>' +
+            '<input type="text" id="detailDataFinal" placeholder="dd/MM/yyyy" style="width:100px; padding-left:4px; border:1px solid #69c38a; border-radius:4px; font-size:12px; height:22px;" />' +
+            '<button type="button" id="btnFiltrarDetailExames" class="btn btn-success btn-xs" style="padding:2px 8px; font-size:12px;">' +
+            '<i class="fa-sharp fa-solid fa-magnifying-glass"></i> Filtrar' +
+            '</button>' +
+            '</div>' +
+            '</td>' +
             '</tr>';
         $row.after(headerHtml);
+
+        // Aplicar máscaras de data no filtro inline
+        $("#detailDataInicial, #detailDataFinal").mask("99/99/9999", { placeholder: " ", autoclear: false });
 
         var $lastInserted = $row.next();
         exames.forEach(function (exame) {
@@ -341,7 +358,10 @@
             // Itens do exame (sub-linhas)
             if (exame.itens && exame.itens.length > 0) {
                 // Header dos itens (com Folha e Médico)
-                var medicoInfo = (exame.nomeMedico || '') + (exame.crm ? ' CRM: ' + exame.crm : '');
+                var medicoNomeHtml = exame.medicoId
+                    ? '<span class="link-medico-detail" data-medico-id="' + exame.medicoId + '" role="button" tabindex="0">' + (exame.nomeMedico || '-') + '</span>'
+                    : (exame.nomeMedico || '-');
+                var medicoInfo = medicoNomeHtml + (exame.crm ? ' CRM: ' + exame.crm : '');
                 var itensHeaderHtml = '<tr class="detail-item-row" style="font-weight:bold;">' +
                     '<td></td>' +
                     '<td style="padding-left:20px;">Folha</td>' +
@@ -377,81 +397,6 @@
                 '</td></tr>';
             $lastInserted.after(indicadorHtml);
         }
-    }
-
-    //Feito pelo Kiro em 17/05/2026
-    // Sub-detail de itens do exame — expand/collapse ao clicar na linha do exame
-    var _carregandoDetailItens = false;
-
-    $(document).ready(function () {
-        $(document).off('click.detailItens').on('click.detailItens', '.detail-exame-row', function (e) {
-            // Prevenir clique duplo
-            if (_carregandoDetailItens) return;
-
-            var $exameRow = $(this);
-            var exameRealizadoId = $exameRow.data('exame-id');
-            if (!exameRealizadoId) return;
-
-            // Fechar sub-detail anterior antes de abrir novo
-            $('#modeloTable tbody tr.detail-item-row').remove();
-
-            // Carregar itens do exame via AJAX
-            carregarItensExame($exameRow, exameRealizadoId);
-        });
-    });
-
-    function carregarItensExame($exameRow, exameRealizadoId) {
-        _carregandoDetailItens = true;
-
-        $.ajax({
-            url: '/Pacientes/ObterItensExame',
-            data: { exameRealizadoId: exameRealizadoId },
-            type: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                if (data.sucesso && data.itens && data.itens.length > 0) {
-                    renderizarItensExame($exameRow, data.itens);
-                } else if (data.sucesso && (!data.itens || data.itens.length === 0)) {
-                    // Nenhum item encontrado — exibir mensagem inline
-                    var msgHtml = '<tr class="detail-item-row">' +
-                        '<td colspan="9" style="text-align:center; color:#888; font-style:italic; padding-left:40px;">Nenhum item encontrado para este exame.</td>' +
-                        '</tr>';
-                    $exameRow.after(msgHtml);
-                }
-            },
-            error: function () {
-                clickAviso('Erro de Rede', 'Não foi possível carregar os itens do exame. Talvez seja necessário refazer login.', 'critica', null);
-            },
-            complete: function () {
-                _carregandoDetailItens = false;
-            }
-        });
-    }
-
-    function renderizarItensExame($exameRow, itens) {
-        // Linha de cabeçalho dos itens
-        var headerHtml = '<tr class="detail-item-row" style="font-weight:bold;">' +
-            '<td></td>' +
-            '<td style="padding-left:20px;">Ref. Exame</td>' +
-            '<td>Ref. Item</td>' +
-            '<td>Conta Exame</td>' +
-            '<td colspan="5">Descrição</td>' +
-            '</tr>';
-        $exameRow.after(headerHtml);
-
-        // Linhas de dados dos itens
-        var $lastInserted = $exameRow.next();
-        itens.forEach(function (item) {
-            var rowHtml = '<tr class="detail-item-row">' +
-                '<td></td>' +
-                '<td style="padding-left:20px;">' + (item.refExame || '-') + '</td>' +
-                '<td>' + (item.refItem || '-') + '</td>' +
-                '<td>' + (item.contaExame || '-') + '</td>' +
-                '<td colspan="5">' + (item.descricao || '-') + '</td>' +
-                '</tr>';
-            $lastInserted.after(rowHtml);
-            $lastInserted = $lastInserted.next();
-        });
     }
 
     // Handler de clique no indicador de expansão (últimos 12 meses)
@@ -526,5 +471,45 @@
             carregarExamesPaciente($parentRow, pacienteId);
         });
     });
+
+    //Feito pelo Kiro em 17/05/2026
+    // Handler de clique no nome do médico no detail — abre modal de consulta
+    $(document).ready(function () {
+        $(document).off('click.medicoDetail').on('click.medicoDetail', '.link-medico-detail', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var medicoId = $(this).data('medico-id');
+            if (!medicoId) return;
+
+            var modalUrl = '/Medicos/ModalConsultarMedico?id=' + medicoId;
+            $('#modalTriggerMedico').load(modalUrl, function (response, status, xhr) {
+                if (status === 'error') {
+                    console.error('Erro ao carregar modal do médico. Status:', xhr.status, xhr.statusText);
+                    console.error('Resposta:', response);
+                    clickAviso('Erro', 'Não foi possível carregar os dados do médico. (HTTP ' + xhr.status + ')', 'critica', null);
+                    return;
+                }
+                var modalEl = document.getElementById('modalConsultarMedico');
+                if (modalEl) {
+                    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                } else {
+                    console.error('Elemento #modalConsultarMedico não encontrado na resposta.');
+                    clickAviso('Erro', 'Modal não encontrado na resposta.', 'critica', null);
+                }
+            });
+        });
+
+        // Suporte à navegação por teclado (ENTER/ESPAÇO)
+        $(document).off('keydown.medicoDetail').on('keydown.medicoDetail', '.link-medico-detail', function (e) {
+            if (e.which === 13 || e.which === 32) {
+                e.preventDefault();
+                $(this).trigger('click');
+            }
+        });
+    });
     //..Kiro
 </script>
+
+<!-- Container para o modal de consulta de médico -->
+<div id="modalTriggerMedico"></div>

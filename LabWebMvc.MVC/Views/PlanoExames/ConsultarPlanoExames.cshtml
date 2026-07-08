@@ -1,38 +1,9 @@
-﻿@using static BLL.UtilBLL
+@using static BLL.UtilBLL
 @using LabWebMvc.MVC.ViewModel
 @model vmPlanoExames
 @{
     Layout = "_Layout";
 }
-<style>
-    label {
-        color: gray;
-    }
-
-    .wrapper {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr; /* até 3 colunas em cada wrapper */
-    }
-
-    .campo {
-        display: flex;
-        border: none;
-        background-color: inherit;
-        color: black;
-        font-size: small;
-    }
-
-    .border0 {
-        border: none;
-        appearance: none; /* retira qualquer símbolo e formatação do drop down */
-        -webkit-appearance: none;
-        background-color: inherit;
-    }
-
-    .width300 {
-        width: 300px;
-    }
-</style>
 <script>
     $(document).ready(function () {
         initBtnVoltar();
@@ -46,58 +17,59 @@
 <div id="myModal" class="modal">
     <!-- Modal content -->
     <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header bg-verde-escuro">
             <h5 class="modal-title">@ViewBag.TextoMenu[0]</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
-        <div class="modal-body">
-            <!-- Linha 1 -->
-            <div class="wrapper">
-@*                 
-    ///TODO/// PRECISA COMPLEMENTAR COM OS DADOS DOS PREÇOS QUANDO TIVER PRONTA A TABELA
- *@
-                <div>
-                    @Html.Label("Conta Exame")
-                    @Html.TextBoxFor(p => p.ContaExame, new { @class = "campo", @disabled = "disabled" })
+        <div class="modal-body lab-refined">
+            <div class="card-secao card-secao-w-lg">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-clipboard-list"></i> Dados do Exame
                 </div>
-                <div>
-                    @Html.Label(null, "Tabela de Exames", new { @class = "" })
-                    @Html.TextBoxFor(p => p.Id, new { @class = "campo width300", @disabled = "disabled" })
-                </div>
-                <div>
-                    @Html.Label(null, "Tabela Preços", new { @class = "" })
-                    @Html.TextBoxFor(p => p.TabelaExamesId, new { @class = "campo width300", @disabled = "disabled" })
-                </div>
-            </div>
-            <!-- Linha 2 -->
-            <div class="wrapper">
-                <div>
-                    @Html.Label("Folha")
-                    @Html.TextBoxFor(p => p.RefExame, new { @class = "campo", @disabled = "disabled" })
-                </div>
-                <div>
-                    @Html.Label("Principal")
-                    @Html.TextBoxFor(p => p.RefItem, new { @class = "campo", @disabled = "disabled" })
-                </div>
-                <div>
-                    @Html.Label("Item")
-                    @Html.TextBoxFor(p => p.Descricao, new { @class = "campo", @disabled = "disabled" })
-                </div>
-            </div>
-            <!-- Linha 3 -->
-            <div class="wrapper">
-                <div>
-                    @Html.Label("Unidade de Medida")
-                    @Html.TextBoxFor(p => p.UnidadeMedida, new { @class = "campo", @disabled = "disabled" })
-                </div>
-                <div>
-                    @Html.Label("Prazo Entrega em Dias")
-                    @Html.TextBoxFor(p => p.PrazoResultadoDias, new { @class = "campo", @disabled = "disabled" })
+                <div class="card-secao-body">
+                    <div class="field-row">
+                        <div class="field-group w-md">
+                            <label>Conta Exame</label>
+                            <div class="field-readonly">@Model.ContaExame</div>
+                        </div>
+                        <div class="field-group w-md">
+                            <label>Tabela de Exames</label>
+                            <div class="field-readonly">@Model.Id</div>
+                        </div>
+                        <div class="field-group w-md">
+                            <label>Tabela Preços</label>
+                            <div class="field-readonly">@Model.TabelaExamesId</div>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group w-md">
+                            <label>Folha</label>
+                            <div class="field-readonly">@Model.RefExame</div>
+                        </div>
+                        <div class="field-group w-md">
+                            <label>Principal</label>
+                            <div class="field-readonly">@Model.RefItem</div>
+                        </div>
+                        <div class="field-group w-lg">
+                            <label>Item</label>
+                            <div class="field-readonly">@Model.Descricao</div>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group w-md">
+                            <label>Unidade de Medida</label>
+                            <div class="field-readonly">@Model.UnidadeMedida</div>
+                        </div>
+                        <div class="field-group w-sm">
+                            <label>Prazo Entrega em Dias</label>
+                            <div class="field-readonly">@Model.PrazoResultadoDias</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="modal-footer" style="justify-content: center;">
-            <button type="button" id="btnVoltar" class="btn btn-secondary">
+            <button type="button" id="btnVoltar" class="btn btn-secondary lab-btn">
                 <i class="fa-solid fa-arrow-left"></i> Voltar
             </button>
         </div>

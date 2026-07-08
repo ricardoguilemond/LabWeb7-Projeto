@@ -102,7 +102,12 @@
 
     });
 </script>
-<div class="form-group">
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-table-list"></i> Seleção de Tabela e Folha
+    </div>
+    <div class="card-secao-body">
+        <div class="form-group">
     @Html.Label("Tabela de Preço?")
     <div style="display: inline-block;">
         @Html.DropDownListFor(x => x.PlanoExames.TabelaExamesId, Model.PlanoExames.TabelaIdList, new { @id = "id_tabela", @class = "itemTabelaExame", onchange = "atualizaBoxTabela(this);" })
@@ -117,12 +122,21 @@
     </div>
 </div>
 <div style="margin: 8px 0; padding: 6px 12px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404;">
-    <i class="fa-solid fa-circle-info"></i> Todo item de exame que receber valor/preço será exibido na recepção para ser lançado em exames dos pacientes.
+        <i class="fa-solid fa-circle-info"></i> Todo item de exame que receber valor/preço será exibido na recepção para ser lançado em exames dos pacientes.
+        </div>
+    </div>
 </div>
-<div class="table-responsive">
-    <table id="modeloTable" name="datatable" data-order='[[ 3, "asc" ]]' class="display compact order-column table-striped table-hover nowrap">
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-list-check"></i> Itens da Folha de Exame
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive">
+            <table id="modeloTable" name="datatable" data-order='[[ 3, "asc" ]]' class="display compact order-column table-striped table-hover nowrap">
         @await Html.PartialAsync("Partials/_PartialPlanoContaItem", Model)
-    </table>
+            </table>
+        </div>
+    </div>
 </div>
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>

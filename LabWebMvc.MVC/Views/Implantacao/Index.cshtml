@@ -34,8 +34,13 @@
         });
     });
 </script>
-<div class="table-responsive">
-    <table id="modeloTable" name="datatable" class="display compact order-column stripe table-hover nowrap">
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-database"></i> Importação de Tabelas
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive">
+            <table id="modeloTable" name="datatable" class="display compact order-column stripe table-hover nowrap">
         <thead>
             <tr>
                 <th>Nome da Tabela</th>
@@ -82,7 +87,9 @@
                 <th id="op">Opções</th>
             </tr>
         </tfoot>
-    </table>
+            </table>
+        </div>
+    </div>
 </div>
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>

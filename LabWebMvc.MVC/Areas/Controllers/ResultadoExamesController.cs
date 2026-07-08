@@ -344,14 +344,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // Montar lista de assinaturas ativas
                 var listaAssinaturas = MontarAssinaturas(assinaturas);
 
-                // Carregar AlinhaLaudo e flag de gráfico do PlanoExames para cada item (por ContaExame + TabelaExamesId)
+                // Carregar flag de gráfico do PlanoExames para cada item (por ContaExame + TabelaExamesId)
                 var contasExame = itens.Select(i => i.ContaExame).Distinct().ToList();
                 var planoExamesDict = await _db.PlanoExames
                     .AsNoTracking()
                     .Where(p => p.TabelaExamesId == exame.TabelaExamesId && contasExame.Contains(p.ContaExame))
                     .ToDictionaryAsync(
                         p => p.ContaExame,
-                        p => new { p.AlinhaLaudo, p.GraficoNoItem });
+                        p => new { p.GraficoNoItem });
 
                 // Montar DTO para o helper
                 var dadosPdf = new DadosPdfResultado
@@ -387,7 +387,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     DataImpressao = dataImpressaoLocal.ToString("dd/MM/yyyy"),
                     HoraImpressao = dataImpressaoLocal.ToString("HH:mm"),
 
-                    // Itens — incluir AlinhaLaudo do PlanoExames
+                    // Itens
                     Itens = itens.Select(i => new ItemPdfResultado
                     {
                         ContaExame = i.ContaExame,
@@ -398,15 +398,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         Referencia = i.Referencia ?? "",
                         EhPrincipal = i.ContaExame.Length >= 11
                             && i.ContaExame.Substring(i.ContaExame.Length - 4) == "0000"
-                            && i.ContaExame.Substring(4, 3) != "000",
-                        AlinhaLaudo = planoExamesDict.TryGetValue(i.ContaExame, out var plano) ? plano.AlinhaLaudo : 0
+                            && i.ContaExame.Substring(4, 3) != "000"
                     }).ToList(),
 
                     // Assinaturas
-                    Assinaturas = listaAssinaturas,
-
-                    // Caminho laudos fixos — fallback temporário (será removido na etapa 11)
-                    CaminhoLaudos = System.IO.Path.Combine(_env.ContentRootPath, "Laudos")
+                    Assinaturas = listaAssinaturas
                 };
 
                 //Feito pelo Kiro em 11/07/2025

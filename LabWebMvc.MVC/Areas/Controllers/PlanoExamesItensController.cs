@@ -347,6 +347,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             try
             {
+                vm.Id = planoExames.Id;
+                vm.ExameId = planoExames.ExameId;
+                vm.ContaExame = planoExames.ContaExame;
+                vm.TabelaExamesId = planoExames.TabelaExamesId;
+                vm.RefExame = planoExames.RefExame;
                 vm.CitoInstituicao = planoExames.CitoInstituicao;
                 vm.CitoTituloExame = planoExames.CitoTituloExame;
                 vm.RefItem = planoExames.RefItem;
@@ -354,7 +359,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.QCH = planoExames.QCH;
                 vm.Etiqueta = planoExames.Etiqueta;
                 vm.Etiquetas = planoExames.Etiquetas;
-                vm.AlinhaLaudo = planoExames.AlinhaLaudo;
                 vm.Seleciona = planoExames.Seleciona;
                 vm.NaoMostrar = planoExames.NaoMostrar;
                 vm.CitoTituloFolha = planoExames.CitoTituloFolha;
@@ -364,7 +368,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.ICH = planoExames.ICH;
                 vm.UnidadeMedida = planoExames.UnidadeMedida;
                 vm.Referencia = planoExames.Referencia;
-                vm.Laudo = planoExames.Laudo;
                 vm.MapaHorizontal = planoExames.MapaHorizontal;
                 vm.ResultadoMinimo = planoExames.ResultadoMinimo;
                 vm.ResultadoMaximo = planoExames.ResultadoMaximo;
@@ -382,6 +385,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     vm.ValorItem = planoExames.ValorItem;
 
                 vm.TipoContaExame = planoExames.ContaExame.Substring(7, 4) == "0000" ? (int)TipoContaExame.Principal : (int)TipoContaExame.Item;
+
+                // Carregar nome da tabela para exibição (campo disabled na view)
+                var nomeTabela = await _db.TabelaExames
+                    .AsNoTracking()
+                    .Where(t => t.Id == planoExames.TabelaExamesId)
+                    .Select(t => t.NomeTabela)
+                    .FirstOrDefaultAsync();
+                ViewBag.NomeTabela = nomeTabela ?? "";
             }
             catch (Exception ex)
             {
@@ -440,6 +451,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                 plano.NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar;
                                 plano.ValorCusto = vm.ValorCusto;
                                 plano.ValorItem = vm.ValorItem;
+                                plano.UnidadeMedida = vm.UnidadeMedida;
+                                plano.Referencia = vm.Referencia;
+                                plano.MapaHorizontal = string.IsNullOrEmpty(vm.MapaHorizontal) ? string.Empty : vm.MapaHorizontal.ToUpperInvariant();
                             }
 
                             await _db.SaveChangesAsync();

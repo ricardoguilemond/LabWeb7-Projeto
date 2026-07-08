@@ -267,7 +267,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                     QCH = string.IsNullOrEmpty(vm.QCH.ToString()) ? 0 : vm.QCH,
                                     Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta,
                                     Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas,
-                                    AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo,
                                     GraficoNoItem = DefinirFlagGrafico(vm),
                                     Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona,
                                     NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar,
@@ -280,7 +279,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                     ICH = vm.ICH,
                                     UnidadeMedida = vm.UnidadeMedida,
                                     Referencia = vm.Referencia,
-                                    Laudo = vm.Laudo,
                                     MapaHorizontal = string.IsNullOrEmpty(vm.MapaHorizontal) ? string.Empty : vm.MapaHorizontal.ToUpper(),
                                     ResultadoMinimo = vm.ResultadoMinimo,
                                     ResultadoMaximo = vm.ResultadoMaximo,
@@ -445,7 +443,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.QCH = planoExames.QCH;
                 vm.Etiqueta = planoExames.Etiqueta;
                 vm.Etiquetas = planoExames.Etiquetas;
-                vm.AlinhaLaudo = planoExames.AlinhaLaudo;
                 vm.GraficoNoItem = planoExames.GraficoNoItem;
                 vm.Seleciona = planoExames.Seleciona;
                 vm.NaoMostrar = planoExames.NaoMostrar;
@@ -458,7 +455,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.ICH = planoExames.ICH;
                 vm.UnidadeMedida = planoExames.UnidadeMedida;
                 vm.Referencia = planoExames.Referencia;
-                vm.Laudo = planoExames.Laudo;
                 vm.MapaHorizontal = planoExames.MapaHorizontal;    //Sinonímia SEMPRE maiúscula
                 vm.ResultadoMinimo = planoExames.ResultadoMinimo;
                 vm.ResultadoMaximo = planoExames.ResultadoMaximo;
@@ -528,7 +524,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                 plano.Descricao = contaExame.Substring(7, 4) == "0000" ? vm.Descricao.ToUpper() : vm.Descricao;
                                 plano.Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta;
                                 plano.Etiquetas = string.IsNullOrEmpty(vm.Etiquetas.ToString()) ? 0 : vm.Etiquetas;
-                                plano.AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo;
                                 plano.GraficoNoItem = DefinirFlagGrafico(vm);
                                 plano.Seleciona = string.IsNullOrEmpty(vm.Seleciona.ToString()) ? 0 : vm.Seleciona;
                                 plano.NaoMostrar = string.IsNullOrEmpty(vm.NaoMostrar.ToString()) ? 0 : vm.NaoMostrar;

@@ -61,10 +61,17 @@ else
 {
     <div class="alert alert-warning">Dados da folha não disponíveis.</div>
 }
-<div class="table-responsive">
-    <table id="modeloTable" name="datatable" data-order='[[ 1, "asc" ]]' class="display compact order-column stripe table-hover nowrap">
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-clipboard-list"></i> Plano de Exames
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive">
+            <table id="modeloTable" name="datatable" data-order='[[ 1, "asc" ]]' class="display compact order-column stripe table-hover nowrap">
         @await Html.PartialAsync("Partials/_PartialPlanoConta", Model)
-    </table>
+        </table>
+        </div>
+    </div>
 </div>
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>

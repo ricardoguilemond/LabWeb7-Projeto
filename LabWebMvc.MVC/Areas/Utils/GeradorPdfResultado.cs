@@ -56,9 +56,6 @@ namespace LabWebMvc.MVC.Areas.Utils
 
         // Histórico evolutivo de valores por ContaExame (ex.: Glicose)
         public Dictionary<string, List<DadoHistoricoExame>>? HistoricoPorContaExame { get; set; }
-
-        // Caminho base para laudos fixos (.DOC) — fallback quando cache não carregado
-        public string CaminhoLaudos { get; set; } = "";
     }
 
     public class DadoHistoricoExame
@@ -76,7 +73,6 @@ namespace LabWebMvc.MVC.Areas.Utils
         public string UnidadeMedida { get; set; } = "";
         public string Referencia { get; set; } = "";
         public bool EhPrincipal { get; set; }
-        public int AlinhaLaudo { get; set; } // 0=esquerda, 1=direita (do PlanoExames)
     }
 
     public class AssinaturaPdf
@@ -121,12 +117,15 @@ namespace LabWebMvc.MVC.Areas.Utils
         private readonly XFont _fontRodape = new("Arial", 9, XFontStyle.Regular);
         private readonly XFont _fontRodapeBold = new("Arial", 9, XFontStyle.Bold);
         private readonly XFont _fontPequena = new("Arial", 8, XFontStyle.Regular);
+        private readonly XFont _fontPequenaBold = new("Arial", 8, XFontStyle.Bold);
 
         // Cores
         private readonly XColor _corFaixaCinza = XColor.FromArgb(226, 226, 226); // #E2E2E2
         private readonly XColor _corVerde = XColor.FromArgb(0, 128, 0);
         private readonly XColor _corBarraVerde = XColor.FromArgb(0, 100, 0);
+        private readonly XColor _corVermelha = XColor.FromArgb(220, 20, 60);
         private readonly XSolidBrush _brushCinzaEscuro = new(XColor.FromArgb(40, 40, 40)); // quase preto
+        private readonly XSolidBrush _brushVermelho = new(XColor.FromArgb(220, 20, 60));
 
         public byte[] Gerar(DadosPdfResultado dados)
         {
@@ -158,7 +157,7 @@ namespace LabWebMvc.MVC.Areas.Utils
                 foreach (var itemPre in grupo.Itens)
                 {
                     if (itemPre.EhPrincipal) continue;
-                    double altLaudo = CalcularAlturaLaudo(itemPre, dados.ReferenciasPorContaExame, dados.CaminhoLaudos);
+                    double altLaudo = CalcularAlturaLaudo(itemPre, dados.ReferenciasPorContaExame);
                     cacheAlturaLaudo[itemPre.ContaExame] = altLaudo;
                     bool temGraf = dados.HistoricoPorContaExame != null
                         && dados.HistoricoPorContaExame.ContainsKey(itemPre.ContaExame);
@@ -195,7 +194,7 @@ namespace LabWebMvc.MVC.Areas.Utils
                         y = DesenharTituloFolha(gfx, grupo.NomeFolha, y);
                     }
 
-                    y = DesenharItem(gfx, item, y, indiceItem, dados.ReferenciasPorContaExame, dados.HistoricoPorContaExame, dados.CaminhoLaudos, grupoTemConteudo, cacheAlturaLaudo);
+                    y = DesenharItem(gfx, item, y, indiceItem, dados.ReferenciasPorContaExame, dados.HistoricoPorContaExame, grupoTemConteudo, cacheAlturaLaudo);
                     indiceItem++;
                 }
 
@@ -454,7 +453,7 @@ namespace LabWebMvc.MVC.Areas.Utils
         private double DesenharItem(XGraphics gfx, ItemPdfResultado item, double y, int indice,
             Dictionary<string, List<ExameReferenciaItem>>? referencias,
             Dictionary<string, List<DadoHistoricoExame>>? historicoPorContaExame,
-            string caminhoLaudosFallback, bool grupoTemConteudo,
+            bool grupoTemConteudo,
             Dictionary<string, double> cacheAlturaLaudo)
         {
             if (item.EhPrincipal)
@@ -498,22 +497,22 @@ namespace LabWebMvc.MVC.Areas.Utils
 
                 y += 16;
 
-                // Laudo fixo (cache ou .DOC fallback)
-                y = DesenharLaudoFixo(gfx, item, y, referencias, caminhoLaudosFallback);
+                // Laudo fixo (exclusivo de ExameReferencia)
+                y = DesenharLaudoFixo(gfx, item, y, referencias);
 
                 // Gráfico evolutivo (se houver histórico para este ContaExame)
                 if (historicoPorContaExame != null
                     && historicoPorContaExame.TryGetValue(item.ContaExame, out var historicoGlicose)
                     && historicoGlicose.Count >= 2)
                 {
-                    y = DesenharGraficoEvolucao(gfx, historicoGlicose, item.Descricao, y);
+                    y = DesenharGraficoEvolucao(gfx, historicoGlicose, item.Descricao, item.Referencia, y);
                 }
             }
 
             return y;
         }
 
-        private double DesenharGraficoEvolucao(XGraphics gfx, List<DadoHistoricoExame> historico, string descricaoExame, double y)
+        private double DesenharGraficoEvolucao(XGraphics gfx, List<DadoHistoricoExame> historico, string descricaoExame, string referencia, double y)
         {
             const double chartHeight = 100;
             const double marginLeftValues = 40;
@@ -562,7 +561,13 @@ namespace LabWebMvc.MVC.Areas.Utils
             gfx.DrawLine(penEixo, plotLeft, plotBottom, plotRight, plotBottom);
 
             var penLinha = new XPen(_corVerde, 1.2);
+            var penPonto = new XPen(_corVerde, 1.2);
             var brushPonto = new XSolidBrush(_corVerde);
+            var penPontoFora = new XPen(_corVermelha, 1.2);
+            var brushPontoFora = new XSolidBrush(_corVermelha);
+
+            // Faixa de referência (se conseguir extrair do texto)
+            var (refMin, refMax) = ExtrairFaixaReferencia(referencia);
 
             double MapX(DateTime data)
             {
@@ -576,6 +581,13 @@ namespace LabWebMvc.MVC.Areas.Utils
                 return plotBottom - ratio * (plotBottom - plotTop);
             }
 
+            bool EstaForaDaReferencia(decimal valor)
+            {
+                if (refMin.HasValue && valor < refMin.Value) return true;
+                if (refMax.HasValue && valor > refMax.Value) return true;
+                return false;
+            }
+
             // Desenhar pontos e conectá-los (dados já estão ordenados crescente por data)
             var pontos = historico.Select(h => new { X = MapX(h.DataExame), Y = MapY(h.Valor), h.Valor, h.DataExame }).ToList();
 
@@ -585,18 +597,23 @@ namespace LabWebMvc.MVC.Areas.Utils
                 if (i < pontos.Count - 1)
                     gfx.DrawLine(penLinha, pontos[i].X, pontos[i].Y, pontos[i + 1].X, pontos[i + 1].Y);
 
-                // Ponto
-                gfx.DrawEllipse(penLinha, pontos[i].X - 2.5, pontos[i].Y - 2.5, 5, 5);
-                gfx.DrawEllipse(brushPonto, pontos[i].X - 1.5, pontos[i].Y - 1.5, 3, 3);
+                bool fora = EstaForaDaReferencia(pontos[i].Valor);
+                var penAtual = fora ? penPontoFora : penPonto;
+                var brushAtual = fora ? brushPontoFora : brushPonto;
+                var fonteData = fora ? _fontPequenaBold : _fontPequena;
+
+                // Ponto (marcador maior: raio externo 4, interno 2.5)
+                gfx.DrawEllipse(penAtual, pontos[i].X - 4, pontos[i].Y - 4, 8, 8);
+                gfx.DrawEllipse(brushAtual, pontos[i].X - 2.5, pontos[i].Y - 2.5, 5, 5);
 
                 // Valor do ponto acima da interseção
                 string labelValor = pontos[i].Valor.ToString("G", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
                 gfx.DrawString(labelValor, _fontPequena, _brushCinzaEscuro,
-                    new XRect(pontos[i].X - 18, pontos[i].Y - 14, 36, 12), XStringFormats.TopCenter);
+                    new XRect(pontos[i].X - 18, pontos[i].Y - 16, 36, 12), XStringFormats.TopCenter);
 
-                // Rótulo da data no eixo X (abaixo)
+                // Rótulo da data no eixo X (abaixo) — negrito quando fora da referência
                 string labelData = pontos[i].DataExame.ToString("dd/MM/yy");
-                gfx.DrawString(labelData, _fontPequena, _brushCinzaEscuro,
+                gfx.DrawString(labelData, fonteData, _brushCinzaEscuro,
                     new XRect(pontos[i].X - 20, plotBottom + 2, 40, 12), XStringFormats.TopCenter);
             }
 
@@ -604,17 +621,56 @@ namespace LabWebMvc.MVC.Areas.Utils
         }
 
         /// <summary>
+        /// Extrai a faixa numérica de referência a partir do texto livre da referência.
+        /// Entende padrões como "3,6 a 7,7", "menor 170,0" e "maior que 199,0".
+        /// </summary>
+        private static (decimal? Min, decimal? Max) ExtrairFaixaReferencia(string referencia)
+        {
+            if (string.IsNullOrWhiteSpace(referencia))
+                return (null, null);
+
+            var matches = System.Text.RegularExpressions.Regex.Matches(referencia, @"\d+(?:[.,]\d+)?");
+            if (matches.Count == 0)
+                return (null, null);
+
+            var valores = matches
+                .Select(m => m.Value.Replace(".", "").Replace(",", "."))
+                .Select(v => decimal.TryParse(v, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : (decimal?)null)
+                .Where(d => d.HasValue)
+                .Select(d => d!.Value)
+                .ToList();
+
+            if (valores.Count == 0)
+                return (null, null);
+
+            bool temMaior = referencia.Contains("maior", System.StringComparison.OrdinalIgnoreCase);
+            bool temMenor = referencia.Contains("menor", System.StringComparison.OrdinalIgnoreCase);
+
+            if (valores.Count >= 2)
+            {
+                decimal v1 = valores[0];
+                decimal v2 = valores[1];
+                return (Math.Min(v1, v2), Math.Max(v1, v2));
+            }
+
+            if (temMaior)
+                return (valores[0], null);
+            if (temMenor)
+                return (null, valores[0]);
+
+            return (null, null);
+        }
+
+        /// <summary>
         /// Calcula a altura total do laudo (em pontos) sem renderizar.
-        /// Cache path: preciso. File fallback: estimativa por tamanho do arquivo.
+        /// Fonte exclusiva: ExameReferencia (cache).
         /// </summary>
         private double CalcularAlturaLaudo(ItemPdfResultado item,
-            Dictionary<string, List<ExameReferenciaItem>>? referencias,
-            string caminhoLaudosFallback)
+            Dictionary<string, List<ExameReferenciaItem>>? referencias)
         {
             if (string.IsNullOrWhiteSpace(item.ContaExame))
                 return 0;
 
-            // 1. Cache path (preciso)
             if (referencias != null && referencias.TryGetValue(item.ContaExame, out var listaRefs))
             {
                 double altura = 0;
@@ -631,34 +687,17 @@ namespace LabWebMvc.MVC.Areas.Utils
                 return altura;
             }
 
-            // 2. File fallback (estimativa por tamanho do arquivo)
-            if (!string.IsNullOrWhiteSpace(caminhoLaudosFallback))
-            {
-                string caminhoDoc = Path.Combine(caminhoLaudosFallback, item.ContaExame + ".DOC");
-                if (File.Exists(caminhoDoc))
-                {
-                    try
-                    {
-                        var info = new FileInfo(caminhoDoc);
-                        // Estimativa: ~1 linha a cada 60 bytes de RTF processado
-                        int linhasEstimadas = Math.Max(1, (int)(info.Length / 60));
-                        return (linhasEstimadas * 11) + 3;
-                    }
-                    catch { }
-                }
-            }
-
             return 0;
         }
 
         //Feito pelo Kiro em 11/07/2025
         private double DesenharLaudoFixo(XGraphics gfx, ItemPdfResultado item, double y,
-            Dictionary<string, List<ExameReferenciaItem>>? referencias, string caminhoLaudosFallback)
+            Dictionary<string, List<ExameReferenciaItem>>? referencias)
         {
             if (string.IsNullOrWhiteSpace(item.ContaExame))
                 return y;
 
-            // 1. Tentar obter do cache (dicionário passado pelo DTO)
+            // Fonte exclusiva: ExameReferencia (cache)
             if (referencias != null && referencias.TryGetValue(item.ContaExame, out var listaRefs))
             {
                 foreach (var refItem in listaRefs)
@@ -674,57 +713,6 @@ namespace LabWebMvc.MVC.Areas.Utils
                         y = RenderizarTextoLaudo(gfx, conteudo, y, formatoLaudo);
                     }
                 }
-                return y;
-            }
-
-            // 2. Fallback: ler do disco (comportamento anterior — será removido na etapa 11)
-            if (string.IsNullOrWhiteSpace(caminhoLaudosFallback))
-                return y;
-
-            string caminhoDoc = Path.Combine(caminhoLaudosFallback, item.ContaExame + ".DOC");
-            if (!File.Exists(caminhoDoc))
-                return y;
-
-            try
-            {
-                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                string conteudoDisco;
-                try
-                {
-                    conteudoDisco = File.ReadAllText(caminhoDoc, Encoding.GetEncoding(1252));
-                }
-                catch
-                {
-                    conteudoDisco = File.ReadAllText(caminhoDoc, Encoding.UTF8);
-                }
-
-                // Decodificar caracteres RTF acentuados (\'XX = byte hexadecimal Windows-1252)
-                conteudoDisco = Regex.Replace(conteudoDisco, @"\\'([0-9a-fA-F]{2})", match =>
-                {
-                    byte b = Convert.ToByte(match.Groups[1].Value, 16);
-                    return Encoding.GetEncoding(1252).GetString(new[] { b });
-                });
-
-                // Strip RTF tags preservando texto
-                conteudoDisco = Regex.Replace(conteudoDisco, @"\{\\[^}]*\}", "");
-                conteudoDisco = Regex.Replace(conteudoDisco, @"\\par\b\s?", "\n");
-                conteudoDisco = Regex.Replace(conteudoDisco, @"\\[a-z]+\d*\s?", "");
-                conteudoDisco = Regex.Replace(conteudoDisco, @"[{}]", "");
-                conteudoDisco = conteudoDisco.Trim();
-
-                if (string.IsNullOrWhiteSpace(conteudoDisco))
-                    return y;
-
-                // AlinhaLaudo: 0=Esquerda (padrão), 1=Direita
-                var formatoLaudo = item.AlinhaLaudo == 1
-                    ? XStringFormats.TopRight
-                    : XStringFormats.TopLeft;
-
-                y = RenderizarTextoLaudo(gfx, conteudoDisco, y, formatoLaudo);
-            }
-            catch
-            {
-                // Se falhar ao ler laudo, ignorar
             }
 
             return y;

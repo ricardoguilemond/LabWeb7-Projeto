@@ -4,41 +4,6 @@
 @{
     Layout = "_Layout";
 }
-<style>
-    label {
-        color: gray;
-    }
-
-    .wrapper {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr; /* até 3 colunas em cada wrapper */
-    }
-
-    .campo {
-        display: flex;
-        border: none;
-        background-color: inherit;
-        color: black;
-        font-size: small;
-        width: 400px;
-    }
-
-    .border0 {
-        border: none;
-        appearance: none; /* retira qualquer símbolo e formatação do drop down */
-        -webkit-appearance: none;
-        background-color: inherit;
-    }
-
-    .email {
-        width: 200px;
-        color: blue;
-    }
-
-    .width300 {
-        width: 300px;
-    }
-</style>
 <script>
     $(document).ready(function () {
         initBtnVoltar();
@@ -52,48 +17,49 @@
 <div id="myModal" class="modal">
     <!-- Modal content -->
     <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header bg-verde-escuro">
             <h5 class="modal-title">@ViewBag.TextoMenu[0]</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
-        <div class="modal-body">
-            @* Feito pelo Qoder em 21/04/2026 - Instituição e Sigla do Posto *@
-            <div class="wrapper">
-                <div>
-                    @Html.Label("Instituição (Sigla)")
-                    <input type="text" class="campo" disabled value="@Model.SiglaInstituicao" />
+        <div class="modal-body lab-refined">
+            <div class="card-secao card-secao-w-xl">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-location-dot"></i> Dados do Posto
                 </div>
-                <div>
-                    @Html.Label("Instituição (Nome)")
-                    <input type="text" class="campo" disabled value="@Model.NomeInstituicao" />
+                <div class="card-secao-body">
+                    <div class="field-row">
+                        <div class="field-group w-sm">
+                            <label>Instituição (Sigla)</label>
+                            <div class="field-readonly">@Model.SiglaInstituicao</div>
+                        </div>
+                        <div class="field-group w-xl">
+                            <label>Instituição (Nome)</label>
+                            <div class="field-readonly">@Model.NomeInstituicao</div>
+                        </div>
+                        <div class="field-group w-sm">
+                            <label>Sigla do Posto</label>
+                            <div class="field-readonly">@Model.SiglaPosto</div>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group w-xl">
+                            <label>Nome</label>
+                            <div class="field-readonly">@Model.NomePosto</div>
+                        </div>
+                        <div class="field-group w-xl">
+                            <label>Responsável</label>
+                            <div class="field-readonly">@Model.Responsavel</div>
+                        </div>
+                        <div class="field-group w-md">
+                            <label>Telefone</label>
+                            <div class="field-readonly">@Model.Telefone</div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    @Html.Label("Sigla do Posto")
-                    @Html.TextBoxFor(p => p.SiglaPosto, new { @class = "campo", @disabled = "disabled" })
-                </div>
-            </div>
-            @* ..Qoder *@
-            <!-- Linha 1 -->
-            <div class="wrapper">
-                <div>
-                    @Html.Label("Nome")
-                    @Html.TextBoxFor(p => p.NomePosto, new { @class = "campo", @disabled = "disabled" })
-                </div>
-                <div>
-                    @Html.Label("Responsável")
-                    @Html.TextBoxFor(p => p.Responsavel, new { @class = "campo", @disabled = "disabled" })
-                </div>
-                <div>
-                    @Html.Label("Telefone")
-                    @Html.TextBoxFor(p => p.Telefone, new { @id = "telefone", @class = "campo", @disabled = "disabled" })
-                </div>
-            </div>
-            <!-- Linha 2 -->
-            <div class="wrapper">
             </div>
         </div>
         <div class="modal-footer" style="justify-content: center;">
-            <button type="button" id="btnVoltar" class="btn btn-secondary">
+            <button type="button" id="btnVoltar" class="btn btn-secondary lab-btn">
                 <i class="fa-solid fa-arrow-left"></i> Voltar
             </button>
         </div>

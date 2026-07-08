@@ -80,7 +80,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Editar")]
-        public IActionResult Editar(int? id)
+        public IActionResult Editar(int? id, string? contaExame = null, int? tabelaExamesId = null)
         {
             ViewBag.TextoMenu = new object[] { "Plano de Exames", false };
 
@@ -89,6 +89,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Select(t => new { t.Id, t.NomeTabela })
                 .ToList();
             ViewBag.Tabelas = tabelas;
+
+            // Se não há id, mas há contaExame + tabelaExamesId, buscar registro existente
+            if ((!id.HasValue || id.Value <= 0) && !string.IsNullOrWhiteSpace(contaExame) && tabelaExamesId.HasValue)
+            {
+                var existente = _db.ExameReferencia
+                    .AsNoTracking()
+                    .FirstOrDefault(r => r.ContaExame == contaExame && r.TabelaExamesId == tabelaExamesId.Value);
+                if (existente != null)
+                {
+                    id = existente.Id;
+                }
+            }
 
             if (id.HasValue && id.Value > 0)
             {
@@ -154,9 +166,21 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 ViewBag.ConteudoHtml = "";
                 ViewBag.DescricaoExame = "";
                 ViewBag.Editando = false;
+                ViewBag.ContaExamePre = contaExame;
+                ViewBag.TabelaExamesIdPre = tabelaExamesId;
+
+                // Pré-carregar a descrição do exame se temos contaExame + tabelaExamesId
+                if (!string.IsNullOrWhiteSpace(contaExame) && tabelaExamesId.HasValue)
+                {
+                    ViewBag.DescricaoExame = _db.PlanoExames
+                        .AsNoTracking()
+                        .Where(p => p.ContaExame == contaExame && p.TabelaExamesId == tabelaExamesId.Value)
+                        .Select(p => p.Descricao)
+                        .FirstOrDefault() ?? "";
+                }
             }
 
-            return View();
+            return View("Editar");
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -246,12 +270,17 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 string usuario = HttpContext.Session.GetString("SessionNome") ?? "sistema";
                 DateTime agora = _geralController.ObterDataHoraUtc();
 
-                byte[] conteudoBytes;
+                // Ler bytes do arquivo
+                byte[] arquivoBytes;
                 using (var ms = new MemoryStream())
                 {
                     arquivo.CopyTo(ms);
-                    conteudoBytes = ms.ToArray();
+                    arquivoBytes = ms.ToArray();
                 }
+
+                // Converter sempre para HTML (UTF-8) — DOC/DOCX/RTF são apenas para importação
+                string htmlConvertido = ConversorDocParaHtml.Converter(extensao, arquivoBytes);
+                byte[] conteudoBytes = System.Text.Encoding.UTF8.GetBytes(htmlConvertido);
 
                 if (id > 0)
                 {
@@ -260,7 +289,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         return Json(new { sucesso = false, mensagem = "Registro não encontrado." });
 
                     registro.ConteudoBinario = conteudoBytes;
-                    registro.FormatoOrigem = extensao;
+                    registro.FormatoOrigem = "HTML";
                     registro.DataAlteracao = agora;
                     registro.UsuarioAlteracao = usuario;
                     registro.Versao += 1;
@@ -275,7 +304,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         ContaExame = contaExame.Trim(),
                         TabelaExamesId = tabelaExamesId,
                         ConteudoBinario = conteudoBytes,
-                        FormatoOrigem = extensao,
+                        FormatoOrigem = "HTML",
                         AlinhaLaudo = 0,
                         DataCriacao = agora,
                         DataAlteracao = agora,
@@ -345,6 +374,143 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
 
             return Json(new { sucesso = true, conteudo, formato = registro.FormatoOrigem });
+        }
+    }
+
+    /// <summary>
+    /// Converte conteúdo binário de DOC/DOCX/RTF para HTML.
+    /// O objetivo é evitar conteúdo ilegível (acentuação, caracteres ruins) e padronizar
+    /// todos os laudos como HTML. DOC/DOCX são apenas para importação.
+    /// </summary>
+    public static class ConversorDocParaHtml
+    {
+        /// <summary>
+        /// Converte o conteúdo binário para HTML UTF-8.
+        /// </summary>
+        public static string Converter(string extensao, byte[] conteudoBytes)
+        {
+            extensao = extensao.ToUpperInvariant();
+
+            return extensao switch
+            {
+                "HTML" => System.Text.Encoding.UTF8.GetString(conteudoBytes),
+                "RTF" => ConverterRtf(conteudoBytes),
+                "DOCX" => ConverterDocx(conteudoBytes),
+                "DOC" => ConverterDoc(conteudoBytes),
+                _ => ""
+            };
+        }
+
+        private static string ConverterRtf(byte[] conteudoBytes)
+        {
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            string textoRtf = System.Text.Encoding.GetEncoding(1252).GetString(conteudoBytes);
+
+            // Decodificar escapes RTF acentuados (\'XX -> caractere Windows-1252)
+            textoRtf = System.Text.RegularExpressions.Regex.Replace(textoRtf, @"\\'([0-9a-fA-F]{2})", match =>
+            {
+                byte b = Convert.ToByte(match.Groups[1].Value, 16);
+                return System.Text.Encoding.GetEncoding(1252).GetString(new[] { b });
+            });
+
+            // Remover tags RTF preservando texto
+            textoRtf = System.Text.RegularExpressions.Regex.Replace(textoRtf, @"\{\\[^}]*\}", "");
+            textoRtf = System.Text.RegularExpressions.Regex.Replace(textoRtf, @"\\par\b\s?", "\n");
+            textoRtf = System.Text.RegularExpressions.Regex.Replace(textoRtf, @"\\[a-z]+\d*\s?", "");
+            textoRtf = System.Text.RegularExpressions.Regex.Replace(textoRtf, @"[{}]", "");
+            textoRtf = textoRtf.Trim();
+
+            // Converter quebras de linha em <br> para o Quill exibir corretamente
+            var linhas = textoRtf.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            return string.Join("<br>", linhas.Where(l => !string.IsNullOrWhiteSpace(l)));
+        }
+
+        private static string ConverterDocx(byte[] conteudoBytes)
+        {
+            // DOCX é um arquivo ZIP contendo word/document.xml
+            try
+            {
+                using (var ms = new MemoryStream(conteudoBytes))
+                using (var archive = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Read))
+                {
+                    var entry = archive.GetEntry("word/document.xml");
+                    if (entry == null)
+                        return "";
+
+                    string xml;
+                    using (var stream = entry.Open())
+                    using (var reader = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8))
+                    {
+                        xml = reader.ReadToEnd();
+                    }
+
+                    // Dividir por parágrafos (</w:p>) e extrair texto de <w:t> em cada parágrafo
+                    var paragrafos = System.Text.RegularExpressions.Regex.Split(xml, @"</w:p>");
+                    var linhasHtml = new List<string>();
+
+                    foreach (var paragrafo in paragrafos)
+                    {
+                        var textos = System.Text.RegularExpressions.Regex.Matches(paragrafo, @"<w:t[^>]*>([^<]*)</w:t>");
+                        var sb = new System.Text.StringBuilder();
+                        foreach (System.Text.RegularExpressions.Match m in textos)
+                        {
+                            sb.Append(m.Groups[1].Value);
+                        }
+
+                        string linha = sb.ToString().Trim();
+                        if (!string.IsNullOrWhiteSpace(linha))
+                        {
+                            linhasHtml.Add("<p>" + System.Net.WebUtility.HtmlEncode(linha) + "</p>");
+                        }
+                    }
+
+                    return string.Join("", linhasHtml);
+                }
+            }
+            catch
+            {
+                // Se a extração falhar, retornar HTML vazio
+                return "";
+            }
+        }
+
+        private static string ConverterDoc(byte[] conteudoBytes)
+        {
+            // DOC binário (formato legado) — não há parser nativo sem biblioteca de terceiros.
+            // Tentar extrair sequências legíveis de texto, descartando dados binários.
+            // Se o resultado for confiável, converter para HTML; caso contrário, retornar vazio.
+            try
+            {
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                string raw = System.Text.Encoding.GetEncoding(1252).GetString(conteudoBytes);
+
+                // Extrair sequências de caracteres legíveis (ASCII imprimível + Latin-1)
+                // Mínimo de 4 caracteres consecutivos para considerar texto válido
+                var matches = System.Text.RegularExpressions.Regex.Matches(raw, @"[\x20-\x7E\xA0-\xFF]{4,}");
+                var linhasHtml = new List<string>();
+
+                foreach (System.Text.RegularExpressions.Match m in matches)
+                {
+                    string texto = m.Value.Trim();
+                    // Filtrar sequências que parecem binário (muitos caracteres não alfabéticos)
+                    int alfaCount = texto.Count(c => char.IsLetterOrDigit(c) || c == ' ' || c == '.' || c == ',' || c == '-');
+                    if (!string.IsNullOrWhiteSpace(texto) && alfaCount >= texto.Length / 2)
+                    {
+                        linhasHtml.Add("<p>" + System.Net.WebUtility.HtmlEncode(texto) + "</p>");
+                    }
+                }
+
+                // Se conseguimos extrair pelo menos 3 linhas, é provável que seja texto válido
+                if (linhasHtml.Count >= 3)
+                    return string.Join("", linhasHtml);
+
+                // Caso contrário, retornar vazio (evita conteúdo ilegível)
+                return "";
+            }
+            catch
+            {
+                return "";
+            }
         }
     }
 

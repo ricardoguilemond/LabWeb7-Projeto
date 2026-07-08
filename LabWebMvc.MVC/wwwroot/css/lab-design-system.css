@@ -1,0 +1,307 @@
+/* ============================================================
+   LabWeb7 - Design System
+   Sistema de classes reutilizaveis para modernizacao visual
+   de todas as Views e Partial Views do projeto.
+   ============================================================ */
+
+/* ---------- Variaveis ---------- */
+:root {
+    --lab-primary: #2c7a7a;
+    --lab-primary-light: #4ba8a8;
+    --lab-primary-glow: rgba(44, 122, 122, 0.12);
+    --lab-bg-card: #ffffff;
+    --lab-bg-header: #f5f7fa;
+    --lab-bg-readonly: #f0f4f8;
+    --lab-border: #e0e0e0;
+    --lab-border-readonly: #d6dee6;
+    --lab-border-input: #ccc;
+    --lab-text-label: #666;
+    --lab-text-hint: #888;
+    --lab-text-dark: #444;
+    --lab-radius: 10px;
+    --lab-radius-sm: 6px;
+    --lab-radius-btn: 8px;
+    --lab-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --lab-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --lab-spacing: 16px;
+    --lab-gap: 24px;
+    --lab-font-label: 0.82em;
+    --lab-font-hint: 0.78em;
+    --lab-font-header: 0.9em;
+}
+
+/* ---------- Form Container (limite de largura alinhado à esquerda) ---------- */
+.lab-form-container {
+    width: 100%;
+    max-width: 1200px;
+    padding: 20px 0;
+}
+
+.lab-form-narrow {
+    max-width: 1024px;
+}
+
+/* ---------- Larguras de Campos (coerentes com colunas de tabela) ---------- */
+.field-group .form-control,
+.field-group select {
+    width: 100%;
+}
+
+/* Larguras máximas para inputs conforme tipo de dado */
+.w-field-xs { max-width: 100px; }   /* Códigos, IDs pequenos */
+.w-field-sm { max-width: 160px; }   /* CEP, número, data */
+.w-field-md { max-width: 260px; }   /* Documentos, telefone, e-mail */
+.w-field-lg { max-width: 420px; }   /* Nomes, endereços */
+.w-field-xl { max-width: 600px; }   /* Descrições longas */
+.w-field-full { max-width: 100%; }  /* Ocupa todo o espaço do field-group */
+
+/* Larguras dos field-group (colunas flex) */
+.field-group.w-xs { flex: 0 0 100px !important; max-width: 100px; }
+.field-group.w-sm { flex: 0 0 160px !important; max-width: 160px; }
+.field-group.w-md { flex: 0 0 260px !important; max-width: 260px; }
+.field-group.w-lg { flex: 0 0 420px !important; max-width: 420px; }
+.field-group.w-xl { flex: 0 0 600px !important; max-width: 600px; }
+
+/* ---------- Card Secao ---------- */
+.card-secao {
+    background: var(--lab-bg-card);
+    border: 1px solid var(--lab-border);
+    border-radius: var(--lab-radius);
+    margin-bottom: var(--lab-spacing);
+    box-shadow: var(--lab-shadow);
+    overflow: hidden;
+}
+
+.card-secao-header {
+    background: var(--lab-bg-header);
+    border-bottom: 1px solid var(--lab-border);
+    padding: 8px 16px;
+    font-size: var(--lab-font-header);
+    font-weight: 600;
+    color: var(--lab-text-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-secao-header i {
+    color: var(--lab-primary);
+}
+
+.card-secao-body {
+    padding: var(--lab-spacing);
+}
+
+/* ---------- Field Row (flex 2 colunas) ---------- */
+.field-row {
+    display: flex;
+    gap: var(--lab-gap);
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.field-row:last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- Field Group ---------- */
+.field-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.field-group > label,
+.field-group > .lab-label {
+    font-size: var(--lab-font-label);
+    font-weight: 600;
+    color: var(--lab-text-label);
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* ---------- Inputs e Selects ---------- */
+.field-group input[type="text"],
+.field-group input[type="number"],
+.field-group input[type="email"],
+.field-group input[type="date"],
+.field-group input[type="password"],
+.field-group input[type="tel"],
+.field-group select {
+    border: 1px solid var(--lab-border-input);
+    border-radius: var(--lab-radius-sm);
+    padding: 6px 10px;
+    font-size: 0.9em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--lab-bg-card);
+    color: #333;
+}
+
+.field-group input[type="text"]:focus,
+.field-group input[type="number"]:focus,
+.field-group input[type="email"]:focus,
+.field-group input[type="date"]:focus,
+.field-group input[type="password"]:focus,
+.field-group input[type="tel"]:focus,
+.field-group select:focus {
+    border-color: var(--lab-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--lab-primary-glow);
+}
+
+/* ---------- Readonly / Disabled ---------- */
+.field-readonly {
+    background-color: var(--lab-bg-readonly) !important;
+    border: 1px solid var(--lab-border-readonly) !important;
+    color: var(--lab-text-dark) !important;
+    font-weight: 500;
+}
+
+/* ---------- Hint ---------- */
+.field-hint {
+    font-size: var(--lab-font-hint);
+    color: var(--lab-text-hint);
+    margin-top: 3px;
+}
+
+/* ---------- Radio Group ---------- */
+.radio-group {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding-top: 4px;
+}
+
+.radio-group label {
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: normal;
+    margin-left: 4px;
+    margin-right: 0;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #333;
+}
+
+/* ---------- Botoes ---------- */
+.lab-btn {
+    border-radius: var(--lab-radius-btn);
+    transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.lab-btn:hover {
+    box-shadow: var(--lab-shadow-hover);
+}
+
+.lab-btn:active {
+    transform: translateY(1px);
+}
+
+/* ---------- Cabecalho de Titulo ---------- */
+.lab-titulo {
+    color: var(--lab-primary);
+    margin: 0 0 4px 0;
+    font-size: 1.3em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ---------- Aviso ---------- */
+.lab-aviso {
+    margin-bottom: var(--lab-spacing);
+}
+
+/* ---------- DataTables: melhorar espacamento ---------- */
+.card-secao .dataTables_wrapper {
+    padding-top: 4px;
+}
+
+.card-secao .dataTables_filter input {
+    border: 1px solid var(--lab-border-input);
+    border-radius: var(--lab-radius-sm);
+    padding: 4px 8px;
+    font-size: 0.85em;
+}
+
+.card-secao table.dataTable thead th {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--lab-text-label);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid var(--lab-border);
+}
+
+.card-secao table.dataTable tbody td {
+    font-size: 0.88em;
+    padding: 6px 10px;
+}
+
+/* ---------- Modal: cabecalho estilizado ---------- */
+.modal-compact .card-secao {
+    margin-bottom: 10px;
+    box-shadow: none;
+}
+
+.modal-compact .card-secao-header {
+    padding: 6px 12px;
+    font-size: 0.82em;
+}
+
+.modal-compact .card-secao-body {
+    padding: 10px;
+}
+
+/* ---------- Refinamento Visual (views selecionadas, exceto Login/Requisitar) ---------- */
+.lab-refined .field-group > label,
+.lab-refined .field-group > .lab-label {
+    font-size: 0.55em;
+}
+
+.lab-refined .radio-group > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.lab-refined .radio-group > span input[type="radio"] {
+    margin: 0;
+}
+
+.lab-refined .radio-group > span label {
+    margin: 0;
+    padding: 0;
+    font-size: 0.85em;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: normal;
+}
+
+.lab-refined textarea.lab-textarea {
+    width: 700px;
+    max-width: 100%;
+    font-size: 12px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+/* Larguras fixas para cards (baseada no maior campo interno) */
+.card-secao-w-sm { width: 560px; max-width: 100%; }
+.card-secao-w-md { width: 680px; max-width: 100%; }
+.card-secao-w-lg { width: 816px; max-width: 100%; }
+.card-secao-w-xl { width: 992px; max-width: 100%; }
+
+/* ---------- Responsividade ---------- */
+@media (max-width: 768px) {
+    .field-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .field-group {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}

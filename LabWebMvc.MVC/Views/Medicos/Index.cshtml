@@ -6,7 +6,12 @@
 @using LabWebMvc.MVC.Areas.Utils
 @model vmMedicos
 <partial name='Partials/_PartialMenuMedicos' />
-<div class="table-responsive">
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-user-doctor"></i> Médicos Cadastrados
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive">
     <table id="modeloTable" name="datatable" data-order='[[ 0, "desc" ]]' class="display compact order-column stripe table-hover nowrap">
         <thead>
             <tr>
@@ -52,7 +57,9 @@
                 <th id="op">Opções</th>
             </tr>
         </tfoot>
-    </table>
+        </table>
+        </div>
+    </div>
 </div>
 @section Scripts {
     <div class="toolbar"><partial name='_PartialDatatables' /></div>

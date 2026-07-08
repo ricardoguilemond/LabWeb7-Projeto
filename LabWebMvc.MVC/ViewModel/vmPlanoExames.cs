@@ -54,8 +54,6 @@ namespace LabWebMvc.MVC.ViewModel
 
         public int Etiqueta { get; set; }
         public int Etiquetas { get; set; }
-        public byte[]? Laudo { get; set; }
-        public int AlinhaLaudo { get; set; }
         public int? GraficoNoItem { get; set; }
         public bool GraficoNoItemBool
         {

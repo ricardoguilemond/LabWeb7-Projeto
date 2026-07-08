@@ -3,12 +3,13 @@
 @using static BLL.UtilBLL
 
 @*Feito pelo Kiro em 14/06/2026*@
-<div style="max-width: 700px; margin: 20px auto; padding: 20px;">
-    <h4 style="color: #333; margin-bottom: 16px;">
+<div class="card-secao" style="max-width: 700px;">
+    <div class="card-secao-header">
         <i class="fa-solid fa-broom"></i> Compactar Requisições
-    </h4>
+    </div>
+    <div class="card-secao-body">
 
-    <div style="background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
+    <div class="alert alert-info" style="font-size: 13px; line-height: 1.6;">
         <strong>Informativo:</strong><br/>
         Esta operação remove registros da tabela de <strong>Requisições</strong> que foram utilizados
         como backup temporário durante o cadastro de exames de pacientes.<br/><br/>
@@ -16,19 +17,20 @@
         Apenas requisições cujo exame já foi baixado ou não existe mais serão compactadas.
     </div>
 
-    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
-        <label style="font-size: 13px;">Limpar requisições até a data:</label>
+    <div class="field-row" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-size: 13px;">Limpar requisições até a data:</label>
         <input type="text" id="dataLimiteCompactacao" placeholder="dd/MM/yyyy"
-               style="width: 120px; padding: 4px 8px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+               class="form-control" style="width: 150px;" />
     </div>
 
     <div id="infoElegiveis" style="font-size: 13px; margin-bottom: 16px; color: #555;">
         Total de registros elegíveis: <strong id="totalElegiveis">carregando...</strong>
     </div>
 
-    <button type="button" id="btnCompactar" class="btn btn-warning btn-sm" style="font-size: 13px;">
+    <button type="button" id="btnCompactar" class="lab-btn btn-warning btn-sm">
         <i class="fa-solid fa-broom"></i> Compactar
     </button>
+    </div>
 </div>
 @*..Kiro*@
 

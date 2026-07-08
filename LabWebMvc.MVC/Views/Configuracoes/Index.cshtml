@@ -1,5 +1,4 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-@using static BLL.UtilBLL
+﻿@using static BLL.UtilBLL
 @using LabWebMvc.MVC.ViewModel
 @model vmConfiguracoes
 @{
@@ -36,163 +35,164 @@
 </script>
 @using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))  //@id-"form" é obrigatório para campos chegarem do doutro lado
 {
-    <div class="row">
-        <div class="col-md-4">
-            @Html.AntiForgeryToken()
-            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-            <div class="form-group mb-3">
-                <div class="row align-items-center">
-                    <div class="col-md-9">
-                        @Html.Label("*Nome da Impressora de Cupom (1)")
-                        @Html.TextBoxFor(p => p.ImpressoraCupom1, new {
-                        @class = "form-control capitalize",
-                                        @placeholder = "Exemplo: NaoFiscal, Cupom, Termica",
-                                        @required = "required"
-                                        })
+    <div class="lab-form-container lab-form-narrow lab-refined">
+
+    <div class="card-secao card-secao-w-lg">
+        <div class="card-secao-header">
+            <i class="fa-solid fa-print"></i> Impressoras de Cupom
+        </div>
+        <div class="card-secao-body">
+            <div class="field-row">
+                <div class="field-group w-xl">
+                    <label>*Nome da Impressora de Cupom (1)</label>
+                    @Html.TextBoxFor(p => p.ImpressoraCupom1, new {
+                    @class = "form-control capitalize",
+                                    @placeholder = "Exemplo: NaoFiscal, Cupom, Termica",
+                                    @required = "required"
+                                    })
                 </div>
-                <div class="col-md-3">
-                    @Html.Label("Usar?")
+                <div class="field-group w-xs">
+                    <label>Usar?</label>
                     @Html.DropDownListFor(p => p.UsarImpressoraCupom1,
-                                        new SelectList(new[] {
-                                        new { Value = 1, Text = "Sim" },
-                                        new { Value = 0, Text = "Não" }
-                                        }, "Value", "Text", Model.UsarImpressoraCupom1),
-                                        new { @class = "form-select form-select-sm w-auto" }) <!-- w-auto = largura mínima -->
+                                    new SelectList(new[] {
+                                    new { Value = 1, Text = "Sim" },
+                                    new { Value = 0, Text = "Não" }
+                                    }, "Value", "Text", Model.UsarImpressoraCupom1),
+                                    new { @class = "form-select form-select-sm w-auto" })
                 </div>
             </div>
-        </div>
-        <div class="form-group mb-3">
-            <div class="row align-items-center">
-                <div class="col-md-9">
-                    @Html.Label("*Nome da Impressora de Cupom (2)")
+            <div class="field-row">
+                <div class="field-group w-xl">
+                    <label>*Nome da Impressora de Cupom (2)</label>
                     @Html.TextBoxFor(p => p.ImpressoraCupom2, new {
-                                        @class = "form-control capitalize",
-                                        @placeholder = "Exemplo: NaoFiscal, Cupom, Termica",
-                                        @required = "required"
-                                        })
+                                    @class = "form-control capitalize",
+                                    @placeholder = "Exemplo: NaoFiscal, Cupom, Termica",
+                                    @required = "required"
+                                    })
                 </div>
-                <div class="col-md-3">
-                    @Html.Label("Usar?")
+                <div class="field-group w-xs">
+                    <label>Usar?</label>
                     @Html.DropDownListFor(p => p.UsarImpressoraCupom2,
-                                        new SelectList(new[] {
-                                        new { Value = 1, Text = "Sim" },
-                                        new { Value = 0, Text = "Não" }
-                                        }, "Value", "Text", Model.UsarImpressoraCupom2),
-                                        new { @class = "form-select form-select-sm w-auto" }) <!-- w-auto = largura mínima -->
+                                    new SelectList(new[] {
+                                    new { Value = 1, Text = "Sim" },
+                                    new { Value = 0, Text = "Não" }
+                                    }, "Value", "Text", Model.UsarImpressoraCupom2),
+                                    new { @class = "form-select form-select-sm w-auto" })
                 </div>
             </div>
-        </div>
-        <div class="form-group mb-3">
-            <div class="row align-items-center">
-                <div class="col-md-9">
-                    @Html.Label("*Nome da Impressora de Cupom (3)")
+            <div class="field-row">
+                <div class="field-group w-xl">
+                    <label>*Nome da Impressora de Cupom (3)</label>
                     @Html.TextBoxFor(p => p.ImpressoraCupom3, new {
-                                        @class = "form-control capitalize",
-                                        @placeholder = "Exemplo: NaoFiscal, Cupom, Termica",
-                                        @required = "required"
-                                        })
+                                    @class = "form-control capitalize",
+                                    @placeholder = "Exemplo: NaoFiscal, Cupom, Termica",
+                                    @required = "required"
+                                    })
                 </div>
-                <div class="col-md-3">
-                    @Html.Label("Usar?")
+                <div class="field-group w-xs">
+                    <label>Usar?</label>
                     @Html.DropDownListFor(p => p.UsarImpressoraCupom3,
-                                        new SelectList(new[] {
-                                        new { Value = 1, Text = "Sim" },
-                                        new { Value = 0, Text = "Não" }
-                                        }, "Value", "Text", Model.UsarImpressoraCupom3),
-                                        new { @class = "form-select form-select-sm w-auto" }) <!-- w-auto = largura mínima -->
+                                    new SelectList(new[] {
+                                    new { Value = 1, Text = "Sim" },
+                                    new { Value = 0, Text = "Não" }
+                                    }, "Value", "Text", Model.UsarImpressoraCupom3),
+                                    new { @class = "form-select form-select-sm w-auto" })
                 </div>
             </div>
-        </div>
-        <div class="form-group mb-3">
-            <div class="row">
-                <div class="col-md-6">
-                    @Html.Label("Fonte (Nome)")
-                    @Html.TextBoxFor(p => p.FonteNome, new {
-                                        @class = "form-control",
-                                        @placeholder = "Exemplo: Courier New, Consolas"
-                                        })
-                </div>
-                <div class="col-md-6">
-                    @Html.Label("Fonte (Tamanho)")
-                    @Html.TextBoxFor(p => p.FonteTamanho, new {
-                                        @class = "form-control",
-                                        @type = "number",
-                                        @min = "6",
-                                        @max = "20",
-                                        @placeholder = "Exemplo: 9, 10"
-                                        })
-                </div>
-            </div>
-        </div>
-        <!-- Dados de formatação do conteúdo -->
-        <div class="form-group mb-3">
-            <div class="row">
-                <div class="col-md-6">
-                    @Html.Label("Largura do Papel (centésimos de polegada) padrão: 283")
-                    @Html.TextBoxFor(p => p.LarguraPapel, new {
-                                        @class = "form-control",
-                                        @type = "number",
-                                        @placeholder = "Exemplo: 283 ou 384"
-                                        })
-                </div>
-                <div class="col-md-6">
-                    @Html.Label("Altura do Papel (centésimos de polegada)")
-                    @Html.TextBoxFor(p => p.AlturaPapel, new {
-                                        @class = "form-control",
-                                        @type = "number",
-                                        @placeholder = "Exemplo: 32767 (máximo suportado)"
-                                        })
-                </div>
-            </div>
-        </div>
-        <div class="form-group mb-3">
-            <label>Margens (centésimos de polegada)</label>
-            <div class="row">
-                <div class="col-md-3">
-                    @Html.Label("Esquerda")
-                    @Html.TextBoxFor(p => p.MargemEsquerda, new {
-                                        @class = "form-control",
-                                        @type = "number",
-                                        @placeholder = "Ex: 5"
-                                        })
-                </div>
-                <div class="col-md-3">
-                    @Html.Label("Direita")
-                    @Html.TextBoxFor(p => p.MargemDireita, new {
-                                        @class = "form-control",
-                                        @type = "number",
-                                        @placeholder = "Ex: 5"
-                                        })
-                </div>
-                <div class="col-md-3">
-                    @Html.Label("Superior")
-                    @Html.TextBoxFor(p => p.MargemSuperior, new {
-                                        @class = "form-control",
-                                        @type = "number",
-                                        @placeholder = "Ex: 5"
-                                        })
-                </div>
-                <div class="col-md-3">
-                    @Html.Label("Inferior")
-                    @Html.TextBoxFor(p => p.MargemInferior, new {
-                                        @class = "form-control",
-                                        @type = "number",
-                                        @placeholder = "Ex: 5"
-                                        })
-                </div>
-            </div>
-        </div>
-        <!--
-        Submeter Formulário
-        -->
-        <div class="form-group botao-centralizado">
-            <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
-                Salvar
-            </button>
         </div>
     </div>
-</div>
+
+    <div class="card-secao card-secao-w-lg">
+        <div class="card-secao-header">
+            <i class="fa-solid fa-file-lines"></i> Configurações de Papel e Fonte
+        </div>
+        <div class="card-secao-body">
+            <div class="field-row">
+                <div class="field-group w-md">
+                    <label>Fonte (Nome)</label>
+                    @Html.TextBoxFor(p => p.FonteNome, new {
+                                    @class = "form-control",
+                                    @placeholder = "Exemplo: Courier New, Consolas"
+                                    })
+                </div>
+                <div class="field-group w-xs">
+                    <label>Fonte (Tamanho)</label>
+                    @Html.TextBoxFor(p => p.FonteTamanho, new {
+                                    @class = "form-control",
+                                    @type = "number",
+                                    @min = "6",
+                                    @max = "20",
+                                    @placeholder = "Exemplo: 9, 10"
+                                    })
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group w-sm">
+                    <label>Largura do Papel (centésimos de polegada) padrão: 283</label>
+                    @Html.TextBoxFor(p => p.LarguraPapel, new {
+                                    @class = "form-control",
+                                    @type = "number",
+                                    @placeholder = "Exemplo: 283 ou 384"
+                                    })
+                </div>
+                <div class="field-group w-sm">
+                    <label>Altura do Papel (centésimos de polegada)</label>
+                    @Html.TextBoxFor(p => p.AlturaPapel, new {
+                                    @class = "form-control",
+                                    @type = "number",
+                                    @placeholder = "Exemplo: 32767 (máximo suportado)"
+                                    })
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group w-xs">
+                    <label>Margem Esquerda</label>
+                    @Html.TextBoxFor(p => p.MargemEsquerda, new {
+                                    @class = "form-control",
+                                    @type = "number",
+                                    @placeholder = "Ex: 5"
+                                    })
+                </div>
+                <div class="field-group w-xs">
+                    <label>Margem Direita</label>
+                    @Html.TextBoxFor(p => p.MargemDireita, new {
+                                    @class = "form-control",
+                                    @type = "number",
+                                    @placeholder = "Ex: 5"
+                                    })
+                </div>
+                <div class="field-group w-xs">
+                    <label>Margem Superior</label>
+                    @Html.TextBoxFor(p => p.MargemSuperior, new {
+                                    @class = "form-control",
+                                    @type = "number",
+                                    @placeholder = "Ex: 5"
+                                    })
+                </div>
+                <div class="field-group w-xs">
+                    <label>Margem Inferior</label>
+                    @Html.TextBoxFor(p => p.MargemInferior, new {
+                                    @class = "form-control",
+                                    @type = "number",
+                                    @placeholder = "Ex: 5"
+                                    })
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--
+    Submeter Formulário
+    -->
+    <div class="form-group" style="margin-top: 16px;">
+        <button id="clickSubmit" type="submit" class="btn btn-lg btn-success lab-btn">
+            <i class="fa-solid fa-floppy-disk"></i> Salvar
+        </button>
+    </div>
+    </div>
 }
 @section Scripts {
     @{

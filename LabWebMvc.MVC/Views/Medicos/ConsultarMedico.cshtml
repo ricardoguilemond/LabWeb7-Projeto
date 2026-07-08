@@ -4,40 +4,6 @@
 @{
     Layout = "_Layout";
 }
-<style>
-    label {
-        color: gray;
-    }
-
-    .wrapper {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr; /* até 3 colunas em cada wrapper */
-    }
-
-    .campo {
-        display: flex;
-        border: none;
-        background-color: inherit;
-        color: black;
-        font-size: small;
-    }
-
-    .border0 {
-        border: none;
-        appearance: none; /* retira qualquer símbolo e formatação do drop down */
-        -webkit-appearance: none;
-        background-color: inherit;
-    }
-
-    .email {
-        width: 200px;
-        color: blue;
-    }
-
-    .width300 {
-        width: 300px;
-    }
-</style>
 <script>
     $(document).ready(function () {
         initBtnVoltar();
@@ -51,40 +17,45 @@
 <div id="myModal" class="modal">
     <!-- Modal content -->
     <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header bg-verde-escuro">
             <h5 class="modal-title">@ViewBag.TextoMenu[0]</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
-        <div class="modal-body">
-            <!-- Linha 1 -->
-            <div class="wrapper">
-                <div>
-                    @Html.Label(null, "Nome Médico", new { @class = "" })
-                    @Html.TextBoxFor(p => p.NomeMedico, new { @class = "campo width300", @disabled = "disabled" })
+        <div class="modal-body lab-refined">
+            <div class="card-secao card-secao-w-lg">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-user-doctor"></i> Dados do Médico
                 </div>
-                <div>
-                    @Html.Label("CRM")
-                    @Html.TextBoxFor(p => p.CRM, new { @id="crm", @class = "campo", @disabled = "disabled" })
-                </div>
-                <div>
-                    @Html.Label("Especialidade")
-                    @Html.TextBoxFor(p => p.Especialidade, new { @class = "campo", @disabled = "disabled" })
-                </div>
-            </div>
-            <!-- Linha 2 -->
-            <div class="wrapper">
-                <div>
-                    @Html.Label("Telefone")
-                    @Html.TextBoxFor(p => p.Telefone, new { @id = "telefone", @class = "campo", @disabled = "disabled" })
-                </div>
-                <div>
-                    @Html.Label("e-mail")
-                    @Html.TextBoxFor(p => p.Email, new { @class = "campo email", @disabled = "disabled" })
+                <div class="card-secao-body">
+                    <div class="field-row">
+                        <div class="field-group w-xl">
+                            <label>Nome Médico</label>
+                            <div class="field-readonly">@Model.NomeMedico</div>
+                        </div>
+                        <div class="field-group w-md">
+                            <label>CRM</label>
+                            <div class="field-readonly">@Model.CRM</div>
+                        </div>
+                        <div class="field-group w-md">
+                            <label>Especialidade</label>
+                            <div class="field-readonly">@Model.Especialidade</div>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group w-md">
+                            <label>Telefone</label>
+                            <div class="field-readonly">@Model.Telefone</div>
+                        </div>
+                        <div class="field-group w-lg">
+                            <label>e-mail</label>
+                            <div class="field-readonly" style="color: blue;">@Model.Email</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="modal-footer" style="justify-content: center;">
-            <button type="button" id="btnVoltar" class="btn btn-secondary">
+            <button type="button" id="btnVoltar" class="btn btn-secondary lab-btn">
                 <i class="fa-solid fa-arrow-left"></i> Voltar
             </button>
         </div>

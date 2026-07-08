@@ -1,0 +1,52 @@
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmMedicos
+<div class="modal fade" id="modalConsultarMedico" tabindex="-1" aria-labelledby="tituloModalConsultarMedico" aria-hidden="true" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-top">
+        <div class="modal-content shadow rounded">
+            <div class="modal-header bg-verde-escuro">
+                <h5 class="modal-title" id="tituloModalConsultarMedico">@ViewBag.TextoMenu[0]</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body bg-light lab-refined">
+                <div class="card-secao card-secao-w-lg">
+                    <div class="card-secao-header">
+                        <i class="fa-solid fa-user-doctor"></i> Dados do Médico
+                    </div>
+                    <div class="card-secao-body">
+                        <div class="field-row">
+                            <div class="field-group w-xl">
+                                <label>Nome Médico</label>
+                                <div class="field-readonly">@Model.NomeMedico</div>
+                            </div>
+                            <div class="field-group w-sm">
+                                <label>CRM</label>
+                                <div class="field-readonly" id="crm">@Model.CRM</div>
+                            </div>
+                            <div class="field-group w-lg">
+                                <label>Especialidade</label>
+                                <div class="field-readonly">@Model.Especialidade</div>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group w-sm">
+                                <label>Telefone</label>
+                                <div class="field-readonly" id="telefone">@Model.Telefone</div>
+                            </div>
+                            <div class="field-group w-xl">
+                                <label>e-mail</label>
+                                <div class="field-readonly">@Model.Email</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button type="button" class="btn btn-secondary lab-btn" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-arrow-left"></i> Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Fim do Modal -->

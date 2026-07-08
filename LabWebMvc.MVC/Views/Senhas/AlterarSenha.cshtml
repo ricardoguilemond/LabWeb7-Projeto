@@ -18,60 +18,73 @@
 </script>
 <div class="col-md-12">
     <section id="LoginForm">
-        <div class="row d-flex justify-content-center col-12">
-            <div class="col-4 border border-primary rounded m-20">
-                <div class="d-flex justify-content-left mt-2">
-                    <div class="form-group">
-                        Você está cadastrando/alterando uma nova senha para este usuário: <br />
-                        Email/Login: <b>@ViewBag.Itens.Email</b><br />
-                        Nome do Usuário: <b>@ViewBag.Itens.NomeCompleto</b><br />
-                    </div>
-                </div>
-                @using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal" }))
-                {
-                    @Html.Hidden("dados", new { @ViewBag.Itens.Email, @ViewBag.Itens.NomeCompleto })
-                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="lab-form-container lab-form-narrow lab-refined">
 
-                    <div class="d-flex justify-content-center">
-                        <div class="form-group">
-                            @Html.TextBoxFor(m => m.SenhaUsuario, new { @class = "form-control", @type = "password", @placeholder = "Entre com a nova senha", @required = "required", @autofocus = "autofocus", @title = "Entre com a nova senha" })
+            <div class="card-secao card-secao-w-md">
+                <div class="card-secao-header">
+                    <i class="fa-solid fa-key"></i> Alteração de Senha
+                </div>
+                <div class="card-secao-body">
+                    <div class="field-group" style="margin-bottom: 16px;">
+                        <div class="field-hint">
+                            Você está cadastrando/alterando uma nova senha para este usuário:<br />
+                            Email/Login: <b>@ViewBag.Itens.Email</b><br />
+                            Nome do Usuário: <b>@ViewBag.Itens.NomeCompleto</b>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-center">
-                        <div class="form-group">
-                            @Html.TextBoxFor(m => m.SenhaRepete, new { @class = "form-control", @type = "password", @placeholder = "Repita a senha", @title = "Repita a senha" })
+
+                    @using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal" }))
+                    {
+                        @Html.Hidden("dados", new { @ViewBag.Itens.Email, @ViewBag.Itens.NomeCompleto })
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                        <div class="field-row">
+                            <div class="field-group w-md">
+                                <label>Nova Senha</label>
+                                @Html.TextBoxFor(m => m.SenhaUsuario, new { @class = "form-control", @type = "password", @placeholder = "Entre com a nova senha", @required = "required", @autofocus = "autofocus", @title = "Entre com a nova senha" })
+                            </div>
+                            <div class="field-group w-md">
+                                <label>Repetir Senha</label>
+                                @Html.TextBoxFor(m => m.SenhaRepete, new { @class = "form-control", @type = "password", @placeholder = "Repita a senha", @title = "Repita a senha" })
+                            </div>
                         </div>
-                    </div>
-                    <div class="d-flex justify-content-left ms-3">
-                        <div class="form-group">
-                            @Html.CheckBoxFor(m => m.BoxGerarSenhaAutomatica, new { @class = "form-check-input", @id = "BoxGerarSenhaAutomatica" })
-                            <label class="form-check-label">Ou se preferir, gerar uma senha automática pelo sistema</label>
+
+                        <div class="field-row">
+                            <div class="field-group">
+                                <div class="radio-group">
+                                    @Html.CheckBoxFor(m => m.BoxGerarSenhaAutomatica, new { @class = "form-check-input", @id = "BoxGerarSenhaAutomatica" })
+                                    <label class="form-check-label">Ou se preferir, gerar uma senha automática pelo sistema</label>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="d-flex justify-content-left ms-3">
-                        <div class="form-group">
-                            @Html.CheckBoxFor(m => m.BoxEnviarEmail, new { @class = "form-check-input", @id = "BoxEnviarEmail", @checked = "checked", @disabled = "disabled" })
-                            <label class="form-check-label">Enviar a nova senha para Email</label>
+
+                        <div class="field-row">
+                            <div class="field-group">
+                                <div class="radio-group">
+                                    @Html.CheckBoxFor(m => m.BoxEnviarEmail, new { @class = "form-check-input", @id = "BoxEnviarEmail", @checked = "checked", @disabled = "disabled" })
+                                    <label class="form-check-label">Enviar a nova senha para Email</label>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="d-flex justify-content-left">
-                        <div class="form-group">
+
+                        <div class="field-hint" style="margin-bottom: 16px;">
                             Se desejar ver o perfil do usuário vá para: "<b>Perfil e Permissões</b>"
                         </div>
-                    </div>
-                    <!--
-                    Submeter Formulário
-                    -->
-                    <div class="form-group" style="text-align: center;">
-                        <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
-                            <i class="fa-solid fa-arrow-left"></i> Voltar
-                        </button>
-                        <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
-                            Salvar
-                        </button>
-                    </div>
-                }
+                        <!--
+                        Submeter Formulário
+                        -->
+                        <div class="form-group">
+                            <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary lab-btn" style="margin-right: 10px;">
+                                <i class="fa-solid fa-arrow-left"></i> Voltar
+                            </button>
+                            <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde lab-btn">
+                                Salvar
+                            </button>
+                        </div>
+                    }
+                </div>
             </div>
+
         </div>
     </section>
 </div>

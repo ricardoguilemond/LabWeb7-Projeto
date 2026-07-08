@@ -72,202 +72,260 @@
 {
     @Html.AntiForgeryToken()
     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-    <style>
-        .cadastro-clean .form-control { font-size: 12px !important; }
-        .cadastro-clean select.form-control { font-size: 12px !important; }
-    </style>
-    <div class="cadastro-clean" style="max-width: 700px; margin: 20px 0; padding: 24px; border: 1px solid #d4edda; border-radius: 8px; background-color: #fff;">
-        <h4 style="color: #333; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0;">
-            <i class="fa-solid fa-building" style="color: #69c38a;"></i> Alterar Instituição
-        </h4>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">*Nome da Instituição</label>
-                @Html.TextBoxFor(p => p.Nome, new { @class = "form-control capitalize", @placeholder = "Entre com o nome completo da instituição", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+
+    <div class="lab-form-container lab-refined">
+
+        <div class="card-secao card-secao-w-lg">
+            <div class="card-secao-header">
+                <i class="fa-solid fa-building"></i> Dados da Instituição
             </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">*Sigla</label>
-                @Html.TextBoxFor(p => p.Sigla, new { @class = "form-control capitalize", @readonly = "readonly", @style = "border: 1px solid #69c38a; border-radius: 6px; background-color: #f9f9f9;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">*CNPJ</label>
-                @Html.TextBoxFor(p => p.CNPJ, new { @class = "form-control capitalize", @readonly = "readonly", @style = "border: 1px solid #69c38a; border-radius: 6px; background-color: #f9f9f9;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">*e-mail</label>
-                @Html.TextBoxFor(p => p.Email, new { @class = "form-control lowercase", @style = "color: blue; border: 1px solid #69c38a; border-radius: 6px;", @placeholder = "e-mail", @type = "email", @required = "required" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">*Telefone ou celular com DDD</label>
-                @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD", @required = "required", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Celular com DDD</label>
-                @Html.TextBoxFor(p => p.Celular, new { @class = "form-control", @placeholder = "Celular com DDD", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">CEP</label>
-                @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Logradouro (Rua/Trav)</label>
-                @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Endereço</label>
-                @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Número</label>
-                @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Complemento</label>
-                @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Bairro</label>
-                @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Cidade/Município</label>
-                @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">UF:</label>
-                <div style="display: inline-block;">
-                    @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF), new { @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            <div class="card-secao-body">
+                <div class="field-row">
+                    <div class="field-group w-xl">
+                        <label>*Nome da Instituição</label>
+                        @Html.TextBoxFor(p => p.Nome, new { @class = "form-control capitalize", @placeholder = "Entre com o nome completo da instituição", @required = "required" })
+                    </div>
+                    <div class="field-group w-sm">
+                        <label>*Sigla</label>
+                        @Html.TextBoxFor(p => p.Sigla, new { @class = "form-control capitalize field-readonly", @readonly = "readonly" })
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-md">
+                        <label>*CNPJ</label>
+                        @Html.TextBoxFor(p => p.CNPJ, new { @class = "form-control capitalize field-readonly", @readonly = "readonly" })
+                    </div>
+                    <div class="field-group w-lg">
+                        <label>*e-mail</label>
+                        @Html.TextBoxFor(p => p.Email, new { @class = "form-control lowercase", @style = "color: blue;", @placeholder = "e-mail", @type = "email", @required = "required" })
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-md">
+                        <label>*Telefone ou celular com DDD</label>
+                        @Html.TextBoxFor(p => p.Telefone, new { @class = "form-control", @placeholder = "Telefone com DDD", @required = "required" })
+                    </div>
+                    <div class="field-group w-md">
+                        <label>Celular com DDD</label>
+                        @Html.TextBoxFor(p => p.Celular, new { @class = "form-control", @placeholder = "Celular com DDD" })
+                    </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Título do Timbre para Relatórios</label>
-                @Html.TextBoxFor(p => p.TituloTimbre, new { @class = "form-control", @placeholder = "Título do Timbre para Relatórios", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+        </div>
+
+        <div class="card-secao card-secao-w-lg">
+            <div class="card-secao-header">
+                <i class="fa-solid fa-location-dot"></i> Endereço
             </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Subtítulo do Timbre para Relatórios</label>
-                @Html.TextBoxFor(p => p.SubTituloTimbre, new { @class = "form-control", @placeholder = "Subtítulo do Timbre para Relatórios", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <!--
-                Carregamento das imagens
-            -->
-            <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
-                <div class="form-group">
-                    <label style="font-size: 13px; color: #333;">TIMBRE: Pequena imagem quadrada: 215x235 pixels (Largura_x_altura), para acompanhar os títulos dos relatórios</label>
-                    @Html.TextBoxFor(p => p.CaminhoImagemTimbre, new { @type = "file", @id = "fileTimbre", @name = "fileTimbre", @value = Model.PathImages })
-                    @Html.Raw("<div id='imgsT'></div>")
-                    @if (!string.IsNullOrEmpty(Model.NomeTimbre))
-                    {
-                        <input id=@Model.NomeTimbre type='button' name='excluirTimbre' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a function não vai funcionar --> *@
-                    }
-                    @Html.HiddenFor(p => p.NomeTimbre, new { @id = "nomeTimbre" })
-                    @Html.HiddenFor(p => p.CaminhoImagemTimbre, new { @id = "caminhoTimbre" })
-                    @Html.HiddenFor(p => p.Timbre, new { @id = "bytesTimbre" })
+            <div class="card-secao-body">
+                <div class="field-row">
+                    <div class="field-group w-sm">
+                        <label>CEP</label>
+                        @Html.TextBoxFor(p => p.CEP, new { @class = "form-control", @placeholder = "CEP" })
+                    </div>
+                    <div class="field-group w-xl">
+                        <label>Logradouro (Rua/Trav)</label>
+                        @Html.TextBoxFor(p => p.Logradouro, new { @class = "form-control capitalize", @placeholder = "Logradouro/Rua/Trav" })
+                    </div>
                 </div>
-            </fieldset>
-            <fieldset class="borda_redonda sombra" style="padding: 6px; width: 680px;">
-                <div class="form-group">
-                    <label style="font-size: 13px; color: #333;">LOGOMARCA/BANNER: Imagem retangular: 670x120 pixels (Largura_x_altura), que substitui título e timbre nos relatórios</label>
-                    @Html.TextBoxFor(p => p.CaminhoImagemLogomarca, new { @type = "file", @id = "fileLogo", @name = "fileLogo", @value = Model.PathImages })
-                    @Html.Raw("<div id='imgsL'></div>")
-                    @if (!string.IsNullOrEmpty(Model.NomeLogomarca))
-                    {
-                        <input id=@Model.NomeLogomarca type='button' name='excluirLogomarca' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a funtion não vai funcionar --> *@
-                    }
-                    @Html.HiddenFor(p => p.NomeLogomarca, new { @id = "nomeLogomarca" })
-                    @Html.HiddenFor(p => p.CaminhoImagemLogomarca, new { @id = "caminhoLogomarca" })
-                    @Html.HiddenFor(p => p.Logomarca, new { @id = "bytesLogomarca" })
+                <div class="field-row">
+                    <div class="field-group w-xl">
+                        <label>Endereço</label>
+                        @Html.TextBoxFor(p => p.Endereco, new { @class = "form-control capitalize", @placeholder = "Endereço" })
+                    </div>
+                    <div class="field-group w-sm">
+                        <label>Número</label>
+                        @Html.TextBoxFor(p => p.Numero, new { @class = "form-control capitalize", @placeholder = "Número" })
+                    </div>
                 </div>
-            </fieldset>
-            <!--
-                Fim do carregamento das imagens
-            -->
-            <div class="form-group">
-                <!-- Saltar linha -->
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">*Usa imagem timbre nos relatórios? S/N </label>
-                @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                {
-                    int timbreIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
-                    string timbreSigla = Utils.RetornaItem(i, "ListaSN", 1);
-                    string timbreDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (timbreIndex == Model.TimbreSN);
-                    <div style="display: inline-block;">
-                        @Html.RadioButton("TimbreSN", timbreIndex, check)
-                        @Html.Label(timbreDescricao)
+                <div class="field-row">
+                    <div class="field-group w-md">
+                        <label>Complemento</label>
+                        @Html.TextBoxFor(p => p.Complemento, new { @class = "form-control", @placeholder = "Complemento/Apto/Quadra/Lote" })
                     </div>
-                }
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">*Usa carimbo CRBio no final dos relatórios? S/N </label>
-                @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                {
-                    int carimboIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
-                    string carimboSigla = Utils.RetornaItem(i, "ListaSN", 1);
-                    string carimboDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (carimboIndex == Model.CarimboSN);
-                    <div style="display: inline-block;">
-                        @Html.RadioButton("CarimboSN", carimboIndex, check)
-                        @Html.Label(carimboDescricao)
+                    <div class="field-group w-md">
+                        <label>Bairro</label>
+                        @Html.TextBoxFor(p => p.Bairro, new { @class = "form-control capitalize", @placeholder = "Bairro" })
                     </div>
-                }
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">*Nome do Contato</label>
-                @Html.TextBoxFor(p => p.Contato, new { @class = "form-control", @placeholder = "Nome do contato principal", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Nome do Usuário FTP (se houver)</label>
-                @Html.TextBoxFor(p => p.UsuarioCaminhoFTP, new { @class = "form-control", @placeholder = "Nome Usuário do FTP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Email do Usuário FTP (se houver)</label>
-                @Html.TextBoxFor(p => p.UsuarioEmailFTP, new { @class = "form-control", @placeholder = "Email Usuário do FTP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Número da Porta do Usuário FTP (se houver)</label>
-                @Html.TextBoxFor(p => p.UsuarioPortaFTP, new { @class = "form-control", @placeholder = "Número Porta do FTP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Senha do Usuário FTP (se houver)</label>
-                @Html.TextBoxFor(p => p.UsuarioSenhaFTP, new { @class = "form-control", @placeholder = "Senha do FTP", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Valor para o Exame de Citologia (Exame em lâminas, se houver)</label>
-                @Html.TextBoxFor(p => p.ValorExameCitologia, new { @class = "form-control", @placeholder = "Valor para o Exame de Citologia (Lâminas)", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
-            </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Imprime texto de propaganda caso haja algum? S/N </label>
-                @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                {
-                    int propIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
-                    string propSigla = Utils.RetornaItem(i, "ListaSN", 1);
-                    string propDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (propIndex == (Model.Propaganda ?? 0));
-                    <div style="display: inline-block;">
-                        @Html.RadioButton("Propaganda", propIndex, check)
-                        @Html.Label(propDescricao)
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-xl">
+                        <label>Cidade/Município</label>
+                        @Html.TextBoxFor(p => p.Cidade, new { @class = "form-control capitalize", @placeholder = "Cidade/Município" })
                     </div>
-                }
+                    <div class="field-group w-xs">
+                        <label>UF</label>
+                        @Html.DropDownListFor(p => p.vmGeral.TipoUF, new SelectList(Utils.ListaUF(), "UF", "Nome", selectedValue: Model.SessionUF), new { @class = "form-control" })
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Aviso de Rodapé (primeira linha, se desejar algum)</label>
-                @Html.TextBoxFor(p => p.AvisoRodape1, new { @class = "form-control", @placeholder = "Aviso do Rodapé (primeira linha)", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+        </div>
+
+        <div class="card-secao card-secao-w-lg">
+            <div class="card-secao-header">
+                <i class="fa-solid fa-image"></i> Configurações de Relatórios
             </div>
-            <div class="form-group">
-                <label style="font-size: 13px; color: #333;">Aviso de Rodapé (segunda linha, se desejar algum)</label>
-                @Html.TextBoxFor(p => p.AvisoRodape2, new { @class = "form-control", @placeholder = "Aviso do Rodapé (segunda linha)", @style = "border: 1px solid #69c38a; border-radius: 6px;" })
+            <div class="card-secao-body">
+                <div class="field-row">
+                    <div class="field-group w-lg">
+                        <label>Título do Timbre para Relatórios</label>
+                        @Html.TextBoxFor(p => p.TituloTimbre, new { @class = "form-control", @placeholder = "Título do Timbre para Relatórios" })
+                    </div>
+                    <div class="field-group w-lg">
+                        <label>Subtítulo do Timbre para Relatórios</label>
+                        @Html.TextBoxFor(p => p.SubTituloTimbre, new { @class = "form-control", @placeholder = "Subtítulo do Timbre para Relatórios" })
+                    </div>
+                </div>
+
+                <!--
+                    Carregamento das imagens
+                -->
+                <div class="field-row">
+                    <div class="field-group w-full">
+                        <label>TIMBRE: Pequena imagem quadrada (215x235 px)</label>
+                        <div class="field-hint">Acompanha os títulos dos relatórios</div>
+                        @Html.TextBoxFor(p => p.CaminhoImagemTimbre, new { @type = "file", @id = "fileTimbre", @name = "fileTimbre", @value = Model.PathImages })
+                        @Html.Raw("<div id='imgsT'></div>")
+                        @if (!string.IsNullOrEmpty(Model.NomeTimbre))
+                        {
+                            <input id=@Model.NomeTimbre type='button' name='excluirTimbre' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a function não vai funcionar --> *@
+                        }
+                        @Html.HiddenFor(p => p.NomeTimbre, new { @id = "nomeTimbre" })
+                        @Html.HiddenFor(p => p.CaminhoImagemTimbre, new { @id = "caminhoTimbre" })
+                        @Html.HiddenFor(p => p.Timbre, new { @id = "bytesTimbre" })
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-full">
+                        <label>LOGOMARCA/BANNER: Imagem retangular (670x120 px)</label>
+                        <div class="field-hint">Substitui título e timbre nos relatórios</div>
+                        @Html.TextBoxFor(p => p.CaminhoImagemLogomarca, new { @type = "file", @id = "fileLogo", @name = "fileLogo", @value = Model.PathImages })
+                        @Html.Raw("<div id='imgsL'></div>")
+                        @if (!string.IsNullOrEmpty(Model.NomeLogomarca))
+                        {
+                            <input id=@Model.NomeLogomarca type='button' name='excluirLogomarca' value='Excluir Imagem' />@* <!-- Este não pode ter @Html.Raw ou a funtion não vai funcionar --> *@
+                        }
+                        @Html.HiddenFor(p => p.NomeLogomarca, new { @id = "nomeLogomarca" })
+                        @Html.HiddenFor(p => p.CaminhoImagemLogomarca, new { @id = "caminhoLogomarca" })
+                        @Html.HiddenFor(p => p.Logomarca, new { @id = "bytesLogomarca" })
+                    </div>
+                </div>
+                <!--
+                    Fim do carregamento das imagens
+                -->
+
+                <div class="field-row">
+                    <div class="field-group w-lg">
+                        <label>*Usa imagem timbre nos relatórios? S/N</label>
+                        <div class="radio-group">
+                            @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                            {
+                                int timbreIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();
+                                string timbreSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                                string timbreDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                                bool check = (timbreIndex == Model.TimbreSN);
+                                <span>
+                                    @Html.RadioButton("TimbreSN", timbreIndex, check)
+                                    <label>@timbreDescricao</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="field-group w-lg">
+                        <label>*Usa carimbo CRBio no final dos relatórios? S/N</label>
+                        <div class="radio-group">
+                            @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                            {
+                                int carimboIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();
+                                string carimboSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                                string carimboDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                                bool check = (carimboIndex == Model.CarimboSN);
+                                <span>
+                                    @Html.RadioButton("CarimboSN", carimboIndex, check)
+                                    <label>@carimboDescricao</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-lg">
+                        <label>Imprime texto de propaganda caso haja algum? S/N</label>
+                        <div class="radio-group">
+                            @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                            {
+                                int propIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();
+                                string propSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                                string propDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                                bool check = (propIndex == (Model.Propaganda ?? 0));
+                                <span>
+                                    @Html.RadioButton("Propaganda", propIndex, check)
+                                    <label>@propDescricao</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-lg">
+                        <label>Aviso de Rodapé (primeira linha)</label>
+                        @Html.TextBoxFor(p => p.AvisoRodape1, new { @class = "form-control", @placeholder = "Aviso do Rodapé (primeira linha)" })
+                    </div>
+                    <div class="field-group w-lg">
+                        <label>Aviso de Rodapé (segunda linha)</label>
+                        @Html.TextBoxFor(p => p.AvisoRodape2, new { @class = "form-control", @placeholder = "Aviso do Rodapé (segunda linha)" })
+                    </div>
+                </div>
             </div>
-            <!--
-            Submeter Formulário
-            -->
-            <div class="form-group" style="margin-top: 20px; text-align: center;">
-                <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
-                    <i class="fa-solid fa-arrow-left"></i> Voltar
-                </button>
-                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde" style="border-radius: 6px;">
-                    Salvar
-                </button>
+        </div>
+
+        <div class="card-secao card-secao-w-lg">
+            <div class="card-secao-header">
+                <i class="fa-solid fa-network-wired"></i> Contato e FTP
             </div>
+            <div class="card-secao-body">
+                <div class="field-row">
+                    <div class="field-group w-lg">
+                        <label>*Nome do Contato</label>
+                        @Html.TextBoxFor(p => p.Contato, new { @class = "form-control", @placeholder = "Nome do contato principal" })
+                    </div>
+                    <div class="field-group w-md">
+                        <label>Valor para o Exame de Citologia (Lâminas)</label>
+                        @Html.TextBoxFor(p => p.ValorExameCitologia, new { @class = "form-control", @placeholder = "Valor para o Exame de Citologia (Lâminas)" })
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-md">
+                        <label>Nome do Usuário FTP (se houver)</label>
+                        @Html.TextBoxFor(p => p.UsuarioCaminhoFTP, new { @class = "form-control", @placeholder = "Nome Usuário do FTP" })
+                    </div>
+                    <div class="field-group w-lg">
+                        <label>Email do Usuário FTP (se houver)</label>
+                        @Html.TextBoxFor(p => p.UsuarioEmailFTP, new { @class = "form-control", @placeholder = "Email Usuário do FTP" })
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-sm">
+                        <label>Número da Porta do Usuário FTP (se houver)</label>
+                        @Html.TextBoxFor(p => p.UsuarioPortaFTP, new { @class = "form-control", @placeholder = "Número Porta do FTP" })
+                    </div>
+                    <div class="field-group w-md">
+                        <label>Senha do Usuário FTP (se houver)</label>
+                        @Html.TextBoxFor(p => p.UsuarioSenhaFTP, new { @class = "form-control", @placeholder = "Senha do FTP" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+            <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary lab-btn" style="margin-right: 10px;">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
+            <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde lab-btn">
+                Salvar
+            </button>
+        </div>
+
     </div>
 }
 @section Scripts {

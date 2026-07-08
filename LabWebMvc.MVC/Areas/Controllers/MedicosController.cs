@@ -303,6 +303,29 @@ namespace LabWebMvc.MVC.Areas.Controllers
             return PartialView(vm); //na edição a vm precisa retornar para a View
         }
 
+        //Feito pelo Kiro em 17/05/2026
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpGet]
+        [Route("Medicos/ModalConsultarMedico")]
+        public async Task<ActionResult> ModalConsultarMedico(int id)
+        {
+            var dados = await _db.Medicos.Where(c => c.Id == id).AsNoTracking().FirstOrDefaultAsync();
+            var vm = new vmMedicos();
+            if (dados != null)
+            {
+                vm.Id = dados.Id;
+                vm.NomeMedico = dados.NomeMedico.ToUpper();
+                vm.CRM = dados.CRM;
+                vm.Especialidade = dados.Especialidade.ToCapitalize();
+                vm.Telefone = dados.Telefone;
+                vm.Email = dados.Email != null ? dados.Email.ToLower() : string.Empty;
+            }
+            ViewBag.TextoMenu = new object[] { "Consulta de Médico", false };
+            _geralController.Validacao("ConsultarMedico,Medicos", ViewBag.TextoMenu[0]);
+            return PartialView("_ModalConsultarMedico", vm);
+        }
+        //..Kiro
+
         public IActionResult ConverterPdf()
         {
             try

@@ -40,135 +40,134 @@
 
 @using (Html.BeginForm(FormMethod.Post, new { @class = "form-horizontal", @id = "form", @enctype = "multipart/form-data" }))  //@id="form" é obrigatório para campos chegarem do outro lado
 {
-    <div class="row">
-        <div class="col-md-4">
-            @Html.AntiForgeryToken()
-            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-            <div class="form-group">
-                @Html.Label("Descrição do Exame:")
-                <div style="display: inline-block; font-weight: 500;">@TempData["Descricao"]</div>
-                @{
-                    var geral = new vmGeral();
-                    geral.Aviso = Utils.AvisoHtml("Aviso", "A alteração irá atualizar a descrição <b>" + @TempData["Descricao"] + "</b>, em todas as instituições do plano.");
-                    @Html.Raw(geral.Aviso)
-                }
+    <div class="lab-form-container lab-refined">
+
+        <div class="card-secao card-secao-w-lg">
+            <div class="card-secao-header">
+                <i class="fa-solid fa-clipboard-list"></i> Descrição do Exame
             </div>
-            <div class="form-group">
-                @if (ViewBag.TipoContaExame == 0)
-                {
-                    @Html.Label("Descrição conta principal")
-                }
-                else
-                {
-                    @Html.Label("Descrição conta item")
-                }
-                @Html.TextBoxFor(p => p.Descricao, new { @class = "form-control" })
-            </div>
-            <div class="form-group">
-                <fieldset class="borda_redonda" style="padding: 6px;">
-                    @{
-                        ICollection<int> listaEtiquetas = new HashSet<int>();
-                    }
-                    @for (int i = 0; i <= 10; i++)
-                    {
-                        listaEtiquetas.Add(i);
-                    }
-                    @Html.Label("Quantidade de Etiquetas (Máximo de 10)")
-                    @Html.DropDownListFor(p => p.Etiquetas, new SelectList(listaEtiquetas, "Value"), new { style = "width:50px", size = "1" })
-                </fieldset>
-            </div>
-            <div class="form-group">
-                @Html.Label("Colocar na lista de itens de rotina?")
-                @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                {
-                    int rotinaIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
-                    string rotinaSigla = Utils.RetornaItem(i, "ListaSN", 1);
-                    string rotinaDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (rotinaIndex == 0);
-                    <div style="display: inline-block;">
-                        @Html.RadioButton("Seleciona", rotinaIndex, check)
-                        @Html.Label(rotinaDescricao)
+            <div class="card-secao-body">
+                <div class="field-row">
+                    <div class="field-group w-full">
+                        <label>Descrição do Exame</label>
+                        <div class="field-readonly" style="font-weight: 500;">@TempData["Descricao"]</div>
+                        @{
+                            var geral = new vmGeral();
+                            geral.Aviso = Utils.AvisoHtml("Aviso", "A alteração irá atualizar a descrição <b>" + @TempData["Descricao"] + "</b>, em todas as instituições do plano.");
+                            @Html.Raw(geral.Aviso)
+                        }
                     </div>
-                }
-            </div>
-            <div class="form-group">
-                @Html.Label("Mostrar este item na recepção?")
-                @for (int i = 0; i < Utils.ListaSN().Count; i++)
-                {
-                    int recepcaoIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
-                    string recepcaoSigla = Utils.RetornaItem(i, "ListaSN", 1);
-                    string recepcaoDescricao = Utils.RetornaItem(i, "ListaSN", 2);
-                    bool check = (recepcaoIndex == 0);
-                    <div style="display: inline-block;">
-                        @Html.RadioButton("NaoMostrar", recepcaoIndex, check)
-                        @Html.Label(recepcaoDescricao)
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-xl">
+                        @if (ViewBag.TipoContaExame == 0)
+                        {
+                            <label>Descrição conta principal</label>
+                        }
+                        else
+                        {
+                            <label>Descrição conta item</label>
+                        }
+                        @Html.TextBoxFor(p => p.Descricao, new { @class = "form-control" })
                     </div>
-                }
-            </div>
-            <div class="form-group">
-                @Html.Label("Prazo Entrega em Dias")
-                @Html.TextBoxFor(p => p.PrazoResultadoDias, new { @class = "form-control" })
-            </div>
-            <div class="form-group">
-                @Html.Label("Resultado Mínimo Permitido")
-                @Html.TextBoxFor(p => p.ResultadoMinimo, new { @class = "form-control", @type = "number", @step = "any", @style = "width: 150px;" })
-                @Html.Label("Resultado Máximo Permitido")
-                @Html.TextBoxFor(p => p.ResultadoMaximo, new { @class = "form-control", @type = "number", @step = "any", @style = "width: 150px;" })
-                <div style="font-size: 0.8em; color: #666;">
-                    Intervalo numérico aceito no lançamento de resultados.
                 </div>
-            </div>
-            <div class="form-group">
-                <div style="display: inline-block;">
-                    @Html.CheckBoxFor(p => p.GraficoNoItemBool)
-                    @Html.Label("Mostrar gráfico evolutivo no item de exame")
-                </div>
-                <div style="font-size: 0.8em; color: #666;">
-                    Disponível apenas para resultados numéricos ou percentuais.
-                </div>
-            </div>
-
-
-            @*          planoExames.CitoInstituicao = vm.CitoInstituicao;  //tem default 0 (não nulo)  na tabela
-        planoExames.CitoTituloExame = vm.CitoTituloExame;  //tem default 0 (não nulo)  na tabela
-        planoExames.CitoTituloFolha = vm.CitoTituloFolha;
-        planoExames.CitoDescricao = vm.CitoDescricao;
-        planoExames.CitoParteDescricao = vm.CitoParteDescricao;
-
-        *@
-            @*
-        planoExames.QCH = string.IsNullOrEmpty(vm.QCH.ToString()) ? 0 : vm.QCH;
-        planoExames.Etiqueta = string.IsNullOrEmpty(vm.Etiqueta.ToString()) ? 0 : vm.Etiqueta;
-        planoExames.AlinhaLaudo = string.IsNullOrEmpty(vm.AlinhaLaudo.ToString()) ? 0 : vm.AlinhaLaudo;
-
-        //Aceitam nulo
-        planoExames.TABELACH = vm.TABELACH;
-        planoExames.ICH = vm.ICH;
-        planoExames.UnidadeMedida = vm.UnidadeMedida;
-        planoExames.Referencia = vm.Referencia;
-        planoExames.Laudo = vm.Laudo;
-        planoExames.MapaHorizontal = string.IsNullOrEmpty(vm.MapaHorizontal) ? string.Empty : vm.MapaHorizontal.ToUpper();    //Sinonímia SEMPRE maiúscula
-        planoExames.ResultadoMinimo = vm.ResultadoMinimo;
-        planoExames.ResultadoMaximo = vm.ResultadoMaximo;
-        planoExames.LaboratorioExterno = vm.LaboratorioExterno;
-        *@
-
-
-
-
-            <!--
-            Submeter Formulário
-            -->
-            <div class="form-group" style="text-align: center;">
-                <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary" style="margin-right: 10px;">
-                    <i class="fa-solid fa-arrow-left"></i> Voltar
-                </button>
-                <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
-                    Salvar
-                </button>
             </div>
         </div>
+
+        <div class="card-secao card-secao-w-lg">
+            <div class="card-secao-header">
+                <i class="fa-solid fa-sliders"></i> Configurações do Item
+            </div>
+            <div class="card-secao-body">
+                <div class="field-row">
+                    <div class="field-group w-xs">
+                        @{
+                            ICollection<int> listaEtiquetas = new HashSet<int>();
+                        }
+                        @for (int i = 0; i <= 10; i++)
+                        {
+                            listaEtiquetas.Add(i);
+                        }
+                        <label>Quantidade de Etiquetas (Máximo de 10)</label>
+                        @Html.DropDownListFor(p => p.Etiquetas, new SelectList(listaEtiquetas, "Value"), new { style = "width:50px", size = "1" })
+                    </div>
+                    <div class="field-group w-sm">
+                        <label>Prazo Entrega em Dias</label>
+                        @Html.TextBoxFor(p => p.PrazoResultadoDias, new { @class = "form-control" })
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-md">
+                        <label>Colocar na lista de itens de rotina?</label>
+                        <div class="radio-group">
+                            @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                            {
+                                int rotinaIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                                string rotinaSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                                string rotinaDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                                bool check = (rotinaIndex == 0);
+                                <span>
+                                    @Html.RadioButton("Seleciona", rotinaIndex, check)
+                                    <label>@rotinaDescricao</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="field-group w-md">
+                        <label>Mostrar este item na recepção?</label>
+                        <div class="radio-group">
+                            @for (int i = 0; i < Utils.ListaSN().Count; i++)
+                            {
+                                int recepcaoIndex = Utils.RetornaItem(i, "ListaSN", 0).ToInt32();  //index
+                                string recepcaoSigla = Utils.RetornaItem(i, "ListaSN", 1);
+                                string recepcaoDescricao = Utils.RetornaItem(i, "ListaSN", 2);
+                                bool check = (recepcaoIndex == 0);
+                                <span>
+                                    @Html.RadioButton("NaoMostrar", recepcaoIndex, check)
+                                    <label>@recepcaoDescricao</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-md">
+                        <label>Resultado Mínimo Permitido</label>
+                        @Html.TextBoxFor(p => p.ResultadoMinimo, new { @class = "form-control", @type = "number", @step = "any" })
+                    </div>
+                    <div class="field-group w-md">
+                        <label>Resultado Máximo Permitido</label>
+                        @Html.TextBoxFor(p => p.ResultadoMaximo, new { @class = "form-control", @type = "number", @step = "any" })
+                        <div class="field-hint">Intervalo numérico aceito no lançamento de resultados.</div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group w-md">
+                        <label>Gráfico Evolutivo</label>
+                        <div class="radio-group">
+                            <span>
+                                @Html.CheckBoxFor(p => p.GraficoNoItemBool)
+                                <label>Mostrar gráfico evolutivo no item de exame</label>
+                            </span>
+                        </div>
+                        <div class="field-hint">Disponível apenas para resultados numéricos ou percentuais.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+            <button type="button" id="btnVoltar" class="btn btn-lg btn-secondary lab-btn" style="margin-right: 10px;">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
+            <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde lab-btn">
+                Salvar
+            </button>
+        </div>
+
     </div>
 }
 @section Scripts {
