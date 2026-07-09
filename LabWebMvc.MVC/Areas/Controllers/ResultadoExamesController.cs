@@ -275,6 +275,54 @@ namespace LabWebMvc.MVC.Areas.Controllers
         }
         //..Kiro
 
+        //Feito pelo Kiro em 08/07/2026
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("ResultadoExames/LiberarExame")]
+        public async Task<IActionResult> LiberarExame(int exameRealizadoId)
+        {
+            try
+            {
+                var exame = await _db.ExamesRealizados
+                    .Where(e => e.Id == exameRealizadoId)
+                    .FirstOrDefaultAsync();
+
+                if (exame == null)
+                    return Json(new { sucesso = false, mensagem = "Exame não encontrado." });
+
+                if (exame.Liberacao == 1)
+                    return Json(new { sucesso = false, mensagem = "Este exame já está liberado." });
+
+                var itens = await _db.ItensExamesRealizados
+                    .Where(i => i.ExameRealizadoId == exameRealizadoId
+                             && i.ContaExame.Substring(4, 7) != "0000000")
+                    .ToListAsync();
+
+                var itensSemResultado = itens
+                    .Where(i => i.ContaExame.Substring(i.ContaExame.Length - 4) != "0000")
+                    .Where(i => string.IsNullOrWhiteSpace(i.Resultado))
+                    .ToList();
+
+                if (itensSemResultado.Count > 0)
+                {
+                    var faltando = string.Join(", ", itensSemResultado.Select(i => i.Descricao ?? i.ContaExame));
+                    return Json(new { sucesso = false, mensagem = "Não é possível liberar. Resultado faltando em: " + faltando });
+                }
+
+                exame.Liberacao = 1;
+                exame.DataFim = _geralController.ObterDataHoraUtc();
+                await _db.SaveChangesAsync();
+
+                return Json(new { sucesso = true, mensagem = "Exame liberado com sucesso." });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[ResultadoExames] LiberarExame - Erro: " + ex.Message, "wError");
+                return Json(new { sucesso = false, mensagem = "Erro ao liberar exame." });
+            }
+        }
+        //..Kiro
+
         //Feito pelo Kiro em 19/06/2026
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]

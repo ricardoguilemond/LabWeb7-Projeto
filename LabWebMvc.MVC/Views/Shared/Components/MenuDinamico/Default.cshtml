@@ -5,7 +5,7 @@
     bool montou000 = false;
 }
 
-@if (Model != null && Model.Any())
+@if (User?.Identity?.IsAuthenticated == true && Model != null && Model.Any())
 {
     @foreach (var item in Model!)
     {
@@ -51,9 +51,39 @@
     {
         @Html.Raw("</nav>")
         @Html.Raw("</div>")
+        montou000 = false;
     }
 }
-else
-{
-    <div class="alert alert-warning">Menu não disponível.</div>
+
+@* Itens fixos no final do menu *@
+@{
+    var menuIdSobre = Utils.GeraMenuIdSeguro("Sobre", 999998);
+    var menuIdAcesso = Utils.GeraMenuIdSeguro("LoginLogout", 999999);
 }
+
+@* Grupo Sobre *@
+@Html.Raw($"<a class='nav-link collapsed' href='#' data-bs-toggle='collapse' data-bs-target='#{menuIdSobre}' aria-expanded='false' aria-controls='{menuIdSobre}'>")
+@Html.Raw("<div class='sb-nav-link-icon'><i class='fas fa-info-circle'></i></div>")
+Sobre
+@Html.Raw("<div class='sb-sidenav-collapse-arrow'><i class='fas fa-angle-down'></i></div>")
+@Html.Raw("</a>")
+@Html.Raw($"<div class='collapse' id='{menuIdSobre}' aria-labelledby='headingOne' data-bs-parent='#sidenavAccordion'>")
+@Html.Raw("<nav class='sb-sidenav-menu-nested nav'>")
+<a class="nav-link" href="@Url.Action("NossoSistema", "Home")">Nosso Sistema</a>
+<a class="nav-link" href="@Url.Action("Privacy", "Home")">Privacidade</a>
+<a class="nav-link" href="@Url.Action("Release", "Release")">Versão do Ambiente</a>
+@Html.Raw("</nav>")
+@Html.Raw("</div>")
+
+@* Grupo Login/Logout *@
+@Html.Raw($"<a class='nav-link collapsed' href='#' data-bs-toggle='collapse' data-bs-target='#{menuIdAcesso}' aria-expanded='false' aria-controls='{menuIdAcesso}'>")
+@Html.Raw("<div class='sb-nav-link-icon'><i class='fas fa-user'></i></div>")
+Login/Logout
+@Html.Raw("<div class='sb-sidenav-collapse-arrow'><i class='fas fa-angle-down'></i></div>")
+@Html.Raw("</a>")
+@Html.Raw($"<div class='collapse' id='{menuIdAcesso}' aria-labelledby='headingOne' data-bs-parent='#sidenavAccordion'>")
+@Html.Raw("<nav class='sb-sidenav-menu-nested nav'>")
+<a class="nav-link" href="/Home/Login">Login</a>
+<a class="nav-link" href="/Logout">Logout</a>
+@Html.Raw("</nav>")
+@Html.Raw("</div>")

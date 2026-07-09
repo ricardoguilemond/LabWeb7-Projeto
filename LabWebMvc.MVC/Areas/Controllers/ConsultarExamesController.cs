@@ -40,22 +40,20 @@ namespace LabWebMvc.MVC.Areas.Controllers
             string? siglaInstituicao,
             string? nomeInstituicao,
             string? siglaPosto,
-            string? nomePosto)
+            string? nomePosto,
+            string situacaoExame = "todos")
         {
             ICollection<dynamic> listaGrid = [];
 
-            var query = _db.ExamesRealizados
-                .AsNoTracking()
-                .Include(e => e.Instituicao)
-                .Include(e => e.Postos)
-                .Include(e => e.Pacientes)
-                .Include(e => e.TabelaExames)
-                .AsQueryable();
+            // Valida valores permitidos
+            var opcoesValidas = new[] { "todos", "liberados", "naoLiberados", "pendentes", "baixados" };
+            if (!opcoesValidas.Contains(situacaoExame))
+                situacaoExame = "todos";
 
-            // Defaults: DE = 3 dias atras, PARA = ontem (hoje nao aparece por padrao)
+            // Defaults: DE = 15 dias atras, PARA = hoje
             DateTime hojeLocal = DateTime.Now.Date;
-            DateTime dataDe = hojeLocal.AddDays(-3);
-            DateTime dataPara = hojeLocal.AddDays(-1);
+            DateTime dataDe = hojeLocal.AddDays(-15);
+            DateTime dataPara = hojeLocal;
 
             // Parse se fornecido pelo usuario
             if (!string.IsNullOrEmpty(dataExameDe))
@@ -66,11 +64,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
             // Converte para range UTC (necessario para timestamptz no Npgsql 8.x)
             var (inicioDeUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataDe);
             var (_, fimParaUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataPara);
-            query = query.Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc);
 
             // Passa as datas efetivas para a view
             ViewBag.DataExameDe = dataDe.ToString("dd/MM/yyyy");
             ViewBag.DataExamePara = dataPara.ToString("dd/MM/yyyy");
+            ViewBag.SituacaoExame = situacaoExame;
 
             bool temOutroFiltro = !string.IsNullOrEmpty(nomePaciente)
                           || codigoExame.HasValue
@@ -79,45 +77,121 @@ namespace LabWebMvc.MVC.Areas.Controllers
                           || !string.IsNullOrEmpty(siglaPosto)
                           || !string.IsNullOrEmpty(nomePosto);
 
-            if (!string.IsNullOrEmpty(nomePaciente))
-                query = query.Where(e => e.Pacientes.NomePaciente
-                    .ToLower().Contains(nomePaciente.Trim().ToLower()));
+            var pendentesIds = await _db.ItensExamesRealizados
+                .AsNoTracking()
+                .Where(i => i.ContaExame.Substring(i.ContaExame.Length - 4) != "0000")
+                .Where(i => string.IsNullOrEmpty(i.Resultado))
+                .Select(i => i.ExameRealizadoId)
+                .Distinct()
+                .ToListAsync();
 
-            if (codigoExame.HasValue)
-                query = query.Where(e => e.Id == codigoExame.Value);
-
-            if (!string.IsNullOrEmpty(siglaInstituicao))
-                query = query.Where(e => e.Instituicao.Sigla
-                    .ToLower().Contains(siglaInstituicao.Trim().ToLower()));
-
-            if (!string.IsNullOrEmpty(nomeInstituicao))
-                query = query.Where(e => e.Instituicao.Nome
-                    .ToLower().Contains(nomeInstituicao.Trim().ToLower()));
-
-            if (!string.IsNullOrEmpty(nomePosto))
-                query = query.Where(e => e.Postos != null && e.Postos.NomePosto
-                    .ToLower().Contains(nomePosto.Trim().ToLower()));
-
-            //Feito pelo Qoder em 21/04/2026 - filtro por Sigla Posto (D8)
-            if (!string.IsNullOrEmpty(siglaPosto))
-                query = query.Where(e => e.Postos != null && e.Postos.SiglaPosto
-                    .ToLower().Contains(siglaPosto.Trim().ToLower()));
-            //..Qoder
-
-            // Sem outros filtros alem da data: limitar a 100 registros
-            if (!temOutroFiltro)
-                query = query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id).Take(100);
-            else
-                query = query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id);
-
-            var dados = await query.ToListAsync();
-
-            int totalRegistros = 0;
-            int totalTabela = _db.ExamesRealizados.AsNoTracking().Count();
-
-            foreach (var item in dados)
+            IQueryable<ExamesRealizados> CriarQueryExamesRealizados()
             {
-                totalRegistros++;
+                var q = _db.ExamesRealizados
+                    .AsNoTracking()
+                    .Include(e => e.Instituicao)
+                    .Include(e => e.Postos)
+                    .Include(e => e.Pacientes)
+                    .Include(e => e.TabelaExames)
+                    .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc)
+                    .AsQueryable();
+
+                switch (situacaoExame)
+                {
+                    case "liberados":
+                        q = q.Where(e => e.Liberacao == 1 && e.Baixado == 0);
+                        break;
+                    case "naoLiberados":
+                        q = q.Where(e => e.Liberacao == 0 && e.Baixado == 0 && !pendentesIds.Contains(e.Id));
+                        break;
+                    case "pendentes":
+                        q = q.Where(e => e.Liberacao == 0 && e.Baixado == 0 && pendentesIds.Contains(e.Id));
+                        break;
+                }
+
+                return q;
+            }
+
+            IQueryable<ExamesRealizadosAM> CriarQueryExamesRealizadosAM()
+            {
+                return _db.ExamesRealizadosAM
+                    .AsNoTracking()
+                    .Include(e => e.Instituicao)
+                    .Include(e => e.Postos)
+                    .Include(e => e.Pacientes)
+                    .Include(e => e.TabelaExames)
+                    .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc)
+                    .AsQueryable();
+            }
+
+            IQueryable<ExamesRealizados> AplicarFiltros(IQueryable<ExamesRealizados> q)
+            {
+                if (!string.IsNullOrEmpty(nomePaciente))
+                    q = q.Where(e => e.Pacientes.NomePaciente
+                        .ToLower().Contains(nomePaciente.Trim().ToLower()));
+
+                if (codigoExame.HasValue)
+                    q = q.Where(e => e.Id == codigoExame.Value);
+
+                if (!string.IsNullOrEmpty(siglaInstituicao))
+                    q = q.Where(e => e.Instituicao.Sigla
+                        .ToLower().Contains(siglaInstituicao.Trim().ToLower()));
+
+                if (!string.IsNullOrEmpty(nomeInstituicao))
+                    q = q.Where(e => e.Instituicao.Nome
+                        .ToLower().Contains(nomeInstituicao.Trim().ToLower()));
+
+                if (!string.IsNullOrEmpty(nomePosto))
+                    q = q.Where(e => e.Postos != null && e.Postos.NomePosto
+                        .ToLower().Contains(nomePosto.Trim().ToLower()));
+
+                if (!string.IsNullOrEmpty(siglaPosto))
+                    q = q.Where(e => e.Postos != null && e.Postos.SiglaPosto
+                        .ToLower().Contains(siglaPosto.Trim().ToLower()));
+
+                if (!temOutroFiltro)
+                    q = q.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id).Take(100);
+                else
+                    q = q.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id);
+
+                return q;
+            }
+
+            IQueryable<ExamesRealizadosAM> AplicarFiltrosAM(IQueryable<ExamesRealizadosAM> q)
+            {
+                if (!string.IsNullOrEmpty(nomePaciente))
+                    q = q.Where(e => e.Pacientes.NomePaciente
+                        .ToLower().Contains(nomePaciente.Trim().ToLower()));
+
+                if (codigoExame.HasValue)
+                    q = q.Where(e => e.Id == codigoExame.Value);
+
+                if (!string.IsNullOrEmpty(siglaInstituicao))
+                    q = q.Where(e => e.Instituicao.Sigla
+                        .ToLower().Contains(siglaInstituicao.Trim().ToLower()));
+
+                if (!string.IsNullOrEmpty(nomeInstituicao))
+                    q = q.Where(e => e.Instituicao.Nome
+                        .ToLower().Contains(nomeInstituicao.Trim().ToLower()));
+
+                if (!string.IsNullOrEmpty(nomePosto))
+                    q = q.Where(e => e.Postos != null && e.Postos.NomePosto
+                        .ToLower().Contains(nomePosto.Trim().ToLower()));
+
+                if (!string.IsNullOrEmpty(siglaPosto))
+                    q = q.Where(e => e.Postos != null && e.Postos.SiglaPosto
+                        .ToLower().Contains(siglaPosto.Trim().ToLower()));
+
+                if (!temOutroFiltro)
+                    q = q.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id).Take(100);
+                else
+                    q = q.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id);
+
+                return q;
+            }
+
+            void AdicionarItemExamesRealizados(dynamic item, string situacao)
+            {
                 listaGrid.Add(new
                 {
                     Id = item.Id,
@@ -129,8 +203,34 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     NomePaciente = item.Pacientes.NomePaciente,
                     Nascimento = item.Pacientes.Nascimento,
                     Sequencial = item.Sequencial,
-                    DataIni = item.DataIni
+                    DataIni = item.DataIni,
+                    Liberacao = item.Liberacao,
+                    Baixado = item.Baixado,
+                    SituacaoExame = situacao
                 });
+            }
+
+            if (situacaoExame == "baixados")
+            {
+                var dadosAm = await AplicarFiltrosAM(CriarQueryExamesRealizadosAM()).ToListAsync();
+                foreach (var item in dadosAm)
+                    AdicionarItemExamesRealizados(item, "baixados");
+            }
+            else if (situacaoExame == "todos")
+            {
+                var dados = await AplicarFiltros(CriarQueryExamesRealizados()).ToListAsync();
+                foreach (var item in dados)
+                    AdicionarItemExamesRealizados(item, "todos");
+
+                var dadosAm = await AplicarFiltrosAM(CriarQueryExamesRealizadosAM()).ToListAsync();
+                foreach (var item in dadosAm)
+                    AdicionarItemExamesRealizados(item, "todos");
+            }
+            else
+            {
+                var dados = await AplicarFiltros(CriarQueryExamesRealizados()).ToListAsync();
+                foreach (var item in dados)
+                    AdicionarItemExamesRealizados(item, situacaoExame);
             }
 
             ViewBag.TextoMenu = new object[] { "Consultar Exames", false };

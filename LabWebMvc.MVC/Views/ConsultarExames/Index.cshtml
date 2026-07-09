@@ -14,10 +14,10 @@
     </div>
     <div class="card-secao-body">
         <form method="get" asp-action="Index" asp-controller="ConsultarExames" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
-        <label style="font: normal 13px calibri, arial, sans-serif;">DE:</label>
+        <label style="font: normal 13px calibri, arial, sans-serif;">Data do Exame DE:</label>
         <input type="text" name="dataExameDe" placeholder="dd/MM/yyyy" value="@ViewBag.DataExameDe"
                style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
-        <label style="font: normal 13px calibri, arial, sans-serif;">PARA:</label>
+        <label style="font: normal 13px calibri, arial, sans-serif;">ATÉ:</label>
         <input type="text" name="dataExamePara" placeholder="dd/MM/yyyy" value="@ViewBag.DataExamePara"
                style="width: 110px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
 
@@ -48,6 +48,24 @@
                maxlength="20" oninput="this.value=this.value.toUpperCase()" />
         @*..Qoder*@
 
+        <div style="display: flex; align-items: center; gap: 12px; min-height: 30px;">
+            <label style="font: normal 13px calibri, arial, sans-serif; margin-bottom: 0;">
+                <input type="radio" name="situacaoExame" value="todos" @(ViewBag.SituacaoExame == "todos" ? "checked" : "") onchange="this.form.submit()" /> Todos
+            </label>
+            <label style="font: normal 13px calibri, arial, sans-serif; margin-bottom: 0;">
+                <input type="radio" name="situacaoExame" value="liberados" @(ViewBag.SituacaoExame == "liberados" ? "checked" : "") onchange="this.form.submit()" /> Exames Liberados
+            </label>
+            <label style="font: normal 13px calibri, arial, sans-serif; margin-bottom: 0;">
+                <input type="radio" name="situacaoExame" value="naoLiberados" @(ViewBag.SituacaoExame == "naoLiberados" ? "checked" : "") onchange="this.form.submit()" /> Exames Não Liberados
+            </label>
+            <label style="font: normal 13px calibri, arial, sans-serif; margin-bottom: 0;">
+                <input type="radio" name="situacaoExame" value="pendentes" @(ViewBag.SituacaoExame == "pendentes" ? "checked" : "") onchange="this.form.submit()" /> Exames Pendentes de Resultado
+            </label>
+            <label style="font: normal 13px calibri, arial, sans-serif; margin-bottom: 0;">
+                <input type="radio" name="situacaoExame" value="baixados" @(ViewBag.SituacaoExame == "baixados" ? "checked" : "") onchange="this.form.submit()" /> Exames Baixados
+            </label>
+        </div>
+
         <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
             <i class="fa-sharp fa-solid fa-magnifying-glass"></i> Pesquisar
         </button>
@@ -75,12 +93,54 @@
                 <th>Data Nascimento</th>
                 <th>Seq</th>
                 <th>Data do Exame</th>
+                <th>Status</th>
                 <th>Opções</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var item in Model.ListaDados)
             {
+                string statusTexto;
+                string statusCor;
+
+                if (item.SituacaoExame == "todos")
+                {
+                    if (item.Baixado == 1)
+                    {
+                        statusTexto = "Baixado";
+                        statusCor = "gray";
+                    }
+                    else if (item.Liberacao == 1)
+                    {
+                        statusTexto = "Liberado";
+                        statusCor = "green";
+                    }
+                    else
+                    {
+                        statusTexto = "Não Liberado";
+                        statusCor = "orange";
+                    }
+                }
+                else
+                {
+                    statusTexto = item.SituacaoExame switch
+                    {
+                        "liberados" => "Liberado",
+                        "naoLiberados" => "Não Liberado",
+                        "pendentes" => "Pendente",
+                        "baixados" => "Baixado",
+                        _ => "-"
+                    };
+                    statusCor = item.SituacaoExame switch
+                    {
+                        "liberados" => "green",
+                        "naoLiberados" => "orange",
+                        "pendentes" => "red",
+                        "baixados" => "gray",
+                        _ => "black"
+                    };
+                }
+
                 @Html.Raw(
                          "<tr>" +
                          "<td>" + item.Id + "</td>" +
@@ -93,6 +153,7 @@
                          "<td>" + ((DateTime)item.Nascimento).ToLocalString("dd/MM/yyyy") + "</td>" +
                          "<td>" + item.Sequencial + "</td>" +
                          "<td>" + ((DateTime)item.DataIni).ToLocalString("dd/MM/yyyy") + "</td>" +
+                         "<td style='color:" + statusCor + "; font-weight:bold;'>" + statusTexto + "</td>" +
                          "<td class='grid_fundo_opcoes'>" +
                          "<a id=" + item.Id + " class='grid_itens' onclick=clickDeleteExame(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>" +
                          "</td>" +
@@ -112,6 +173,7 @@
                 <th>Data Nascimento</th>
                 <th>Seq</th>
                 <th>Data do Exame</th>
+                <th>Status</th>
                 <th id="op">Opções</th>
             </tr>
         </tfoot>

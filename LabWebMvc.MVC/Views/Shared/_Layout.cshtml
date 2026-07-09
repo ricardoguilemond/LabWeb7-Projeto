@@ -146,10 +146,8 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        @if (User?.Identity?.IsAuthenticated == true)  //Implementado no segundo login do HomeController
-                        {
-                            @await Component.InvokeAsync("MenuDinamico")
-                        }
+                        @* Menu dinâmico + itens fixos sempre renderizados; o Login/Logout alterna conforme autenticação *@
+                        @await Component.InvokeAsync("MenuDinamico")
                     </div>
                 </div>
                 <div class="sb-sidenav-footer">

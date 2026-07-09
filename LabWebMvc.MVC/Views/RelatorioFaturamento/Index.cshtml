@@ -1,0 +1,200 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using BLL
+@using static BLL.UtilBLL
+@using LabWebMvc.MVC.ViewModel
+@model vmRelatorioFaturamento
+
+<partial name='Partials/_PartialMenuRelatorioFaturamento' />
+
+<div id="filtrosRelatorioFaturamento" class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Relatório de Faturamento por Período
+    </div>
+    <div class="card-secao-body">
+        @if (TempData["MensagemErro"] != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                @TempData["MensagemErro"]
+            </div>
+        }
+
+        <form id="formRelatorioFaturamento" method="post" asp-action="GerarPdf" asp-controller="RelatorioFaturamento">
+            <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;">
+                <div>
+                    <label style="font: normal 13px calibri, arial, sans-serif; display: block;">Data Inicial:</label>
+                    <input type="text" asp-for="DataIni" value="@Model.DataIni.ToString("dd/MM/yyyy")" placeholder="dd/MM/yyyy"
+                           style="width: 120px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+                </div>
+
+                <div>
+                    <label style="font: normal 13px calibri, arial, sans-serif; display: block;">Data Final:</label>
+                    <input type="text" asp-for="DataFim" value="@Model.DataFim.ToString("dd/MM/yyyy")" placeholder="dd/MM/yyyy"
+                           style="width: 120px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+                </div>
+
+                <div style="min-width: 260px;">
+                    <label style="font: normal 13px calibri, arial, sans-serif; display: block;">Instituições:</label>
+                    <div id="listaInstituicoes"
+                         style="width: 100%; height: 120px; overflow-y: auto; border: 1px solid #69c38a; border-radius: 6px; padding: 6px; background-color: #fff;">
+                        @foreach (var item in Model.Instituicoes)
+                        {
+                            var idInst = $"inst_{item.Value}";
+                            var selecionado = int.TryParse(item.Value, out var id) && Model.InstituicoesSelecionadas.Contains(id);
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                <input type="checkbox" name="InstituicoesSelecionadas" value="@item.Value" id="@idInst" class="chk-instituicao" @(selecionado ? "checked" : "") />
+                                <label for="@idInst" style="margin-bottom: 0; font: normal 13px calibri, arial, sans-serif; cursor: pointer;">@item.Text</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div style="min-width: 260px;">
+                    <label style="font: normal 13px calibri, arial, sans-serif; display: block;">Tabelas de Preços:</label>
+                    <div id="listaTabelas"
+                         style="width: 100%; height: 120px; overflow-y: auto; border: 1px solid #69c38a; border-radius: 6px; padding: 6px; background-color: #fff;">
+                        @foreach (var item in Model.Tabelas)
+                        {
+                            var idTabela = $"tab_{item.Value}";
+                            var selecionado = int.TryParse(item.Value, out var id) && Model.TabelasSelecionadas.Contains(id);
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                <input type="checkbox" name="TabelasSelecionadas" value="@item.Value" id="@idTabela" class="chk-tabela" @(selecionado ? "checked" : "") />
+                                <label for="@idTabela" style="margin-bottom: 0; font: normal 13px calibri, arial, sans-serif; cursor: pointer;">@item.Text</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font: normal 13px calibri, arial, sans-serif; display: block;">Ordenação:</label>
+                    <select asp-for="Ordenacao"
+                            style="width: 220px; padding: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;">
+                        <option value="2">Data, Sigla Instituição + Sequencial</option>
+                        <option value="1">Sigla Instituição + Sequencial</option>
+                        <option value="0">Alfabética (Nome Paciente)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font: normal 13px calibri, arial, sans-serif; display: block;">Mostragem de Preços:</label>
+                    <select asp-for="MostragemPrecos"
+                            style="width: 320px; padding: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;">
+                        <option value="2">Não imprimir itens com valores zerados</option>
+                        <option value="0">Aceitar zerados nos Exames dos Pacientes</option>
+                        <option value="1">Aceitar todos os zerados baseado no Plano de Exames</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font: normal 13px calibri, arial, sans-serif; display: block;">Layout:</label>
+                    <select asp-for="DuasColunas"
+                            style="width: 160px; padding: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;">
+                        <option value="true">Duas colunas</option>
+                        <option value="false">Uma coluna</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 6px; min-height: 30px;">
+                    <input type="checkbox" asp-for="IncluirBaixados" id="chkIncluirBaixados" />
+                    <label for="chkIncluirBaixados" style="font: normal 13px calibri, arial, sans-serif; margin-bottom: 0;">Incluir Baixados (Arquivados)</label>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
+                    <i class="fa-sharp fa-solid fa-file-pdf"></i> Gerar PDF
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $("#DataIni, #DataFim").inputmask("99/99/9999");
+
+            $("#listaInstituicoes").on("change", ".chk-instituicao", function () {
+                carregarTabelas();
+            });
+
+            $("#DataIni, #DataFim, #chkIncluirBaixados").on("change", function () {
+                carregarTabelas();
+            });
+
+            $("#formRelatorioFaturamento").on("submit", function (e) {
+                e.preventDefault();
+
+                var $form = $(this);
+                var $btn = $form.find('button[type="submit"]');
+                var textoOriginal = $btn.html();
+                $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Gerando...');
+
+                fetch($form.attr("action"), {
+                    method: "POST",
+                    body: new FormData(this)
+                })
+                .then(function (response) {
+                    if (!response.ok) {
+                        return response.text().then(function () {
+                            throw new Error("Erro ao gerar relatório. Verifique os filtros e tente novamente.");
+                        });
+                    }
+                    return response.blob();
+                })
+                .then(function (blob) {
+                    var url = window.URL.createObjectURL(blob);
+                    window.open(url, "_blank");
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(function (error) {
+                    console.error(error);
+                    clickAviso("Atenção", error.message, "aviso", null);
+                })
+                .finally(function () {
+                    $btn.prop("disabled", false).html(textoOriginal);
+                });
+            });
+
+            function carregarTabelas() {
+                var dataIni = $("#DataIni").val();
+                var dataFim = $("#DataFim").val();
+                var instituicoes = $(".chk-instituicao:checked").map(function () {
+                    return $(this).val();
+                }).get();
+                var incluirBaixados = $("#chkIncluirBaixados").is(":checked");
+
+                $.ajax({
+                    url: '@Url.Action("CarregarTabelas", "RelatorioFaturamento")',
+                    type: 'POST',
+                    data: {
+                        dataIni: dataIni,
+                        dataFim: dataFim,
+                        instituicoes: instituicoes,
+                        incluirBaixados: incluirBaixados
+                    },
+                    traditional: true,
+                    success: function (result) {
+                        var $container = $("#listaTabelas");
+                        $container.empty();
+
+                        if (result.length === 0) {
+                            $container.append('<span style="font: normal 12px calibri, arial, sans-serif; color: #888;">Nenhuma tabela encontrada para as instituições selecionadas.</span>');
+                            return;
+                        }
+
+                        $.each(result, function (i, item) {
+                            var id = 'tab_' + item.value;
+                            var html =
+                                '<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">' +
+                                '<input type="checkbox" name="TabelasSelecionadas" value="' + item.value + '" id="' + id + '" class="chk-tabela" />' +
+                                '<label for="' + id + '" style="margin-bottom: 0; font: normal 13px calibri, arial, sans-serif; cursor: pointer;">' + item.text + '</label>' +
+                                '</div>';
+                            $container.append(html);
+                        });
+                    },
+                    error: function () {
+                        console.log("Erro ao carregar tabelas.");
+                    }
+                });
+            }
+        });
+    </script>
+}
