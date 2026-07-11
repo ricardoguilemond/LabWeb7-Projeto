@@ -16,7 +16,12 @@
         public int MargemEsquerda { get; set; } = 5;    
         public int MargemDireita { get; set; } = 5; 
         public int MargemSuperior { get; set; } = 5;    
-        public int MargemInferior { get; set; } = 5;    
+        public int MargemInferior { get; set; } = 5;
+        /// <summary>
+        /// Tipo de corte ESC/POS no final do cupom:
+        /// 0 = Nenhum, 1 = Parcial, 2 = Total
+        /// </summary>
+        public int TipoCorteCupom { get; set; } = 2;
 
     }
 }

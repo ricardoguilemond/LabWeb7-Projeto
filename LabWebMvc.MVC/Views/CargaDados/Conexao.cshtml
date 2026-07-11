@@ -1,0 +1,404 @@
+@model LabWebMvc.MVC.ViewModel.CargaDados.FirebirdConnectionViewModel
+
+@section Head {
+    <style>
+        /* Garante que o formulário e seus campos fiquem editáveis e acima de qualquer overlay */
+        #form-conexao {
+            position: relative !important;
+            z-index: 10000 !important;
+        }
+
+        #form-conexao input,
+        #form-conexao select,
+        #form-conexao textarea,
+        #form-conexao button,
+        #form-conexao fieldset {
+            pointer-events: auto !important;
+            user-select: auto !important;
+            -webkit-user-select: auto !important;
+            opacity: 1 !important;
+            position: relative !important;
+            z-index: 10001 !important;
+        }
+
+        #form-conexao input:disabled,
+        #form-conexao select:disabled,
+        #form-conexao textarea:disabled,
+        #form-conexao button:disabled {
+            background-color: #e9ecef !important;
+        }
+
+        /* Esconde qualquer overlay de loading que possa existir nesta tela */
+        .modalLoading,
+        .loading {
+            display: none !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card-secao">
+                <div class="card-header">
+                    <h4><i class="fa-solid fa-database"></i> Conexão com Firebird</h4>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Conexao", "CargaDados", FormMethod.Post, new { @id = "form-conexao" }))
+                    {
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Servidor)
+                                    @Html.TextBoxFor(m => m.Servidor, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.Servidor, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Porta)
+                                    @Html.TextBoxFor(m => m.Porta, new { @class = "form-control", @type = "number" })
+                                    @Html.ValidationMessageFor(m => m.Porta, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Charset)
+                                    @Html.TextBoxFor(m => m.Charset, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-check">
+                                    @Html.CheckBoxFor(m => m.UsarODBC, new { @class = "form-check-input", @id = "UsarODBC" })
+                                    @Html.LabelFor(m => m.UsarODBC, new { @class = "form-check-label" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3" id="grupoDSN">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.NomeDSN)
+                                    @Html.TextBoxFor(m => m.NomeDSN, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.NomeDSN, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">Nome do DSN ODBC configurado no Windows (igual ao usado pelo Delphi).</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.CaminhoBanco)
+                                    <div class="input-group">
+                                        @Html.TextBoxFor(m => m.CaminhoBanco, new { @class = "form-control", @placeholder = "Ex: C:\\Dados\\LabWeb7.FDB", @id = "CaminhoBanco" })
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalSeletorArquivo">
+                                            <i class="fa-solid fa-folder-open"></i> Procurar
+                                        </button>
+                                    </div>
+                                    @Html.ValidationMessageFor(m => m.CaminhoBanco, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Usuario)
+                                    @Html.TextBoxFor(m => m.Usuario, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.Usuario, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Senha)
+                                    @Html.PasswordFor(m => m.Senha, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.Senha, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">Tenta primeiro com Sucesso105. Se falhar, usa masterkey automaticamente.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.TamanhoLote)
+                                    @Html.TextBoxFor(m => m.TamanhoLote, new { @class = "form-control", @type = "number" })
+                                    @Html.ValidationMessageFor(m => m.TamanhoLote, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-center">
+                                <div class="form-check mt-4">
+                                    @Html.CheckBoxFor(m => m.ModoSimulacao, new { @class = "form-check-input" })
+                                    @Html.LabelFor(m => m.ModoSimulacao, new { @class = "form-check-label" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa-solid fa-plug"></i> Testar Conexão e Prosseguir
+                                </button>
+                            </div>
+                        </div>
+
+                        <script>
+                            // Reabilita todos os campos do formulário imediatamente após a renderização do HTML
+                            (function () {
+                                if (typeof jQuery !== 'undefined') {
+                                    jQuery('#form-conexao').find('input, select, textarea, button, fieldset')
+                                        .prop('disabled', false)
+                                        .prop('readonly', false)
+                                        .css('pointer-events', 'auto')
+                                        .css('opacity', '1');
+                                } else {
+                                    const form = document.getElementById('form-conexao');
+                                    if (form) {
+                                        form.querySelectorAll('input, select, textarea, button, fieldset').forEach(el => {
+                                            el.removeAttribute('disabled');
+                                            el.removeAttribute('readonly');
+                                        });
+                                    }
+                                }
+                                document.querySelectorAll('.modalLoading').forEach(el => {
+                                    el.style.display = 'none';
+                                    el.style.pointerEvents = 'none';
+                                });
+                            })();
+                        </script>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalSeletorArquivo" tabindex="-1" aria-labelledby="modalSeletorArquivoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSeletorArquivoLabel"><i class="fa-solid fa-folder-open"></i> Selecionar banco Firebird</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="caminhoAtual" class="form-label">Caminho atual</label>
+                    <div class="input-group">
+                        <input type="text" id="caminhoAtual" class="form-control" value="c:\\xWeb7\\" />
+                        <button type="button" class="btn btn-outline-secondary" id="btnIrPara"><i class="fa-solid fa-arrow-right"></i> Ir</button>
+                    </div>
+                </div>
+                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-sm table-hover" id="tabelaArquivos">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>Nome</th>
+                                <th style="width: 100px;">Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSelecionarArquivo" disabled><i class="fa-solid fa-check"></i> Selecionar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let caminhoSelecionado = '';
+    let arquivoSelecionado = '';
+
+    function carregarArquivos(caminho) {
+        console.log('Carregando arquivos de:', caminho);
+        fetch('/CargaDados/ListarArquivos?caminho=' + encodeURIComponent(caminho))
+            .then(r => {
+                if (!r.ok) {
+                    throw new Error('HTTP ' + r.status + ' - ' + r.statusText);
+                }
+                return r.json();
+            })
+            .then(data => {
+                console.log('Resposta:', data);
+                if (!data.sucesso) {
+                    if (caminho !== '__drives__') {
+                        // Silenciosamente mostra a lista de drives quando o caminho não existe
+                        carregarArquivos('__drives__');
+                    } else {
+                        alert(data.mensagem);
+                    }
+                    return;
+                }
+
+                document.getElementById('caminhoAtual').value = data.caminho;
+                caminhoSelecionado = data.caminho;
+                arquivoSelecionado = '';
+                document.getElementById('btnSelecionarArquivo').disabled = true;
+
+                const tbody = document.querySelector('#tabelaArquivos tbody');
+                tbody.innerHTML = '';
+
+                // Voltar para lista de drives ou pasta pai
+                if (data.ehRaiz) {
+                    tbody.innerHTML += `<tr style="cursor:pointer;" onclick="carregarArquivos('__drives__')">
+                        <td><i class="fa-solid fa-hard-drive"></i></td>
+                        <td><strong>[Drives]</strong></td>
+                        <td>Raiz</td>
+                    </tr>`;
+                } else {
+                    const ultimaBarra = data.caminho.lastIndexOf('\\');
+                    const pai = ultimaBarra > 0 ? data.caminho.substring(0, ultimaBarra) : '__drives__';
+                    if (pai && pai !== data.caminho) {
+                        tbody.innerHTML += `<tr style="cursor:pointer;" onclick="carregarArquivos('${pai.replace(/\\/g, '\\\\')}')">
+                            <td><i class="fa-solid fa-arrow-up"></i></td>
+                            <td><strong>[..]</strong></td>
+                            <td>Pasta</td>
+                        </tr>`;
+                    }
+                }
+
+                data.diretorios.forEach(d => {
+                    tbody.innerHTML += `<tr style="cursor:pointer;" onclick="carregarArquivos('${d.caminho.replace(/\\/g, '\\\\')}')">
+                        <td><i class="fa-solid fa-folder text-warning"></i></td>
+                        <td><strong>${d.nome}</strong></td>
+                        <td>Pasta</td>
+                    </tr>`;
+                });
+
+                data.arquivos.forEach(f => {
+                    tbody.innerHTML += `<tr style="cursor:pointer;" onclick="selecionarArquivo('${f.caminho.replace(/\\/g, '\\\\')}', this)">
+                        <td><i class="fa-solid fa-database text-primary"></i></td>
+                        <td>${f.nome}</td>
+                        <td>Banco</td>
+                    </tr>`;
+                });
+
+                if (data.diretorios.length === 0 && data.arquivos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">Nenhuma pasta ou arquivo .FDB encontrado neste local.</td></tr>';
+                }
+            })
+            .catch(err => {
+                console.error('Erro ao carregar arquivos:', err);
+                alert('Erro ao carregar arquivos: ' + err.message);
+            });
+    }
+
+    function selecionarArquivo(caminho, linha) {
+        arquivoSelecionado = caminho;
+        document.getElementById('btnSelecionarArquivo').disabled = false;
+        document.querySelectorAll('#tabelaArquivos tbody tr').forEach(tr => tr.classList.remove('table-active'));
+        linha.classList.add('table-active');
+    }
+
+    function reabilitarCampos() {
+        // Esconde overlays de loading que possam estar bloqueando a tela
+        // (não remove para não quebrar o script do _Layout que também tenta removê-lo)
+        document.querySelectorAll('.modalLoading').forEach(el => {
+            el.style.display = 'none';
+            el.style.pointerEvents = 'none';
+        });
+        const loading = document.getElementsByClassName('loading')[0];
+        if (loading) loading.style.display = 'none';
+
+        // Garante que todos os campos do formulário de conexão estejam editáveis
+        const formConexao = document.getElementById('form-conexao');
+        if (formConexao) {
+            let bloqueados = 0;
+            formConexao.querySelectorAll('input, select, textarea, button, fieldset').forEach(el => {
+                if (el.id !== 'btnSelecionarArquivo') {
+                    if (el.disabled || el.readOnly) {
+                        bloqueados++;
+                    }
+                    el.removeAttribute('disabled');
+                    el.removeAttribute('readonly');
+                    el.style.pointerEvents = 'auto';
+                    el.style.opacity = '1';
+                    el.style.userSelect = 'auto';
+                    el.style.webkitUserSelect = 'auto';
+                }
+            });
+            if (bloqueados > 0) {
+                console.log('[Conexao] Campos reabilitados:', bloqueados);
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        reabilitarCampos();
+        setTimeout(reabilitarCampos, 100);
+        setTimeout(reabilitarCampos, 500);
+        setTimeout(reabilitarCampos, 1500);
+
+        window.addEventListener('load', reabilitarCampos);
+
+        // Observa mudanças que possam desabilitar campos dinamicamente
+        const formConexao = document.getElementById('form-conexao');
+        if (formConexao && window.MutationObserver) {
+            const observer = new MutationObserver(function (mutations) {
+                let precisaReabilitar = false;
+                mutations.forEach(function (mutation) {
+                    if (mutation.type === 'attributes' &&
+                        (mutation.attributeName === 'disabled' || mutation.attributeName === 'readonly')) {
+                        const target = mutation.target;
+                        if (target.disabled || target.readOnly) {
+                            precisaReabilitar = true;
+                        }
+                    }
+                });
+                if (precisaReabilitar) {
+                    console.log('[Conexao] MutationObserver detectou bloqueio, reabilitando...');
+                    reabilitarCampos();
+                }
+            });
+            observer.observe(formConexao, { subtree: true, attributes: true });
+        }
+
+        const modal = document.getElementById('modalSeletorArquivo');
+        modal.addEventListener('shown.bs.modal', function () {
+            const caminhoAtual = document.getElementById('CaminhoBanco').value || '__drives__';
+            carregarArquivos(caminhoAtual);
+        });
+
+        document.getElementById('btnIrPara').addEventListener('click', function () {
+            carregarArquivos(document.getElementById('caminhoAtual').value);
+        });
+
+        document.getElementById('caminhoAtual').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                carregarArquivos(this.value);
+            }
+        });
+
+        document.getElementById('btnSelecionarArquivo').addEventListener('click', function () {
+            document.getElementById('CaminhoBanco').value = arquivoSelecionado;
+            const bsModal = bootstrap.Modal.getInstance(modal);
+            bsModal.hide();
+        });
+
+        const chkUsarODBC = document.getElementById('UsarODBC');
+        const grupoDSN = document.getElementById('grupoDSN');
+        function atualizarVisibilidadeDSN() {
+            if (grupoDSN) {
+                grupoDSN.style.display = chkUsarODBC && chkUsarODBC.checked ? 'flex' : 'none';
+            }
+        }
+        if (chkUsarODBC) {
+            chkUsarODBC.addEventListener('change', atualizarVisibilidadeDSN);
+            atualizarVisibilidadeDSN();
+        }
+    });
+</script>

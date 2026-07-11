@@ -17,5 +17,10 @@
         public int MargemDireita { get; set; }
         public int MargemSuperior { get; set; }
         public int MargemInferior { get; set; }
+        /// <summary>
+        /// Tipo de corte ESC/POS no final do cupom:
+        /// 0 = Nenhum, 1 = Parcial, 2 = Total
+        /// </summary>
+        public int TipoCorteCupom { get; set; }
     }
 }

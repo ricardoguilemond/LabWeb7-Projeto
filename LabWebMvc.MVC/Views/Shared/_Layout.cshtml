@@ -78,6 +78,7 @@
             min-height: 100%;
             width: 100%;
             background-color: inherit;
+            pointer-events: none;
         }
         /* Para todas as janelas de modal de mensagens/avisos */
         .modal { /* modal alterado somente para esta tela */
@@ -100,6 +101,7 @@
             position: fixed;
             z-index: 999;
             background-color: inherit;
+            pointer-events: none;
         }
 
         .top-fixo {
@@ -295,8 +297,12 @@
             // O DataTables exibe seu próprio "Carregando..." via language.loadingRecords.
             window.onload = function () {
                 setTimeout(function () {
-                    document.body.removeChild(modalLoading);
-                    loading.style.display = "none";
+                    if (modalLoading && modalLoading.parentNode === document.body) {
+                        document.body.removeChild(modalLoading);
+                    }
+                    if (loading) {
+                        loading.style.display = "none";
+                    }
                 }, 200);
             };
             //..Kiro

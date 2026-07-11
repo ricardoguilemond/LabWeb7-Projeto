@@ -79,6 +79,22 @@ namespace LabWebMvc.MVC.Areas.Impressoras
             try
             {
                 pd.Print();
+
+                // Após a impressão gráfica, envia comando RAW ESC/POS de corte (se configurado).
+                if (config != null && config.TipoCorteCupom > 0)
+                {
+                    var comandoCorte = RawPrinterHelper.ObterComandoCorte(config.TipoCorteCupom);
+                    if (comandoCorte.Length > 0)
+                    {
+                        if (!RawPrinterHelper.EnviarBytesParaImpressora(nomeImpressora, comandoCorte))
+                        {
+                            string msgCorte = "Cupom impresso, mas falha ao enviar comando de corte para a impressora.";
+                            eventLogHelper.LogEventViewer(msgCorte, "wWarning");
+                            return new ResultadoImpressao { Sucesso = true, Mensagem = msgCorte };
+                        }
+                    }
+                }
+
                 return new ResultadoImpressao { Sucesso = true, Mensagem = "Cupom impresso com sucesso." };
             }
             catch (Exception ex)

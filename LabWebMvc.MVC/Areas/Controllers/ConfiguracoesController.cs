@@ -43,8 +43,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 AlturaPapel = config?.AlturaPapel ?? 0,
                 MargemEsquerda = config?.MargemEsquerda ?? 0,
                 MargemDireita = config?.MargemDireita ?? 0, 
-                MargemSuperior = config?.MargemSuperior ?? 0, 
-                MargemInferior = config?.MargemInferior ?? 0
+                MargemSuperior = config?.MargemSuperior ?? 0,
+                MargemInferior = config?.MargemInferior ?? 0,
+                TipoCorteCupom = config?.TipoCorteCupom ?? 2
             };
             return View(vm);
         }
@@ -80,7 +81,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     MargemEsquerda = vm.MargemEsquerda,
                     MargemDireita = vm.MargemDireita,
                     MargemSuperior = vm.MargemSuperior,
-                    MargemInferior = vm.MargemInferior
+                    MargemInferior = vm.MargemInferior,
+                    TipoCorteCupom = vm.TipoCorteCupom
                 };
 
                 _db.Configuracoes.Add(novaConfig);
@@ -103,6 +105,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 config.MargemDireita = vm.MargemDireita;
                 config.MargemSuperior = vm.MargemSuperior;
                 config.MargemInferior = vm.MargemInferior;
+                config.TipoCorteCupom = vm.TipoCorteCupom;
             }
 
             await _db.SaveChangesAsync();

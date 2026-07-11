@@ -181,6 +181,18 @@
                                     })
                 </div>
             </div>
+            <div class="field-row">
+                <div class="field-group w-md">
+                    <label>Corte do Cupom (ESC/POS)</label>
+                    @Html.DropDownListFor(p => p.TipoCorteCupom,
+                                    new SelectList(new[] {
+                                    new { Value = 0, Text = "Nenhum" },
+                                    new { Value = 1, Text = "Parcial" },
+                                    new { Value = 2, Text = "Total" }
+                                    }, "Value", "Text", Model.TipoCorteCupom),
+                                    new { @class = "form-select form-select-sm w-auto" })
+                </div>
+            </div>
         </div>
     </div>
 

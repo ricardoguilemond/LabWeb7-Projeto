@@ -1,0 +1,129 @@
+@model LabWebMvc.MVC.ViewModel.CargaDados.EstimativaViewModel
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card-secao">
+                <div class="card-header">
+                    <h4><i class="fa-solid fa-stopwatch"></i> Estimativa de Tempo</h4>
+                </div>
+                <div class="card-body">
+                    @if (Model.ModoSimulacao)
+                    {
+                        <div class="alert alert-warning">
+                            <strong>Modo simulação ativado.</strong> Nenhum dado será gravado no PostgreSQL.
+                        </div>
+                    }
+
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h5>@Model.TotalRegistros.ToString("N0")</h5>
+                                    <small>Total de registros no Firebird</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h5>@Model.TotalNovos.ToString("N0")</h5>
+                                    <small>Registros novos a importar</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h5>@Model.TempoTotalEstimado.ToString(@"hh\:mm\:ss")</h5>
+                                    <small>Tempo estimado</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h5>@Model.TamanhoLote.ToString("N0")</h5>
+                                    <small>Registros por lote</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.ErrosBloqueantes.Any())
+                    {
+                        <div class="alert alert-danger">
+                            <strong>Erros bloqueantes encontrados:</strong>
+                            <ul>
+                                @foreach (var erro in Model.ErrosBloqueantes)
+                                {
+                                    <li>@erro</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Ordem</th>
+                                    <th>Tabela Firebird</th>
+                                    <th>Tabela PostgreSQL</th>
+                                    <th>Total</th>
+                                    <th>Existentes</th>
+                                    <th>Novos</th>
+                                    <th>Tempo Est.</th>
+                                    <th>Avisos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var tabela in Model.Tabelas)
+                                {
+                                    <tr class="@(tabela.Incompatibilidades.Any() ? "table-danger" : "")">
+                                        <td>@tabela.Ordem</td>
+                                        <td>@tabela.NomeFirebird</td>
+                                        <td>@tabela.NomePostgreSQL</td>
+                                        <td>@tabela.TotalRegistros.ToString("N0")</td>
+                                        <td>@tabela.RegistrosExistentes.ToString("N0")</td>
+                                        <td>@tabela.RegistrosNovos.ToString("N0")</td>
+                                        <td>@tabela.TempoEstimado.ToString(@"hh\:mm\:ss")</td>
+                                        <td>
+                                            @if (tabela.Avisos.Any())
+                                            {
+                                                <ul class="mb-0">
+                                                    @foreach (var aviso in tabela.Avisos)
+                                                    {
+                                                        <li><small>@aviso</small></li>
+                                                    }
+                                                </ul>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-success"><i class="fa-solid fa-check"></i></span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            @if (Model.PodeProsseguir)
+                            {
+                                <a href="@Url.Action("Importar", "CargaDados")" class="btn btn-success">
+                                    <i class="fa-solid fa-play"></i> Prosseguir para Importação
+                                </a>
+                            }
+                            <a href="@Url.Action("Tabelas", "CargaDados")" class="btn btn-secondary">
+                                <i class="fa-solid fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

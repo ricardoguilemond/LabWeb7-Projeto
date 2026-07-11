@@ -10,6 +10,7 @@ using LabWebMvc.MVC.Areas.Validations;
 using LabWebMvc.MVC.Integracoes.Exportacao;
 using LabWebMvc.MVC.Integracoes.Importacao;
 using LabWebMvc.MVC.Interfaces;
+using LabWebMvc.MVC.ViewModel.CargaDados;
 using LabWebMvc.MVC.Interfaces.Criptografias;
 using LabWebMvc.MVC.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -97,20 +98,12 @@ namespace LabWebMvc.MVC
             //com tempo de vida útil igual ao tempo da aplicação!
             services.AddScoped<IValidadorDeSessao, ValidadorDeSessao>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            //Para o modelo de importação de movimentações (carga de dados) 
-            services.AddScoped<MovimentacaoImportacao>(sp =>
-            {
-                var connectionService = sp.GetRequiredService<IConnectionService>();
-                var config = sp.GetRequiredService<IConfiguration>();
-                var eventLogHelper = sp.GetRequiredService<IEventLogHelper>();
-
-                var optionsBuilder = new DbContextOptionsBuilder<Db>()
-                    .UseNpgsql(connectionService.GetConnectionString());
-
-                var db = new Db(optionsBuilder.Options, connectionService, eventLogHelper);
-
-                return new MovimentacaoImportacao(db, config);
-            });
+            // Serviços da nova Carga de Dados Firebird -> PostgreSQL
+            services.AddSignalR();
+            services.AddScoped<ITypeConverter, TypeConverter>();
+            services.AddScoped<ISchemaComparer, SchemaComparer>();
+            services.AddScoped<IFirebirdImporter, FirebirdImporter>();
+            services.AddScoped<ICargaDadosExecutor, CargaDadosExecutor>();
             //Para o modelo de exportação de pacientes
             services.AddScoped<ServicoExportacaoPacientes>();
             //
@@ -237,6 +230,7 @@ namespace LabWebMvc.MVC
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute("default", "{controller=Home}/{action=Login}/{id?}");
+                endpoints.MapHub<ImportProgressHub>("/hubs/importProgress");
                 endpoints.MapRazorPages(); //para termos rotas de uso direto Razor Pages, como a de Login.cshtml
 
                 //endpoints.MapDefaultControllerRoute();   //não vamos usar mapeamento default, porque queremos controlar algumas rotas diferentes.
