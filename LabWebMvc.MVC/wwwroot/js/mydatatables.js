@@ -10,6 +10,15 @@ function configTable() {
         //Se não controlar aqui com max-width ele não respeita a formatação do layout
         $(this).html('<input type="text" placeholder="' + title + '" style="max-width: 106px; padding-left: 4px; border: 1px solid gray; border-radius: 5px;" />');
     });
+
+    //Feito pelo Kiro em 27/07/2026
+    // Verifica se a tabela possui registros no tbody antes de habilitar fixedColumns.
+    // O plugin fixedColumns quebra o layout visual quando a tabela está vazia
+    // (colunas duplicadas lado a lado). Desabilita quando não há dados.
+    var temDados = $('#modeloTable tbody tr').length > 0;
+    var fixedColsConfig = temDados ? { left: -1, right: 1 } : false;
+    //..Kiro
+
     $('#modeloTable').DataTable({
         initComplete: function () {//executa a busca nas células disponíveis no footer
             this.api()
@@ -23,10 +32,7 @@ function configTable() {
                     });
                 });
         },
-        fixedColumns: {
-            left: -1,  //não permite fixar a primeira coluna
-            right: 1,  //fixa a última coluna dos ícones de ações/botões de ações
-        },
+        fixedColumns: fixedColsConfig,
         autoWidth: true,
         responsive: true,
         layout: {

@@ -12,6 +12,15 @@
                     {
                         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
+                        <!-- Overlay de loading exibido ao calcular a estimativa -->
+                        <div id="loading-estimativa" class="d-none position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(255,255,255,0.85); z-index: 9999;">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                            <h5 class="text-primary">Calculando estimativa...</h5>
+                            <p class="text-muted text-center">Isso pode levar alguns instantes.</p>
+                        </div>
+
                         <div class="alert alert-info">
                             <strong>Ordem de importação:</strong> as tabelas serão importadas na ordem abaixo para respeitar as dependências entre elas.
                         </div>
@@ -80,4 +89,9 @@
             cb.checked = selecionar;
         });
     }
+
+    document.getElementById('form-tabelas').addEventListener('submit', function () {
+        var loading = document.getElementById('loading-estimativa');
+        loading.classList.remove('d-none');
+    });
 </script>

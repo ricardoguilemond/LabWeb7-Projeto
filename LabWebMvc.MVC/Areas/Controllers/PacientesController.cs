@@ -204,7 +204,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         //Salva o CPF no CPF, e salva na Identidade qualquer outro tipo de documento!
                         paciente.CPF = obj.vmGeral.TipoDocumento == 0 ? obj.CPF?.CPFSemFormatacao() : string.Empty;
                         paciente.Identidade = obj.vmGeral.TipoDocumento > 0 ? obj.CPF?.CPFSemFormatacao() : string.Empty;
-                        paciente.Emissor = obj.vmGeral.TipoOrgaoEmissor > -1 ? obj.vmGeral.TipoOrgaoEmissor : 0;
+                        paciente.Emissor = obj.vmGeral.TipoOrgaoEmissor;
 
                         //Colunas NÃO nulas:
                         paciente.NomePaciente = obj.NomePaciente.ToUpper();
@@ -255,7 +255,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     {
                         await transaction.RollbackAsync();
 
-                        _eventLogHelper.LogEventViewer("ERRO: Paciente não foi salvo CNPJ: " + obj.CPF, "wError");
+                        _eventLogHelper.LogEventViewer("ERRO: Paciente não foi salvo CPF: " + obj.CPF, "wError");
 
                         TrataExceptionViewer(ex, _db);
 
@@ -363,7 +363,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         //Salva o CPF no CPF, e salva na Identidade qualquer outro tipo de documento!
                         paciente.CPF = vm.vmGeral.TipoDocumento == 0 ? vm.CPF?.CPFSemFormatacao() : string.Empty;
                         paciente.Identidade = vm.vmGeral.TipoDocumento > 0 ? vm.CPF?.CPFSemFormatacao() : string.Empty;
-                        paciente.Emissor = vm.vmGeral.TipoOrgaoEmissor > -1 ? vm.vmGeral.TipoOrgaoEmissor : 0;
+                        paciente.Emissor = vm.vmGeral.TipoOrgaoEmissor;
 
                         //Colunas NÃO nulas:
                         paciente.NomePaciente = vm.NomePaciente.ToUpper();
@@ -737,6 +737,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 return Json(new { success = false, responseText = string.Format("{0} {1}", "Falha:", ex.Message) });
             }
         }
+
     }
 
     internal class CustomErrorModel

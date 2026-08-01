@@ -83,7 +83,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 string idTabela = item.Id.ToString().PadLeft(2, '0');
 
                 var planoExames = await _db.PlanoExames
-                    .FirstOrDefaultAsync(s => s.ContaExame == contaFolha && s.ExameId == vm.Id && s.TabelaExamesId == item.Id);
+                    .FirstOrDefaultAsync(s => s.ContaExame == contaFolha && s.ClasseExamesId == vm.Id && s.TabelaExamesId == item.Id);
 
                 var strategy = _db.Database.CreateExecutionStrategy();
                 await strategy.ExecuteAsync(async () =>
@@ -94,7 +94,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         {
                             var plano = new PlanoExames
                             {
-                                ExameId = vm.Id,
+                                ClasseExamesId = vm.Id,
                                 RefExame = vm.RefExame.ToUpper(),
                                 RefItem = vm.RefExame.ToUpper(),
                                 Descricao = vm.RefExame.ToUpper(),
@@ -493,7 +493,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                     // Exclui todos os registros do PlanoExames vinculados à folha
                     await _db.PlanoExames
-                        .Where(pe => pe.ExameId == id)
+                        .Where(pe => pe.ClasseExamesId == id)
                         .ExecuteDeleteAsync();
 
                     // Exclui a folha de exames

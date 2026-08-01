@@ -35,6 +35,14 @@
             pointer-events: none !important;
             visibility: hidden !important;
         }
+
+        /* Garante que os selects mostrem a seta de seleção */
+        #form-conexao select.form-control {
+            appearance: auto !important;
+            -webkit-appearance: menulist !important;
+            -moz-appearance: menulist !important;
+            cursor: pointer !important;
+        }
     </style>
 }
 
@@ -54,21 +62,15 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(m => m.Servidor)
-                                    @Html.TextBoxFor(m => m.Servidor, new { @class = "form-control" })
+                                    @Html.TextBoxFor(m => m.Servidor, new { @class = "form-control form-control-sm" })
                                     @Html.ValidationMessageFor(m => m.Servidor, "", new { @class = "text-danger" })
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(m => m.Porta)
-                                    @Html.TextBoxFor(m => m.Porta, new { @class = "form-control", @type = "number" })
+                                    @Html.TextBoxFor(m => m.Porta, new { @class = "form-control form-control-sm", @type = "number" })
                                     @Html.ValidationMessageFor(m => m.Porta, "", new { @class = "text-danger" })
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    @Html.LabelFor(m => m.Charset)
-                                    @Html.TextBoxFor(m => m.Charset, new { @class = "form-control" })
                                 </div>
                             </div>
                         </div>

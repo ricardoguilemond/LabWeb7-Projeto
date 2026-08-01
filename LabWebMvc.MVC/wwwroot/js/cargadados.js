@@ -39,6 +39,8 @@ async function iniciarImportacao() {
     document.getElementById("area-progresso").style.display = "block";
     document.getElementById("area-resultado").style.display = "none";
     document.getElementById("area-decisao").style.display = "none";
+    document.getElementById("status-spinner").style.display = "inline-block";
+    document.getElementById("status-texto").textContent = "Conectando ao servidor...";
 
     const connectionId = connection ? connection.connectionId : "";
 
@@ -106,6 +108,17 @@ function atualizarProgresso(progresso) {
 
     document.getElementById("tabela-atual").textContent = progresso.tabelaAtual || "-";
     document.getElementById("status-texto").textContent = progresso.status || "Processando...";
+
+    const faseAtual = document.getElementById("fase-atual");
+    if (faseAtual) {
+        faseAtual.textContent = progresso.fase || "-";
+        faseAtual.className = "badge " + (progresso.fase === "Limpeza" ? "bg-warning text-dark" : "bg-success");
+    }
+
+    const spinner = document.getElementById("status-spinner");
+    if (spinner) {
+        spinner.style.display = (progresso.emExecucao || progresso.porcentagemTotal < 100) ? "inline-block" : "none";
+    }
     document.getElementById("registros-texto").textContent =
         (progresso.registrosProcessados || 0).toLocaleString("pt-BR") +
         " / " +
@@ -116,6 +129,7 @@ function atualizarProgresso(progresso) {
 function mostrarErro(erro) {
     document.getElementById("btn-iniciar").style.display = "inline-block";
     document.getElementById("btn-cancelar").style.display = "none";
+    document.getElementById("status-spinner").style.display = "none";
 
     const area = document.getElementById("area-resultado");
     area.style.display = "block";
@@ -153,6 +167,7 @@ function mostrarResultado(resultado) {
     document.getElementById("btn-iniciar").style.display = "inline-block";
     document.getElementById("btn-cancelar").style.display = "none";
     document.getElementById("barra-progresso").classList.remove("progress-bar-animated");
+    document.getElementById("status-spinner").style.display = "none";
 
     const area = document.getElementById("area-resultado");
     area.style.display = "block";
@@ -162,7 +177,7 @@ function mostrarResultado(resultado) {
 
     if (resultado.resultados && resultado.resultados.length > 0) {
         html += "<table class='table table-sm table-bordered mt-2'><thead><tr>" +
-            "<th>Tabela</th><th>Lidos</th><th>Inseridos</th><th>Duplicados</th><th>Erros</th><th>Tempo</th>" +
+            "<th>Tabela</th><th>Lidos</th><th>Inseridos</th><th>Erros</th><th>Tempo</th><th>Observação</th>" +
             "</tr></thead><tbody>";
 
         resultado.resultados.forEach(function (r) {
@@ -170,9 +185,9 @@ function mostrarResultado(resultado) {
                 "<td>" + (r.nomePostgreSQL || r.nomeFirebird) + "</td>" +
                 "<td>" + (r.totalLido || 0).toLocaleString("pt-BR") + "</td>" +
                 "<td>" + (r.inseridos || 0).toLocaleString("pt-BR") + "</td>" +
-                "<td>" + (r.duplicados || 0).toLocaleString("pt-BR") + "</td>" +
                 "<td>" + (r.erros || 0).toLocaleString("pt-BR") + "</td>" +
                 "<td>" + formatarTempo(r.tempoGasto) + "</td>" +
+                "<td>" + (r.observacao || "") + "</td>" +
                 "</tr>";
         });
 

@@ -161,6 +161,7 @@ namespace LabWebMvc.MVC
             services.Configure<GoogleReCaptchaSettings>(Configuration.GetSection("GoogleReCaptcha"));  //pega o array de configurações do Google ReCaptcha do appsettings.json
             services.AddScoped<CreateAssessmentSample>();
             services.AddScoped<IValidacaoGoogleReCaptcha, ValidacaoGoogleReCaptcha>();
+            services.AddScoped<IReCaptchaMetricasService, ReCaptchaMetricasService>();
             //..
             //Renderizando Razor Pages
             services.AddRazorPages();

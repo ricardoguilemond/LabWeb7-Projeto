@@ -7,7 +7,6 @@ public partial class Requisitar
     public int PacienteId { get; set; }
     public int ClasseExamesId { get; set; }
     public string ClasseExamesNome { get; set; } = null!;
-    public int ExameId { get; set; }
     public int OrdemItem { get; set; }
     public string? RefExame { get; set; }
     public string? RefItem { get; set; }

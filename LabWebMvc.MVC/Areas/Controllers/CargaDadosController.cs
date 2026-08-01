@@ -54,6 +54,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         public IActionResult Conexao()
         {
             ViewBag.TextoMenu = "Carga de Dados : Conexão Firebird";
+            //Feito pelo Kiro em 26/07/2026 — Fix bug encoding acentuação importação Firebird
             return View(new FirebirdConnectionViewModel
             {
                 Usuario = "SYSDBA",
@@ -61,10 +62,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 Servidor = "localhost",
                 Porta = 3051,
                 Charset = "NONE",
-                TamanhoLote = 1000,
+                TamanhoLote = 2500,
                 ModoSimulacao = true,
                 CaminhoBanco = @"F:\x-Web7\DadosLabWeb7\DB_CONDELAB.FDB"
             });
+            //..Kiro
         }
 
         [TypeFilter(typeof(SessionFilter))]

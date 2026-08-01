@@ -1,4 +1,4 @@
-﻿﻿﻿using ExtensionsMethods.EventViewerHelper;
+﻿﻿using ExtensionsMethods.EventViewerHelper;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -2305,6 +2305,8 @@ public class Db : DbContext
             entity.Property(e => e.MargemDireita);
             entity.Property(e => e.MargemSuperior);
             entity.Property(e => e.MargemInferior);
+            entity.Property(e => e.TipoCorteCupom)
+                  .HasDefaultValue(2);
         });
 
         modelBuilder.Entity<Sexo>(entity =>

@@ -7,7 +7,7 @@ public partial class PlanoExames
 {
     public int Id { get; set; }
 
-    public int ExameId { get; set; }
+    public int ClasseExamesId { get; set; }
 
     public int CitoInstituicao { get; set; }
 

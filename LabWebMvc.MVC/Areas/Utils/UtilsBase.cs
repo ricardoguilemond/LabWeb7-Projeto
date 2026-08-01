@@ -405,6 +405,76 @@ namespace LabWebMvc.MVC.Areas.Utils
             return "0/0";
         }
 
+        public static void RegistrarSolicitacaoReCaptcha(Db db, string nomeProjeto)
+        {
+            try
+            {
+                DateTime agora = DateTime.Now;
+                ReCaptchaMonitoramento? monitor = db.ReCaptchaMonitoramento
+                    .FirstOrDefault(x => x.NomeProjeto == nomeProjeto &&
+                                         x.MesReferencia == agora.Month &&
+                                         x.AnoReferencia == agora.Year);
+
+                if (monitor == null)
+                {
+                    monitor = new ReCaptchaMonitoramento
+                    {
+                        NomeProjeto = nomeProjeto,
+                        QuantidadeSolicitacoes = 1,
+                        MesReferencia = agora.Month,
+                        AnoReferencia = agora.Year
+                    };
+                    db.ReCaptchaMonitoramento.Add(monitor);
+                }
+                else
+                {
+                    monitor.QuantidadeSolicitacoes++;
+                    db.ReCaptchaMonitoramento.Update(monitor);
+                }
+
+                db.SaveChanges();
+            }
+            catch
+            {
+                //Log opcional - nao deve quebrar o login por falha de contagem
+            }
+        }
+
+        public static void AtualizarContagemReCaptcha(Db db, string nomeProjeto, long quantidade)
+        {
+            try
+            {
+                DateTime agora = DateTime.Now;
+                ReCaptchaMonitoramento? monitor = db.ReCaptchaMonitoramento
+                    .FirstOrDefault(x => x.NomeProjeto == nomeProjeto &&
+                                         x.MesReferencia == agora.Month &&
+                                         x.AnoReferencia == agora.Year);
+
+                if (monitor == null)
+                {
+                    monitor = new ReCaptchaMonitoramento
+                    {
+                        NomeProjeto = nomeProjeto,
+                        QuantidadeSolicitacoes = (int)Math.Min(quantidade, int.MaxValue),
+                        MesReferencia = agora.Month,
+                        AnoReferencia = agora.Year
+                    };
+                    db.ReCaptchaMonitoramento.Add(monitor);
+                }
+                else
+                {
+                    monitor.QuantidadeSolicitacoes = (int)Math.Min(quantidade, int.MaxValue);
+                    db.ReCaptchaMonitoramento.Update(monitor);
+                }
+
+                db.SaveChanges();
+            }
+            catch
+            {
+                //Log opcional - nao deve quebrar a interface por falha de contagem
+            }
+        }
+
         public static string? LoginTokenLogado()
         {
             IHttpContextAccessor HttpContextAccessor = new HttpContextAccessor();
@@ -851,6 +921,47 @@ namespace LabWebMvc.MVC.Areas.Utils
                      new { Index = 9,   Nome = "CNS/SUS" },
                      new { Index = 10,  Nome = "Outros" }
             ];
+        }
+
+        public static string OrgaoEmissorPorIndice(int indice)
+        {
+            return indice switch
+            {
+                0 => "CPF/Receita Federal/MF-SRF",
+                1 => "Detran",
+                2 => "IFP (Instituo Felix Pacheco)",
+                3 => "IPF (Instituto Pereira Faustino)",
+                4 => "Funcional/Nacional",
+                5 => "Exército",
+                6 => "Marinha",
+                7 => "Aeronáutica",
+                8 => "Passaporte",
+                9 => "CNS/SUS",
+                10 => "Outros",
+                _ => "Outros"
+            };
+        }
+
+        public static int IndicePorOrgaoEmissor(string? nome)
+        {
+            if (string.IsNullOrWhiteSpace(nome))
+                return 10;
+
+            return nome.Trim() switch
+            {
+                "CPF/Receita Federal/MF-SRF" => 0,
+                "Detran" => 1,
+                "IFP (Instituo Felix Pacheco)" => 2,
+                "IPF (Instituto Pereira Faustino)" => 3,
+                "Funcional/Nacional" => 4,
+                "Exército" => 5,
+                "Marinha" => 6,
+                "Aeronáutica" => 7,
+                "Passaporte" => 8,
+                "CNS/SUS" => 9,
+                "Outros" => 10,
+                _ => 10
+            };
         }
 
         /* Lista Gênero/Sexo */

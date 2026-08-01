@@ -7,6 +7,6 @@ namespace LabWebMvc.MVC.ViewModel.CargaDados
         public int TamanhoLote { get; set; } = 1000;
         public bool ModoSimulacao { get; set; }
         public string ConnectionId { get; set; } = string.Empty;
-        public bool IgnorarErros { get; set; }
+        public bool IgnorarErros { get; set; } = true;
     }
 }

@@ -44,10 +44,9 @@
 
     <!-- Meus JS ::: DataTables em 08-09-2022 -->
     <link rel="stylesheet" href="~/DataTables/DataTables-2.0.8/datatables.min.css" />
-    <script src="~/DataTables/DataTables-2.0.8/datatables.min.js" asp-append-version="false"></script>
+    <script src="~/DataTables/DataTables-2.0.8/datatables.js" asp-append-version="false"></script>
     
     <!-- Obrigatório Meu JS (sempre no final) para poder renderizar junto com a página -->
-    <script src="@Url.Content("~/js/site.js")" type="text/javascript"></script>
 
     <!-- STYLE REFERENTE AO LOADING DATATABLES DE TODAS AS PÁGINAS -->
     <style>
@@ -357,6 +356,23 @@
             // Não devem acionar salvamento de dados em nenhuma tela do sistema.
             // O listener anterior que acionava o botão .botao-verde foi removido.
             //..Kiro
+
+            // Atualiza o contador de ReCaptcha no rodapé periodicamente
+            (function atualizarReCaptcha() {
+                const el = document.getElementById("resumo-recaptcha");
+                if (!el) return;
+
+                fetch("/ReCaptchaTracker/Total")
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.sucesso && data.total) {
+                            el.textContent = "ReCaptcha: " + data.total;
+                        }
+                    })
+                    .catch(() => { /* silencioso */ });
+
+                setTimeout(atualizarReCaptcha, 30000); // a cada 30 segundos
+            })();
         </script>
         @RenderSection("Scripts", required: false)
     </div>

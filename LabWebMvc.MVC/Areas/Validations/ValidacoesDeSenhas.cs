@@ -447,13 +447,35 @@ namespace LabWebMvc.MVC.Areas.Validations
             _connectionService.SetConnectionString(admStringConexao);
 
             // 2. Atualiza o _db com a nova conexão dinâmica para a Base do Cliente
+            _eventLog.LogEventViewer($"[DEV-LOGIN] Criando DbContext com string de conexão do cliente", "wInfo");
             var optionsBuilder = new DbContextOptionsBuilder<Db>().UseNpgsql(_connectionService.GetConnectionString());
             _db = new Db(optionsBuilder.Options, _connectionService, _eventLog);
+            _eventLog.LogEventViewer($"[DEV-LOGIN] DbContext criado com sucesso", "wInfo");
 
             //Segue fluxo normal, recebendo a senha normalmente do usuário na sua própria base, ou seja, na base do Cliente.
+            _eventLog.LogEventViewer($"[DEV-LOGIN] Iniciando consulta de Senhas para {vm.LoginUsuario}", "wInfo");
             //O usuário faz login com a senha normal, então precisa comparar o hash BCrypt com a senha digitada.
             //Se a senha ainda estiver em formato legado (AES), migra automaticamente para BCrypt.
-            Senhas? login = await _db.Senhas.Where(l => l.LoginUsuario == vm.LoginUsuario).Include(l => l.UsuariosWeb).SingleOrDefaultAsync();
+            Senhas? login = null;
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                login = await _db.Senhas.Where(l => l.LoginUsuario == vm.LoginUsuario).Include(l => l.UsuariosWeb).SingleOrDefaultAsync(cts.Token);
+                _eventLog.LogEventViewer($"[DEV-LOGIN] Consulta de Senhas concluída", "wInfo");
+            }
+            catch (OperationCanceledException)
+            {
+                _eventLog.LogEventViewer("[DEV-LOGIN] TIMEOUT de 30s ao consultar Senhas. Abortando login.", "wError");
+                senhasLogin.SituacaoLogin = (int)TipoSituacaoLogin.ComRestricao;
+                return senhasLogin;
+            }
+            catch (Exception ex)
+            {
+                _eventLog.LogEventViewer($"[DEV-LOGIN] ERRO ao consultar Senhas: {ex.Message}", "wError");
+                senhasLogin.SituacaoLogin = (int)TipoSituacaoLogin.ComRestricao;
+                return senhasLogin;
+            }
+
             if (login != null && vm.SenhaUsuario != null)
             {
                 bool senhaValida = CriptoDecripto.VerificaSenhaComMigracao(vm.SenhaUsuario, login.SenhaUsuario, out string? novoHash);

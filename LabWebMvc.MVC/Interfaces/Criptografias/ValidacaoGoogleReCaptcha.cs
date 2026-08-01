@@ -34,9 +34,11 @@ namespace LabWebMvc.MVC.Interfaces.Criptografias
     public class GoogleReCaptchaSettings
     {
         public bool ExecutaAvaliacaoRecaptcha { get; set; } = false; //se for false, não executa a avaliação do ReCaptcha Enterprise do Google / true = tem custos!.
+        public bool SincronizarComGoogle { get; set; } = false; //se for false, usa apenas contagem local (recomendado para desenvolvimento). true = consulta métricas reais no Google Cloud Monitoring.
         public string SiteKey { get; set; } = null!;
         public string SecretKey { get; set; } = null!;
         public string ProjectID { get; set; } = null!; //Project ID do Google Cloud, onde está o ReCaptcha Enterprise.
+        public string? CredentialsPath { get; set; } //Caminho do arquivo JSON da Service Account (opcional, mas recomendado para produção).
     }
 
     public class ValidacaoGoogleReCaptcha : IValidacaoGoogleReCaptcha
@@ -67,7 +69,8 @@ namespace LabWebMvc.MVC.Interfaces.Criptografias
             {
                 string url = string.Format(_captchaSettings.SiteKey + "{0}", _captchaSettings.SecretKey);
 
-                HttpClient client = new();
+                using HttpClient client = new();
+                client.Timeout = TimeSpan.FromSeconds(30);
                 HttpResponseMessage recaptchaResponse = client.GetAsync(url, (System.Net.Http.HttpCompletionOption)int.Parse("1")).Result;
                 string _JsonString = recaptchaResponse.Content.ReadAsStringAsync().Result;
 
@@ -98,6 +101,11 @@ namespace LabWebMvc.MVC.Interfaces.Criptografias
                 {
                     isValid = recaptchaResponse.IsSuccessStatusCode;
                 }
+            }
+            catch (OperationCanceledException ex) when (ex.CancellationToken.IsCancellationRequested || ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase))
+            {
+                isValid = true; //timeout atingido: não bloqueia o login
+                _eventLog.LogEventViewer("IsCaptchaValid - TIMEOUT de 30s atingido na validação do ReCaptcha. Prosseguindo com o login.", "wWarning");
             }
             catch (Exception ex)
             {

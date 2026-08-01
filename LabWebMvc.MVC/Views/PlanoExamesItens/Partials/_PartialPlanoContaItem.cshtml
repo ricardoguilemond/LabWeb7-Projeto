@@ -54,27 +54,56 @@
         strFundo = "<tr class='getColorBackPrincipal'>";
     }
     @if (plano.ContaExame.Substring(4, 7) == "0000000")  //conta folha
+    {
         TipoConta = "Folha";
+        strFundo = "<tr class='getColorBackFolha'>";
+    }
 
     string grupoConta = plano.ContaExame.Substring(0, 7);
+    string prefixoFolha = plano.ContaExame.Substring(0, 4);
     string tipoLinha = TipoConta;
-    bool itensTemValor = false;
-    bool principalTemValor = false;
-    if (TipoConta == "Principal")
+
+    //Feito pelo Kiro em 01/08/2026
+    // Regra de desabilitação hierárquica de campos de valor:
+    // - Se valor na Folha → desabilita Principais e Itens
+    // - Se valor no Principal → desabilita Folha e Itens daquele grupo
+    // - Se valor em Item → desabilita Folha e Principal daquele grupo
+    bool folhaTemValor = Model.ListaDados.Any(d =>
+        ((string)d.ContaExame).StartsWith(prefixoFolha) &&
+        ((string)d.ContaExame).Substring(4, 7) == "0000000" &&
+        (d.ValorCusto != null && d.ValorCusto > 0 || d.ValorItem != null && d.ValorItem > 0));
+
+    bool campoDesabilitado = false;
+
+    if (TipoConta == "Folha")
     {
-        itensTemValor = Model.ListaDados.Any(d =>
+        // Folha desabilitada se algum Principal ou Item da mesma folha tem valor
+        bool algumFilhoTemValor = Model.ListaDados.Any(d =>
+            ((string)d.ContaExame).StartsWith(prefixoFolha) &&
+            ((string)d.ContaExame).Substring(4, 7) != "0000000" &&
+            (d.ValorCusto != null && d.ValorCusto > 0 || d.ValorItem != null && d.ValorItem > 0));
+        campoDesabilitado = algumFilhoTemValor;
+    }
+    else if (TipoConta == "Principal")
+    {
+        // Principal desabilitado se a Folha tem valor OU se algum Item do grupo tem valor
+        bool itensTemValor = Model.ListaDados.Any(d =>
             ((string)d.ContaExame).StartsWith(grupoConta) &&
             ((string)d.ContaExame).Substring(7, 4) != "0000" &&
             (d.ValorCusto != null && d.ValorCusto > 0 || d.ValorItem != null && d.ValorItem > 0));
+        campoDesabilitado = folhaTemValor || itensTemValor;
     }
     else if (TipoConta == "Item")
     {
-        principalTemValor = Model.ListaDados.Any(d =>
+        // Item desabilitado se a Folha tem valor OU se o Principal do grupo tem valor
+        bool principalTemValor = Model.ListaDados.Any(d =>
             ((string)d.ContaExame).StartsWith(grupoConta) &&
             ((string)d.ContaExame).Substring(7, 4) == "0000" &&
             (d.ValorCusto != null && d.ValorCusto > 0 || d.ValorItem != null && d.ValorItem > 0));
+        campoDesabilitado = folhaTemValor || principalTemValor;
     }
-    bool campoDesabilitado = (TipoConta == "Principal" && itensTemValor) || (TipoConta == "Item" && principalTemValor);
+    //..Kiro
+
     string disabledAttr = campoDesabilitado ? "disabled" : "";
 
     @Html.Raw(strFundo +
@@ -85,10 +114,10 @@
               "<td style='width: 10%;'>" + plano.Descricao + "</td>")
 
     @Html.Raw("<td style='width: 10%;'>")
-    <input type="text" name="ValorCusto" value="@plano.ValorCusto" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorCusto@(plano.Id)" style="width: 100px;" data-grupo="@grupoConta" data-tipo="@tipoLinha" @disabledAttr />
+    <input type="text" name="ValorCusto" value="@plano.ValorCusto" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorCusto@(plano.Id)" style="width: 100px;" data-grupo="@grupoConta" data-folha="@prefixoFolha" data-tipo="@tipoLinha" @disabledAttr />
     @Html.Raw("</td>")
     @Html.Raw("<td style='width: 10%;'>")
-    <input type="text" name="ValorItem" value="@plano.ValorItem" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorItem@(plano.Id)" style="width: 100px;" data-grupo="@grupoConta" data-tipo="@tipoLinha" @disabledAttr />
+    <input type="text" name="ValorItem" value="@plano.ValorItem" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorItem@(plano.Id)" style="width: 100px;" data-grupo="@grupoConta" data-folha="@prefixoFolha" data-tipo="@tipoLinha" @disabledAttr />
     @Html.Raw("</td>")
     @Html.Raw("<td id='" + plano.Id + "' class='linhaMargemSobreCusto' style='width: 12%;'>" + @TempData["linhaMargemSobreCusto"] + "&nbsp;</td>")
     @Html.Raw("<td id='margemBruta" + plano.Id + "' class='linhaMargemBruta' style='width: 10%;'>" + @TempData["linhaMargemBruta"] + "&nbsp;</td>")
@@ -100,6 +129,9 @@
               "</td>" +
               "</tr>")
 }
+@Html.Raw("</tbody>")
+@Html.Raw("<tbody id='summary'>")
+@Html.Raw(TempData["Summary"])
 @Html.Raw("</tbody>")
 @Html.Raw("<tfoot>" +
           "<tr>" +
@@ -115,6 +147,3 @@
           "<th id='op'>Opções</th>" +
           "</tr>" +
           "</tfoot>")
-@Html.Raw("<tbody id='summary'>")
-@Html.Raw(TempData["Summary"])
-@Html.Raw("</tbody>")

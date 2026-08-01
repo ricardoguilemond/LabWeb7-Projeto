@@ -111,7 +111,12 @@ namespace LabWebMvc.MVC.Interfaces.Criptografias
                 //Recupera os dados do Google ReCaptcha com sua pontuação e possíveis erros de validação.
                 try
                 {
-                    response = await clientGoogle.CreateAssessmentAsync(createAssessmentRequest);
+                    using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
+                    response = await clientGoogle.CreateAssessmentAsync(createAssessmentRequest, cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    mensagens.Add("TIMEOUT: A avaliação do ReCaptcha Enterprise demorou mais de 30 segundos. Prosseguindo com o login.");
                 }
                 catch (Grpc.Core.RpcException ex)
                 {

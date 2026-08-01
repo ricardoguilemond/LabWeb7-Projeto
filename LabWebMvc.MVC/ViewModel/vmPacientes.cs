@@ -33,7 +33,6 @@ namespace LabWebMvc.MVC.ViewModel
         [StringLength(20, ErrorMessage = "<div class='has-error'>Pode ter no máximo {1} caracteres</div>", MinimumLength = 0)]
         public string? Identidade { get; set; }
 
-        [Required]
         public int Emissor { get; set; }
 
         [StringLength(15, ErrorMessage = "<div class='has-error'>Pode ter no máximo {1} caracteres</div>", MinimumLength = 0)]

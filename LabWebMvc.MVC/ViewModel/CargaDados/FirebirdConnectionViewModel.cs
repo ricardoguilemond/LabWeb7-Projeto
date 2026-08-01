@@ -26,10 +26,14 @@ namespace LabWebMvc.MVC.ViewModel.CargaDados
 
         [Display(Name = "Tamanho do lote")]
         [Range(100, 10000, ErrorMessage = "O lote deve estar entre 100 e 10.000 registros")]
-        public int TamanhoLote { get; set; } = 1000;
+        public int TamanhoLote { get; set; } = 2500;
 
-        [Display(Name = "Charset")]
+        //Feito pelo Kiro em 26/07/2026 — Importação via ODBC resolve bug encoding
+        // A importação real usa System.Data.Odbc com Charset=WIN1252 (montada internamente).
+        // Este campo mantém NONE para a connection string ADO.NET (teste de conexão e schema).
+        [ScaffoldColumn(false)]
         public string Charset { get; set; } = "NONE";
+        //..Kiro
 
         [Display(Name = "Usar conexão ODBC (igual ao Delphi)")]
         public bool UsarODBC { get; set; }

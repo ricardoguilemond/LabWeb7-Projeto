@@ -21,8 +21,12 @@
 
                     <div id="area-progresso" style="display:none;">
                         <div class="mb-2">
-                            <strong>Tabela atual:</strong> <span id="tabela-atual">-</span>
-                            <span class="ms-3"><strong>Status:</strong> <span id="status-texto">Inicializando...</span></span>
+                            <strong>Fase:</strong> <span id="fase-atual" class="badge bg-secondary">-</span>
+                            <span class="ms-3"><strong>Tabela atual:</strong> <span id="tabela-atual">-</span></span>
+                            <span class="ms-3"><strong>Status:</strong>
+                                <span class="spinner-border spinner-border-sm text-primary me-1" id="status-spinner" role="status" aria-hidden="true" style="display:none;"></span>
+                                <span id="status-texto">Aguardando início...</span>
+                            </span>
                         </div>
 
                         <div class="progress" style="height: 30px;">

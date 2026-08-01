@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Security.Claims;
 using static BLL.UtilBLL;
 using static ExtensionsMethods.Genericos.Enumeradores;
@@ -32,6 +33,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         private readonly IValidacoesDeSenhas _validacoesDeSenhas;
         private readonly IConnectionService _connectionService;
         private readonly ReCaptchaService _reCaptchaService;
+        private readonly IReCaptchaMetricasService _metricasService;
 
         public HomeController(IOptions<GoogleReCaptchaSettings> captchaSettings,
                               IValidacaoGoogleReCaptcha captchaValidator,
@@ -44,6 +46,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                               Imagem imagem,
                               IConnectionService connectionService,
                               ReCaptchaService reCaptchaService,
+                              IReCaptchaMetricasService metricasService,
                               ExclusaoService exclusaoService) 
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
@@ -53,6 +56,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             _validacoesDeSenhas = validacoesDeSenhas;
             _connectionService = connectionService;
             _reCaptchaService = reCaptchaService;
+            _metricasService = metricasService;
         }
 
         [HttpGet]
@@ -136,12 +140,24 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("Login")]
         public async Task<IActionResult> Login(vmLogin? vm, bool? modo = true)   /* o parâmetro "modo" aqui nem é usado, é apenas para tornar o método sobrescrito !! */
         {
+            Stopwatch sw = Stopwatch.StartNew();
+            _eventLogHelper.LogEventViewer($"[Home] Início do processo de login para {vm?.LoginUsuario} em {DateTime.Now:HH:mm:ss.fff}", "wInfo");
+
             if (vm == null)
             {
                 _eventLogHelper.LogEventViewer("[Home] Tentativa de Login sem parâmetros", "wError");
                 return RedirectToAction("Error", "Mensagem", new { mensagem = "Tentativa de Login sem parâmetros e reCaptcha não foi acionado!" });
             }
+
+            if (!_captchaSettings.ExecutaAvaliacaoRecaptcha)
+            {
+                _eventLogHelper.LogEventViewer("[Home] Avaliação do ReCaptcha desabilitada. Prosseguindo com o login diretamente.", "wInfo");
+                TempData["vmLogin"] = JsonConvert.SerializeObject(vm);
+                return RedirectToAction("ExecutaRotinaFinal", "Home");
+            }
+
             bool validaReCaptcha = _captchaValidator.IsCaptchaValid(vm!);  //retorna se o Google ReCaptcha está sendo validado ou não pela página.
+            _eventLogHelper.LogEventViewer($"[Home] Validação do ReCaptcha concluída em {sw.ElapsedMilliseconds}ms", "wInfo");
 
             if (!validaReCaptcha)
             {
@@ -150,7 +166,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
 
             //Avaliação do Google ReCaptcha antes de continuar o Login
-            return await AvaliarReCaptchaLimiteAntesDoLogin(vm);
+            var resultado = await AvaliarReCaptchaLimiteAntesDoLogin(vm);
+            _eventLogHelper.LogEventViewer($"[Home] Avaliação do limite do ReCaptcha concluída em {sw.ElapsedMilliseconds}ms", "wInfo");
+            return resultado;
         }
 
         [NonAction]
@@ -190,6 +208,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 return RedirectToAction("Error", "Mensagem", new { mensagem = "Sessão de login expirada ou inválida." });
 
             vmLogin? vm = JsonConvert.DeserializeObject<vmLogin>(tempLogin.ToString()!);
+
+            if (!_captchaSettings.ExecutaAvaliacaoRecaptcha)
+            {
+                _eventLogHelper.LogEventViewer("[Home] Avaliação do ReCaptcha desabilitada em ExecutaRotinaFinal. Prosseguindo com a validação do usuário.", "wInfo");
+                return await ContinuarLogin(vm);
+            }
 
             ICollection<string> validacaoReCaptcha = await _captchaService.CreateAssessment(vm?.GoogleCaptchaToken ?? "");
 
@@ -260,12 +284,16 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [NonAction]
         private async Task<IActionResult> ContinuarLogin(vmLogin? vm)
         {
+            Stopwatch sw = Stopwatch.StartNew();
+            _eventLogHelper.LogEventViewer($"[Home] Início do ContinuarLogin para {vm?.LoginUsuario} em {DateTime.Now:HH:mm:ss.fff}", "wInfo");
+
             /*
              * Entra aqui para localizar o usuário...
              */
             if (vm != null)
             {
                 vmSenhas? validaLogin = await _validacoesDeSenhas.RetornaValidacaoLogin(vm)!;
+                _eventLogHelper.LogEventViewer($"[Home] RetornaValidacaoLogin concluído em {sw.ElapsedMilliseconds}ms", "wInfo");
 
                 if (vm != null && validaLogin != null && validaLogin.SituacaoLogin == (int)TipoSituacaoLogin.SemRestricao)
                 {
@@ -281,6 +309,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     // Recria o _db apontando para o banco correto do usuário autenticado
                     var optionsBuilder = new DbContextOptionsBuilder<Db>().UseNpgsql(_connectionService.GetConnectionString());
                     _db = new Db(optionsBuilder.Options, _connectionService, _eventLogHelper);
+                    _eventLogHelper.LogEventViewer($"[Home] DbContext recriado em {sw.ElapsedMilliseconds}ms", "wInfo");
+
+                    // Registra a solicitação ReCaptcha no monitoramento mensal do banco correto da empresa
+                    if (_captchaSettings.ExecutaAvaliacaoRecaptcha)
+                    {
+                        LabWebMvc.MVC.Areas.Utils.Utils.RegistrarSolicitacaoReCaptcha(_db, _captchaSettings.ProjectID ?? "labwebmvc");
+                        _eventLogHelper.LogEventViewer($"[Home] Registro de solicitação ReCaptcha concluído em {sw.ElapsedMilliseconds}ms", "wInfo");
+                    }
+                    else
+                    {
+                        _eventLogHelper.LogEventViewer("[Home] ReCaptcha desabilitado. Pulando registro de solicitação.", "wInfo");
+                    }
 
                     //Salvando as sessions para uso GLOBAL no sistema
                     //Grava as variáveis do Usuário de Sessão/Session incluindo o token gerado pelo Google reCaptcha
@@ -297,6 +337,24 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     //Continua salvando as sessions para uso GLOBAL no sistema
                     string UF = _db.Empresa.FirstOrDefault()?.UF ?? "RJ";
                     HttpContext.Session.SetString("SessionUF", UF);
+                    _eventLogHelper.LogEventViewer($"[Home] Dados da empresa carregados em {sw.ElapsedMilliseconds}ms", "wInfo");
+
+                    // Sincroniza com o Google o total de avaliações do mês corrente após o banco correto estar ativo
+                    if (_captchaSettings.SincronizarComGoogle)
+                    {
+                        try
+                        {
+                            await SincronizarReCaptchaComGoogleAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _eventLogHelper.LogEventViewer($"[Home] Erro ao sincronizar ReCaptcha após login: {ex.Message}", "wError");
+                        }
+                    }
+                    else
+                    {
+                        _eventLogHelper.LogEventViewer("[Home] Sincronização com Google desabilitada. Usando contagem local de ReCaptcha.", "wInfo");
+                    }
 
                     //Para controlar o Menu esconder e mostrar somente quando o Login for realizado com sucesso!
                     //USA as bibliotecas:
@@ -316,6 +374,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                     // Faz login com cookie
                     await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+                    _eventLogHelper.LogEventViewer($"[Home] Cookie de autenticação criado em {sw.ElapsedMilliseconds}ms", "wInfo");
                     //..
 
                     //Feito pelo Kiro em 11/07/2025
@@ -327,11 +386,16 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         var matchDb = System.Text.RegularExpressions.Regex.Match(connStr ?? "", @"Database=([^;]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
                         string nomeBanco = matchDb.Success ? matchDb.Groups[1].Value : "";
                         if (!string.IsNullOrWhiteSpace(nomeBanco))
+                        {
+                            _eventLogHelper.LogEventViewer($"[Home] Início do carregamento do cache de exames em {sw.ElapsedMilliseconds}ms", "wInfo");
                             await exameRefCache.CarregarCacheAsync(nomeBanco);
+                            _eventLogHelper.LogEventViewer($"[Home] Cache de exames carregado em {sw.ElapsedMilliseconds}ms", "wInfo");
+                        }
                     }
                     //..Kiro
 
                     //Retorna OK, após Login validado!
+                    _eventLogHelper.LogEventViewer($"[Home] Redirecionando para Index em {sw.ElapsedMilliseconds}ms", "wInfo");
                     return RedirectToAction("Index", "Home", new { mensagem = vm?.LoginUsuario != null ? vm.LoginUsuario.MensagemStartUp(false) : "" });
                 }
                 else if (validaLogin != null && (validaLogin.SituacaoLogin == (int)TipoSituacaoLogin.ComRestricao))
@@ -422,6 +486,23 @@ namespace LabWebMvc.MVC.Areas.Controllers
             HttpContext.Session.SetString("SessionNomeEmpresa", "");
             //Remove o cookie associado à sessão
             Response.Cookies.Delete(".LabWeb7.Session");
+        }
+
+        private async Task SincronizarReCaptchaComGoogleAsync()
+        {
+            try
+            {
+                string projectId = _captchaSettings.ProjectID ?? "labwebmvc";
+                long? totalGoogle = await _metricasService.ObterTotalAvaliacoesMesAtualAsync(projectId);
+                if (totalGoogle.HasValue)
+                {
+                    LabWebMvc.MVC.Areas.Utils.Utils.AtualizarContagemReCaptcha(_db, projectId, totalGoogle.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer($"[Home] Erro ao sincronizar ReCaptcha com Google: {ex.Message}", "wError");
+            }
         }
     } //Fim
 }

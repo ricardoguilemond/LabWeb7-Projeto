@@ -138,7 +138,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             // Preenche o ViewModel base
             vm = new vmPlanoExames
             {
-                ExameId = numeroItemFolha,
+                ClasseExamesId = numeroItemFolha,
                 TabelaExamesId = numeroTabela,
                 FolhaIdList = folhas.Select(f => new SelectListItem { Text = f.Id.ToString(), Value = f.Id.ToString() }).ToList(),
                 FolhaNomeList = folhas.Select(f => new SelectListItem { Text = f.RefExame, Value = f.Id.ToString() }).ToList(),
@@ -146,18 +146,20 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 TabelaNomeList = tabelas.Select(t => new SelectListItem { Text = t.NomeTabela, Value = t.Id.ToString() }).ToList()
             };
 
-            // Carrega os dados da tabela (sem a folha, que e apenas cabecalho)
+            //Feito pelo Kiro em 01/08/2026
+            // Carrega os dados da tabela INCLUINDO a Folha (0000000) para exibição hierárquica completa.
+            // A Folha pode conter o valor do exame quando cobrado "inteiro".
             var dados = await _db.PlanoExames
-                .Where(s => !s.ContaExame.EndsWith("0000000") && s.ExameId == numeroItemFolha && s.TabelaExamesId == numeroTabela)
-                .OrderByDescending(o => o.Id)
+                .Where(s => s.ClasseExamesId == numeroItemFolha && s.TabelaExamesId == numeroTabela)
+                .OrderBy(o => o.ContaExame)
                 .Take(registros)
                 .AsNoTracking()
                 .ToListAsync();
 
             int totalTabela = await _db.PlanoExames
-                .Where(s => !s.ContaExame.EndsWith("0000000"))
                 .AsNoTracking()
                 .CountAsync();
+            //..Kiro
 
             int totalRegistros = dados.Count;
 
@@ -167,7 +169,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             // Carrega o registro da Folha para o calculo do sumario (prioridade hierarquica)
             var folhaRegistro = await _db.PlanoExames
-                .Where(s => s.ContaExame.EndsWith("0000000") && s.ExameId == numeroItemFolha && s.TabelaExamesId == numeroTabela)
+                .Where(s => s.ContaExame.EndsWith("0000000") && s.ClasseExamesId == numeroItemFolha && s.TabelaExamesId == numeroTabela)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
 
@@ -178,7 +180,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             // Calcula margens sobre o custo e margem bruta (com prioridade hierarquica Folha > Principal > Itens)
             CalculaMargens(dadosParaCalculo);
 
-            //Feito pelo Kiro em 20/04/2026
+            //Feito pelo Kiro em 27/07/2026
             // Prepara resposta
             var vmResposta = new vmListaValidacao<dynamic>
             {
@@ -188,7 +190,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 TotalTabela = totalTabela,
                 ListaDados = dados.Cast<dynamic>().ToList(),
                 PlanoExames = vm,
-                PartialView = partial || (totalRegistros == 0 && string.IsNullOrEmpty(vm.Descricao))
+                PartialView = partial
                     ? "Partials/_PartialPlanoContaItem"
                     : null
             };
@@ -317,7 +319,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (dados != null)
             {
                 vm.Id = dados.Id;
-                vm.ExameId = dados.ExameId;
+                vm.ClasseExamesId = dados.ClasseExamesId;
                 vm.ContaExame = dados.ContaExame.FormatarContaExameSem11();
                 vm.TabelaExamesId = dados.TabelaExamesId;
                 vm.RefExame = dados.RefExame;
@@ -348,7 +350,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             try
             {
                 vm.Id = planoExames.Id;
-                vm.ExameId = planoExames.ExameId;
+                vm.ClasseExamesId = planoExames.ClasseExamesId;
                 vm.ContaExame = planoExames.ContaExame;
                 vm.TabelaExamesId = planoExames.TabelaExamesId;
                 vm.RefExame = planoExames.RefExame;
@@ -518,11 +520,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             await _db.SaveChangesAsync();
                             await transaction.CommitAsync();
 
+                            //Feito pelo Kiro em 01/08/2026
                             //Para conseguir atualizar o sumário no Grid após salvar o item
-                            ICollection<PlanoExames> dados = await _db.PlanoExames.Where(s => !s.ContaExame.EndsWith("0000000") && s.ExameId == idFolha && s.TabelaExamesId == idTabela).AsNoTracking().OrderByDescending(o => o.Id).ToListAsync();
+                            // Inclui a Folha na listagem para exibição hierárquica completa
+                            ICollection<PlanoExames> dados = await _db.PlanoExames.Where(s => s.ClasseExamesId == idFolha && s.TabelaExamesId == idTabela).AsNoTracking().OrderBy(o => o.ContaExame).ToListAsync();
+                            //..Kiro
 
                             // Carrega tambem o registro da Folha para o calculo (prioridade hierarquica)
-                            var folhaRegistro = await _db.PlanoExames.Where(s => s.ContaExame.EndsWith("0000000") && s.ExameId == idFolha && s.TabelaExamesId == idTabela).AsNoTracking().FirstOrDefaultAsync();
+                            var folhaRegistro = await _db.PlanoExames.Where(s => s.ContaExame.EndsWith("0000000") && s.ClasseExamesId == idFolha && s.TabelaExamesId == idTabela).AsNoTracking().FirstOrDefaultAsync();
                             var dadosParaCalculo = new List<PlanoExames>(dados);
                             if (folhaRegistro != null)
                                 dadosParaCalculo.Add(folhaRegistro);

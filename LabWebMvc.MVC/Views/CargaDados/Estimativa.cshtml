@@ -16,23 +16,15 @@
                     }
 
                     <div class="row mb-4">
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="card text-center bg-light">
                                 <div class="card-body">
                                     <h5>@Model.TotalRegistros.ToString("N0")</h5>
-                                    <small>Total de registros no Firebird</small>
+                                    <small>Total de registros a importar</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card text-center bg-light">
-                                <div class="card-body">
-                                    <h5>@Model.TotalNovos.ToString("N0")</h5>
-                                    <small>Registros novos a importar</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="card text-center bg-light">
                                 <div class="card-body">
                                     <h5>@Model.TempoTotalEstimado.ToString(@"hh\:mm\:ss")</h5>
@@ -40,7 +32,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="card text-center bg-light">
                                 <div class="card-body">
                                     <h5>@Model.TamanhoLote.ToString("N0")</h5>
@@ -71,8 +63,6 @@
                                     <th>Tabela Firebird</th>
                                     <th>Tabela PostgreSQL</th>
                                     <th>Total</th>
-                                    <th>Existentes</th>
-                                    <th>Novos</th>
                                     <th>Tempo Est.</th>
                                     <th>Avisos</th>
                                 </tr>
@@ -85,8 +75,6 @@
                                         <td>@tabela.NomeFirebird</td>
                                         <td>@tabela.NomePostgreSQL</td>
                                         <td>@tabela.TotalRegistros.ToString("N0")</td>
-                                        <td>@tabela.RegistrosExistentes.ToString("N0")</td>
-                                        <td>@tabela.RegistrosNovos.ToString("N0")</td>
                                         <td>@tabela.TempoEstimado.ToString(@"hh\:mm\:ss")</td>
                                         <td>
                                             @if (tabela.Avisos.Any())

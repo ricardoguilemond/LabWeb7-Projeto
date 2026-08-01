@@ -1081,10 +1081,11 @@ namespace BLL
         public static string? FormataTelefone(this string? tel)
         {
             if (string.IsNullOrEmpty(tel)) return "";
-            tel = tel.TrimStart('0');  //retira zeros à esquerda
-            tel = tel.TrimStart('+');  //retira + à esquerda
 
-            long number = Convert.ToInt64(tel);
+            tel = new string(tel.Where(char.IsDigit).ToArray());
+            if (string.IsNullOrEmpty(tel)) return "";
+
+            tel = tel.TrimStart('0');  //retira zeros à esquerda
             int tam = tel.Length;
             string fmt = "";
             if (tam == 8) fmt = "0000-0000";
@@ -1096,6 +1097,7 @@ namespace BLL
             if (tam == 15) fmt = "+00 (0000) 0-0000-0000";   //internacional
             if (tam > 15) return tel;
 
+            long number = Convert.ToInt64(tel);
             return number.ToString(fmt);
         }
 
@@ -1103,10 +1105,12 @@ namespace BLL
 
         public static string FormataTelefoneNotNull(this string tel)
         {
-            tel = tel.TrimStart('0');  //retira zeros à esquerda
-            tel = tel.TrimStart('+');  //retira + à esquerda
+            if (string.IsNullOrEmpty(tel)) return "";
 
-            long number = Convert.ToInt64(tel);
+            tel = new string(tel.Where(char.IsDigit).ToArray());
+            if (string.IsNullOrEmpty(tel)) return "";
+
+            tel = tel.TrimStart('0');  //retira zeros à esquerda
             int tam = tel.Length;
             string fmt = "";
             if (tam == 8) fmt = "0000-0000";
@@ -1118,6 +1122,7 @@ namespace BLL
             if (tam == 15) fmt = "+00 (0000) 0-0000-0000";   //internacional
             if (tam > 15) return tel;
 
+            long number = Convert.ToInt64(tel);
             return number.ToString(fmt);
         }
 

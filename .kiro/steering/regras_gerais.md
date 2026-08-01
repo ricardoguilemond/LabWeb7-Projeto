@@ -48,7 +48,12 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
 
 ## Projeto
 
-- Framework: .NET 8 (C#), Frontend: JavaScript + jQuery + Razor, Banco: PostgreSQL
+- Framework: ASP.NET Core MVC, **.NET 8** (C# 12)
+- Entity Framework Core **8.0.19** — não sugerir APIs do EF Core 9+
+- Frontend: JavaScript + jQuery + Razor
+- Banco padrão: PostgreSQL (Npgsql)
+- Compatibilidade SQL: manter compatibilidade com PostgreSQL (padrão),
+  SQL Server (reserva) e Firebird (apenas rotinas de importação)
 - Não utiliza Migrations
 - Multi-cliente, banco único por empresa
 - PostgreSQL roda local (desenvolvimento), não está em produção
@@ -57,6 +62,28 @@ description: Regras gerais de conduta e restrições do Kiro para o projeto LabW
   sobre plugins e bibliotecas adicionais.
 - Regras detalhadas de CSS, JavaScript e DataTables estão no
   steering `regras-frontend-css-js.md`.
+
+### Padrões de Código Obrigatórios
+
+- Sempre respeitar a arquitetura existente da solução
+- Priorizar código assíncrono (`async`/`await`)
+- Não usar `.Result` nem `.Wait()` (evitar bloqueios)
+- Não usar `dynamic` — onde existir, sugerir substituição tipada
+- Não usar `reflection` quando houver alternativa tipada
+- Preferir LINQ legível sobre código complexo, salvo quando
+  não for realmente possível simplificar
+- Não quebrar a arquitetura em camadas
+- Reaproveitar serviços existentes antes de criar novos
+- Priorizar Injeção de Dependência
+- Seguir os padrões já utilizados na solução
+- Não sugerir bibliotecas externas sem justificar claramente
+  o benefício
+- Sempre explicar o motivo de alterações significativas
+- Antes de sugerir refatoração, verificar impacto nos demais
+  projetos da solução
+- Antes de sugerir alteração estrutural, verificar compatibilidade
+  com o restante do projeto — preferir mudanças incrementais em
+  vez de reescritas completas
 
 ## Banco de Dados
 

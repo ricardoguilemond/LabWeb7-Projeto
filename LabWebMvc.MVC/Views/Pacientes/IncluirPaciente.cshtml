@@ -58,7 +58,7 @@
                     </div>
                     <div class="field-group w-sm">
                         <label>*Data Nascimento</label>
-                        @Html.TextBoxFor(p => p.Nascimento, new { @class = "form-control", @type = "date", @placeholder = "Data de nascimento", @required = "required" })
+                        @Html.TextBoxFor(p => p.Nascimento, "{0:yyyy-MM-dd}", new { @class = "form-control", @type = "date", @placeholder = "Data de nascimento", @required = "required" })
                     </div>
                 </div>
                 <div class="field-row">

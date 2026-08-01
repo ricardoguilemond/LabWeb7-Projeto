@@ -234,9 +234,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     // Dados para serem salvos na Requisição
                     // Vincula IDs e navegações
                     requisicao.PacienteId = vm.VmPacientes.Id;
-                    requisicao.ClasseExamesId = itemCupom.ExameId;       // Título da Folha
+                    requisicao.ClasseExamesId = itemCupom.ClasseExamesId;       // Título da Folha
                     requisicao.ClasseExamesNome = (itemCupom.RefExame ?? "").ToUpperInvariant();    // Nome da Folha
-                    requisicao.ExameId = itemCupom.ExameId;
                     requisicao.OrdemItem = ordem;
                     requisicao.RefExame = (itemCupom.RefExame ?? "").ToUpperInvariant();
                     requisicao.RefItem = itemCupom.RefItem;
@@ -1256,7 +1255,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 valorItem   = r.ValorItem,
                 refExame    = r.RefExame,
                 refItem     = r.RefItem,
-                exameId     = r.ExameId,
+                classeExamesId = r.ClasseExamesId,
                 etiquetas   = r.Etiquetas
             }).ToList();
 

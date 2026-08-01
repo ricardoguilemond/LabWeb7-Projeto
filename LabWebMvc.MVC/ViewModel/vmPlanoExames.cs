@@ -6,7 +6,7 @@ namespace LabWebMvc.MVC.ViewModel
     public class vmPlanoExames
     {
         public int Id { get; set; }
-        public int ExameId { get; set; }   //Código na Folha de Exames
+        public int ClasseExamesId { get; set; }   //Código na Folha de Exames
         public int CitoInstituicao { get; set; }
 
         [MaxLength(60)]

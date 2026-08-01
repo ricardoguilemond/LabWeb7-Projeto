@@ -67,7 +67,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             string? descricaoFolha = _db.ClasseExames.Where(s => s.Id == numeroItemFolha).Single().RefExame ?? string.Empty;
 
             ICollection<PlanoExames> dados = await _db.PlanoExames
-                .Where(s => !s.ContaExame.EndsWith("0000000") && s.TabelaExamesId == (int)IdPadrao.SUS && s.ExameId == numeroItemFolha)
+                .Where(s => !s.ContaExame.EndsWith("0000000") && s.TabelaExamesId == (int)IdPadrao.SUS && s.ClasseExamesId == numeroItemFolha)
                 .OrderByDescending(o => o.Id)
                 .Take(registros)
                 .ToListAsync();
@@ -77,7 +77,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //preenche com a parte obrigatória e ÚNICA/ESPECÍFICA DA INCLUSÃO da vm, com os valores de filtro para aparecer na IncluirPlanoExames.cshtml
             vm = new vmPlanoExames()
             {
-                ExameId = numeroItemFolha,   //número da folha selecionada
+                ClasseExamesId = numeroItemFolha,   //número da folha selecionada
                 RefExame = descricaoFolha,    //descrição da folha selecionada
                 ContaExame = totalRegistros == 0 ? Utils.Utils.RetornaCodigoFolhaExame(_db, numeroItemFolha) : dados.First().ContaExame,  //conta exame da folha selecionada
                 FolhaIdList = _db.ClasseExames.Select(l => new SelectListItem { Text = l.Id.ToString(), Value = l.Id.ToString() }).ToList(),
@@ -89,12 +89,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             TempData["NumeroFolha"] = numeroItemFolha.ToString();
             TempData.Keep();
 
-            //Feito pelo Kiro em 20/04/2026
+            //Feito pelo Kiro em 27/07/2026
             //Finalização da View
-            if (partial || (totalRegistros == 0 && string.IsNullOrEmpty(vm.Descricao)))
+            if (partial)
             {
                 var vmResposta = new vmListaValidacao<dynamic>
-                {   //quando ainda não houver dados da Folha no Plano de Exames ou for uma partialView
+                {   //quando for uma partialView (chamada AJAX para trocar folha)
                     RetornoDeRota = "Index",
                     Titulo = "Tabela de Plano de Exames",
                     TotalRegistros = totalRegistros,
@@ -147,7 +147,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             // Carrega as contas principais da folha para os dropdowns
             var contasPrincipais = _db.PlanoExames
-                .Where(p => p.ExameId == numeroFolha
+                .Where(p => p.ClasseExamesId == numeroFolha
                          && p.ContaExame.Substring(7, 4) == "0000"
                          && p.ContaExame.Substring(4, 3) != "000"
                          && p.TabelaExamesId == (int)IdPadrao.SUS)
@@ -156,7 +156,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             var vm = new vmPlanoExames
             {
-                ExameId = numeroFolha,
+                ClasseExamesId = numeroFolha,
                 Item1 = contasPrincipais.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
                 {
                     Text = c.Id.ToString(),
@@ -189,7 +189,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             string[] contaExame = new string[] { };
 
             //Importante: corrigindo possível falha de lançamento, caso o usuário tente lançar uma conta principal com controle de conta item (javascript pode ter sido burlado)
-            if (vm.TipoContaExame == (int)TipoContaExame.Item && (registroID == vm.ExameId)) registroID = 0;
+            if (vm.TipoContaExame == (int)TipoContaExame.Item && (registroID == vm.ClasseExamesId)) registroID = 0;
 
             /*
              * Bloco de preparação dos dados antes da gravação
@@ -199,16 +199,16 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (vm.TipoContaExame == (int)TipoContaExame.Principal && registroID == 0 && planoExamesConta == null)  //Está chegando então conta principal para ser incluída
             {
                 //última conta exame existente no plano na mesma folha (ExameId = Folha)
-                planoExamesConta = await _db.PlanoExames.Where(x => x.ExameId == vm.ExameId && x.ContaExame.EndsWith("0000")).OrderByDescending(o => o.ContaExame).FirstOrDefaultAsync();
+                planoExamesConta = await _db.PlanoExames.Where(x => x.ClasseExamesId == vm.ClasseExamesId && x.ContaExame.EndsWith("0000")).OrderByDescending(o => o.ContaExame).FirstOrDefaultAsync();
             }
 
             if (planoExamesConta == null)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "O sistema não conseguiu identificar internamente a conta necessária" });
 
-            vm.ExameId = planoExamesConta.ExameId;
+            vm.ClasseExamesId = planoExamesConta.ClasseExamesId;
             vm.ContaExame = planoExamesConta.ContaExame.Substring(0, 7) + "0000";
 
-            contaExame = (vm.TipoContaExame == (int)TipoContaExame.Principal) ? Utils.Utils.SequenciadorContaPrincipal(_db, vm.ExameId) : Utils.Utils.SequenciadorContaItem(_db, vm.ExameId, vm.ContaExame.ToULong());
+            contaExame = (vm.TipoContaExame == (int)TipoContaExame.Principal) ? Utils.Utils.SequenciadorContaPrincipal(_db, vm.ClasseExamesId) : Utils.Utils.SequenciadorContaItem(_db, vm.ClasseExamesId, vm.ContaExame.ToULong());
             if (contaExame[0] == "ERRO")
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "O sistema não conseguiu gerar o código da conta principal" });
 
@@ -221,7 +221,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
             else
             {   //conta item
-                ///string[] ret = Utils.RetornaDescricaoConta(vm.ExameId, vm.ContaExame.Substring(4, 3).ToInt32());
+                ///string[] ret = Utils.RetornaDescricaoConta(vm.ClasseExamesId, vm.ContaExame.Substring(4, 3).ToInt32());
                 vm.ContaExame = contaExame[0];    //conta item completa!
                 vm.RefExame = contaExame[1];      // ret[1];
                 vm.RefItem = contaExame[2];       // vm.RefExame;
@@ -256,7 +256,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                 await _db.PlanoExames.AddAsync(new PlanoExames()
                                 {
                                     //Colunas NÃO nulas:
-                                    ExameId = vm.ExameId,
+                                    ClasseExamesId = vm.ClasseExamesId,
                                     CitoInstituicao = vm.CitoInstituicao,
                                     CitoTituloExame = vm.CitoTituloExame,
                                     RefExame = vm.RefExame,
@@ -401,7 +401,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (dados != null)
             {
                 vm.Id = dados.Id;
-                vm.ExameId = dados.ExameId;
+                vm.ClasseExamesId = dados.ClasseExamesId;
                 vm.ContaExame = dados.ContaExame.FormatarContaExameSem11();
                 vm.TabelaExamesId = dados.TabelaExamesId;
                 vm.RefExame = dados.RefExame;
@@ -470,7 +470,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             TempData.Clear();
             TempData["Descricao"] = planoExames.Descricao;
-            TempData["NumeroFolha"] = planoExames.ExameId.ToString();
+            TempData["NumeroFolha"] = planoExames.ClasseExamesId.ToString();
             TempData.Keep();
 
             //Parâmetros auxiliares em ViewBag
