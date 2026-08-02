@@ -13,6 +13,20 @@ namespace LabWebMvc.MVC.Areas.Utils
         public List<ExameFaturamentoDto> Exames { get; set; } = [];
         public List<TotalFaturamentoDto> TotaisPorInstituicao { get; set; } = [];
         public List<string> TabelasUtilizadas { get; set; } = [];
+        public List<QuantitativoItemDto> QuantitativoItens { get; set; } = [];
+    }
+
+    public class QuantitativoItemDto
+    {
+        public string ContaExame { get; set; } = "";
+        public string Folha { get; set; } = "";
+        public string Item { get; set; } = "";
+        public int Quantidade { get; set; }
+
+        public string DescricaoCompleta =>
+            Folha.Equals(Item, StringComparison.OrdinalIgnoreCase)
+                ? Folha.ToUpperInvariant()
+                : $"{Folha.ToUpperInvariant()},{Item.ToUpperInvariant()}";
     }
 
     public class ExameFaturamentoDto
@@ -64,6 +78,9 @@ namespace LabWebMvc.MVC.Areas.Utils
         private readonly XFont _fontPequena = new("Arial", 8, XFontStyle.Regular);
         private readonly XFont _fontPequenaBold = new("Arial", 8, XFontStyle.Bold);
         private readonly XFont _fontTotal = new("Arial", 10, XFontStyle.Bold);
+        private readonly XFont _fontQuantitativo = new("Courier New", 10, XFontStyle.Bold);
+        private readonly XFont _fontQuantitativoTitulo = new("Arial", 11, XFontStyle.Bold);
+        private readonly XBrush _brushQuantitativo = new XSolidBrush(XColor.FromArgb(51, 51, 51));
 
         public byte[] Gerar(DadosPdfFaturamento dados, Empresa? empresa, bool duasColunas)
         {
@@ -118,6 +135,7 @@ namespace LabWebMvc.MVC.Areas.Utils
             }
 
             y = DesenharTotalGeral(gfx, totalGeral, dados, y);
+            (y, gfx, page) = DesenharQuantitativoItens(gfx, page, dados, y);
             DesenharRodape(gfx, page);
 
             using var stream = new MemoryStream();
@@ -300,6 +318,51 @@ namespace LabWebMvc.MVC.Areas.Utils
             y += 18;
 
             return y;
+        }
+
+        private (double y, XGraphics gfx, PdfPage page) DesenharQuantitativoItens(XGraphics gfx, PdfPage page, DadosPdfFaturamento dados, double y)
+        {
+            if (dados.QuantitativoItens.Count == 0)
+                return (y, gfx, page);
+
+            // Verifica espaco na pagina; se necessario, cria nova pagina
+            double alturaEstimada = 50 + (dados.QuantitativoItens.Count * 14) + 20;
+            if (y + alturaEstimada > LimiteY)
+            {
+                DesenharRodape(gfx, page);
+                page = gfx.PdfPage.Owner.AddPage();
+                page.Size = PdfSharpCore.PageSize.A4;
+                gfx = XGraphics.FromPdfPage(page);
+                y = MargemTopo;
+            }
+
+            y += 10;
+            gfx.DrawString("QUANTITATIVO DE ITENS DE EXAMES REALIZADOS:", _fontQuantitativoTitulo, XBrushes.Black, new XRect(MargemEsquerda, y, AreaUtil, 16), XStringFormats.TopLeft);
+            y += 18;
+
+            string cabecalhoQuant = RetornaLinhaPontilhada("Folha de Exame, Item", "Quantidade");
+            gfx.DrawString(cabecalhoQuant, _fontQuantitativo, _brushQuantitativo, new XRect(MargemEsquerda, y, AreaUtil, 14), XStringFormats.TopLeft);
+            y += 16;
+
+            foreach (var item in dados.QuantitativoItens)
+            {
+                string descricao = item.DescricaoCompleta;
+                string quantidade = item.Quantidade.ToString("N0");
+                string linha = RetornaLinhaPontilhada(descricao, quantidade);
+
+                gfx.DrawString(linha, _fontQuantitativo, _brushQuantitativo, new XRect(MargemEsquerda, y, AreaUtil, 14), XStringFormats.TopLeft);
+                y += 14;
+            }
+
+            return (y, gfx, page);
+        }
+
+        private static string RetornaLinhaPontilhada(string descricao, string quantidade)
+        {
+            const int totalCaracteres = 85;
+            int pontos = totalCaracteres - (descricao.Length + quantidade.Length);
+            if (pontos < 1) pontos = 1;
+            return descricao + new string('.', pontos) + quantidade;
         }
 
         private void DesenharRodape(XGraphics gfx, PdfPage page)

@@ -62,31 +62,189 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
 
             _logger.LogInformation(
-                "GerarPdf: periodo {DataIni:dd/MM/yyyy} a {DataFim:dd/MM/yyyy}, instituicoes={Instituicoes}, tabelas={Tabelas}, incluirBaixados={IncluirBaixados}",
+                "GerarPdf: periodo {DataIni:dd/MM/yyyy} a {DataFim:dd/MM/yyyy}, instituicoes={Instituicoes}, tabelas={Tabelas}, incluirBaixados={IncluirBaixados}, formato={Formato}",
                 filtro.DataIni, filtro.DataFim,
                 string.Join(",", filtro.InstituicoesSelecionadas),
                 string.Join(",", filtro.TabelasSelecionadas),
-                filtro.IncluirBaixados);
+                filtro.IncluirBaixados,
+                filtro.FormatoSaida);
 
             var empresa = await _db.Empresa.AsNoTracking().FirstOrDefaultAsync();
             var dados = await MontarDadosRelatorioAsync(filtro);
 
             _logger.LogInformation("GerarPdf: total de exames no relatorio={Total}", dados.Exames.Count);
 
-            var gerador = new GeradorPdfFaturamento();
-            byte[] pdfBytes = gerador.Gerar(dados, empresa, filtro.DuasColunas);
+            string nomeBase = $"Faturamento_{filtro.DataIni:ddMMyyyy}_a_{filtro.DataFim:ddMMyyyy}";
 
-            string nomeArquivo = $"Faturamento_{filtro.DataIni:ddMMyyyy}_a_{filtro.DataFim:ddMMyyyy}.pdf";
-            return File(pdfBytes, "application/pdf", nomeArquivo);
+            return filtro.FormatoSaida switch
+            {
+                1 => GerarRespostaHtml(dados, empresa, nomeBase),
+                2 => GerarRespostaWord(dados, empresa, nomeBase, filtro.DuasColunas),
+                _ => GerarRespostaPdf(dados, empresa, nomeBase, filtro.DuasColunas)
+            };
+        }
+
+        private FileResult GerarRespostaPdf(DadosPdfFaturamento dados, Empresa? empresa, string nomeBase, bool duasColunas)
+        {
+            var gerador = new GeradorPdfFaturamento();
+            byte[] bytes = gerador.Gerar(dados, empresa, duasColunas);
+            return File(bytes, "application/pdf", $"{nomeBase}.pdf");
+        }
+
+        private FileResult GerarRespostaHtml(DadosPdfFaturamento dados, Empresa? empresa, string nomeBase)
+        {
+            var gerador = new GeradorHtmlFaturamento();
+            byte[] bytes = gerador.Gerar(dados, empresa);
+            return File(bytes, "text/html; charset=utf-8", $"{nomeBase}.html");
+        }
+
+        private FileResult GerarRespostaWord(DadosPdfFaturamento dados, Empresa? empresa, string nomeBase, bool duasColunas)
+        {
+            var gerador = new GeradorWordFaturamento();
+            byte[] bytes = gerador.Gerar(dados, empresa);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{nomeBase}.docx");
+        }
+
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("RelatorioFaturamento/CarregarInstituicoes")]
+        public async Task<IActionResult> CarregarInstituicoes(DateTime dataIni, DateTime dataFim, bool incluirBaixados)
+        {
+            var instituicoes = await ObterInstituicoesAsync(dataIni, dataFim, incluirBaixados);
+            return Json(instituicoes);
         }
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpPost]
         [Route("RelatorioFaturamento/CarregarTabelas")]
-        public async Task<IActionResult> CarregarTabelas(DateTime dataIni, DateTime dataFim, List<int> instituicoes, bool incluirBaixados)
+        public async Task<IActionResult> CarregarTabelas(DateTime dataIni, DateTime dataFim, List<string> instituicoes, bool incluirBaixados)
         {
-            var tabelas = await ObterTabelasAsync(dataIni, dataFim, instituicoes, incluirBaixados);
+            var ids = instituicoes?
+                .Select(v => int.TryParse(v, out var id) ? id : (int?)null)
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .ToList() ?? [];
+
+            _logger.LogInformation("CarregarTabelas recebido: dataIni={DataIni}, dataFim={DataFim}, instituicoesRaw=[{Raw}], ids=[{Ids}]", dataIni, dataFim, string.Join(",", instituicoes ?? []), string.Join(",", ids));
+
+            var tabelas = await ObterTabelasAsync(dataIni, dataFim, ids, incluirBaixados);
             return Json(tabelas);
+        }
+
+        // Endpoint temporario de diagnostico para investigar divergencia de tabelas (PART x GARCIA).
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("RelatorioFaturamento/DiagnosticoTabelas")]
+        public async Task<IActionResult> DiagnosticoTabelas(DateTime dataIni, DateTime dataFim, List<string> instituicoes, bool incluirBaixados)
+        {
+            var ids = instituicoes?
+                .Select(v => int.TryParse(v, out var id) ? id : (int?)null)
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .ToList() ?? [];
+
+            // As colunas DataIni/DataFim sao timestamptz (UTC no banco).
+            // A carga de dados do Firebird gravou as datas locais do Delphi como UTC,
+            // entao filtramos pelo proprio valor UTC da coluna, sem conversao de timezone.
+            // Os parametros de filtro permanecem com Kind=Unspecified (data pura).
+            var inicio = DateTime.SpecifyKind(dataIni.Date, DateTimeKind.Unspecified);
+            var fim = DateTime.SpecifyKind(dataFim.Date, DateTimeKind.Unspecified);
+
+            var query = _db.ExamesRealizados
+                .AsNoTracking()
+                .Include(e => e.Instituicao)
+                .Include(e => e.TabelaExames)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Liberacao == 1)
+                .Where(e => incluirBaixados || e.Baixado != 1)
+                .Where(e => e.TabelaExames != null)
+                .AsQueryable();
+
+            if (ids != null && ids.Count > 0)
+                query = query.Where(e => ids.Contains(e.InstituicaoId));
+
+            var ativos = await query
+                .Select(e => new
+                {
+                    e.Id,
+                    e.InstituicaoId,
+                    InstituicaoSigla = e.Instituicao!.Sigla,
+                    TabelaId = e.TabelaExamesId,
+                    TabelaSigla = e.TabelaExames!.SiglaTabela,
+                    e.DataIni,
+                    e.DataFim,
+                    e.Liberacao,
+                    e.Baixado
+                })
+                .ToListAsync();
+
+            var am = new List<object>();
+            if (incluirBaixados)
+            {
+                var queryAm = _db.ExamesRealizadosAM
+                    .AsNoTracking()
+                    .Include(e => e.Instituicao)
+                    .Include(e => e.TabelaExames)
+                    .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                    .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                    .Where(e => e.Liberacao == 1)
+                    .Where(e => e.TabelaExames != null)
+                    .AsQueryable();
+
+                if (ids != null && ids.Count > 0)
+                    queryAm = queryAm.Where(e => ids.Contains(e.InstituicaoId));
+
+                am = await queryAm
+                    .Select(e => new
+                    {
+                        e.Id,
+                        e.InstituicaoId,
+                        InstituicaoSigla = e.Instituicao!.Sigla,
+                        TabelaId = e.TabelaExamesId,
+                        TabelaSigla = e.TabelaExames!.SiglaTabela,
+                        e.DataIni,
+                        e.DataFim,
+                        e.Liberacao,
+                        e.Baixado
+                    })
+                    .ToListAsync<object>();
+            }
+
+            var semDataFim = await _db.ExamesRealizados
+                .AsNoTracking()
+                .Include(e => e.Instituicao)
+                .Include(e => e.TabelaExames)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => !e.DataFim.HasValue)
+                .Where(e => e.Liberacao == 1)
+                .Where(e => incluirBaixados || e.Baixado != 1)
+                .Where(e => ids != null && ids.Count > 0 ? ids.Contains(e.InstituicaoId) : true)
+                .Select(e => new
+                {
+                    e.Id,
+                    e.InstituicaoId,
+                    InstituicaoSigla = e.Instituicao!.Sigla,
+                    TabelaId = e.TabelaExamesId,
+                    TabelaSigla = e.TabelaExames!.SiglaTabela,
+                    e.DataIni,
+                    e.DataFim,
+                    e.Liberacao,
+                    e.Baixado,
+                    Motivo = "Sem DataFim - excluido pelo filtro DataFim.HasValue"
+                })
+                .ToListAsync();
+
+            return Json(new
+            {
+                PeriodoLocal = new { Inicio = inicio, Fim = fim },
+                IncluirBaixados = incluirBaixados,
+                Ativos = ativos,
+                AM = am,
+                SemDataFim = semDataFim,
+                TabelasDistintasAtivos = ativos.Select(a => a.TabelaSigla).Distinct().OrderBy(x => x),
+                TabelasDistintasAM = am.Select(a => ((dynamic)a).TabelaSigla).Distinct().OrderBy(x => x)
+            });
         }
 
         private async Task CarregarListasAsync(vmRelatorioFaturamento model)
@@ -105,11 +263,43 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         private async Task<List<SelectListItem>> ObterInstituicoesAsync(DateTime dataIni, DateTime dataFim, bool incluirBaixados)
         {
-            // Regra de negocio: exibir SEMPRE todas as instituicoes cadastradas,
-            // independente de periodo ou existencia de exames.
+            // Regra de negocio: exibir apenas as instituicoes que possuem exames realizados
+            // no periodo informado. As colunas DataIni/DataFim sao timestamptz (UTC no banco).
+            // A carga de dados do Firebird gravou as datas locais do Delphi como UTC, entao
+            // usamos o proprio valor UTC da coluna para filtrar, igual ao comportamento
+            // do Delphi (que nao converte timezone).
+            // Os parametros de filtro permanecem com Kind=Unspecified (data pura).
+            var inicio = DateTime.SpecifyKind(dataIni.Date, DateTimeKind.Unspecified);
+            var fim = DateTime.SpecifyKind(dataFim.Date, DateTimeKind.Unspecified);
+
+            // IDs de instituicoes com exames ativos no periodo
+            var idsAtivos = await _db.ExamesRealizados
+                .AsNoTracking()
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim
+                         && e.Liberacao == 1 && e.Baixado != 1
+                         && e.InstituicaoId > 0)
+                .Select(e => e.InstituicaoId)
+                .Distinct()
+                .ToListAsync();
+
+            // Se incluir baixados, adiciona tambem as de ExamesRealizadosAM
+            if (incluirBaixados)
+            {
+                var idsAm = await _db.ExamesRealizadosAM
+                    .AsNoTracking()
+                    .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim
+                             && e.Liberacao == 1
+                             && e.InstituicaoId > 0)
+                    .Select(e => e.InstituicaoId)
+                    .Distinct()
+                    .ToListAsync();
+
+                idsAtivos = idsAtivos.Union(idsAm).Distinct().ToList();
+            }
+
             var instituicoes = await _db.Instituicao
                 .AsNoTracking()
-                .Where(i => !string.IsNullOrEmpty(i.Sigla))
+                .Where(i => idsAtivos.Contains(i.Id) && !string.IsNullOrEmpty(i.Sigla))
                 .OrderBy(i => i.Sigla)
                 .Select(i => new SelectListItem
                 {
@@ -119,40 +309,48 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .ToListAsync();
 
             _logger.LogInformation(
-                "ObterInstituicoesAsync: total de instituicoes cadastradas={Total}",
-                instituicoes.Count);
+                "ObterInstituicoesAsync: periodo {DataIni:dd/MM/yyyy} a {DataFim:dd/MM/yyyy}, incluirBaixados={IncluirBaixados}, total instituicoes no periodo={Total}",
+                dataIni, dataFim, incluirBaixados, instituicoes.Count);
 
             return instituicoes;
         }
 
         private async Task<List<SelectListItem>> ObterTabelasAsync(DateTime dataIni, DateTime dataFim, List<int> instituicoes, bool incluirBaixados)
         {
-            var (inicioUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataIni);
-            var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataFim);
+            // As colunas DataIni/DataFim sao timestamptz (UTC no banco).
+            // A carga de dados do Firebird gravou as datas locais do Delphi como UTC,
+            // entao filtramos pelo proprio valor UTC da coluna, sem conversao de timezone.
+            // Os parametros de filtro permanecem com Kind=Unspecified (data pura).
+            var inicio = DateTime.SpecifyKind(dataIni.Date, DateTimeKind.Unspecified);
+            var fim = DateTime.SpecifyKind(dataFim.Date, DateTimeKind.Unspecified);
 
             _logger.LogInformation(
-                "ObterTabelasAsync: periodo local {DataIni:dd/MM/yyyy} a {DataFim:dd/MM/yyyy} -> UTC {InicioUtc:dd/MM/yyyy HH:mm} a {FimUtc:dd/MM/yyyy HH:mm}, instituicoes=[{Instituicoes}], incluirBaixados={IncluirBaixados}",
-                dataIni, dataFim, inicioUtc, fimUtc,
+                "ObterTabelasAsync: periodo local {DataIni:dd/MM/yyyy} a {DataFim:dd/MM/yyyy}, instituicoes=[{Instituicoes}], incluirBaixados={IncluirBaixados}",
+                dataIni, dataFim,
                 instituicoes == null ? "null" : string.Join(",", instituicoes),
                 incluirBaixados);
 
             // Diagnostico: quantos exames no periodo, ignorando instituicao/tabela/liberacao/baixado
+            // Regra alinhada com o Delphi: exame deve iniciar E terminar dentro do periodo.
             var totalExamesPeriodo = await _db.ExamesRealizados
                 .AsNoTracking()
-                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                 .CountAsync();
             _logger.LogInformation("ObterTabelasAsync: totalExamesRealizados no periodo={Total}", totalExamesPeriodo);
 
             var liberados = await _db.ExamesRealizados
                 .AsNoTracking()
-                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                 .Where(e => e.Liberacao == 1)
                 .CountAsync();
             _logger.LogInformation("ObterTabelasAsync: apos Liberacao==1 ={Total}", liberados);
 
             var naoBaixados = await _db.ExamesRealizados
                 .AsNoTracking()
-                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                 .Where(e => e.Liberacao == 1)
                 .Where(e => incluirBaixados || e.Baixado != 1)
                 .CountAsync();
@@ -160,7 +358,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             var comTabela = await _db.ExamesRealizados
                 .AsNoTracking()
-                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                 .Where(e => e.Liberacao == 1)
                 .Where(e => incluirBaixados || e.Baixado != 1)
                 .Where(e => e.TabelaExames != null)
@@ -169,7 +368,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             var query = _db.ExamesRealizados
                 .AsNoTracking()
-                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                 .Where(e => e.Liberacao == 1)
                 .Where(e => incluirBaixados || e.Baixado != 1)
                 .Where(e => e.TabelaExames != null)
@@ -195,7 +395,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 var queryAm = _db.ExamesRealizadosAM
                     .AsNoTracking()
-                    .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                    .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                    .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                     .Where(e => e.Liberacao == 1)
                     .Where(e => e.TabelaExames != null)
                     .AsQueryable();
@@ -237,17 +438,82 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         private async Task<DadosPdfFaturamento> MontarDadosRelatorioAsync(vmRelatorioFaturamento filtro)
         {
-            var (inicioUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(filtro.DataIni);
-            var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(filtro.DataFim);
+            // As colunas DataIni/DataFim no PostgreSQL sao timestamptz (UTC no banco).
+            // A carga de dados do Firebird gravou as datas locais do Delphi como UTC.
+            // Portanto usamos o proprio valor UTC da coluna para filtrar, sem conversao
+            // de timezone, garantindo alinhamento com o Delphi.
+            // Os parametros de filtro permanecem com Kind=Unspecified (data pura).
+            var inicio = DateTime.SpecifyKind(filtro.DataIni.Date, DateTimeKind.Unspecified);
+            var fim = DateTime.SpecifyKind(filtro.DataFim.Date, DateTimeKind.Unspecified);
 
-            // Atualiza valores zerados antes da impressão
-            if (filtro.MostragemPrecos != 2)
-            {
-                await AtualizarValoresZeradosAsync(inicioUtc, fimUtc, filtro.InstituicoesSelecionadas, filtro.TabelasSelecionadas);
-            }
+            // Atualiza valores zerados pelo PlanoExames antes da impressao.
+            // Roda sempre: a opcao MostragemPrecos controla apenas a exibicao,
+            // nao deve impedir a tentativa de recuperar valores do PlanoExames.
+            await AtualizarValoresZeradosAsync(inicio, fim, filtro.InstituicoesSelecionadas, filtro.TabelasSelecionadas);
 
             // Seleciona exames (ativos + arquivados/baixados quando solicitado)
-            var exames = await SelecionarExamesAsync(inicioUtc, fimUtc, filtro);
+            var exames = await SelecionarExamesAsync(inicio, fim, filtro);
+
+            // --- Batch de itens: 2 queries fixas no lugar de N+1 ---
+            var idsAtivos = exames.Where(e => !e.OrigemAM).Select(e => e.Id).ToList();
+            var idsAM    = exames.Where(e => e.OrigemAM).Select(e => e.Id).ToList();
+
+            // Query unica para todos os itens de exames ativos
+            var queryItensAtivos = _db.ItensExamesRealizados
+                .AsNoTracking()
+                .Where(i => idsAtivos.Contains(i.ExameRealizadoId))
+                .Where(i => !string.IsNullOrEmpty(i.Descricao))
+                .Where(i => !EF.Functions.Like(i.Descricao!.ToLower(), "exames%"));
+
+            if (filtro.MostragemPrecos == 2)
+                queryItensAtivos = queryItensAtivos.Where(i => i.ValorItem.HasValue && i.ValorItem.Value != 0);
+
+            var rawAtivos = await queryItensAtivos
+                .OrderBy(i => i.ExameRealizadoId).ThenBy(i => i.OrdemItem)
+                .Select(i => new { ExameId = i.ExameRealizadoId, i.TabelaExamesId, i.Descricao, i.ValorItem, i.ClasseExamesNome })
+                .ToListAsync();
+
+            var dictAtivos = rawAtivos
+                .GroupBy(i => i.ExameId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(i => new ItemFaturamentoFonte
+                    {
+                        Descricao = i.Descricao,
+                        ValorItem = i.ValorItem,
+                        ClasseExamesNome = i.ClasseExamesNome
+                    }).ToList());
+
+            // Query unica para todos os itens de exames arquivados (AM)
+            Dictionary<int, List<ItemFaturamentoFonte>> dictAM = [];
+            if (idsAM.Count > 0)
+            {
+                var queryItensAM = _db.ItensExamesRealizadosAM
+                    .AsNoTracking()
+                    .Where(i => idsAM.Contains(i.ExameRealizadoAMId))
+                    .Where(i => !string.IsNullOrEmpty(i.Descricao))
+                    .Where(i => !EF.Functions.Like(i.Descricao!.ToLower(), "exames%"));
+
+                if (filtro.MostragemPrecos == 2)
+                    queryItensAM = queryItensAM.Where(i => i.ValorItem.HasValue && i.ValorItem.Value != 0);
+
+                var rawAM = await queryItensAM
+                    .OrderBy(i => i.ExameRealizadoAMId).ThenBy(i => i.OrdemItem)
+                    .Select(i => new { ExameId = i.ExameRealizadoAMId, i.TabelaExamesId, i.Descricao, i.ValorItem, i.ClasseExamesNome })
+                    .ToListAsync();
+
+                dictAM = rawAM
+                    .GroupBy(i => i.ExameId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(i => new ItemFaturamentoFonte
+                        {
+                            Descricao = i.Descricao,
+                            ValorItem = i.ValorItem,
+                            ClasseExamesNome = i.ClasseExamesNome
+                        }).ToList());
+            }
+            // --- fim batch ---
 
             var dados = new DadosPdfFaturamento
             {
@@ -261,12 +527,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
             foreach (var exame in exames)
             {
                 sequencia++;
-                var itens = await SelecionarItensAsync(exame, filtro);
 
-                if (filtro.MostragemPrecos == 2)
-                {
-                    itens = itens.Where(i => i.ValorItem.HasValue && i.ValorItem.Value != 0).ToList();
-                }
+                // Lookup no dicionario — sem query adicional ao banco
+                var itens = exame.OrigemAM
+                    ? dictAM.GetValueOrDefault(exame.Id) ?? []
+                    : dictAtivos.GetValueOrDefault(exame.Id) ?? [];
 
                 var exameDto = new ExameFaturamentoDto
                 {
@@ -279,7 +544,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     SiglaTabela = exame.SiglaTabela,
                     NomeTabela = exame.NomeTabela,
                     Sequencial = exame.Sequencial,
-                    DataExame = exame.DataExame,
+                    // Datas legadas (ex: 01/01/1900 do Delphi/Firebird) sao tratadas como ausentes
+                    DataExame = (exame.DataExame.HasValue && exame.DataExame.Value.Year >= 2000)
+                        ? exame.DataExame
+                        : null,
                     Itens = itens.Select(i => new ItemFaturamentoDto
                     {
                         Descricao = i.Descricao ?? "",
@@ -288,10 +556,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     }).ToList()
                 };
 
+                // Quando MostragemPrecos=2 (nao imprimir zerados), exames sem nenhum item com valor
+                // nao devem aparecer no relatorio (todos os itens foram filtrados por serem zerados)
+                if (filtro.MostragemPrecos == 2 && exameDto.Itens.Count == 0)
+                    continue;
+
                 dados.Exames.Add(exameDto);
             }
 
-            // Totais por instituição/tabela
+            // Totais por instituicao
             dados.TotaisPorInstituicao = dados.Exames
                 .GroupBy(e => new { e.SiglaInstituicao, e.NomeInstituicao })
                 .Select(g => new TotalFaturamentoDto
@@ -303,21 +576,68 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .OrderBy(t => t.Sigla)
                 .ToList();
 
-            // Tabelas de preços utilizadas nos exames do relatório
+            // Tabelas de precos utilizadas nos exames do relatorio
             dados.TabelasUtilizadas = dados.Exames
                 .Select(e => $"{e.SiglaTabela} - {e.NomeTabela}")
                 .Distinct()
                 .OrderBy(t => t)
                 .ToList();
 
+            // Quantitativo de itens de exames realizados (igual ao final do relatorio Delphi)
+            dados.QuantitativoItens = await ObterQuantitativoItensAsync(inicio, fim, filtro.TabelasSelecionadas);
+
             return dados;
         }
 
-        private async Task AtualizarValoresZeradosAsync(DateTime inicioUtc, DateTime fimUtc, List<int> instituicoes, List<int> tabelas)
+        private async Task<List<QuantitativoItemDto>> ObterQuantitativoItensAsync(DateTime inicio, DateTime fim, List<int> tabelas)
+        {
+            // Alinhado com FRelExamesRealizados.BandaSumarioExtensaoBeforePrint (Delphi):
+            // - Conta itens de ExamesRealizados no periodo (DataIni/DataFim dentro do range).
+            // - Exclui itens com ValorItem = 0 e descricoes que iniciem com "EXAMES".
+            // - Filtra pelas tabelas de precos selecionadas.
+            // - Nao filtra por instituicao (igual ao Delphi).
+            // - Agrupa por RefExame (Folha), Descricao (Item) e ContaExame.
+            var query = _db.ItensExamesRealizados
+                .AsNoTracking()
+                .Where(i => i.ValorItem != 0 && i.ValorItem != null)
+                .Where(i => !string.IsNullOrEmpty(i.Descricao) && !EF.Functions.Like(i.Descricao.ToLower(), "exames%"))
+                .Where(i => tabelas == null || tabelas.Count == 0 || (tabelas.Contains(i.TabelaExamesId) && tabelas.Contains(i.ExamesRealizados.TabelaExamesId)))
+                .Where(i => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(i.ExamesRealizados.DataIni, "UTC").Date >= inicio
+                         && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(i.ExamesRealizados.DataIni, "UTC").Date <= fim)
+                .Where(i => i.ExamesRealizados.DataFim.HasValue
+                         && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(i.ExamesRealizados.DataFim.Value, "UTC").Date >= inicio
+                         && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(i.ExamesRealizados.DataFim.Value, "UTC").Date <= fim)
+                .Where(i => i.ExamesRealizados.Liberacao == 1 && i.ExamesRealizados.Baixado != 1);
+
+            var resultado = await query
+                .GroupBy(i => new { i.RefExame, i.Descricao, i.ContaExame })
+                .Select(g => new QuantitativoItemDto
+                {
+                    ContaExame = g.Key.ContaExame ?? "",
+                    Folha = g.Key.RefExame ?? "",
+                    Item = g.Key.Descricao ?? "",
+                    Quantidade = g.Count()
+                })
+                .OrderBy(q => q.Folha)
+                .ThenBy(q => q.Item)
+                .ThenBy(q => q.ContaExame)
+                .ToListAsync();
+
+            _logger.LogInformation(
+                "ObterQuantitativoItensAsync: periodo {Inicio:dd/MM/yyyy} a {Fim:dd/MM/yyyy}, tabelas=[{Tabelas}], itens={Itens}",
+                inicio, fim,
+                tabelas == null ? "null" : string.Join(",", tabelas),
+                resultado.Count);
+
+            return resultado;
+        }
+
+        private async Task AtualizarValoresZeradosAsync(DateTime inicio, DateTime fim, List<int> instituicoes, List<int> tabelas)
         {
             var query = _db.ItensExamesRealizados
                 .Where(i => i.ValorItem == 0 || i.ValorItem == null)
-                .Where(i => i.ExamesRealizados.DataIni >= inicioUtc && i.ExamesRealizados.DataIni <= fimUtc)
+                .Where(i => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(i.ExamesRealizados.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(i.ExamesRealizados.DataIni, "UTC").Date <= fim)
+                .Where(i => i.ExamesRealizados.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(i.ExamesRealizados.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(i.ExamesRealizados.DataFim.Value, "UTC").Date <= fim)
                 .Where(i => i.ExamesRealizados.Liberacao == 1 && i.ExamesRealizados.Baixado != 1)
                 .AsQueryable();
 
@@ -346,31 +666,34 @@ namespace LabWebMvc.MVC.Areas.Controllers
             await _db.SaveChangesAsync();
         }
 
-        private async Task<List<ExameFaturamentoFonte>> SelecionarExamesAsync(DateTime inicioUtc, DateTime fimUtc, vmRelatorioFaturamento filtro)
+        private async Task<List<ExameFaturamentoFonte>> SelecionarExamesAsync(DateTime inicio, DateTime fim, vmRelatorioFaturamento filtro)
         {
             var exames = new List<ExameFaturamentoFonte>();
 
             var totalNoPeriodo = await _db.ExamesRealizados
                 .AsNoTracking()
-                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                 .CountAsync();
 
             var totalLiberadosNaoBaixados = await _db.ExamesRealizados
                 .AsNoTracking()
-                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                 .Where(e => e.Liberacao == 1 && e.Baixado != 1)
                 .CountAsync();
 
             _logger.LogInformation(
-                "SelecionarExamesAsync: periodo UTC {InicioUtc:dd/MM/yyyy HH:mm} a {FimUtc:dd/MM/yyyy HH:mm}, totalNoPeriodo={TotalNoPeriodo}, liberadosNaoBaixados={LiberadosNaoBaixados}",
-                inicioUtc, fimUtc, totalNoPeriodo, totalLiberadosNaoBaixados);
+                "SelecionarExamesAsync: periodo local {Inicio:dd/MM/yyyy} a {Fim:dd/MM/yyyy}, totalNoPeriodo={TotalNoPeriodo}, liberadosNaoBaixados={LiberadosNaoBaixados}",
+                inicio, fim, totalNoPeriodo, totalLiberadosNaoBaixados);
 
             var query = _db.ExamesRealizados
                 .AsNoTracking()
                 .Include(e => e.Instituicao)
                 .Include(e => e.TabelaExames)
                 .Include(e => e.Pacientes)
-                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                 .Where(e => e.Liberacao == 1 && e.Baixado != 1)
                 .AsQueryable();
 
@@ -384,15 +707,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
             _logger.LogInformation(
                 "SelecionarExamesAsync: apos filtros de instituicao/tabela, exames encontrados={Contagem}",
                 contagemComFiltros);
-
-            var amostraExames = await query
-                .Take(20)
-                .Select(e => new { e.Id, e.InstituicaoId, e.TabelaExamesId, e.DataIni, e.DataExame, e.Sequencial, e.Liberacao, e.Baixado })
-                .ToListAsync();
-            _logger.LogInformation(
-                "SelecionarExamesAsync: amostra dos primeiros {Qtde} exames = {Detalhes}",
-                amostraExames.Count,
-                string.Join("; ", amostraExames.Select(e => $"Id={e.Id} Inst={e.InstituicaoId} Tab={e.TabelaExamesId} DataIni={e.DataIni:dd/MM/yyyy HH:mm} DataExame={e.DataExame:dd/MM/yyyy} Lib={e.Liberacao} Baix={e.Baixado}")));
 
             query = filtro.Ordenacao switch
             {
@@ -427,7 +741,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .Include(e => e.Instituicao)
                     .Include(e => e.TabelaExames)
                     .Include(e => e.Pacientes)
-                    .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc)
+                    .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
+                    .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                     .Where(e => e.Liberacao == 1)
                     .AsQueryable();
 
@@ -457,7 +772,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
             }
 
-            // Reordena caso AM tenha sido incluído e ordenação seja por Data
+            // Reordena caso AM tenha sido incluido e ordenacao seja por Data
             if (filtro.IncluirBaixados && filtro.Ordenacao == 2)
             {
                 exames = exames
@@ -482,60 +797,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
 
             return exames;
-        }
-
-        private async Task<List<ItemFaturamentoFonte>> SelecionarItensAsync(ExameFaturamentoFonte exame, vmRelatorioFaturamento filtro)
-        {
-            var itens = new List<ItemFaturamentoFonte>();
-
-            if (!exame.OrigemAM)
-            {
-                var query = _db.ItensExamesRealizados
-                    .AsNoTracking()
-                    .Where(i => i.ExameRealizadoId == exame.Id)
-                    .Where(i => i.TabelaExamesId == exame.TabelaExamesId)
-                    .Where(i => !string.IsNullOrEmpty(i.Descricao))
-                    .Where(i => !EF.Functions.Like(i.Descricao!.ToLower(), "exames%"))
-                    .AsQueryable();
-
-                if (filtro.MostragemPrecos == 2)
-                    query = query.Where(i => i.ValorItem.HasValue && i.ValorItem.Value != 0);
-
-                itens = await query
-                    .OrderBy(i => i.OrdemItem)
-                    .Select(i => new ItemFaturamentoFonte
-                    {
-                        Descricao = i.Descricao,
-                        ValorItem = i.ValorItem,
-                        ClasseExamesNome = i.ClasseExamesNome
-                    })
-                    .ToListAsync();
-            }
-            else
-            {
-                var query = _db.ItensExamesRealizadosAM
-                    .AsNoTracking()
-                    .Where(i => i.ExameRealizadoAMId == exame.Id)
-                    .Where(i => i.TabelaExamesId == exame.TabelaExamesId)
-                    .Where(i => !string.IsNullOrEmpty(i.Descricao))
-                    .Where(i => !EF.Functions.Like(i.Descricao!.ToLower(), "exames%"))
-                    .AsQueryable();
-
-                if (filtro.MostragemPrecos == 2)
-                    query = query.Where(i => i.ValorItem.HasValue && i.ValorItem.Value != 0);
-
-                itens = await query
-                    .OrderBy(i => i.OrdemItem)
-                    .Select(i => new ItemFaturamentoFonte
-                    {
-                        Descricao = i.Descricao,
-                        ValorItem = i.ValorItem,
-                        ClasseExamesNome = i.ClasseExamesNome
-                    })
-                    .ToListAsync();
-            }
-
-            return itens;
         }
 
         private class ExameFaturamentoFonte

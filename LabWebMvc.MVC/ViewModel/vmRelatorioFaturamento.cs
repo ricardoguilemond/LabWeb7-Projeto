@@ -29,4 +29,11 @@ public class vmRelatorioFaturamento
 
     public bool DuasColunas { get; set; } = true;
     public bool IncluirBaixados { get; set; } = false;
+
+    /// <summary>
+    /// 0 = PDF (padrão)
+    /// 1 = HTML
+    /// 2 = Word (.docx)
+    /// </summary>
+    public int FormatoSaida { get; set; } = 0;
 }
