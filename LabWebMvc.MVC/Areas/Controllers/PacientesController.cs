@@ -13,6 +13,8 @@ using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.Text;
 using static BLL.UtilBLL;
 using static LabWebMvc.MVC.UtilHelper.TrataExcecoes;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
@@ -21,15 +23,20 @@ namespace LabWebMvc.MVC.Areas.Controllers
 {
     public class PacientesController : BaseController
     {
+        private readonly IMemoryCache _cache;
+
         public PacientesController(IDbFactory dbFactory, 
                                    IValidadorDeSessao validador, 
                                    GeralController geralController, 
                                    IEventLogHelper eventLogHelper, 
                                    Imagem imagem,
                                    ExclusaoService exclusaoService,
-                                   IConnectionService connectionService)
+                                   IConnectionService connectionService,
+                                   IMemoryCache cache)
                : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
-        { }
+        {
+            _cache = cache;
+        }
 
         private void MontaControllers(string action, string controller, string parametros = "")
         {
@@ -44,111 +51,189 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Pacientes")]
-        public async Task<IActionResult> Index(string? Conteudo, int registros = 50,
-            string? nomePaciente = null, string? cpf = null, string? dataNascimento = null)
+        public IActionResult Index(string? nomePaciente = null, string? cpf = null, string? dataNascimento = null)
         {
-            // ViewBag.TextoMenu = new object[] { "Cadastro de Pacientes", false };
-
             MontaControllers("IncluirPaciente", "Pacientes");
-            if (Conteudo == null) Conteudo = string.Empty; else Conteudo = Conteudo.Trim();
 
-            ICollection<dynamic> listaGrid = [];
-            List<Pacientes> dados = [];
+            // Os dados do grid são carregados via AJAX pelo DataTables (server-side processing).
+            // A view recebe apenas os filtros iniciais para repassar ao endpoint Listar.
+            ViewBag.NomePaciente = nomePaciente ?? string.Empty;
+            ViewBag.Cpf = cpf ?? string.Empty;
+            ViewBag.DataNascimento = dataNascimento ?? string.Empty;
 
-            int totalTabela = 0;
-            int totalRegistros = 0;
-            if (string.IsNullOrEmpty(Conteudo)) registros = 100; //quando não tem dados para filtrar
-
-            totalTabela = _db.Pacientes.AsNoTracking().AsEnumerable().Count();
-
-            if (!string.IsNullOrEmpty(Conteudo))
-            {
-                dados = await _db.Pacientes.AsNoTracking()
-                          .FiltrarPorConteudo(Conteudo, x => x.CPF, x => x.NomePaciente, x => x.NomeSocial, x => x.Endereco, x => x.Bairro, x => x.Cidade, x => x.Id.ToString())
-                          .OrderByDescending(x => x.Id)
-                          .ToListAsync();
-
-                if (Conteudo.Split('/').Count() == 3 || Conteudo.Split('-').Count() == 3) //está buscando alguma data
-                {
-                    DateTime dataBusca = Conteudo.Trim().FormataData("dd/MM/yyyy", true);
-                    // Converte data local para range UTC — necessário para comparar com colunas timestamptz no Npgsql 8.x
-                    // (Usar .Day/.Month/.Year em timestamptz traduz para EXTRACT() que opera em UTC, causando resultados incorretos)
-                    var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataBusca);
-                    ICollection<Pacientes> dadosQuery = await _db.Pacientes.AsNoTracking()
-                                                       .Where(l => l.Nascimento >= inicioUtc &&
-                                                                    l.Nascimento <= fimUtc
-                                                                   )
-                                                       .OrderByDescending(o => o.Id)
-                                                       .ToListAsync();
-                    if (dadosQuery.Count > 0)
-                        dados.AddRange(dadosQuery);
-                }
-            }
-            else
-            {
-                //Feito pelo Kiro em 17/05/2026
-                // Filtros backend de paciente — só se aplicam quando Conteudo está vazio
-                bool temFiltroPaciente = !string.IsNullOrEmpty(nomePaciente)
-                                      || !string.IsNullOrEmpty(cpf)
-                                      || !string.IsNullOrEmpty(dataNascimento);
-
-                if (temFiltroPaciente)
-                {
-                    var query = _db.Pacientes.AsNoTracking().AsQueryable();
-
-                    // Filtro por nome do paciente (case-insensitive)
-                    if (!string.IsNullOrEmpty(nomePaciente))
-                    {
-                        query = query.Where(p => p.NomePaciente.ToLower().Contains(nomePaciente.Trim().ToLower()));
-                    }
-
-                    // Filtro por CPF (com ou sem formatação)
-                    if (!string.IsNullOrEmpty(cpf))
-                    {
-                        string cpfLimpo = cpf.Trim().Replace(".", "").Replace("-", "");
-                        query = query.Where(p => (p.CPF ?? "").Replace(".", "").Replace("-", "").Contains(cpfLimpo));
-                    }
-
-                    // Filtro por data de nascimento
-                    if (!string.IsNullOrEmpty(dataNascimento))
-                    {
-                        DateTime dataNascParsed = dataNascimento.Trim().FormataData("dd/MM/yyyy", true);
-                        var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataNascParsed);
-                        query = query.Where(p => p.Nascimento >= inicioUtc && p.Nascimento <= fimUtc);
-                    }
-
-                    dados = await query.OrderByDescending(o => o.Id).ToListAsync();
-                }
-                else
-                {
-                    dados = await _db.Pacientes.AsNoTracking().OrderByDescending(o => o.Id).Take(registros).ToListAsync();
-                }
-                //..Kiro
-            }
-
-            foreach (Pacientes item in dados)
-            {
-                totalRegistros++;
-                vmPacientes resultado = new vmPacientes()
-                {
-                    Id = item.Id,
-                    IdPacienteExterno = item.IdPacienteExterno,
-                    NomePaciente = item.NomePaciente,
-                    Nascimento = item.Nascimento,
-                    Sexo = item.Sexo,
-                    CPF = item.CPF.FormatarCPF(),
-                    TipoDocumento = item.TipoDocumento,
-                    Identidade = item.Identidade,
-                    Telefone = item.Telefone.FormataTelefone(),
-                    Emissor = item.Emissor
-                };
-                listaGrid.Add(resultado);
-            }
-
-            //Finalização da View
             ViewBag.TextoMenu = new object[] { "Cadastro de Pacientes", false };
-            var vmIndex = new vmPacientes { ListaDados = listaGrid };
-            return View(vmIndex);
+            return View(new vmPacientes());
+        }
+
+        /// <summary>
+        /// Endpoint server-side do DataTables para o cadastro de pacientes.
+        /// Carrega blocos de 100 registros do banco (cache de curta duração) e
+        /// devolve a página solicitada de 10 em 10, mantendo a navegação rápida
+        /// nas 10 primeiras páginas sem perder acesso aos demais registros.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("Pacientes/Listar")]
+        public async Task<IActionResult> Listar(
+            [FromForm] DataTableRequest request,
+            string? nomePaciente = null,
+            string? cpf = null,
+            string? dataNascimento = null)
+        {
+            try
+            {
+                int draw = request.Draw;
+                int start = request.Start;
+                int length = Math.Max(request.Length, 10);
+                string searchValue = request.Search?.Value?.Trim() ?? string.Empty;
+
+                const int blockSize = 100;
+                int blockIndex = start / blockSize;
+                int blockStart = blockIndex * blockSize;
+
+                string sortColumn = request.Order.Count > 0 && request.Order[0].Column < request.Columns.Count
+                    ? (request.Columns[request.Order[0].Column].Data ?? "id")
+                    : "id";
+                string sortDir = request.Order.Count > 0
+                    ? (request.Order[0].Dir ?? "desc")
+                    : "desc";
+
+                string cacheKey = BuildCacheKey(nomePaciente, cpf, dataNascimento, searchValue, sortColumn, sortDir, blockIndex);
+
+                if (!_cache.TryGetValue(cacheKey, out List<Pacientes>? blockData) || blockData == null)
+                {
+                    blockData = await LoadBlockAsync(nomePaciente, cpf, dataNascimento, searchValue, sortColumn, sortDir, blockStart, blockSize);
+                    _cache.Set(cacheKey, blockData, TimeSpan.FromMinutes(5));
+                }
+
+                int recordsTotal = await CountTotalAsync(nomePaciente, cpf, dataNascimento, searchValue);
+
+                int skipInBlock = start - blockStart;
+                var pageData = blockData.Skip(skipInBlock).Take(length).ToList();
+
+                List<object> result = pageData.Select(item => (object)new
+                {
+                    id = item.Id,
+                    idPacienteExterno = item.IdPacienteExterno ?? string.Empty,
+                    nomePaciente = item.NomePaciente ?? string.Empty,
+                    nascimento = FormataData(item.Nascimento),
+                    sexo = item.Sexo ?? string.Empty,
+                    documento = item.TipoDocumento == 0 ? item.CPF.FormatarCPF() : (item.Identidade ?? string.Empty),
+                    tipoDocumento = LabWebMvc.MVC.Areas.Utils.Utils.RetornaItem(item.TipoDocumento, "TipoDocumento"),
+                    telefone = item.Telefone.FormataTelefone(),
+                    acoes = BuildAcoes(item.Id)
+                }).ToList();
+
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = draw,
+                    RecordsTotal = recordsTotal,
+                    RecordsFiltered = recordsTotal,
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[Pacientes] Listar - Erro: " + ex.Message, "wError");
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = request.Draw,
+                    RecordsTotal = 0,
+                    RecordsFiltered = 0,
+                    Data = new List<object>()
+                });
+            }
+        }
+
+        private string BuildCacheKey(string? nomePaciente, string? cpf, string? dataNascimento, string searchValue, string sortColumn, string sortDir, int blockIndex)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            string raw = $"{nomePaciente?.ToLowerInvariant()}|{cpf?.Replace(".", "").Replace("-", "")}|{dataNascimento}|{searchValue.ToLowerInvariant()}|{sortColumn}|{sortDir}|{blockIndex}";
+            byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(raw));
+            return "Pacientes_" + Convert.ToHexString(hash);
+        }
+
+        private async Task<List<Pacientes>> LoadBlockAsync(string? nomePaciente, string? cpf, string? dataNascimento, string searchValue, string sortColumn, string sortDir, int blockStart, int blockSize)
+        {
+            IQueryable<Pacientes> query = BuildBaseQuery(nomePaciente, cpf, dataNascimento, searchValue);
+            query = ApplyOrdering(query, sortColumn, sortDir);
+            return await query.Skip(blockStart).Take(blockSize).ToListAsync();
+        }
+
+        private async Task<int> CountTotalAsync(string? nomePaciente, string? cpf, string? dataNascimento, string searchValue)
+        {
+            IQueryable<Pacientes> query = BuildBaseQuery(nomePaciente, cpf, dataNascimento, searchValue);
+            return await query.CountAsync();
+        }
+
+        private IQueryable<Pacientes> BuildBaseQuery(string? nomePaciente, string? cpf, string? dataNascimento, string searchValue)
+        {
+            var query = _db.Pacientes.AsNoTracking();
+
+            // Filtros backend
+            if (!string.IsNullOrEmpty(nomePaciente))
+            {
+                query = query.Where(p => p.NomePaciente.ToLower().Contains(nomePaciente.Trim().ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(cpf))
+            {
+                string cpfLimpo = cpf.Trim().Replace(".", "").Replace("-", "");
+                query = query.Where(p => (p.CPF ?? "").Replace(".", "").Replace("-", "").Contains(cpfLimpo));
+            }
+
+            if (!string.IsNullOrEmpty(dataNascimento))
+            {
+                DateTime dataNascParsed = dataNascimento.Trim().FormataData("dd/MM/yyyy", true);
+                var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataNascParsed);
+                query = query.Where(p => p.Nascimento >= inicioUtc && p.Nascimento <= fimUtc);
+            }
+
+            // Busca global do DataTables
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                query = query.FiltrarPorConteudo(searchValue,
+                    x => x.CPF,
+                    x => x.NomePaciente,
+                    x => x.NomeSocial,
+                    x => x.Endereco,
+                    x => x.Bairro,
+                    x => x.Cidade,
+                    x => x.Id.ToString());
+
+                if (searchValue.Split('/').Length == 3 || searchValue.Split('-').Length == 3)
+                {
+                    DateTime dataBusca = searchValue.Trim().FormataData("dd/MM/yyyy", true);
+                    var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataBusca);
+                    query = query.Where(l => l.Nascimento >= inicioUtc && l.Nascimento <= fimUtc);
+                }
+            }
+
+            return query;
+        }
+
+        private IQueryable<Pacientes> ApplyOrdering(IQueryable<Pacientes> query, string sortColumn, string sortDir)
+        {
+            bool desc = sortDir.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            return sortColumn.ToLowerInvariant() switch
+            {
+                "nomepaciente" => desc ? query.OrderByDescending(p => p.NomePaciente) : query.OrderBy(p => p.NomePaciente),
+                "nascimento" => desc ? query.OrderByDescending(p => p.Nascimento) : query.OrderBy(p => p.Nascimento),
+                "sexo" => desc ? query.OrderByDescending(p => p.Sexo) : query.OrderBy(p => p.Sexo),
+                "documento" => desc ? query.OrderByDescending(p => p.CPF) : query.OrderBy(p => p.CPF),
+                "tipodocumento" => desc ? query.OrderByDescending(p => p.TipoDocumento) : query.OrderBy(p => p.TipoDocumento),
+                "telefone" => desc ? query.OrderByDescending(p => p.Telefone) : query.OrderBy(p => p.Telefone),
+                _ => desc ? query.OrderByDescending(p => p.Id) : query.OrderBy(p => p.Id)
+            };
+        }
+
+        private static string BuildAcoes(int id)
+        {
+            return $"<a id='{id}' class='grid_itens' onclick=clickConsulta(this) title='Consultar'><i class='fa-sharp fa-solid fa-display'></i> </a>" +
+                   $"<a id='{id}' class='grid_itens' onclick=clickExames(this) title='Exames Realizados'><i class='fa-sharp fa-solid fa-file-medical'></i> </a>" +
+                   $"<a id='{id}' class='grid_itens' onclick=clickAlterar(this) title='Alterar'><i class='fa-sharp fa-solid fa-file-pen'></i> </a>" +
+                   $"<a id='{id}' class='grid_itens' onclick=clickDelete(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>";
         }
 
         [TypeFilter(typeof(SessionFilter))]

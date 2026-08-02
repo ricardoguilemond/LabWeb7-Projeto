@@ -12,6 +12,8 @@ using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.Text;
 using static BLL.UtilBLL;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
@@ -19,6 +21,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
 {
     public class MedicosController : BaseController
     {
+        private readonly IMemoryCache _cache;
+
         public MedicosController(
             IDbFactory dbFactory,
             IValidadorDeSessao validador,
@@ -26,9 +30,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
-            IConnectionService connectionService)
+            IConnectionService connectionService,
+            IMemoryCache cache)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
+            _cache = cache;
         }
 
         private void MontaControllers(string action, string controller, string parametros = "")
@@ -44,48 +50,144 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Medicos")]
-        public async Task<IActionResult> Index(string? Conteudo, int registros = 50)
+        public IActionResult Index()
         {
             MontaControllers("IncluirMedico", "Medicos");
-            if (Conteudo == null) Conteudo = string.Empty; else Conteudo = Conteudo.Trim();
 
-            ICollection<dynamic> listaGrid = [];
-            List<Medicos> dados = [];
-
-            int totalTabela = 0;
-            int totalRegistros = 0;
-            if (string.IsNullOrEmpty(Conteudo)) registros = 100; //quando não tem dados para filtrar
-
-            totalTabela = _db.Medicos.AsNoTracking().AsEnumerable().Count();
-
-            if (!string.IsNullOrEmpty(Conteudo))
-            {
-                dados = await _db.Medicos.AsNoTracking()
-                          .FiltrarPorConteudo(Conteudo, x => x.CRM, x => x.NomeMedico, x => x.Id.ToString())
-                          .OrderByDescending(x => x.Id)
-                          .ToListAsync();
-            }
-            else
-                dados = await _db.Medicos.AsNoTracking().OrderByDescending(o => o.Id).Take(registros).ToListAsync();
-
-            foreach (Medicos item in dados)
-            {
-                totalRegistros++;
-                vmMedicos resultado = new()
-                {
-                    Id = item.Id,
-                    NomeMedico = item.NomeMedico,
-                    CRM = item.CRM,
-                    Telefone = item.Telefone.FormataTelefone(),
-                    Email = item.Email,
-                    Especialidade = item.Especialidade
-                };
-                listaGrid.Add(resultado);
-            }
-
+            // Dados do grid carregados via AJAX pelo DataTables (server-side processing).
             ViewBag.TextoMenu = new object[] { "Cadastro de Médicos", false };
-            var vmIndex = new vmMedicos { ListaDados = listaGrid };
-            return View(vmIndex);
+            return View(new vmMedicos());
+        }
+
+        /// <summary>
+        /// Endpoint server-side do DataTables para o cadastro de médicos.
+        /// Carrega blocos de 100 registros do banco (cache de curta duração) e
+        /// devolve a página solicitada de 10 em 10.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("Medicos/Listar")]
+        public async Task<IActionResult> Listar([FromForm] DataTableRequest request)
+        {
+            try
+            {
+                int draw = request.Draw;
+                int start = request.Start;
+                int length = Math.Max(request.Length, 10);
+                string searchValue = request.Search?.Value?.Trim() ?? string.Empty;
+
+                const int blockSize = 100;
+                int blockIndex = start / blockSize;
+                int blockStart = blockIndex * blockSize;
+
+                string sortColumn = request.Order.Count > 0 && request.Order[0].Column < request.Columns.Count
+                    ? (request.Columns[request.Order[0].Column].Data ?? "id")
+                    : "id";
+                string sortDir = request.Order.Count > 0
+                    ? (request.Order[0].Dir ?? "desc")
+                    : "desc";
+
+                string cacheKey = BuildCacheKey(searchValue, sortColumn, sortDir, blockIndex);
+
+                if (!_cache.TryGetValue(cacheKey, out List<Medicos>? blockData) || blockData == null)
+                {
+                    blockData = await LoadBlockAsync(searchValue, sortColumn, sortDir, blockStart, blockSize);
+                    _cache.Set(cacheKey, blockData, TimeSpan.FromMinutes(5));
+                }
+
+                int recordsTotal = await CountTotalAsync(searchValue);
+
+                int skipInBlock = start - blockStart;
+                var pageData = blockData.Skip(skipInBlock).Take(length).ToList();
+
+                List<object> result = pageData.Select(item => (object)new
+                {
+                    id = item.Id,
+                    nomeMedico = item.NomeMedico ?? string.Empty,
+                    crm = item.CRM ?? string.Empty,
+                    especialidade = item.Especialidade ?? string.Empty,
+                    telefone = item.Telefone.FormataTelefone(),
+                    email = item.Email ?? string.Empty,
+                    acoes = BuildAcoes(item.Id)
+                }).ToList();
+
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = draw,
+                    RecordsTotal = recordsTotal,
+                    RecordsFiltered = recordsTotal,
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[Medicos] Listar - Erro: " + ex.Message, "wError");
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = request.Draw,
+                    RecordsTotal = 0,
+                    RecordsFiltered = 0,
+                    Data = new List<object>()
+                });
+            }
+        }
+
+        private string BuildCacheKey(string searchValue, string sortColumn, string sortDir, int blockIndex)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            string raw = $"{searchValue.ToLowerInvariant()}|{sortColumn}|{sortDir}|{blockIndex}";
+            byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(raw));
+            return "Medicos_" + Convert.ToHexString(hash);
+        }
+
+        private async Task<List<Medicos>> LoadBlockAsync(string searchValue, string sortColumn, string sortDir, int blockStart, int blockSize)
+        {
+            IQueryable<Medicos> query = BuildBaseQuery(searchValue);
+            query = ApplyOrdering(query, sortColumn, sortDir);
+            return await query.Skip(blockStart).Take(blockSize).ToListAsync();
+        }
+
+        private async Task<int> CountTotalAsync(string searchValue)
+        {
+            return await BuildBaseQuery(searchValue).CountAsync();
+        }
+
+        private IQueryable<Medicos> BuildBaseQuery(string searchValue)
+        {
+            var query = _db.Medicos.AsNoTracking();
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                query = query.FiltrarPorConteudo(searchValue,
+                    x => x.CRM,
+                    x => x.NomeMedico,
+                    x => x.Especialidade,
+                    x => x.Id.ToString());
+            }
+
+            return query;
+        }
+
+        private IQueryable<Medicos> ApplyOrdering(IQueryable<Medicos> query, string sortColumn, string sortDir)
+        {
+            bool desc = sortDir.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            return sortColumn.ToLowerInvariant() switch
+            {
+                "nomemedico" => desc ? query.OrderByDescending(p => p.NomeMedico) : query.OrderBy(p => p.NomeMedico),
+                "crm" => desc ? query.OrderByDescending(p => p.CRM) : query.OrderBy(p => p.CRM),
+                "especialidade" => desc ? query.OrderByDescending(p => p.Especialidade) : query.OrderBy(p => p.Especialidade),
+                "telefone" => desc ? query.OrderByDescending(p => p.Telefone) : query.OrderBy(p => p.Telefone),
+                "email" => desc ? query.OrderByDescending(p => p.Email) : query.OrderBy(p => p.Email),
+                _ => desc ? query.OrderByDescending(p => p.Id) : query.OrderBy(p => p.Id)
+            };
+        }
+
+        private static string BuildAcoes(int id)
+        {
+            return $"<a id='{id}' class='grid_itens' onclick=clickConsulta(this) title='Consultar'><i class='fa-sharp fa-solid fa-display'></i> </a>" +
+                   $"<a id='{id}' class='grid_itens' onclick=clickAlterar(this) title='Alterar'><i class='fa-sharp fa-solid fa-file-pen'></i> </a>" +
+                   $"<a id='{id}' class='grid_itens' onclick=clickDelete(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>";
         }
 
         [TypeFilter(typeof(SessionFilter))]

@@ -12,12 +12,16 @@ using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.Text;
 using static BLL.UtilBLL;
 
 namespace LabWebMvc.MVC.Areas.Controllers
 {
     public class PostosController : BaseController
     {
+        private readonly IMemoryCache _cache;
+
         public PostosController(
             IDbFactory dbFactory,
             IValidadorDeSessao validador,
@@ -25,9 +29,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
-            IConnectionService connectionService)
+            IConnectionService connectionService,
+            IMemoryCache cache)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
+            _cache = cache;
         }
 
         private void MontaControllers(string action, string controller, string parametros = "")
@@ -43,60 +49,149 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Postos")]
-        public async Task<IActionResult> Index(string? Conteudo, int registros = 50)
+        public IActionResult Index()
         {
             //monta o controller para chamada dos itens que estão em _PartialMenuPostos.cshtml
             MontaControllers("IncluirPostos", "Postos");
-            if (Conteudo == null) Conteudo = string.Empty; else Conteudo = Conteudo.Trim();
 
-            ICollection<dynamic> listaGrid = [];
-            List<Postos> dados = [];
-
-            int totalTabela = 0;
-            int totalRegistros = 0;
-            if (string.IsNullOrEmpty(Conteudo)) registros = 100; //quando não tem dados para filtrar
-
-            totalTabela = _db.Postos.AsNoTracking().AsEnumerable().Count();
-
-            if (!string.IsNullOrEmpty(Conteudo))
-            {
-                dados = await _db.Postos.AsNoTracking()
-                          .Include(p => p.Instituicao)
-                          .FiltrarPorConteudo(Conteudo, x => x.SiglaPosto, x => x.NomePosto, x => x.Endereco, x => x.Bairro, x => x.Cidade, x => x.Id.ToString())
-                          .OrderByDescending(x => x.Id)
-                          .ToListAsync();
-            }
-            else
-                dados = await _db.Postos.AsNoTracking().Include(p => p.Instituicao).OrderByDescending(o => o.Id).Take(registros).ToListAsync();
-
-            foreach (Postos item in dados)
-            {
-                totalRegistros++;
-                vmPostos resultado = new()
-                {
-                    Id = item.Id,
-                    InstituicaoId = item.InstituicaoId,
-                    SiglaInstituicao = item.Instituicao?.Sigla,
-                    NomeInstituicao = item.Instituicao?.Nome,
-                    SiglaPosto = item.SiglaPosto,
-                    NomePosto = item.NomePosto,
-                    Logradouro = item.Logradouro,
-                    Endereco = item.Endereco,
-                    Numero = item.Numero,
-                    Complemento = item.Complemento,
-                    Bairro = item.Bairro,
-                    Cidade = item.Cidade,
-                    UF = item.UF,
-                    CEP = item.CEP,
-                    Responsavel = item.Responsavel.ToCapitalizeNotNull(),
-                    Telefone = item.Telefone?.FormataTelefoneNotNull()
-                };
-                listaGrid.Add(resultado);
-            }
-
+            // Dados do grid carregados via AJAX pelo DataTables (server-side processing).
             ViewBag.TextoMenu = new object[] { "Cadastro de Postos de Coletas e Anexos", false };
-            var vmIndex = new vmPostos { ListaDados = listaGrid };
-            return View(vmIndex);
+            return View(new vmPostos());
+        }
+
+        /// <summary>
+        /// Endpoint server-side do DataTables para o cadastro de postos/anexos.
+        /// Carrega blocos de 100 registros do banco (cache de curta duração) e
+        /// devolve a página solicitada de 10 em 10.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("Postos/Listar")]
+        public async Task<IActionResult> Listar([FromForm] DataTableRequest request)
+        {
+            try
+            {
+                int draw = request.Draw;
+                int start = request.Start;
+                int length = Math.Max(request.Length, 10);
+                string searchValue = request.Search?.Value?.Trim() ?? string.Empty;
+
+                const int blockSize = 100;
+                int blockIndex = start / blockSize;
+                int blockStart = blockIndex * blockSize;
+
+                string sortColumn = request.Order.Count > 0 && request.Order[0].Column < request.Columns.Count
+                    ? (request.Columns[request.Order[0].Column].Data ?? "id")
+                    : "id";
+                string sortDir = request.Order.Count > 0
+                    ? (request.Order[0].Dir ?? "desc")
+                    : "desc";
+
+                string cacheKey = BuildCacheKey(searchValue, sortColumn, sortDir, blockIndex);
+
+                if (!_cache.TryGetValue(cacheKey, out List<Postos>? blockData) || blockData == null)
+                {
+                    blockData = await LoadBlockAsync(searchValue, sortColumn, sortDir, blockStart, blockSize);
+                    _cache.Set(cacheKey, blockData, TimeSpan.FromMinutes(5));
+                }
+
+                int recordsTotal = await CountTotalAsync(searchValue);
+
+                int skipInBlock = start - blockStart;
+                var pageData = blockData.Skip(skipInBlock).Take(length).ToList();
+
+                List<object> result = pageData.Select(item => (object)new
+                {
+                    id = item.Id,
+                    siglaInstituicao = item.Instituicao?.Sigla ?? string.Empty,
+                    nomeInstituicao = item.Instituicao?.Nome ?? string.Empty,
+                    siglaPosto = item.SiglaPosto ?? string.Empty,
+                    nomePosto = item.NomePosto ?? string.Empty,
+                    responsavel = item.Responsavel.ToCapitalizeNotNull(),
+                    telefone = item.Telefone?.FormataTelefoneNotNull() ?? string.Empty,
+                    acoes = BuildAcoes(item.Id)
+                }).ToList();
+
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = draw,
+                    RecordsTotal = recordsTotal,
+                    RecordsFiltered = recordsTotal,
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[Postos] Listar - Erro: " + ex.Message, "wError");
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = request.Draw,
+                    RecordsTotal = 0,
+                    RecordsFiltered = 0,
+                    Data = new List<object>()
+                });
+            }
+        }
+
+        private string BuildCacheKey(string searchValue, string sortColumn, string sortDir, int blockIndex)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            string raw = $"{searchValue.ToLowerInvariant()}|{sortColumn}|{sortDir}|{blockIndex}";
+            byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(raw));
+            return "Postos_" + Convert.ToHexString(hash);
+        }
+
+        private async Task<List<Postos>> LoadBlockAsync(string searchValue, string sortColumn, string sortDir, int blockStart, int blockSize)
+        {
+            IQueryable<Postos> query = BuildBaseQuery(searchValue);
+            query = ApplyOrdering(query, sortColumn, sortDir);
+            return await query.Skip(blockStart).Take(blockSize).ToListAsync();
+        }
+
+        private async Task<int> CountTotalAsync(string searchValue)
+        {
+            return await BuildBaseQuery(searchValue).CountAsync();
+        }
+
+        private IQueryable<Postos> BuildBaseQuery(string searchValue)
+        {
+            IQueryable<Postos> query = _db.Postos.AsNoTracking().Include(p => p.Instituicao);
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                query = query.FiltrarPorConteudo(searchValue,
+                    x => x.SiglaPosto,
+                    x => x.NomePosto,
+                    x => x.Endereco,
+                    x => x.Bairro,
+                    x => x.Cidade,
+                    x => x.Id.ToString());
+            }
+
+            return query;
+        }
+
+        private IQueryable<Postos> ApplyOrdering(IQueryable<Postos> query, string sortColumn, string sortDir)
+        {
+            bool desc = sortDir.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            return sortColumn.ToLowerInvariant() switch
+            {
+                "siglainstituicao" => desc ? query.OrderByDescending(p => p.Instituicao!.Sigla) : query.OrderBy(p => p.Instituicao!.Sigla),
+                "nomeinstituicao" => desc ? query.OrderByDescending(p => p.Instituicao!.Nome) : query.OrderBy(p => p.Instituicao!.Nome),
+                "siglaposto" => desc ? query.OrderByDescending(p => p.SiglaPosto) : query.OrderBy(p => p.SiglaPosto),
+                "nomeposto" => desc ? query.OrderByDescending(p => p.NomePosto) : query.OrderBy(p => p.NomePosto),
+                "responsavel" => desc ? query.OrderByDescending(p => p.Responsavel) : query.OrderBy(p => p.Responsavel),
+                "telefone" => desc ? query.OrderByDescending(p => p.Telefone) : query.OrderBy(p => p.Telefone),
+                _ => desc ? query.OrderByDescending(p => p.Id) : query.OrderBy(p => p.Id)
+            };
+        }
+
+        private static string BuildAcoes(int id)
+        {
+            return $"<a id='{id}' class='grid_itens' onclick=clickConsulta(this) title='Consultar'><i class='fa-sharp fa-solid fa-display'></i> </a>" +
+                   $"<a id='{id}' class='grid_itens' onclick=clickAlterar(this) title='Alterar'><i class='fa-sharp fa-solid fa-file-pen'></i> </a>" +
+                   $"<a id='{id}' class='grid_itens' onclick=clickDelete(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>";
         }
 
         [TypeFilter(typeof(SessionFilter))]

@@ -40,6 +40,15 @@
         height: 21px;
     }
 
+    /*Feito pelo Kiro em 01/08/2026*/
+    .table-responsive {
+        overflow-x: auto !important;
+    }
+    /* Truncar texto longo nas colunas de conteúdo */
+    #modeloTable td:nth-child(3),
+    #modeloTable td:nth-child(5) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    /*..Kiro*/
+
     .summary {
         color: #646464;
         background-color: #add2fd;
@@ -105,20 +114,98 @@
     </div>
     <div class="card-secao-body">
         <div class="table-responsive">
-            <table id="modeloTable" name="datatable" data-order='[[ 3, "asc" ]]' class="display compact order-column table-striped table-hover nowrap">
+            <table id="modeloTable" name="datatable" data-order='[[ 3, "asc" ]]' class="display compact order-column table-striped table-hover">
         @await Html.PartialAsync("Partials/_PartialPlanoContaItem", Model)
             </table>
         </div>
     </div>
 </div>
 @section Scripts {
+    <script>
+        //Feito pelo Kiro em 01/08/2026
+        // Sobrescreve configTable para esta página com autoWidth:false
+        // Correção: no primeiro carregamento o DataTables calcula larguras sobre HTML
+        // já renderizado, gerando estilos inline incorretos. A solução é capturar o HTML
+        // limpo da tabela ANTES da inicialização do DT e, no primeiro load, destruir a
+        // instância e reinicializar sobre HTML limpo (mesma técnica do AJAX).
+        var _planoExamesFirstLoad = true;
+        var _planoExamesHtmlOriginal = $('#modeloTable').html();
+
+        var _originalConfigTable = typeof configTable === 'function' ? configTable : null;
+        configTable = function() {
+            // No primeiro carregamento, garante HTML limpo (sem resíduos do DT)
+            if (_planoExamesFirstLoad) {
+                _planoExamesFirstLoad = false;
+                // Se o DataTables já foi inicializado pelo _PartialDatatables, destrói
+                if ($.fn.DataTable.isDataTable('#modeloTable')) {
+                    $('#modeloTable').DataTable().destroy();
+                }
+                // Reinjeta o HTML original limpo (sem estilos inline do DT)
+                $('#modeloTable').html(_planoExamesHtmlOriginal);
+            }
+
+            $('#modeloTable tfoot th').each(function () {
+                var title = $(this).text();
+                $(this).html('<input type="text" placeholder="' + title + '" style="max-width: 106px; padding-left: 4px; border: 1px solid gray; border-radius: 5px;" />');
+            });
+            $('#modeloTable').DataTable({
+                initComplete: function () {
+                    this.api().columns().every(function () {
+                        var that = this;
+                        $('input', this.footer()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+                },
+                autoWidth: false,
+                responsive: false,
+                columns: [
+                    { width: '4%' },    /* Tabela */
+                    { width: '7%' },    /* Tipo Conta */
+                    { width: '14%' },   /* Principal */
+                    { width: '10%' },   /* Conta Exame */
+                    { width: '15%' },   /* Descrição do Item */
+                    { width: '9%' },    /* Valor Custo R$ */
+                    { width: '9%' },    /* Valor Cobrar/Paciente R$ */
+                    { width: '11%' },   /* Margem sobre o custo (%) */
+                    { width: '11%' },   /* Margem Bruta (%) */
+                    { width: '10%' }    /* Opções */
+                ],
+                layout: {
+                    topStart: { pageLength: { menu: [[10, 25, 50, 100, 250, 500, -1], [10, 25, 50, 100, 250, 500, "Todos"]] } },
+                    topEnd: { search: { placeholder: 'Digite aqui sua busca' } },
+                    bottomStart: 'info',
+                    bottomEnd: { paging: { numbers: 5 } }
+                },
+                "language": {
+                    "search": "Busca:",
+                    "lengthMenu": "Mostrar _MENU_ resultados por página",
+                    "emptyTable": "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
+                    "info": "Exibindo: _START_/_END_ de _TOTAL_ registros",
+                    "infoFiltered": "(Total de _MAX_ registros existentes na base de dados)",
+                    "infoThousands": ".", "thousands": ".", "decimal": ",",
+                    "loadingRecords": "Carregando...",
+                    "zeroRecords": "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
+                    "paginate": {
+                        "next": "<img src='images/icones/arrow_right_uno.png' width='28%' border='none' />",
+                        "previous": "<img src='images/icones/arrow_left_uno.png' width='28%' border='none' />",
+                        "first": "<img src='images/icones/arrow_left.png' width='28%' border='none' />",
+                        "last": "<img src='images/icones/arrow_right.png' width='28%' border='none' />"
+                    }
+                }
+            }).draw();
+        };
+        //..Kiro
+    </script>
     <div class="toolbar"><partial name='_PartialDatatables' /></div>
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/jquery.maskMoney.min.js"></script>
     <script>
         $(document).ready(function () {
-            var numeroItemTabela = $(".itemTabelaExame").val(1); //declara apenas, porque aqui ainda fica o default do Combobox, colocamos 1 = SUS!
-            var numeroItemFolha = $(".itemFolhaExame").val(1);   //declara no carregamento da página, o número da folha que está DEFAULT no ComboBox!
+            var numeroItemTabela = $(".itemTabelaExame").val(1);
+            var numeroItemFolha = $(".itemFolhaExame").val(1);
 
             //Carrega novo grid de acordo com os boxes
             $('.itemFolhaExame, .itemTabelaExame').change(function (event) {//class from RadioButton
@@ -133,10 +220,10 @@
                     async: true,
                     dataType: "html",
                     success: function (data) {
-                        $('#modeloTable').DataTable().destroy();  //destrói o DataTables para conseguir atualizar o "data" paginando corretamente!
-                        $("#modeloTable").html(data);             //contaDiv é do "tbody" que monta/substitui a partial grid na posição
+                        $('#modeloTable').DataTable().destroy();
+                        $("#modeloTable").html(data);
 
-                        configTable();                       //reconstrói o DataTable com "draw()" com as configurações determinadas
+                        configTable();
 
                     },
                     failure: function () { alert("Falhou carregamento do Grid"); }

@@ -25,28 +25,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model.ListaDados)
-            {
-                @Html.Raw(
-                         "<tr>" +
-                         "<td style='width: 03%;'>" + item.Id + "</td>" +
-                         "<td style='width: 5%;'>" + item.Sigla + "</td>" +
-                         "<td style='width: 15%;'>" + item.Nome + "</td>" +
-                         "<td style='width: 7%;'>" + item.CNPJ + "</td>" +
-                         "<td style='width: 10%;'>" + item.Email + "</td>" +
-                         "<td style='width: 7%;'>" + item.Telefone + "</td>" +
-                         "<td style='width: 7%;'>" + item.Celular + "</td>")
-                ;
-                @Html.Raw(
-                         "<td class='grid_fundo_opcoes'>" +
-                         "<a id=" + item.Id + " class='grid_itens' onclick=clickConsulta(this) title='Consultar'><i class='fa-sharp fa-solid fa-display'></i> </a>" +
-                         "<a id=" + item.Id + " class='grid_itens' onclick=clickPostos(this) title='Postos e Anexos'><i class='fa-sharp fa-solid fa-file-medical'></i> </a>" +
-                         "<a id=" + item.Id + " class='grid_itens' onclick=clickAlterar(this) title='Alterar'><i class='fa-sharp fa-solid fa-file-pen'></i> </a>" +
-                         "<a id=" + item.Id + " class='grid_itens' onclick=clickDelete(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>" +
-                         "</td>" +
-                         "</tr>")
-                ;
-            }
+            @* Dados carregados via AJAX pelo DataTables (server-side processing). *@
         </tbody>
         <tfoot>
             <tr>
@@ -65,13 +44,102 @@
     </div>
 </div>
 @section Scripts {
-    <div class="toolbar"><partial name='_PartialDatatables' /></div>
     <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function () {
-            setTimeout(function () {
-                restaurarEstadoGrid('Instituicoes');
-            }, 500);
+            $('#modeloTable tfoot th').each(function () {
+                var title = $(this).text();
+                if (title !== 'Opções') {
+                    $(this).html('<input type="text" placeholder="' + title + '" style="max-width: 106px; padding-left: 4px; border: 1px solid gray; border-radius: 5px;" />');
+                } else {
+                    $(this).html('');
+                }
+            });
+
+            $('#modeloTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/Instituicoes/Listar',
+                    type: 'POST'
+                },
+                pageLength: 10,
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'id', name: 'id' },
+                    { data: 'sigla', name: 'sigla', orderable: false },
+                    { data: 'nome', name: 'nome' },
+                    { data: 'cnpj', name: 'cnpj', orderable: false },
+                    { data: 'email', name: 'email', orderable: false },
+                    { data: 'telefone', name: 'telefone', orderable: false },
+                    { data: 'celular', name: 'celular', orderable: false },
+                    { data: 'acoes', name: 'acoes', orderable: false, searchable: false }
+                ],
+                autoWidth: true,
+                responsive: true,
+                fixedColumns: {
+                    left: -1,
+                    right: 1
+                },
+                fixedHeader: {
+                    header: true,
+                    footer: true
+                },
+                layout: {
+                    topStart: {
+                        pageLength: {
+                            menu: [[10, 25, 50, 100, 250, 500, -1], [10, 25, 50, 100, 250, 500, "Todos"]]
+                        }
+                    },
+                    topEnd: {
+                        search: {
+                            placeholder: 'Digite aqui sua busca'
+                        }
+                    },
+                    bottomStart: 'info',
+                    bottomEnd: {
+                        paging: {
+                            numbers: 5
+                        }
+                    }
+                },
+                language: {
+                    search: "Busca:",
+                    lengthMenu: "Mostrar _MENU_ resultados por página",
+                    emptyTable: "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
+                    info: "Exibindo: _START_/_END_ de _TOTAL_ registros",
+                    infoFiltered: "(Total de _MAX_ registros existentes na base de dados)",
+                    infoThousands: ".",
+                    thousands: ".",
+                    decimal: ",",
+                    loadingRecords: "Carregando...",
+                    zeroRecords: "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
+                    paginate: {
+                        next: "<img src='images/icones/arrow_right_uno.png' width='28%' border='none' />",
+                        previous: "<img src='images/icones/arrow_left_uno.png' width='28%' border='none' />",
+                        first: "<img src='images/icones/arrow_left.png' width='28%' border='none' />",
+                        last: "<img src='images/icones/arrow_right.png' width='28%' border='none' />"
+                    }
+                },
+                initComplete: function () {
+                    this.api().columns().every(function () {
+                        var that = this;
+                        $('input', this.footer()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+
+                    setTimeout(function () {
+                        if (typeof restaurarEstadoGrid === 'function') {
+                            restaurarEstadoGrid('Instituicoes');
+                        }
+                    }, 500);
+                }
+            });
+
+            $("input[type='search']")[0].focus();
         });
     </script>
 }

@@ -10,6 +10,8 @@ using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.Text;
 using static BLL.UtilBLL;
 
 namespace LabWebMvc.MVC.Areas.Controllers
@@ -17,6 +19,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
     //Feito pelo Kiro em 17/05/2026
     public class ConsultarExamesController : BaseController
     {
+        private readonly IMemoryCache _cache;
+
         public ConsultarExamesController(
             IDbFactory dbFactory,
             IValidadorDeSessao validador,
@@ -24,15 +28,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
-            IConnectionService connectionService)
+            IConnectionService connectionService,
+            IMemoryCache cache)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
-        { }
+        {
+            _cache = cache;
+        }
 
         //Feito pelo Kiro em 17/05/2026
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ConsultarExames")]
-        public async Task<IActionResult> Index(
+        public IActionResult Index(
             string? dataExameDe,
             string? dataExamePara,
             string? nomePaciente,
@@ -43,8 +50,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
             string? nomePosto,
             string situacaoExame = "todos")
         {
-            ICollection<dynamic> listaGrid = [];
-
             // Valida valores permitidos
             var opcoesValidas = new[] { "todos", "liberados", "naoLiberados", "pendentes", "baixados" };
             if (!opcoesValidas.Contains(situacaoExame))
@@ -55,187 +60,359 @@ namespace LabWebMvc.MVC.Areas.Controllers
             DateTime dataDe = hojeLocal.AddDays(-15);
             DateTime dataPara = hojeLocal;
 
-            // Parse se fornecido pelo usuario
             if (!string.IsNullOrEmpty(dataExameDe))
                 dataDe = dataExameDe.Trim().FormataData("dd/MM/yyyy", true);
             if (!string.IsNullOrEmpty(dataExamePara))
                 dataPara = dataExamePara.Trim().FormataData("dd/MM/yyyy", true);
 
-            // Converte para range UTC (necessario para timestamptz no Npgsql 8.x)
-            var (inicioDeUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataDe);
-            var (_, fimParaUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataPara);
-
-            // Passa as datas efetivas para a view
             ViewBag.DataExameDe = dataDe.ToString("dd/MM/yyyy");
             ViewBag.DataExamePara = dataPara.ToString("dd/MM/yyyy");
             ViewBag.SituacaoExame = situacaoExame;
 
-            bool temOutroFiltro = !string.IsNullOrEmpty(nomePaciente)
-                          || codigoExame.HasValue
-                          || !string.IsNullOrEmpty(siglaInstituicao)
-                          || !string.IsNullOrEmpty(nomeInstituicao)
-                          || !string.IsNullOrEmpty(siglaPosto)
-                          || !string.IsNullOrEmpty(nomePosto);
+            ViewBag.TextoMenu = new object[] { "Consultar Exames", false };
+            return View(new vmConsultarExames());
+        }
 
-            var pendentesIds = await _db.ItensExamesRealizados
+        /// <summary>
+        /// Endpoint server-side do DataTables para a tela Consultar Exames.
+        /// Carrega blocos de 100 registros do banco (cache de curta duração) e
+        /// devolve a página solicitada de 10 em 10.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("ConsultarExames/Listar")]
+        public async Task<IActionResult> Listar(
+            [FromForm] DataTableRequest request,
+            string? dataExameDe,
+            string? dataExamePara,
+            string? nomePaciente,
+            int? codigoExame,
+            string? siglaInstituicao,
+            string? nomeInstituicao,
+            string? siglaPosto,
+            string? nomePosto,
+            string situacaoExame = "todos")
+        {
+            try
+            {
+                var opcoesValidas = new[] { "todos", "liberados", "naoLiberados", "pendentes", "baixados" };
+                if (!opcoesValidas.Contains(situacaoExame))
+                    situacaoExame = "todos";
+
+                var (dataDe, dataPara, inicioDeUtc, fimParaUtc) = ObterDatasFiltro(dataExameDe, dataExamePara);
+
+                int draw = request.Draw;
+                int start = request.Start;
+                int length = Math.Max(request.Length, 10);
+                string searchValue = request.Search?.Value?.Trim() ?? string.Empty;
+
+                const int blockSize = 100;
+                int blockIndex = start / blockSize;
+                int blockStart = blockIndex * blockSize;
+
+                string sortColumn = request.Order.Count > 0 && request.Order[0].Column < request.Columns.Count
+                    ? (request.Columns[request.Order[0].Column].Data ?? "id")
+                    : "id";
+                string sortDir = request.Order.Count > 0
+                    ? (request.Order[0].Dir ?? "desc")
+                    : "desc";
+
+                string cacheKey = BuildCacheKey(dataDe, dataPara, nomePaciente, codigoExame, siglaInstituicao, nomeInstituicao, siglaPosto, nomePosto, situacaoExame, searchValue, sortColumn, sortDir, blockIndex);
+
+                if (!_cache.TryGetValue(cacheKey, out List<ConsultarExamesGridItem>? blockData) || blockData == null)
+                {
+                    blockData = await LoadBlockAsync(dataDe, dataPara, nomePaciente, codigoExame, siglaInstituicao, nomeInstituicao, siglaPosto, nomePosto, situacaoExame, searchValue, sortColumn, sortDir, blockStart, blockSize);
+                    _cache.Set(cacheKey, blockData, TimeSpan.FromMinutes(5));
+                }
+
+                int recordsTotal = await CountTotalAsync(dataDe, dataPara, nomePaciente, codigoExame, siglaInstituicao, nomeInstituicao, siglaPosto, nomePosto, situacaoExame, searchValue);
+
+                int skipInBlock = start - blockStart;
+                var pageData = blockData.Skip(skipInBlock).Take(length).ToList();
+
+                List<object> result = pageData.Select(item =>
+                {
+                    (string statusTexto, string statusCor) = ObterStatus(item);
+                    return (object)new
+                    {
+                        id = item.Id,
+                        siglaTabela = item.SiglaTabela,
+                        siglaInstituicao = item.SiglaInstituicao,
+                        nomeInstituicao = item.NomeInstituicao,
+                        siglaPosto = item.SiglaPosto,
+                        nomePosto = item.NomePosto,
+                        nomePaciente = item.NomePaciente,
+                        nascimento = item.Nascimento.ToLocalString("dd/MM/yyyy"),
+                        sequencial = item.Sequencial,
+                        dataIni = item.DataIni.ToLocalString("dd/MM/yyyy"),
+                        liberacao = item.Liberacao,
+                        baixado = item.Baixado,
+                        situacaoExame = item.SituacaoExame,
+                        statusTexto,
+                        statusCor,
+                        acoes = $"<a id='{item.Id}' class='grid_itens' onclick=clickDeleteExame(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>"
+                    };
+                }).ToList();
+
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = draw,
+                    RecordsTotal = recordsTotal,
+                    RecordsFiltered = recordsTotal,
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[ConsultarExames] Listar - Erro: " + ex.Message, "wError");
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = request.Draw,
+                    RecordsTotal = 0,
+                    RecordsFiltered = 0,
+                    Data = new List<object>()
+                });
+            }
+        }
+
+        private (DateTime dataDe, DateTime dataPara, DateTime inicioDeUtc, DateTime fimParaUtc) ObterDatasFiltro(string? dataExameDe, string? dataExamePara)
+        {
+            DateTime hojeLocal = DateTime.Now.Date;
+            DateTime dataDe = hojeLocal.AddDays(-15);
+            DateTime dataPara = hojeLocal;
+
+            if (!string.IsNullOrEmpty(dataExameDe))
+                dataDe = dataExameDe.Trim().FormataData("dd/MM/yyyy", true);
+            if (!string.IsNullOrEmpty(dataExamePara))
+                dataPara = dataExamePara.Trim().FormataData("dd/MM/yyyy", true);
+
+            var (inicioDeUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataDe);
+            var (_, fimParaUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataPara);
+
+            return (dataDe, dataPara, inicioDeUtc, fimParaUtc);
+        }
+
+        private IQueryable<int> ObterPendentesIdsQuery()
+        {
+            return _db.ItensExamesRealizados
                 .AsNoTracking()
                 .Where(i => i.ContaExame.Substring(i.ContaExame.Length - 4) != "0000")
                 .Where(i => string.IsNullOrEmpty(i.Resultado))
                 .Select(i => i.ExameRealizadoId)
-                .Distinct()
-                .ToListAsync();
+                .Distinct();
+        }
 
-            IQueryable<ExamesRealizados> CriarQueryExamesRealizados()
-            {
-                var q = _db.ExamesRealizados
-                    .AsNoTracking()
-                    .Include(e => e.Instituicao)
-                    .Include(e => e.Postos)
-                    .Include(e => e.Pacientes)
-                    .Include(e => e.TabelaExames)
-                    .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc)
-                    .AsQueryable();
+        private string BuildCacheKey(
+            DateTime dataDe, DateTime dataPara,
+            string? nomePaciente, int? codigoExame,
+            string? siglaInstituicao, string? nomeInstituicao,
+            string? siglaPosto, string? nomePosto,
+            string situacaoExame, string searchValue,
+            string sortColumn, string sortDir, int blockIndex)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            string raw = $"{dataDe:yyyyMMdd}|{dataPara:yyyyMMdd}|{nomePaciente?.ToLowerInvariant()}|{codigoExame}|{siglaInstituicao?.ToLowerInvariant()}|{nomeInstituicao?.ToLowerInvariant()}|{siglaPosto?.ToLowerInvariant()}|{nomePosto?.ToLowerInvariant()}|{situacaoExame}|{searchValue.ToLowerInvariant()}|{sortColumn}|{sortDir}|{blockIndex}";
+            byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(raw));
+            return "ConsultarExames_" + Convert.ToHexString(hash);
+        }
 
-                switch (situacaoExame)
+        private async Task<List<ConsultarExamesGridItem>> LoadBlockAsync(
+            DateTime dataDe, DateTime dataPara,
+            string? nomePaciente, int? codigoExame,
+            string? siglaInstituicao, string? nomeInstituicao,
+            string? siglaPosto, string? nomePosto,
+            string situacaoExame, string searchValue,
+            string sortColumn, string sortDir,
+            int blockStart, int blockSize)
+        {
+            IQueryable<ConsultarExamesGridItem> query = BuildBaseQuery(dataDe, dataPara, nomePaciente, codigoExame, siglaInstituicao, nomeInstituicao, siglaPosto, nomePosto, situacaoExame, searchValue);
+            query = ApplyOrdering(query, sortColumn, sortDir);
+            return await query.Skip(blockStart).Take(blockSize).ToListAsync();
+        }
+
+        private async Task<int> CountTotalAsync(
+            DateTime dataDe, DateTime dataPara,
+            string? nomePaciente, int? codigoExame,
+            string? siglaInstituicao, string? nomeInstituicao,
+            string? siglaPosto, string? nomePosto,
+            string situacaoExame, string searchValue)
+        {
+            return await BuildBaseQuery(dataDe, dataPara, nomePaciente, codigoExame, siglaInstituicao, nomeInstituicao, siglaPosto, nomePosto, situacaoExame, searchValue).CountAsync();
+        }
+
+        private IQueryable<ConsultarExamesGridItem> BuildBaseQuery(
+            DateTime dataDe, DateTime dataPara,
+            string? nomePaciente, int? codigoExame,
+            string? siglaInstituicao, string? nomeInstituicao,
+            string? siglaPosto, string? nomePosto,
+            string situacaoExame, string searchValue)
+        {
+            var (_, _, inicioDeUtc, fimParaUtc) = ObterDatasFiltro(dataDe.ToString("dd/MM/yyyy"), dataPara.ToString("dd/MM/yyyy"));
+            var pendentesIds = ObterPendentesIdsQuery();
+
+            IQueryable<ConsultarExamesGridItem> queryEr = _db.ExamesRealizados
+                .AsNoTracking()
+                .Include(e => e.Instituicao)
+                .Include(e => e.Postos)
+                .Include(e => e.Pacientes)
+                .Include(e => e.TabelaExames)
+                .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc)
+                .Select(e => new ConsultarExamesGridItem
                 {
-                    case "liberados":
-                        q = q.Where(e => e.Liberacao == 1 && e.Baixado == 0);
-                        break;
-                    case "naoLiberados":
-                        q = q.Where(e => e.Liberacao == 0 && e.Baixado == 0 && !pendentesIds.Contains(e.Id));
-                        break;
-                    case "pendentes":
-                        q = q.Where(e => e.Liberacao == 0 && e.Baixado == 0 && pendentesIds.Contains(e.Id));
-                        break;
-                }
-
-                return q;
-            }
-
-            IQueryable<ExamesRealizadosAM> CriarQueryExamesRealizadosAM()
-            {
-                return _db.ExamesRealizadosAM
-                    .AsNoTracking()
-                    .Include(e => e.Instituicao)
-                    .Include(e => e.Postos)
-                    .Include(e => e.Pacientes)
-                    .Include(e => e.TabelaExames)
-                    .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc)
-                    .AsQueryable();
-            }
-
-            IQueryable<ExamesRealizados> AplicarFiltros(IQueryable<ExamesRealizados> q)
-            {
-                if (!string.IsNullOrEmpty(nomePaciente))
-                    q = q.Where(e => e.Pacientes.NomePaciente
-                        .ToLower().Contains(nomePaciente.Trim().ToLower()));
-
-                if (codigoExame.HasValue)
-                    q = q.Where(e => e.Id == codigoExame.Value);
-
-                if (!string.IsNullOrEmpty(siglaInstituicao))
-                    q = q.Where(e => e.Instituicao.Sigla
-                        .ToLower().Contains(siglaInstituicao.Trim().ToLower()));
-
-                if (!string.IsNullOrEmpty(nomeInstituicao))
-                    q = q.Where(e => e.Instituicao.Nome
-                        .ToLower().Contains(nomeInstituicao.Trim().ToLower()));
-
-                if (!string.IsNullOrEmpty(nomePosto))
-                    q = q.Where(e => e.Postos != null && e.Postos.NomePosto
-                        .ToLower().Contains(nomePosto.Trim().ToLower()));
-
-                if (!string.IsNullOrEmpty(siglaPosto))
-                    q = q.Where(e => e.Postos != null && e.Postos.SiglaPosto
-                        .ToLower().Contains(siglaPosto.Trim().ToLower()));
-
-                if (!temOutroFiltro)
-                    q = q.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id).Take(100);
-                else
-                    q = q.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id);
-
-                return q;
-            }
-
-            IQueryable<ExamesRealizadosAM> AplicarFiltrosAM(IQueryable<ExamesRealizadosAM> q)
-            {
-                if (!string.IsNullOrEmpty(nomePaciente))
-                    q = q.Where(e => e.Pacientes.NomePaciente
-                        .ToLower().Contains(nomePaciente.Trim().ToLower()));
-
-                if (codigoExame.HasValue)
-                    q = q.Where(e => e.Id == codigoExame.Value);
-
-                if (!string.IsNullOrEmpty(siglaInstituicao))
-                    q = q.Where(e => e.Instituicao.Sigla
-                        .ToLower().Contains(siglaInstituicao.Trim().ToLower()));
-
-                if (!string.IsNullOrEmpty(nomeInstituicao))
-                    q = q.Where(e => e.Instituicao.Nome
-                        .ToLower().Contains(nomeInstituicao.Trim().ToLower()));
-
-                if (!string.IsNullOrEmpty(nomePosto))
-                    q = q.Where(e => e.Postos != null && e.Postos.NomePosto
-                        .ToLower().Contains(nomePosto.Trim().ToLower()));
-
-                if (!string.IsNullOrEmpty(siglaPosto))
-                    q = q.Where(e => e.Postos != null && e.Postos.SiglaPosto
-                        .ToLower().Contains(siglaPosto.Trim().ToLower()));
-
-                if (!temOutroFiltro)
-                    q = q.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id).Take(100);
-                else
-                    q = q.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id);
-
-                return q;
-            }
-
-            void AdicionarItemExamesRealizados(dynamic item, string situacao)
-            {
-                listaGrid.Add(new
-                {
-                    Id = item.Id,
-                    SiglaTabela = item.TabelaExames?.SiglaTabela ?? "",
-                    SiglaInstituicao = item.Instituicao.Sigla,
-                    NomeInstituicao = item.Instituicao.Nome,
-                    SiglaPosto = item.Postos?.SiglaPosto ?? "",
-                    NomePosto = item.Postos?.NomePosto ?? "",
-                    NomePaciente = item.Pacientes.NomePaciente,
-                    Nascimento = item.Pacientes.Nascimento,
-                    Sequencial = item.Sequencial,
-                    DataIni = item.DataIni,
-                    Liberacao = item.Liberacao,
-                    Baixado = item.Baixado,
-                    SituacaoExame = situacao
+                    Id = e.Id,
+                    SiglaTabela = e.TabelaExames != null ? e.TabelaExames.SiglaTabela : "",
+                    SiglaInstituicao = e.Instituicao != null ? e.Instituicao.Sigla : "",
+                    NomeInstituicao = e.Instituicao != null ? e.Instituicao.Nome : "",
+                    SiglaPosto = e.Postos != null ? e.Postos.SiglaPosto : "",
+                    NomePosto = e.Postos != null ? e.Postos.NomePosto : "",
+                    NomePaciente = e.Pacientes != null ? e.Pacientes.NomePaciente : "",
+                    Nascimento = e.Pacientes != null ? e.Pacientes.Nascimento : DateTime.MinValue,
+                    Sequencial = e.Sequencial,
+                    DataIni = e.DataIni,
+                    Liberacao = e.Liberacao,
+                    Baixado = e.Baixado,
+                    SituacaoExame = situacaoExame
                 });
-            }
 
+            IQueryable<ConsultarExamesGridItem> queryAm = _db.ExamesRealizadosAM
+                .AsNoTracking()
+                .Include(e => e.Instituicao)
+                .Include(e => e.Postos)
+                .Include(e => e.Pacientes)
+                .Include(e => e.TabelaExames)
+                .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc)
+                .Select(e => new ConsultarExamesGridItem
+                {
+                    Id = e.Id,
+                    SiglaTabela = e.TabelaExames != null ? e.TabelaExames.SiglaTabela : "",
+                    SiglaInstituicao = e.Instituicao != null ? e.Instituicao.Sigla : "",
+                    NomeInstituicao = e.Instituicao != null ? e.Instituicao.Nome : "",
+                    SiglaPosto = e.Postos != null ? e.Postos.SiglaPosto : "",
+                    NomePosto = e.Postos != null ? e.Postos.NomePosto : "",
+                    NomePaciente = e.Pacientes != null ? e.Pacientes.NomePaciente : "",
+                    Nascimento = e.Pacientes != null ? e.Pacientes.Nascimento : DateTime.MinValue,
+                    Sequencial = e.Sequencial,
+                    DataIni = e.DataIni,
+                    Liberacao = e.Liberacao,
+                    Baixado = e.Baixado,
+                    SituacaoExame = situacaoExame
+                });
+
+            // Situação para ExamesRealizados
+            queryEr = situacaoExame switch
+            {
+                "liberados" => queryEr.Where(e => e.Liberacao == 1 && e.Baixado == 0),
+                "naoLiberados" => queryEr.Where(e => e.Liberacao == 0 && e.Baixado == 0 && !pendentesIds.Contains(e.Id)),
+                "pendentes" => queryEr.Where(e => e.Liberacao == 0 && e.Baixado == 0 && pendentesIds.Contains(e.Id)),
+                _ => queryEr
+            };
+
+            IQueryable<ConsultarExamesGridItem> query;
             if (situacaoExame == "baixados")
             {
-                var dadosAm = await AplicarFiltrosAM(CriarQueryExamesRealizadosAM()).ToListAsync();
-                foreach (var item in dadosAm)
-                    AdicionarItemExamesRealizados(item, "baixados");
+                query = queryAm;
             }
             else if (situacaoExame == "todos")
             {
-                var dados = await AplicarFiltros(CriarQueryExamesRealizados()).ToListAsync();
-                foreach (var item in dados)
-                    AdicionarItemExamesRealizados(item, "todos");
-
-                var dadosAm = await AplicarFiltrosAM(CriarQueryExamesRealizadosAM()).ToListAsync();
-                foreach (var item in dadosAm)
-                    AdicionarItemExamesRealizados(item, "todos");
+                query = queryEr.Concat(queryAm);
             }
             else
             {
-                var dados = await AplicarFiltros(CriarQueryExamesRealizados()).ToListAsync();
-                foreach (var item in dados)
-                    AdicionarItemExamesRealizados(item, situacaoExame);
+                query = queryEr;
             }
 
-            ViewBag.TextoMenu = new object[] { "Consultar Exames", false };
-            var vmIndex = new vmConsultarExames { ListaDados = listaGrid };
-            return View(vmIndex);
+            query = AplicarFiltrosBackend(query, nomePaciente, codigoExame, siglaInstituicao, nomeInstituicao, siglaPosto, nomePosto);
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                query = query.Where(e =>
+                    (e.SiglaTabela != null && e.SiglaTabela.Contains(searchValue)) ||
+                    (e.SiglaInstituicao != null && e.SiglaInstituicao.Contains(searchValue)) ||
+                    (e.NomeInstituicao != null && e.NomeInstituicao.Contains(searchValue)) ||
+                    (e.SiglaPosto != null && e.SiglaPosto.Contains(searchValue)) ||
+                    (e.NomePosto != null && e.NomePosto.Contains(searchValue)) ||
+                    (e.NomePaciente != null && e.NomePaciente.Contains(searchValue)) ||
+                    e.Id.ToString().Contains(searchValue));
+            }
+
+            return query;
+        }
+
+        private IQueryable<ConsultarExamesGridItem> AplicarFiltrosBackend(
+            IQueryable<ConsultarExamesGridItem> query,
+            string? nomePaciente, int? codigoExame,
+            string? siglaInstituicao, string? nomeInstituicao,
+            string? siglaPosto, string? nomePosto)
+        {
+            if (!string.IsNullOrEmpty(nomePaciente))
+                query = query.Where(e => e.NomePaciente.ToLower().Contains(nomePaciente.Trim().ToLower()));
+
+            if (codigoExame.HasValue)
+                query = query.Where(e => e.Id == codigoExame.Value);
+
+            if (!string.IsNullOrEmpty(siglaInstituicao))
+                query = query.Where(e => e.SiglaInstituicao.ToLower().Contains(siglaInstituicao.Trim().ToLower()));
+
+            if (!string.IsNullOrEmpty(nomeInstituicao))
+                query = query.Where(e => e.NomeInstituicao.ToLower().Contains(nomeInstituicao.Trim().ToLower()));
+
+            if (!string.IsNullOrEmpty(nomePosto))
+                query = query.Where(e => e.NomePosto.ToLower().Contains(nomePosto.Trim().ToLower()));
+
+            if (!string.IsNullOrEmpty(siglaPosto))
+                query = query.Where(e => e.SiglaPosto.ToLower().Contains(siglaPosto.Trim().ToLower()));
+
+            return query;
+        }
+
+        private IQueryable<ConsultarExamesGridItem> ApplyOrdering(IQueryable<ConsultarExamesGridItem> query, string sortColumn, string sortDir)
+        {
+            bool desc = sortDir.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            return sortColumn.ToLowerInvariant() switch
+            {
+                "siglatabela" => desc ? query.OrderByDescending(e => e.SiglaTabela) : query.OrderBy(e => e.SiglaTabela),
+                "siglainstituicao" => desc ? query.OrderByDescending(e => e.SiglaInstituicao) : query.OrderBy(e => e.SiglaInstituicao),
+                "nomeinstituicao" => desc ? query.OrderByDescending(e => e.NomeInstituicao) : query.OrderBy(e => e.NomeInstituicao),
+                "siglaposto" => desc ? query.OrderByDescending(e => e.SiglaPosto) : query.OrderBy(e => e.SiglaPosto),
+                "nomeposto" => desc ? query.OrderByDescending(e => e.NomePosto) : query.OrderBy(e => e.NomePosto),
+                "nomepaciente" => desc ? query.OrderByDescending(e => e.NomePaciente) : query.OrderBy(e => e.NomePaciente),
+                "sequencial" => desc ? query.OrderByDescending(e => e.Sequencial) : query.OrderBy(e => e.Sequencial),
+                "dataini" => desc ? query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id) : query.OrderBy(e => e.DataIni).ThenBy(e => e.Id),
+                _ => desc ? query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id) : query.OrderBy(e => e.DataIni).ThenBy(e => e.Id)
+            };
+        }
+
+        private static (string statusTexto, string statusCor) ObterStatus(ConsultarExamesGridItem item)
+        {
+            if (item.SituacaoExame == "todos")
+            {
+                if (item.Baixado == 1)
+                    return ("Baixado", "gray");
+                if (item.Liberacao == 1)
+                    return ("Liberado", "green");
+                return ("Não Liberado", "orange");
+            }
+
+            string statusTexto = item.SituacaoExame switch
+            {
+                "liberados" => "Liberado",
+                "naoLiberados" => "Não Liberado",
+                "pendentes" => "Pendente",
+                "baixados" => "Baixado",
+                _ => "-"
+            };
+
+            string statusCor = item.SituacaoExame switch
+            {
+                "liberados" => "green",
+                "naoLiberados" => "orange",
+                "pendentes" => "red",
+                "baixados" => "gray",
+                _ => "black"
+            };
+
+            return (statusTexto, statusCor);
         }
         //..Kiro
 

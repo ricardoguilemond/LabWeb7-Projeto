@@ -576,6 +576,13 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
             // Tenta primeiro do Firebird; se a tabela nao existir la, carrega do PostgreSQL.
             var lookupInstituicao = await CarregarLookupInstituicaoAsync(configuracao.StringConexaoFirebird, postgresConnectionString, cancellationToken);
             var lookupTabelaExames = await CarregarLookupTabelaExamesAsync(configuracao.StringConexaoFirebird, postgresConnectionString, cancellationToken);
+            //Feito pelo Kiro em 19/07/2026
+            // Carrega lookup ExameRealizadoId → MedicoId de ExamesRealizados no PostgreSQL.
+            // Usado para enriquecer Requisitar.MedicoId (RequisicaoOriginal não tem MedicoResp
+            // no Firebird — o médico está apenas em ExamesRealizados). Se ExamesRealizados
+            // estiver vazia/inexistente, retorna dicionário vazio (o pós-processamento pula).
+            var lookupMedicoPorExame = await CarregarLookupMedicoPorExameAsync(postgresConnectionString, cancellationToken);
+            //..Kiro
             HashSet<long>? idsClasseExamesValidos = null;
 
             //Feito pelo Kiro em 26/07/2026
@@ -646,6 +653,7 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
                         lookupTabelaExames,
                         dependenciasFk,
                         idsClasseExamesValidos,
+                        lookupMedicoPorExame,
                         cancellationToken);
 
                     resultadoFinal.Resultados.Add(resultadoTabela);
@@ -811,6 +819,10 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
             Dictionary<string, int> lookupTabelaExames,
             List<DependenciaFk> dependenciasFk,
             HashSet<long>? idsClasseExamesValidos,
+            //Feito pelo Kiro em 19/07/2026
+            // Lookup ExameRealizadoId → MedicoId de ExamesRealizados (enriquece Requisitar.MedicoId).
+            Dictionary<long, int> lookupMedicoPorExame,
+            //..Kiro
             CancellationToken cancellationToken)
         {
             var resultado = new ImportacaoResultadoViewModel
@@ -855,6 +867,29 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
                     _eventLog.LogEventViewer($"[CargaDados] {tabelaPostgres}: colunas obrigatórias ausentes no Firebird serão preenchidas com padrão: {string.Join(", ", colunasObrigatoriasAusentes.Select(c => c.NomePostgreSQL))}", "wInfo");
                     colunasMapeadas.AddRange(colunasObrigatoriasAusentes);
                 }
+
+                //Feito pelo Kiro em 19/07/2026
+                // Para Requisitar, MedicoId precisa estar no INSERT mesmo sendo nullable no banco,
+                // pois será enriquecido no pós-processamento via lookup de ExamesRealizados.
+                // (RequisicaoOriginal não tem MedicoResp no Firebird — o médico está em ExamesRealizados.)
+                if (tabelaPostgres.Equals("Requisitar", StringComparison.OrdinalIgnoreCase))
+                {
+                    foreach (var pg in comparacao.ColunasPostgreSQL.Where(p =>
+                        p.Nome.Equals("MedicoId", StringComparison.OrdinalIgnoreCase)
+                        && !colunasMapeadasNomes.Contains(p.Nome.ToUpperInvariant())))
+                    {
+                        colunasMapeadas.Add(new MapeamentoColunas
+                        {
+                            NomeFirebird = string.Empty,
+                            NomePostgreSQL = pg.Nome,
+                            ColunaFirebird = null,
+                            ColunaPostgreSQL = pg,
+                            Compativel = true
+                        });
+                        colunasMapeadasNomes.Add(pg.Nome.ToUpperInvariant());
+                    }
+                }
+                //..Kiro
 
                 _eventLog.LogEventViewer($"[CargaDados] DIAGNOSTICO {tabelaPostgres}: colunas mapeadas = {string.Join(", ", colunasMapeadas.Select(c => $"{c.NomePostgreSQL}(nullable:{c.ColunaPostgreSQL?.Nullable.ToString() ?? "?"})"))}", "wInfo");
 
@@ -1251,6 +1286,44 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
                                 if (int.TryParse(contaStr.Substring(2, 2), out var folhaId) && folhaId > 0)
                                 {
                                     registro["ClasseExamesId"] = folhaId;
+                                }
+                            }
+                            //..Kiro
+
+                            //Feito pelo Kiro em 19/07/2026
+                            // Pós-processamento para Requisitar: enriquece MedicoId a partir de
+                            // ExamesRealizados. Requisitar é a junção de ExamesRealizados (header) +
+                            // ItensExamesRealizados (itens). A tabela de origem (RequisicaoOriginal)
+                            // NÃO tem MedicoResp no Firebird — o médico está apenas em ExamesRealizados.
+                            // Logo, MedicoId é obtido via lookup ExameRealizadoId → MedicoId.
+                            // Registros que não alcancam MedicoId em ExamesRealizados (órfãos) são dispensados.
+                            if (tabelaPostgres.Equals("Requisitar", StringComparison.OrdinalIgnoreCase)
+                                && lookupMedicoPorExame.Count > 0)
+                            {
+                                if (registro.TryGetValue("ExameRealizadoId", out var exameRealizadoIdVal)
+                                    && exameRealizadoIdVal != null
+                                    && exameRealizadoIdVal != DBNull.Value)
+                                {
+                                    var exameRealizadoIdLong = Convert.ToInt64(exameRealizadoIdVal);
+                                    if (exameRealizadoIdLong > 0
+                                        && lookupMedicoPorExame.TryGetValue(exameRealizadoIdLong, out var medicoId))
+                                    {
+                                        registro["MedicoId"] = medicoId;
+                                    }
+                                    else
+                                    {
+                                        // Órfão: ExameRealizadoId não existe em ExamesRealizados → dispensar.
+                                        resultado.Ignorados++;
+                                        registro.Clear();
+                                        continue;
+                                    }
+                                }
+                                else
+                                {
+                                    // ExameRealizadoId NULL → não alcança MedicoId → dispensar.
+                                    resultado.Ignorados++;
+                                    registro.Clear();
+                                    continue;
                                 }
                             }
                             //..Kiro
@@ -2660,6 +2733,43 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
 
             return lookup;
         }
+
+        //Feito pelo Kiro em 19/07/2026
+        // Carrega lookup ExameRealizadoId → MedicoId de ExamesRealizados no PostgreSQL.
+        // Usado para enriquecer Requisitar.MedicoId (RequisicaoOriginal não tem MedicoResp).
+        // Só lê do PostgreSQL (ExamesRealizados já importado ou preexistente).
+        private static async Task<Dictionary<long, int>> CarregarLookupMedicoPorExameAsync(
+            string postgresConnectionString,
+            CancellationToken cancellationToken)
+        {
+            var lookup = new Dictionary<long, int>();
+
+            try
+            {
+                using var connPg = new NpgsqlConnection(postgresConnectionString);
+                await connPg.OpenAsync(cancellationToken);
+                const string sql = @"SELECT ""Id"", ""MedicoId"" FROM ""ExamesRealizados""";
+                using var cmd = new NpgsqlCommand(sql, connPg);
+                cmd.CommandTimeout = 60;
+                using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    var id = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                    var medicoId = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+                    if (id > 0 && medicoId > 0)
+                    {
+                        lookup[(long)id] = medicoId;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogEmArquivo($"[CarregarLookupMedicoPorExameAsync] AVISO: nao foi possivel carregar lookup de ExamesRealizados do PostgreSQL: {ex.GetType().Name}: {ex.Message}", erro: true);
+            }
+
+            return lookup;
+        }
+        //..Kiro
 
         private static async Task<HashSet<long>> CarregarIdsClasseExamesAsync(string postgresConnectionString, CancellationToken cancellationToken)
         {

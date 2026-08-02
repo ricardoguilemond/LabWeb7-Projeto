@@ -14,7 +14,16 @@ public partial class Requisitar
     public int InstituicaoId { get; set; }
     public int? PostoId { get; set; }
     public int TabelaExamesId { get; set; }
+
+    //Feito pelo Kiro em 19/07/2026
+    // MedicoId é espelho de ExamesRealizados.MedicoId. Requisitar é a junção de
+    // ExamesRealizados (header) + ItensExamesRealizados (itens). A tabela de
+    // origem no Firebird (RequisicaoOriginal) NÃO possui MedicoResp — o médico
+    // está apenas em ExamesRealizados. Logo, Requisitar.MedicoId é obtido via
+    // backfill: Requisitar.ExameRealizadoId = ExamesRealizados.Id → ExamesRealizados.MedicoId.
+    // Script de pós-processamento: Scripts Tabelas por Banco de Dados/LABWEB7Empresas/fix_medicoid_requisitar.sql
     public int MedicoId { get; set; }
+    //..Kiro
     public string? LaboratorioApoio { get; set; }
     public string? ControleApoio { get; set; }
     public string? LaboratorioExterno { get; set; }

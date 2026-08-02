@@ -83,57 +83,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in ViewBag.ListaDados)
-            {
-                int situacao = (int)item.Situacao;
-                int totalImp = (int)item.TotalImpresso;
-
-                // Montar texto e cor do Status com contagem de impressões
-                string statusTexto;
-                string statusCor;
-
-                if (situacao == 1 && totalImp > 0)
-                {
-                    // Cenário crítico: foi impresso mas resultado alterado depois
-                    statusTexto = $"Impresso({totalImp}), Em Análise";
-                    statusCor = "color:#CC6600; font-weight:bold;"; // Laranja escuro — alerta
-                }
-                else if (situacao == 3)
-                {
-                    // Impresso normalmente — exibir contagem
-                    statusTexto = totalImp > 0 ? $"Impresso({totalImp})" : "Impresso";
-                    statusCor = "color:darkgreen; font-weight:bold;";
-                }
-                else
-                {
-                    statusTexto = SituacaoExamesCache.ObterDescricao(situacao, _dbSituacao);
-                    statusCor = situacao switch
-                    {
-                        0 => "color:red; font-weight:bold;",
-                        1 => "color:blue; font-weight:bold;",
-                        2 => "color:green; font-weight:bold;",
-                        5 => "color:orange; font-weight:bold;",
-                        6 => "color:darkred; font-weight:bold;",
-                        7 => "color:gray; font-weight:bold;",
-                        11 => "color:gray; font-weight:bold;",
-                        _ => "color:red; font-weight:bold;"
-                    };
-                }
-
-                @Html.Raw(
-                         "<tr data-situacao='" + situacao + "' data-total-impresso='" + totalImp + "'>" +
-                         "<td>" + item.Id + "</td>" +
-                         "<td>" + item.NomePaciente + "</td>" +
-                         "<td>" + item.SiglaInstituicao + "</td>" +
-                         "<td>" + item.SiglaTabela + "</td>" +
-                         "<td>" + item.NomePosto + "</td>" +
-                         "<td>" + item.Sequencial + "</td>" +
-                         "<td>" + (item.DataFim != null ? ((DateTime)item.DataFim).ToLocalString("dd/MM/yyyy") : "-") + "</td>" +
-                         "<td>" + item.NomeMedico + " " + item.CRM + "</td>" +
-                         "<td style='" + statusCor + "'>" + statusTexto + "</td>" +
-                         "</tr>")
-                ;
-            }
+            @* Dados carregados via AJAX pelo DataTables (server-side processing). *@
         </tbody>
         <tfoot>
             <tr>
@@ -154,7 +104,121 @@
 </div>
 
 @section Scripts {
-    <div class="toolbar"><partial name='_PartialDatatables' /></div>
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            var urlParams = new URLSearchParams(window.location.search);
+
+            $('#modeloTable tfoot th').each(function () {
+                var title = $(this).text();
+                if (title !== 'Status') {
+                    $(this).html('<input type="text" placeholder="' + title + '" style="max-width: 106px; padding-left: 4px; border: 1px solid gray; border-radius: 5px;" />');
+                } else {
+                    $(this).html('');
+                }
+            });
+
+            var table = $('#modeloTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/ResultadoExames/Listar',
+                    type: 'POST',
+                    data: function (d) {
+                        d.dataInicial = urlParams.get('dataInicial') || '';
+                        d.dataFinal = urlParams.get('dataFinal') || '';
+                        d.nomePaciente = urlParams.get('nomePaciente') || '';
+                        d.codigoExame = urlParams.get('codigoExame') || '';
+                        d.siglaInstituicao = urlParams.get('siglaInstituicao') || '';
+                        d.status = urlParams.get('status') || '';
+                    }
+                },
+                pageLength: 10,
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'id', name: 'id' },
+                    { data: 'nomePaciente', name: 'nomePaciente', orderable: false },
+                    { data: 'siglaInstituicao', name: 'siglaInstituicao', orderable: false },
+                    { data: 'siglaTabela', name: 'siglaTabela', orderable: false },
+                    { data: 'nomePosto', name: 'nomePosto', orderable: false },
+                    { data: 'sequencial', name: 'sequencial', orderable: false },
+                    { data: 'dataFim', name: 'dataFim', orderable: false },
+                    { data: 'medico', name: 'medico', orderable: false },
+                    {
+                        data: 'statusTexto',
+                        name: 'statusTexto',
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            return '<span style="color:' + row.statusCor + '; font-weight:bold;">' + data + '</span>';
+                        }
+                    }
+                ],
+                createdRow: function (row, data) {
+                    $(row).attr('data-situacao', data.situacao);
+                    $(row).attr('data-total-impresso', data.totalImpresso);
+                },
+                autoWidth: true,
+                responsive: true,
+                fixedColumns: {
+                    left: -1,
+                    right: 1
+                },
+                fixedHeader: {
+                    header: true,
+                    footer: true
+                },
+                layout: {
+                    topStart: {
+                        pageLength: {
+                            menu: [[10, 25, 50, 100, 250, 500, -1], [10, 25, 50, 100, 250, 500, "Todos"]]
+                        }
+                    },
+                    topEnd: {
+                        search: {
+                            placeholder: 'Digite aqui sua busca'
+                        }
+                    },
+                    bottomStart: 'info',
+                    bottomEnd: {
+                        paging: {
+                            numbers: 5
+                        }
+                    }
+                },
+                language: {
+                    search: "Busca:",
+                    lengthMenu: "Mostrar _MENU_ resultados por página",
+                    emptyTable: "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
+                    info: "Exibindo: _START_/_END_ de _TOTAL_ registros",
+                    infoFiltered: "(Total de _MAX_ registros existentes na base de dados)",
+                    infoThousands: ".",
+                    thousands: ".",
+                    decimal: ",",
+                    loadingRecords: "Carregando...",
+                    zeroRecords: "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
+                    paginate: {
+                        next: "<img src='images/icones/arrow_right_uno.png' width='28%' border='none' />",
+                        previous: "<img src='images/icones/arrow_left_uno.png' width='28%' border='none' />",
+                        first: "<img src='images/icones/arrow_left.png' width='28%' border='none' />",
+                        last: "<img src='images/icones/arrow_right.png' width='28%' border='none' />"
+                    }
+                },
+                initComplete: function () {
+                    this.api().columns().every(function () {
+                        var that = this;
+                        $('input', this.footer()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+                }
+            });
+
+            $("input[type='search']")[0].focus();
+        });
+    </script>
 }
 
 <!-- Painel Informativo do Exame Selecionado -->

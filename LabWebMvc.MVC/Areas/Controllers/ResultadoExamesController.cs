@@ -11,7 +11,9 @@ using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Globalization;
+using System.Text;
 using static BLL.UtilBLL;
 
 namespace LabWebMvc.MVC.Areas.Controllers
@@ -21,6 +23,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
     {
         private readonly IWebHostEnvironment _env;
         private readonly IExameReferenciaCache _exameReferenciaCache;
+        private readonly IMemoryCache _cache;
 
         public ResultadoExamesController(
             IDbFactory dbFactory,
@@ -31,17 +34,19 @@ namespace LabWebMvc.MVC.Areas.Controllers
             ExclusaoService exclusaoService,
             IConnectionService connectionService,
             IWebHostEnvironment env,
-            IExameReferenciaCache exameReferenciaCache)
+            IExameReferenciaCache exameReferenciaCache,
+            IMemoryCache cache)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _env = env;
             _exameReferenciaCache = exameReferenciaCache;
+            _cache = cache;
         }
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ResultadoExames")]
-        public async Task<IActionResult> Index(
+        public IActionResult Index(
             string? dataInicial,
             string? dataFinal,
             string? nomePaciente,
@@ -49,86 +54,256 @@ namespace LabWebMvc.MVC.Areas.Controllers
             string? siglaInstituicao,
             int? status)
         {
-            var query = _db.ExamesRealizados
+            // Dados do grid carregados via AJAX pelo DataTables (server-side processing).
+            ViewBag.TextoMenu = new object[] { "Resultado de Exames", false };
+            return View();
+        }
+
+        /// <summary>
+        /// Endpoint server-side do DataTables para a tela Resultado de Exames.
+        /// Carrega blocos de 100 registros do banco (cache de curta duração) e
+        /// devolve a página solicitada de 10 em 10.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("ResultadoExames/Listar")]
+        public async Task<IActionResult> Listar(
+            [FromForm] DataTableRequest request,
+            string? dataInicial,
+            string? dataFinal,
+            string? nomePaciente,
+            int? codigoExame,
+            string? siglaInstituicao,
+            int? status)
+        {
+            try
+            {
+                int draw = request.Draw;
+                int start = request.Start;
+                int length = Math.Max(request.Length, 10);
+                string searchValue = request.Search?.Value?.Trim() ?? string.Empty;
+
+                const int blockSize = 100;
+                int blockIndex = start / blockSize;
+                int blockStart = blockIndex * blockSize;
+
+                string sortColumn = request.Order.Count > 0 && request.Order[0].Column < request.Columns.Count
+                    ? (request.Columns[request.Order[0].Column].Data ?? "id")
+                    : "id";
+                string sortDir = request.Order.Count > 0
+                    ? (request.Order[0].Dir ?? "desc")
+                    : "desc";
+
+                string cacheKey = BuildCacheKey(dataInicial, dataFinal, nomePaciente, codigoExame, siglaInstituicao, status, searchValue, sortColumn, sortDir, blockIndex);
+
+                if (!_cache.TryGetValue(cacheKey, out List<ResultadoExamesGridItem>? blockData) || blockData == null)
+                {
+                    blockData = await LoadBlockAsync(dataInicial, dataFinal, nomePaciente, codigoExame, siglaInstituicao, status, searchValue, sortColumn, sortDir, blockStart, blockSize);
+                    _cache.Set(cacheKey, blockData, TimeSpan.FromMinutes(5));
+                }
+
+                int recordsTotal = await CountTotalAsync(dataInicial, dataFinal, nomePaciente, codigoExame, siglaInstituicao, status, searchValue);
+
+                int skipInBlock = start - blockStart;
+                var pageData = blockData.Skip(skipInBlock).Take(length).ToList();
+
+                List<object> result = pageData.Select(item =>
+                {
+                    (string statusTexto, string statusCor) = ObterStatus(item.Situacao, item.TotalImpresso);
+                    return (object)new
+                    {
+                        id = item.Id,
+                        nomePaciente = item.NomePaciente,
+                        siglaInstituicao = item.SiglaInstituicao,
+                        siglaTabela = item.SiglaTabela,
+                        nomePosto = item.NomePosto,
+                        sequencial = item.Sequencial,
+                        dataFim = item.DataFim?.ToLocalString("dd/MM/yyyy") ?? "-",
+                        medico = (item.NomeMedico + " " + item.CRM).Trim(),
+                        situacao = item.Situacao,
+                        totalImpresso = item.TotalImpresso,
+                        statusTexto,
+                        statusCor
+                    };
+                }).ToList();
+
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = draw,
+                    RecordsTotal = recordsTotal,
+                    RecordsFiltered = recordsTotal,
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[ResultadoExames] Listar - Erro: " + ex.Message, "wError");
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = request.Draw,
+                    RecordsTotal = 0,
+                    RecordsFiltered = 0,
+                    Data = new List<object>()
+                });
+            }
+        }
+
+        private string BuildCacheKey(
+            string? dataInicial, string? dataFinal,
+            string? nomePaciente, int? codigoExame,
+            string? siglaInstituicao, int? status,
+            string searchValue, string sortColumn, string sortDir, int blockIndex)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            string raw = $"{dataInicial?.ToLowerInvariant()}|{dataFinal?.ToLowerInvariant()}|{nomePaciente?.ToLowerInvariant()}|{codigoExame}|{siglaInstituicao?.ToLowerInvariant()}|{status}|{searchValue.ToLowerInvariant()}|{sortColumn}|{sortDir}|{blockIndex}";
+            byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(raw));
+            return "ResultadoExames_" + Convert.ToHexString(hash);
+        }
+
+        private async Task<List<ResultadoExamesGridItem>> LoadBlockAsync(
+            string? dataInicial, string? dataFinal,
+            string? nomePaciente, int? codigoExame,
+            string? siglaInstituicao, int? status,
+            string searchValue, string sortColumn, string sortDir,
+            int blockStart, int blockSize)
+        {
+            IQueryable<ResultadoExamesGridItem> query = BuildBaseQuery(dataInicial, dataFinal, nomePaciente, codigoExame, siglaInstituicao, status, searchValue);
+            query = ApplyOrdering(query, sortColumn, sortDir);
+            return await query.Skip(blockStart).Take(blockSize).ToListAsync();
+        }
+
+        private async Task<int> CountTotalAsync(
+            string? dataInicial, string? dataFinal,
+            string? nomePaciente, int? codigoExame,
+            string? siglaInstituicao, int? status,
+            string searchValue)
+        {
+            return await BuildBaseQuery(dataInicial, dataFinal, nomePaciente, codigoExame, siglaInstituicao, status, searchValue).CountAsync();
+        }
+
+        private IQueryable<ResultadoExamesGridItem> BuildBaseQuery(
+            string? dataInicial, string? dataFinal,
+            string? nomePaciente, int? codigoExame,
+            string? siglaInstituicao, int? status,
+            string searchValue)
+        {
+            IQueryable<ExamesRealizados> queryEr = _db.ExamesRealizados
                 .AsNoTracking()
                 .Include(e => e.Instituicao)
                 .Include(e => e.Postos)
                 .Include(e => e.Pacientes)
                 .Include(e => e.Medicos)
                 .Include(e => e.TabelaExames)
-                .Where(e => e.Liberacao == 0 && e.Baixado == 0)
-                .AsQueryable();
-
-            bool temFiltro = !string.IsNullOrEmpty(dataInicial)
-                          || !string.IsNullOrEmpty(dataFinal)
-                          || !string.IsNullOrEmpty(nomePaciente)
-                          || codigoExame.HasValue
-                          || !string.IsNullOrEmpty(siglaInstituicao)
-                          || status.HasValue;
+                .Where(e => e.Liberacao == 0 && e.Baixado == 0);
 
             // Filtros backend
             if (!string.IsNullOrEmpty(dataInicial))
             {
                 DateTime dataParsed = dataInicial.Trim().FormataData("dd/MM/yyyy", true);
                 var (inicioUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataParsed);
-                query = query.Where(e => e.DataIni >= inicioUtc);
+                queryEr = queryEr.Where(e => e.DataIni >= inicioUtc);
             }
 
             if (!string.IsNullOrEmpty(dataFinal))
             {
                 DateTime dataParsed = dataFinal.Trim().FormataData("dd/MM/yyyy", true);
                 var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataParsed);
-                query = query.Where(e => e.DataIni <= fimUtc);
+                queryEr = queryEr.Where(e => e.DataIni <= fimUtc);
             }
 
             if (!string.IsNullOrEmpty(nomePaciente))
-                query = query.Where(e => e.Pacientes.NomePaciente
-                    .ToLower().Contains(nomePaciente.Trim().ToLower()));
+                queryEr = queryEr.Where(e => e.Pacientes.NomePaciente.ToLower().Contains(nomePaciente.Trim().ToLower()));
 
             if (codigoExame.HasValue)
-                query = query.Where(e => e.Id == codigoExame.Value);
+                queryEr = queryEr.Where(e => e.Id == codigoExame.Value);
 
             if (!string.IsNullOrEmpty(siglaInstituicao))
-                query = query.Where(e => e.Instituicao.Sigla
-                    .ToLower().Contains(siglaInstituicao.Trim().ToLower()));
+                queryEr = queryEr.Where(e => e.Instituicao.Sigla.ToLower().Contains(siglaInstituicao.Trim().ToLower()));
 
             if (status.HasValue)
-                query = query.Where(e => e.Situacao == status.Value);
-            // Sem filtros: limitar a 100 registros
-            if (!temFiltro)
-                query = query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id).Take(100);
-            else
-                query = query.OrderByDescending(e => e.DataIni).ThenByDescending(e => e.Id);
+                queryEr = queryEr.Where(e => e.Situacao == status.Value);
 
-            var dados = await query.ToListAsync();
-
-            ICollection<dynamic> listaGrid = [];
-            foreach (var item in dados)
+            IQueryable<ResultadoExamesGridItem> query = queryEr.Select(e => new ResultadoExamesGridItem
             {
-                listaGrid.Add(new
-                {
-                    Id = item.Id,
-                    NomePaciente = item.Pacientes?.NomePaciente ?? "",
-                    SiglaInstituicao = item.Instituicao?.Sigla ?? "",
-                    SiglaTabela = item.TabelaExames?.SiglaTabela ?? "",
-                    NomePosto = item.Postos != null
-                        ? (item.Postos.SiglaPosto ?? "") + "-" + (item.Postos.NomePosto ?? "")
-                        : "",
-                    Sequencial = item.Sequencial,
-                    DataFim = item.DataFim,
-                    NomeMedico = item.Medicos?.NomeMedico ?? "",
-                    CRM = item.Medicos?.CRM ?? "",
-                    Situacao = item.Situacao,
-                    TotalImpresso = item.TotalImpresso
-                });
+                Id = e.Id,
+                NomePaciente = e.Pacientes != null ? e.Pacientes.NomePaciente : "",
+                SiglaInstituicao = e.Instituicao != null ? e.Instituicao.Sigla : "",
+                SiglaTabela = e.TabelaExames != null ? e.TabelaExames.SiglaTabela : "",
+                NomePosto = e.Postos != null ? (e.Postos.SiglaPosto ?? "") + "-" + (e.Postos.NomePosto ?? "") : "",
+                Sequencial = e.Sequencial,
+                DataFim = e.DataFim,
+                NomeMedico = e.Medicos != null ? e.Medicos.NomeMedico : "",
+                CRM = e.Medicos != null ? e.Medicos.CRM : "",
+                Situacao = e.Situacao,
+                TotalImpresso = e.TotalImpresso
+            });
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                query = query.Where(e =>
+                    (e.NomePaciente != null && e.NomePaciente.ToLower().Contains(searchValue.ToLower())) ||
+                    (e.SiglaInstituicao != null && e.SiglaInstituicao.ToLower().Contains(searchValue.ToLower())) ||
+                    (e.SiglaTabela != null && e.SiglaTabela.ToLower().Contains(searchValue.ToLower())) ||
+                    (e.NomePosto != null && e.NomePosto.ToLower().Contains(searchValue.ToLower())) ||
+                    (e.NomeMedico != null && e.NomeMedico.ToLower().Contains(searchValue.ToLower())) ||
+                    (e.CRM != null && e.CRM.ToLower().Contains(searchValue.ToLower())) ||
+                    e.Id.ToString().Contains(searchValue) ||
+                    e.Sequencial.ToString().Contains(searchValue));
             }
 
-            ViewBag.TextoMenu = new object[] { "Resultado de Exames", false };
-            ViewBag.TotalRegistros = listaGrid.Count.ToString();
-            ViewBag.TotalTabela = (await _db.ExamesRealizados.Where(e => e.Liberacao == 0 && e.Baixado == 0).CountAsync()).ToString();
-            ViewBag.ListaDados = listaGrid.Cast<dynamic>().ToList();
+            return query;
+        }
 
-            return View();
+        private IQueryable<ResultadoExamesGridItem> ApplyOrdering(IQueryable<ResultadoExamesGridItem> query, string sortColumn, string sortDir)
+        {
+            bool desc = sortDir.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            return sortColumn.ToLowerInvariant() switch
+            {
+                "nomepaciente" => desc ? query.OrderByDescending(e => e.NomePaciente) : query.OrderBy(e => e.NomePaciente),
+                "siglainstituicao" => desc ? query.OrderByDescending(e => e.SiglaInstituicao) : query.OrderBy(e => e.SiglaInstituicao),
+                "siglatabela" => desc ? query.OrderByDescending(e => e.SiglaTabela) : query.OrderBy(e => e.SiglaTabela),
+                "nomeposto" => desc ? query.OrderByDescending(e => e.NomePosto) : query.OrderBy(e => e.NomePosto),
+                "sequencial" => desc ? query.OrderByDescending(e => e.Sequencial) : query.OrderBy(e => e.Sequencial),
+                "datafim" => desc ? query.OrderByDescending(e => e.DataFim).ThenByDescending(e => e.Id) : query.OrderBy(e => e.DataFim).ThenBy(e => e.Id),
+                "medico" => desc ? query.OrderByDescending(e => e.NomeMedico).ThenByDescending(e => e.CRM) : query.OrderBy(e => e.NomeMedico).ThenBy(e => e.CRM),
+                _ => desc ? query.OrderByDescending(e => e.Id) : query.OrderBy(e => e.Id)
+            };
+        }
+
+        private static (string statusTexto, string statusCor) ObterStatus(int situacao, int totalImpresso)
+        {
+            if (situacao == 1 && totalImpresso > 0)
+                return ($"Impresso({totalImpresso}), Em Análise", "#CC6600");
+
+            if (situacao == 3)
+                return (totalImpresso > 0 ? $"Impresso({totalImpresso})" : "Impresso", "darkgreen");
+
+            string statusTexto = situacao switch
+            {
+                0 => "Pendente",
+                1 => "Em Análise",
+                2 => "Liberado",
+                5 => "A Repetir",
+                6 => "Material Inválido",
+                7 => "Pend. Cadastral",
+                11 => "Baixando",
+                _ => "Pendente"
+            };
+
+            string statusCor = situacao switch
+            {
+                0 => "red",
+                1 => "blue",
+                2 => "green",
+                5 => "orange",
+                6 => "darkred",
+                7 => "gray",
+                11 => "gray",
+                _ => "red"
+            };
+
+            return (statusTexto, statusCor);
         }
 
         //Feito pelo Kiro em 06/06/2026

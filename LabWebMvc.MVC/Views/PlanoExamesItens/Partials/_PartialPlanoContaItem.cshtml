@@ -13,7 +13,7 @@
           "<th>Conta Exame</th>" +
           "<th>Descrição do item</th>" +
           "<th>Valor Custo R$</th>" +
-          "<th>Valor Cobrar/Paciente R$</th>" +
+          "<th>Vr Paciente R$</th>" +
           "<th>Margem sobre o custo (%)</th>" +
           "<th>Margem Bruta (%)</th>" +
           "<th>Opções</th>" +
@@ -107,20 +107,20 @@
     string disabledAttr = campoDesabilitado ? "disabled" : "";
 
     @Html.Raw(strFundo +
-              "<td style='width: 5%;'>" + plano.TabelaExamesId + "</td>" +
-              "<td style='width: 10%;'>" + TipoConta + "</td>" +
-              "<td style='width: 07%;'>" + plano.RefItem + "</td>" +
-              "<td style='width: 07%;'>" + Utils.FormataConta(plano.ContaExame) + "</td>" +
-              "<td style='width: 10%;'>" + plano.Descricao + "</td>")
+              "<td style='width: 3%;'>" + plano.TabelaExamesId + "</td>" +
+              "<td style='width: 6%;'>" + TipoConta + "</td>" +
+              "<td style='width: 12%;'>" + plano.RefItem + "</td>" +
+              "<td style='width: 9%;'>" + Utils.FormataConta(plano.ContaExame) + "</td>" +
+              "<td style='width: 14%;'>" + plano.Descricao + "</td>")
 
-    @Html.Raw("<td style='width: 10%;'>")
-    <input type="text" name="ValorCusto" value="@plano.ValorCusto" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorCusto@(plano.Id)" style="width: 100px;" data-grupo="@grupoConta" data-folha="@prefixoFolha" data-tipo="@tipoLinha" @disabledAttr />
+    @Html.Raw("<td style='width: 8%;'>")
+    <input type="text" name="ValorCusto" value="@plano.ValorCusto" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorCusto@(plano.Id)" style="width: 80px;" data-grupo="@grupoConta" data-folha="@prefixoFolha" data-tipo="@tipoLinha" @disabledAttr />
     @Html.Raw("</td>")
-    @Html.Raw("<td style='width: 10%;'>")
-    <input type="text" name="ValorItem" value="@plano.ValorItem" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorItem@(plano.Id)" style="width: 100px;" data-grupo="@grupoConta" data-folha="@prefixoFolha" data-tipo="@tipoLinha" @disabledAttr />
+    @Html.Raw("<td style='width: 8%;'>")
+    <input type="text" name="ValorItem" value="@plano.ValorItem" onclick="this.value=''" onkeypress="formatarMoedaDecimal(this, ',', event)" class="moeda" id="valorItem@(plano.Id)" style="width: 80px;" data-grupo="@grupoConta" data-folha="@prefixoFolha" data-tipo="@tipoLinha" @disabledAttr />
     @Html.Raw("</td>")
-    @Html.Raw("<td id='" + plano.Id + "' class='linhaMargemSobreCusto' style='width: 12%;'>" + @TempData["linhaMargemSobreCusto"] + "&nbsp;</td>")
-    @Html.Raw("<td id='margemBruta" + plano.Id + "' class='linhaMargemBruta' style='width: 10%;'>" + @TempData["linhaMargemBruta"] + "&nbsp;</td>")
+    @Html.Raw("<td id='" + plano.Id + "' class='linhaMargemSobreCusto' style='width: 10%; white-space: nowrap;'>" + @TempData["linhaMargemSobreCusto"] + "&nbsp;</td>")
+    @Html.Raw("<td id='margemBruta" + plano.Id + "' class='linhaMargemBruta' style='width: 10%; white-space: nowrap;'>" + @TempData["linhaMargemBruta"] + "&nbsp;</td>")
     @Html.Raw("<td class='grid_fundo_opcoes'>" +
               "<a id=" + plano.Id + " class='grid_itens' onclick=clickSalva(this) title='Salvar os valores da linha'><i class='fa-solid fa-check'></i></a>" +
               "<a id=" + plano.Id + " class='grid_itens' onclick=clickAlterar(this) title='Alterar em todas as instituições'><i class='fa-sharp fa-solid fa-file-pen'></i></a>" +
@@ -141,7 +141,7 @@
           "<th>Conta Exame</th>" +
           "<th>Descrição do item</th>" +
           "<th>Valor Custo R$</th>" +
-          "<th>Valor Cobrar/Paciente R$</th>" +
+          "<th>Vr Paciente R$</th>" +
           "<th>Margem sobre o custo (%)</th>" +
           "<th>Margem Bruta (%)</th>" +
           "<th id='op'>Opções</th>" +

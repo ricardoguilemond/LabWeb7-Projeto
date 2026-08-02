@@ -98,68 +98,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model.ListaDados)
-            {
-                string statusTexto;
-                string statusCor;
-
-                if (item.SituacaoExame == "todos")
-                {
-                    if (item.Baixado == 1)
-                    {
-                        statusTexto = "Baixado";
-                        statusCor = "gray";
-                    }
-                    else if (item.Liberacao == 1)
-                    {
-                        statusTexto = "Liberado";
-                        statusCor = "green";
-                    }
-                    else
-                    {
-                        statusTexto = "Não Liberado";
-                        statusCor = "orange";
-                    }
-                }
-                else
-                {
-                    statusTexto = item.SituacaoExame switch
-                    {
-                        "liberados" => "Liberado",
-                        "naoLiberados" => "Não Liberado",
-                        "pendentes" => "Pendente",
-                        "baixados" => "Baixado",
-                        _ => "-"
-                    };
-                    statusCor = item.SituacaoExame switch
-                    {
-                        "liberados" => "green",
-                        "naoLiberados" => "orange",
-                        "pendentes" => "red",
-                        "baixados" => "gray",
-                        _ => "black"
-                    };
-                }
-
-                @Html.Raw(
-                         "<tr>" +
-                         "<td>" + item.Id + "</td>" +
-                         "<td>" + item.SiglaTabela + "</td>" +
-                         "<td>" + item.SiglaInstituicao + "</td>" +
-                         "<td>" + item.NomeInstituicao + "</td>" +
-                         "<td>" + item.SiglaPosto + "</td>" +
-                         "<td>" + item.NomePosto + "</td>" +
-                         "<td>" + item.NomePaciente + "</td>" +
-                         "<td>" + ((DateTime)item.Nascimento).ToLocalString("dd/MM/yyyy") + "</td>" +
-                         "<td>" + item.Sequencial + "</td>" +
-                         "<td>" + ((DateTime)item.DataIni).ToLocalString("dd/MM/yyyy") + "</td>" +
-                         "<td style='color:" + statusCor + "; font-weight:bold;'>" + statusTexto + "</td>" +
-                         "<td class='grid_fundo_opcoes'>" +
-                         "<a id=" + item.Id + " class='grid_itens' onclick=clickDeleteExame(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>" +
-                         "</td>" +
-                         "</tr>")
-                ;
-            }
+            @* Dados carregados via AJAX pelo DataTables (server-side processing). *@
         </tbody>
         <tfoot>
             <tr>
@@ -183,7 +122,122 @@
 </div>
 
 @section Scripts {
-    <div class="toolbar"><partial name='_PartialDatatables' /></div>
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            $('#modeloTable tfoot th').each(function () {
+                var title = $(this).text();
+                if (title !== 'Opções') {
+                    $(this).html('<input type="text" placeholder="' + title + '" style="max-width: 106px; padding-left: 4px; border: 1px solid gray; border-radius: 5px;" />');
+                } else {
+                    $(this).html('');
+                }
+            });
+
+            var urlParams = new URLSearchParams(window.location.search);
+
+            $('#modeloTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/ConsultarExames/Listar',
+                    type: 'POST',
+                    data: function (d) {
+                        d.dataExameDe = urlParams.get('dataExameDe') || '';
+                        d.dataExamePara = urlParams.get('dataExamePara') || '';
+                        d.nomePaciente = urlParams.get('nomePaciente') || '';
+                        d.codigoExame = urlParams.get('codigoExame') || '';
+                        d.siglaInstituicao = urlParams.get('siglaInstituicao') || '';
+                        d.nomeInstituicao = urlParams.get('nomeInstituicao') || '';
+                        d.siglaPosto = urlParams.get('siglaPosto') || '';
+                        d.nomePosto = urlParams.get('nomePosto') || '';
+                        d.situacaoExame = urlParams.get('situacaoExame') || 'todos';
+                    }
+                },
+                pageLength: 10,
+                order: [[9, 'desc']],
+                columns: [
+                    { data: 'id', name: 'id' },
+                    { data: 'siglaTabela', name: 'siglaTabela', orderable: false },
+                    { data: 'siglaInstituicao', name: 'siglaInstituicao', orderable: false },
+                    { data: 'nomeInstituicao', name: 'nomeInstituicao', orderable: false },
+                    { data: 'siglaPosto', name: 'siglaPosto', orderable: false },
+                    { data: 'nomePosto', name: 'nomePosto', orderable: false },
+                    { data: 'nomePaciente', name: 'nomePaciente', orderable: false },
+                    { data: 'nascimento', name: 'nascimento', orderable: false },
+                    { data: 'sequencial', name: 'sequencial', orderable: false },
+                    { data: 'dataIni', name: 'dataIni' },
+                    {
+                        data: 'statusTexto',
+                        name: 'statusTexto',
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return '<span style="color:' + row.statusCor + '; font-weight:bold;">' + data + '</span>';
+                        }
+                    },
+                    { data: 'acoes', name: 'acoes', orderable: false, searchable: false }
+                ],
+                autoWidth: true,
+                responsive: true,
+                fixedColumns: {
+                    left: -1,
+                    right: 1
+                },
+                fixedHeader: {
+                    header: true,
+                    footer: true
+                },
+                layout: {
+                    topStart: {
+                        pageLength: {
+                            menu: [[10, 25, 50, 100, 250, 500, -1], [10, 25, 50, 100, 250, 500, "Todos"]]
+                        }
+                    },
+                    topEnd: {
+                        search: {
+                            placeholder: 'Digite aqui sua busca'
+                        }
+                    },
+                    bottomStart: 'info',
+                    bottomEnd: {
+                        paging: {
+                            numbers: 5
+                        }
+                    }
+                },
+                language: {
+                    search: "Busca:",
+                    lengthMenu: "Mostrar _MENU_ resultados por página",
+                    emptyTable: "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
+                    info: "Exibindo: _START_/_END_ de _TOTAL_ registros",
+                    infoFiltered: "(Total de _MAX_ registros existentes na base de dados)",
+                    infoThousands: ".",
+                    thousands: ".",
+                    decimal: ",",
+                    loadingRecords: "Carregando...",
+                    zeroRecords: "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
+                    paginate: {
+                        next: "<img src='images/icones/arrow_right_uno.png' width='28%' border='none' />",
+                        previous: "<img src='images/icones/arrow_left_uno.png' width='28%' border='none' />",
+                        first: "<img src='images/icones/arrow_left.png' width='28%' border='none' />",
+                        last: "<img src='images/icones/arrow_right.png' width='28%' border='none' />"
+                    }
+                },
+                initComplete: function () {
+                    this.api().columns().every(function () {
+                        var that = this;
+                        $('input', this.footer()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+                }
+            });
+
+            $("input[type='search']")[0].focus();
+        });
+    </script>
 }
 @*..Kiro*@
 <style>

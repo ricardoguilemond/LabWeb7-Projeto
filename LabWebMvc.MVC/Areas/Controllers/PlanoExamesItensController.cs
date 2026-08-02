@@ -221,9 +221,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     PlanoExames? modelo = await _db.PlanoExames.Where(x => x.Id == registroID).FirstOrDefaultAsync();
                     if (modelo != null)
                     {
-                        string folhaModelo = modelo.ContaExame.Substring(0, 4) + "0000000";   //para pegar também o registro referente a FOLHA.
-                        string contaModelo = modelo.ContaExame.Substring(0, 7);
-                        List<PlanoExames> lista = await _db.PlanoExames.Where(x => (x.ContaExame.StartsWith(contaModelo) || x.ContaExame.StartsWith(folhaModelo)) && x.TabelaExamesId == (int)IdPadrao.SUS).AsNoTracking().OrderBy(o => o.ContaExame).ToListAsync();
+                        //Feito pelo Kiro em 01/08/2026
+                        // Carrega TODOS os registros da mesma Folha + mesma Tabela de Preço,
+                        // incluindo a Folha (0000000) e todos os Principais e Itens.
+                        // Usa a TabelaExamesId do registro clicado (não hardcoded SUS).
+                        string prefixoFolha = modelo.ContaExame.Substring(0, 4);
+                        int tabelaId = modelo.TabelaExamesId;
+                        List<PlanoExames> lista = await _db.PlanoExames
+                            .Where(x => x.ContaExame.StartsWith(prefixoFolha) && x.TabelaExamesId == tabelaId)
+                            .AsNoTracking()
+                            .OrderBy(o => o.ContaExame)
+                            .ToListAsync();
+                        //..Kiro
 
                         //Vamos primeiro, colocar a lista com os campos que queremos na memória (Stream) como um TEXTO.
                         MemoryStream stream = new();
@@ -248,38 +257,45 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             string? vCusto = item.ValorCusto?.ToString("F");
                             string? vItem = item.ValorItem?.ToString("F");
 
+                            //Feito pelo Kiro em 01/08/2026
+                            // Destaque verde negrito no item clicado (mesmo padrão do Plano de Exames)
+                            bool ehClicado = item.Id == registroID;
+                            string abreDestaque = ehClicado ? "<strong style='color: green;'>" : "";
+                            string fechaDestaque = ehClicado ? "</strong>" : "";
+                            //..Kiro
+
                             if (item.ContaExame.Substring(4, 7) == "0000000")
                             {
-                                if (item.Id == registroID) writer.Write("<strong>");
+                                writer.Write(abreDestaque);
                                 writer.Write("<p style='margin-left: 0px;'>" +
                                     item.ContaExame.FormatarContaExameSem11() + "&nbsp;&nbsp;" +
                                     item.Descricao + " <small style='color: gray;'>(nome da Folha de Exames)</small>" + "&nbsp;&nbsp;&nbsp;&nbsp; { " +
                                     "C:" + vCusto + "&nbsp;&nbsp;, " +
                                     "P:" + vItem + "&nbsp;&nbsp;" +
                                     "}</p>");
-                                if (item.Id == registroID) writer.Write("</strong>");
+                                writer.Write(fechaDestaque);
                             }
                             else if ((item.ContaExame.Substring(7, 4) == "0000") && (Convert.ToInt32(item.ContaExame.Substring(4, 3)) > 0))
                             {
-                                if (item.Id == registroID) writer.Write("<strong style='color: blue;'>");
+                                writer.Write(abreDestaque);
                                 writer.Write("<p style='margin-left: 30px;'>" +
                                     item.ContaExame.FormatarContaExameSem11() + "&nbsp;&nbsp;" +
                                     item.Descricao + " <small style='color: gray;'>(conta principal)</small>" + "&nbsp;&nbsp;&nbsp;&nbsp; { " +
                                     "C:" + vCusto + "&nbsp;&nbsp;, " +
                                     "P:" + vItem + "&nbsp;&nbsp;" +
                                     "}</p>");
-                                if (item.Id == registroID) writer.Write("</strong>");
+                                writer.Write(fechaDestaque);
                             }
                             else
                             {
-                                if (item.Id == registroID) writer.Write("<strong style='color: blue;'>");
+                                writer.Write(abreDestaque);
                                 writer.Write("<p style='margin-left: 60px;'>" +
                                     item.ContaExame.FormatarContaExameSem11() + "&nbsp;&nbsp;" +
                                     item.Descricao + "&nbsp;&nbsp;&nbsp;&nbsp; { " +
                                     "C:" + vCusto + "&nbsp;&nbsp;, " +
                                     "P:" + vItem + "&nbsp;&nbsp;" +
                                     "}</p>");
-                                if (item.Id == registroID) writer.Write("</strong>");
+                                writer.Write(fechaDestaque);
                             }
                         }
 
