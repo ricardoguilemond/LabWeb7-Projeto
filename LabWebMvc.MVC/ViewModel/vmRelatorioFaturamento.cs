@@ -31,6 +31,12 @@ public class vmRelatorioFaturamento
     public bool IncluirBaixados { get; set; } = false;
 
     /// <summary>
+    /// Quando true, exibe a Data de Conclusao do Exame (DataFim) no relatório.
+    /// Padrao: false (igual ao Delphi).
+    /// </summary>
+    public bool ExibirDataConclusao { get; set; } = false;
+
+    /// <summary>
     /// 0 = PDF (padrão)
     /// 1 = HTML
     /// 2 = Word (.docx)

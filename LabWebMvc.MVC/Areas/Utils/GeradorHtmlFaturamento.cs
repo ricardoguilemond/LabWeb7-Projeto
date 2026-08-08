@@ -84,7 +84,8 @@ namespace LabWebMvc.MVC.Areas.Utils
                 sb.AppendLine("    <thead><tr>");
                 sb.AppendLine("      <th style=\"width:60px\">Seq.</th>");
                 sb.AppendLine("      <th style=\"width:80px\">Tabela</th>");
-                sb.AppendLine("      <th style=\"width:80px\">Data</th>");
+                if (dados.ExibirDataConclusao)
+                    sb.AppendLine("      <th style=\"width:80px\">Data</th>");
                 sb.AppendLine("      <th>Paciente</th>");
                 sb.AppendLine("      <th>Itens</th>");
                 sb.AppendLine("      <th style=\"width:80px;text-align:right\">Total</th>");
@@ -103,7 +104,8 @@ namespace LabWebMvc.MVC.Areas.Utils
                     sb.AppendLine("      <tr>");
                     sb.AppendLine($"        <td>{exame.Sequencial}</td>");
                     sb.AppendLine($"        <td>{EscHtml(exame.SiglaTabela)}</td>");
-                    sb.AppendLine($"        <td>{exame.DataExame?.ToString("dd/MM/yyyy") ?? "—"}</td>");
+                    if (dados.ExibirDataConclusao)
+                        sb.AppendLine($"        <td>{exame.DataExame?.ToString("dd/MM/yyyy") ?? "—"}</td>");
                     sb.AppendLine($"        <td>{EscHtml(exame.NomePaciente)}</td>");
                     sb.AppendLine($"        <td class=\"td-itens\">{itensTexto}</td>");
                     sb.AppendLine($"        <td class=\"td-valor\">{exame.ValorTotal:C2}</td>");
@@ -111,8 +113,9 @@ namespace LabWebMvc.MVC.Areas.Utils
                 }
 
                 // Total por instituição
+                int colunasTotais = dados.ExibirDataConclusao ? 6 : 5;
                 sb.AppendLine("      <tr class=\"tr-total-inst\">");
-                sb.AppendLine($"        <td colspan=\"5\" style=\"text-align:right\">Total {EscHtml(grupo.Key.SiglaInstituicao)}:</td>");
+                sb.AppendLine($"        <td colspan=\"{colunasTotais - 1}\" style=\"text-align:right\">Total {EscHtml(grupo.Key.SiglaInstituicao)}:</td>");
                 sb.AppendLine($"        <td class=\"td-valor\">{totalInst:C2}</td>");
                 sb.AppendLine("      </tr>");
 

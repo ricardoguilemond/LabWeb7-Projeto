@@ -86,8 +86,10 @@ namespace LabWebMvc.MVC.Areas.Utils
 
                     var tabela = CriarTabela();
 
+                    bool exibirData = dados.ExibirDataConclusao;
+
                     // Cabeçalho da tabela
-                    tabela.AppendChild(CriarLinhaHeader());
+                    tabela.AppendChild(CriarLinhaHeader(exibirData));
 
                     // Linhas de exames
                     foreach (var exame in grupo)
@@ -102,17 +104,19 @@ namespace LabWebMvc.MVC.Areas.Utils
                         tabela.AppendChild(CriarLinhaExame(
                             exame.Sequencial.ToString(),
                             exame.SiglaTabela,
-                            exame.DataExame?.ToString("dd/MM/yyyy") ?? "—",
+                            exibirData ? (exame.DataExame?.ToString("dd/MM/yyyy") ?? "—") : null,
                             exame.NomePaciente,
                             itensTexto,
                             exame.ValorTotal.ToString("C2"),
-                            false));
+                            false,
+                            exibirData));
                     }
 
                     // Total por instituição
                     tabela.AppendChild(CriarLinhaTotalInst(
                         $"Total {grupo.Key.SiglaInstituicao}:",
-                        totalInst.ToString("C2")));
+                        totalInst.ToString("C2"),
+                        exibirData));
 
                     body.InsertBefore(tabela, sectPr);
                     body.InsertBefore(CriarParagrafoVazio(), sectPr);
@@ -175,33 +179,41 @@ namespace LabWebMvc.MVC.Areas.Utils
                         new InsideVerticalBorder   { Val = BorderValues.Single, Size = 4 })));
         }
 
-        private static TableRow CriarLinhaHeader()
+        private static TableRow CriarLinhaHeader(bool exibirData)
         {
-            return new TableRow(
-                CriarCelula("Seq.",     ColSeq,      negrito: true, sombreado: true),
-                CriarCelula("Tabela",   ColTabela,   negrito: true, sombreado: true),
-                CriarCelula("Data",     ColData,     negrito: true, sombreado: true),
-                CriarCelula("Paciente", ColPaciente, negrito: true, sombreado: true),
-                CriarCelula("Itens",    ColItens,    negrito: true, sombreado: true),
-                CriarCelula("Total",    ColTotal,    negrito: true, sombreado: true, alinharDireita: true));
+            var row = new TableRow();
+            row.Append(CriarCelula("Seq.",     ColSeq,      negrito: true, sombreado: true));
+            row.Append(CriarCelula("Tabela",   ColTabela,   negrito: true, sombreado: true));
+            if (exibirData)
+                row.Append(CriarCelula("Data", ColData,     negrito: true, sombreado: true));
+            row.Append(CriarCelula("Paciente", ColPaciente, negrito: true, sombreado: true));
+            row.Append(CriarCelula("Itens",    ColItens,    negrito: true, sombreado: true));
+            row.Append(CriarCelula("Total",    ColTotal,    negrito: true, sombreado: true, alinharDireita: true));
+            return row;
         }
 
         private static TableRow CriarLinhaExame(
-            string seq, string tabela, string data, string paciente, string itens, string total, bool sombreado)
+            string seq, string tabela, string? data, string paciente, string itens, string total, bool sombreado, bool exibirData)
         {
-            return new TableRow(
-                CriarCelula(seq,      ColSeq,      sombreado: sombreado),
-                CriarCelula(tabela,   ColTabela,   sombreado: sombreado),
-                CriarCelula(data,     ColData,     sombreado: sombreado),
-                CriarCelula(paciente, ColPaciente, sombreado: sombreado),
-                CriarCelula(itens,    ColItens,    sombreado: sombreado, tamanhoFonte: "16"),
-                CriarCelula(total,    ColTotal,    sombreado: sombreado, alinharDireita: true));
+            var row = new TableRow();
+            row.Append(CriarCelula(seq,      ColSeq,      sombreado: sombreado));
+            row.Append(CriarCelula(tabela,   ColTabela,   sombreado: sombreado));
+            if (exibirData)
+                row.Append(CriarCelula(data ?? "—", ColData, sombreado: sombreado));
+            row.Append(CriarCelula(paciente, ColPaciente, sombreado: sombreado));
+            row.Append(CriarCelula(itens,    ColItens,    sombreado: sombreado, tamanhoFonte: "16"));
+            row.Append(CriarCelula(total,    ColTotal,    sombreado: sombreado, alinharDireita: true));
+            return row;
         }
 
-        private static TableRow CriarLinhaTotalInst(string label, string valor)
+        private static TableRow CriarLinhaTotalInst(string label, string valor, bool exibirData)
         {
+            int spanLargura = ColSeq + ColTabela + ColPaciente + ColItens;
+            if (exibirData)
+                spanLargura += ColData;
+
             return new TableRow(
-                CriarCelulaSpan(label, ColSeq + ColTabela + ColData + ColPaciente + ColItens, negrito: true, sombreado: true, alinharDireita: true),
+                CriarCelulaSpan(label, spanLargura, negrito: true, sombreado: true, alinharDireita: true),
                 CriarCelula(valor, ColTotal, negrito: true, sombreado: true, alinharDireita: true));
         }
 

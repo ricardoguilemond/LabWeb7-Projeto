@@ -124,11 +124,15 @@
                 </div>
             </div>
 
-            @* Linha 4: Incluir Baixados, Formato de Saida, Botao *@
+            @* Linha 4: Incluir Baixados, Exibir Data Conclusao, Formato de Saida, Botao *@
             <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <input type="checkbox" asp-for="IncluirBaixados" id="chkIncluirBaixados" />
                     <label for="chkIncluirBaixados" style="font: normal 13px calibri, arial, sans-serif; margin-bottom: 0;">Incluir Baixados (Arquivados)</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" asp-for="ExibirDataConclusao" id="chkExibirDataConclusao" />
+                    <label for="chkExibirDataConclusao" style="font: normal 13px calibri, arial, sans-serif; margin-bottom: 0;">Exibir Data de Conclusão do Exame</label>
                 </div>
                 <div>
                     <label style="font: normal 13px calibri, arial, sans-serif; display: block;">Formato de Saída:</label>
@@ -236,13 +240,49 @@
                 var $form = $(this);
                 var $btn = $form.find('button[type="submit"]');
                 var textoOriginal = $btn.html();
-                $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Gerando...');
+
+                // Animação de percentual visual (0% a 100%) enquanto o relatório é gerado.
+                // Usa curva ease-out (começa rápido, desacelera) e para em 95%,
+                // reduzindo o tempo aparente de espera no final.
+                var percentual = 0;
+                var limitePercentual = 90;
+                var tabelasSelecionadas = $("#listaTabelas .chk-tabela:checked").length || 1;
+                var duracaoEstimada = 3500 + (tabelasSelecionadas * 500); // base 3,5s + 0,5s por tabela
+                var intervaloAtualizacao = 40;
+                var passos = duracaoEstimada / intervaloAtualizacao;
+                // Fator ease-out: apos N passos o "restante" deve ser pequeno (~0,5%).
+                var fatorEaseOut = Math.pow(0.5 / limitePercentual, 1 / passos);
+                var animacaoPercentual = null;
+
+                function atualizarPercentual() {
+                    // Curva ease-out: incremento grande no inicio, cada vez menor no fim
+                    var restante = limitePercentual - percentual;
+                    percentual += restante * (1 - fatorEaseOut);
+
+                    if (percentual >= limitePercentual - 0.5) {
+                        percentual = limitePercentual;
+                        // Apos atingir 90%, continua subindo 1% a cada ~1s para nao travar visualmente
+                        clearInterval(animacaoPercentual);
+                        animacaoPercentual = setInterval(function () {
+                            if (percentual < 99) {
+                                percentual++;
+                                $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> ' + percentual + '%');
+                            }
+                        }, 1000);
+                    }
+                    $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> ' + Math.floor(percentual) + '%');
+                }
+
+                $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 0%');
+                animacaoPercentual = setInterval(atualizarPercentual, intervaloAtualizacao);
 
                 fetch($form.attr("action"), {
                     method: "POST",
                     body: new FormData(this)
                 })
                 .then(function (response) {
+                    clearInterval(animacaoPercentual);
+                    $btn.html('<i class="fa-solid fa-check"></i> 100%');
                     if (!response.ok) {
                         return response.text().then(function () {
                             throw new Error("Erro ao gerar relatório. Verifique os filtros e tente novamente.");
@@ -256,11 +296,14 @@
                     window.URL.revokeObjectURL(url);
                 })
                 .catch(function (error) {
+                    clearInterval(animacaoPercentual);
                     console.error(error);
                     clickAviso("Atenção", error.message, "aviso", null);
                 })
                 .finally(function () {
-                    $btn.prop("disabled", false).html(textoOriginal);
+                    setTimeout(function () {
+                        $btn.prop("disabled", false).html(textoOriginal);
+                    }, 800);
                 });
             });
 

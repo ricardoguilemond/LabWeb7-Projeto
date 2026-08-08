@@ -520,7 +520,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 DataIni = filtro.DataIni,
                 DataFim = filtro.DataFim,
                 Ordenacao = filtro.Ordenacao,
-                MostragemPrecos = filtro.MostragemPrecos
+                MostragemPrecos = filtro.MostragemPrecos,
+                ExibirDataConclusao = filtro.ExibirDataConclusao
             };
 
             int sequencia = 0;
@@ -544,9 +545,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     SiglaTabela = exame.SiglaTabela,
                     NomeTabela = exame.NomeTabela,
                     Sequencial = exame.Sequencial,
-                    // Datas legadas (ex: 01/01/1900 do Delphi/Firebird) sao tratadas como ausentes
-                    DataExame = (exame.DataExame.HasValue && exame.DataExame.Value.Year >= 2000)
-                        ? exame.DataExame
+                    // O padrao do Delphi nao exibe data do exame.
+                    // Quando solicitado, exibe a Data de Conclusao (DataFim).
+                    DataExame = filtro.ExibirDataConclusao && exame.DataFim.HasValue
+                        ? exame.DataFim
                         : null,
                     Itens = itens.Select(i => new ItemFaturamentoDto
                     {
@@ -712,7 +714,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 0 => query.OrderBy(e => e.Pacientes.NomePaciente).ThenBy(e => e.Id),
                 1 => query.OrderBy(e => e.Instituicao.Sigla).ThenBy(e => e.Sequencial),
-                _ => query.OrderBy(e => e.DataIni).ThenBy(e => e.Instituicao.Sigla).ThenBy(e => e.Sequencial)
+                _ => query.OrderBy(e => e.DataFim).ThenBy(e => e.Instituicao.Sigla).ThenBy(e => e.Sequencial)
             };
 
             foreach (var e in await query.ToListAsync())
@@ -729,6 +731,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     SiglaTabela = e.TabelaExames?.SiglaTabela ?? "",
                     NomeTabela = e.TabelaExames?.NomeTabela ?? "",
                     Sequencial = e.Sequencial,
+                    DataIni = e.DataIni,
+                    DataFim = e.DataFim,
                     DataExame = e.DataExame,
                     OrigemAM = false
                 });
@@ -766,17 +770,20 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         SiglaTabela = e.TabelaExames?.SiglaTabela ?? "",
                         NomeTabela = e.TabelaExames?.NomeTabela ?? "",
                         Sequencial = e.Sequencial,
+                        DataIni = e.DataIni,
+                        DataFim = e.DataFim,
                         DataExame = e.DataExame,
                         OrigemAM = true
                     });
                 }
             }
 
-            // Reordena caso AM tenha sido incluido e ordenacao seja por Data
+            // Reordena caso AM tenha sido incluido e ordenacao seja por Data.
+            // No Delphi a ordenacao por data usa DataFim (coluna 14), depois Instituicao e Sequencial.
             if (filtro.IncluirBaixados && filtro.Ordenacao == 2)
             {
                 exames = exames
-                    .OrderBy(e => e.DataExame)
+                    .OrderBy(e => e.DataFim)
                     .ThenBy(e => e.SiglaInstituicao)
                     .ThenBy(e => e.Sequencial)
                     .ToList();
@@ -811,6 +818,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             public string SiglaTabela { get; set; } = "";
             public string NomeTabela { get; set; } = "";
             public int Sequencial { get; set; }
+            public DateTime DataIni { get; set; }
+            public DateTime? DataFim { get; set; }
             public DateTime? DataExame { get; set; }
             public bool OrigemAM { get; set; }
         }

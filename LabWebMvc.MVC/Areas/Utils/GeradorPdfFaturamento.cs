@@ -10,6 +10,7 @@ namespace LabWebMvc.MVC.Areas.Utils
         public DateTime DataFim { get; set; }
         public int Ordenacao { get; set; }
         public int MostragemPrecos { get; set; }
+        public bool ExibirDataConclusao { get; set; }
         public List<ExameFaturamentoDto> Exames { get; set; } = [];
         public List<TotalFaturamentoDto> TotaisPorInstituicao { get; set; } = [];
         public List<string> TabelasUtilizadas { get; set; } = [];
@@ -69,6 +70,9 @@ namespace LabWebMvc.MVC.Areas.Utils
         private const double AlturaPagina = 841.89;
         private const double AreaUtil = LarguraPagina - MargemEsquerda - MargemDireita;
         private const double LimiteY = AlturaPagina - ReservaRodape;
+        private const double LarguraColunaValor = 70;
+        private const double XFinalValor = LarguraPagina - MargemDireita;
+        private readonly double XColunaValor = MargemEsquerda + AreaUtil - LarguraColunaValor;
 
         private readonly XFont _fontTitulo = new("Arial", 14, XFontStyle.Bold);
         private readonly XFont _fontTituloRelatorio = new("Arial", 12, XFontStyle.Bold);
@@ -124,7 +128,7 @@ namespace LabWebMvc.MVC.Areas.Utils
                     y = DesenharCabecalho(gfx, dados, empresa, y);
                 }
 
-                y = DesenharExame(gfx, exame, y, duasColunas);
+                y = DesenharExame(gfx, exame, y, duasColunas, dados);
                 totalGeral += exame.ValorTotal;
                 totalInstituicao += exame.ValorTotal;
             }
@@ -212,7 +216,7 @@ namespace LabWebMvc.MVC.Areas.Utils
             return y;
         }
 
-        private double DesenharExame(XGraphics gfx, ExameFaturamentoDto exame, double y, bool duasColunas)
+        private double DesenharExame(XGraphics gfx, ExameFaturamentoDto exame, double y, bool duasColunas, DadosPdfFaturamento dados)
         {
             // Linha separadora
             gfx.DrawLine(XPens.LightGray, MargemEsquerda, y, LarguraPagina - MargemDireita, y);
@@ -232,7 +236,8 @@ namespace LabWebMvc.MVC.Areas.Utils
             double larguraColuna = AreaUtil / 3;
             gfx.DrawString($"Referência: {referencia}", _fontNormal, XBrushes.Black, new XRect(MargemEsquerda, y, larguraColuna, 14), XStringFormats.TopLeft);
             gfx.DrawString($"Tabela: {exame.SiglaTabela}", _fontNormal, XBrushes.Black, new XRect(MargemEsquerda + larguraColuna, y, larguraColuna, 14), XStringFormats.TopLeft);
-            gfx.DrawString($"Data: {(exame.DataExame.HasValue ? exame.DataExame.Value.ToString("dd/MM/yyyy") : "")}", _fontNormal, XBrushes.Black, new XRect(MargemEsquerda + 2 * larguraColuna, y, larguraColuna, 14), XStringFormats.TopLeft);
+            if (dados.ExibirDataConclusao)
+                gfx.DrawString($"Data: {(exame.DataExame.HasValue ? exame.DataExame.Value.ToString("dd/MM/yyyy") : "")}", _fontNormal, XBrushes.Black, new XRect(MargemEsquerda + 2 * larguraColuna, y, larguraColuna, 14), XStringFormats.TopLeft);
             y += 14;
 
             gfx.DrawString(exame.NomePaciente, _fontNormalBold, XBrushes.Black, new XRect(MargemEsquerda, y, AreaUtil, 14), XStringFormats.TopLeft);
@@ -251,13 +256,19 @@ namespace LabWebMvc.MVC.Areas.Utils
                     if (i < coluna1.Count)
                     {
                         gfx.DrawString(Truncar(coluna1[i].Descricao, 35), _fontNormal, XBrushes.Black, new XRect(MargemEsquerda, y, colunaLargura - 60, 14), XStringFormats.TopLeft);
-                        gfx.DrawString(coluna1[i].ValorItem.ToString("N2"), _fontNormal, XBrushes.Black, new XRect(MargemEsquerda + colunaLargura - 55, y, 55, 14), XStringFormats.TopRight);
+
+                        string valorTexto1 = coluna1[i].ValorItem.ToString("N2");
+                        double larguraValor1 = gfx.MeasureString(valorTexto1, _fontNormal).Width;
+                        gfx.DrawString(valorTexto1, _fontNormal, XBrushes.Black, MargemEsquerda + colunaLargura - larguraValor1, y);
                     }
 
                     if (i < coluna2.Count)
                     {
-                        gfx.DrawString(Truncar(coluna2[i].Descricao, 35), _fontNormal, XBrushes.Black, new XRect(MargemEsquerda + colunaLargura + 10, y, colunaLargura - 60, 14), XStringFormats.TopLeft);
-                        gfx.DrawString(coluna2[i].ValorItem.ToString("N2"), _fontNormal, XBrushes.Black, new XRect(MargemEsquerda + 2 * colunaLargura - 45, y, 55, 14), XStringFormats.TopRight);
+                        gfx.DrawString(Truncar(coluna2[i].Descricao, 35), _fontNormal, XBrushes.Black, new XRect(MargemEsquerda + colunaLargura + 10, y, colunaLargura - 70, 14), XStringFormats.TopLeft);
+
+                        string valorTexto2 = coluna2[i].ValorItem.ToString("N2");
+                        double larguraValor2 = gfx.MeasureString(valorTexto2, _fontNormal).Width;
+                        gfx.DrawString(valorTexto2, _fontNormal, XBrushes.Black, XFinalValor - larguraValor2, y);
                     }
 
                     y += 14;
@@ -268,15 +279,21 @@ namespace LabWebMvc.MVC.Areas.Utils
             {
                 foreach (var item in exame.Itens)
                 {
-                    gfx.DrawString(Truncar(item.Descricao, 70), _fontNormal, XBrushes.Black, new XRect(MargemEsquerda, y, AreaUtil - 70, 14), XStringFormats.TopLeft);
-                    gfx.DrawString(item.ValorItem.ToString("N2"), _fontNormal, XBrushes.Black, new XRect(MargemEsquerda + AreaUtil - 65, y, 65, 14), XStringFormats.TopRight);
+                    gfx.DrawString(Truncar(item.Descricao, 70), _fontNormal, XBrushes.Black, new XRect(MargemEsquerda, y, AreaUtil - LarguraColunaValor, 14), XStringFormats.TopLeft);
+
+                    string valorItemTexto = item.ValorItem.ToString("N2");
+                    double larguraValorItem = gfx.MeasureString(valorItemTexto, _fontNormal).Width;
+                    gfx.DrawString(valorItemTexto, _fontNormal, XBrushes.Black, XFinalValor - larguraValorItem, y);
+
                     y += 14;
                 }
             }
 
             // Total do exame/paciente
-            gfx.DrawString("Total:", _fontNormalBold, XBrushes.Black, new XRect(MargemEsquerda + AreaUtil - 130, y, 65, 14), XStringFormats.TopLeft);
-            gfx.DrawString(exame.ValorTotal.ToString("N2"), _fontNormalBold, XBrushes.Black, new XRect(MargemEsquerda + AreaUtil - 65, y, 65, 14), XStringFormats.TopRight);
+            string totalTexto = exame.ValorTotal.ToString("N2");
+            double larguraTotal = gfx.MeasureString(totalTexto, _fontNormalBold).Width;
+            gfx.DrawString("Total:", _fontNormalBold, XBrushes.Black, new XRect(XColunaValor - 60, y, 60, 14), XStringFormats.TopLeft);
+            gfx.DrawString(totalTexto, _fontNormalBold, XBrushes.Black, XFinalValor - larguraTotal, y);
             y += 18;
 
             return y;
