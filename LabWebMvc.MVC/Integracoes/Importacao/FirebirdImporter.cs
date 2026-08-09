@@ -758,6 +758,41 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
             }
             //..Kiro
 
+            // Fase 4: Numeração de OrdemItem pós-importação (ItensExamesRealizados / AM).
+            // O campo OrdemItem não existe no Firebird — todos os registros importados
+            // recebem DEFAULT 0. Este passo atribui sequência 1,2,3... por exame, ordenado por Id.
+            if (!configuracao.ModoSimulacao)
+            {
+                var tabelasOk = resultadoFinal.Resultados
+                    .Where(r => r.Concluido && r.Inseridos > 0)
+                    .Select(r => r.NomePostgreSQL)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                bool importouItens = tabelasOk.Contains("ItensExamesRealizados");
+                bool importouItensAM = tabelasOk.Contains("ItensExamesRealizadosAM");
+
+                if (importouItens || importouItensAM)
+                {
+                    await EnviarProgresso(configuracao.ConnectionId, "OrdemItem", 0, 0,
+                        "Numerando OrdemItem dos itens importados...",
+                        tabelasParaImportar.Count, tabelasImportadas.Count, "Pós-processamento", cancellationToken);
+
+                    try
+                    {
+                        await NumerarOrdemItemPosImportacaoAsync(
+                            postgresConnectionString, importouItens, importouItensAM, cancellationToken);
+
+                        _eventLog.LogEventViewer("[CargaDados] OrdemItem numerado com sucesso.", "wInfo");
+                    }
+                    catch (Exception exOrdem)
+                    {
+                        var msgOrdem = $"Aviso: falha na numeração de OrdemItem: {exOrdem.Message}";
+                        LogEmArquivo($"[CargaDados] {msgOrdem}", erro: true);
+                        _eventLog.LogEventViewer($"[CargaDados] {msgOrdem}", "wWarning");
+                    }
+                }
+            }
+
             stopwatchTotal.Stop();
             resultadoFinal.TempoTotal = stopwatchTotal.Elapsed.TotalSeconds;
 
@@ -3109,6 +3144,60 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
             return totalDuplicatas;
         }
         //..Kiro
+
+        /// <summary>
+        /// Pós-importação: atribui OrdemItem sequencial (1,2,3...) para cada exame,
+        /// ordenado por ContaExame (ordem natural dos itens no plano de exames).
+        /// Corrige o DEFAULT 0 herdado da ausência do campo no Firebird.
+        /// </summary>
+        private async Task NumerarOrdemItemPosImportacaoAsync(
+            string postgresConnectionString, bool numerarAtivos, bool numerarAM, CancellationToken cancellationToken)
+        {
+            using var conn = new NpgsqlConnection(postgresConnectionString);
+            await conn.OpenAsync(cancellationToken);
+
+            if (numerarAtivos)
+            {
+                const string sqlAtivos = @"
+                    UPDATE ""ItensExamesRealizados""
+                    SET ""OrdemItem"" = sub.nova_ordem
+                    FROM (
+                        SELECT ""Id"",
+                               ROW_NUMBER() OVER (
+                                   PARTITION BY ""ExameRealizadoId""
+                                   ORDER BY ""ContaExame""
+                               ) AS nova_ordem
+                        FROM ""ItensExamesRealizados""
+                    ) sub
+                    WHERE ""ItensExamesRealizados"".""Id"" = sub.""Id""";
+
+                await using var cmd = new NpgsqlCommand(sqlAtivos, conn);
+                cmd.CommandTimeout = 0;
+                var afetados = await cmd.ExecuteNonQueryAsync(cancellationToken);
+                _eventLog.LogEventViewer($"[CargaDados] OrdemItem ItensExamesRealizados: {afetados} registros atualizados.", "wInfo");
+            }
+
+            if (numerarAM)
+            {
+                const string sqlAM = @"
+                    UPDATE ""ItensExamesRealizadosAM""
+                    SET ""OrdemItem"" = sub.nova_ordem
+                    FROM (
+                        SELECT ""Id"",
+                               ROW_NUMBER() OVER (
+                                   PARTITION BY ""ExameRealizadoAMId""
+                                   ORDER BY ""ContaExame""
+                               ) AS nova_ordem
+                        FROM ""ItensExamesRealizadosAM""
+                    ) sub
+                    WHERE ""ItensExamesRealizadosAM"".""Id"" = sub.""Id""";
+
+                await using var cmd = new NpgsqlCommand(sqlAM, conn);
+                cmd.CommandTimeout = 0;
+                var afetados = await cmd.ExecuteNonQueryAsync(cancellationToken);
+                _eventLog.LogEventViewer($"[CargaDados] OrdemItem ItensExamesRealizadosAM: {afetados} registros atualizados.", "wInfo");
+            }
+        }
 
 
     }

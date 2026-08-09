@@ -18,6 +18,7 @@ namespace LabWebMvc.MVC.ViewModel
         public DateTime DataIni { get; set; }
         public int Liberacao { get; set; }
         public int Baixado { get; set; }
+        public bool Faturado { get; set; }
         public string SituacaoExame { get; set; } = string.Empty;
     }
 }

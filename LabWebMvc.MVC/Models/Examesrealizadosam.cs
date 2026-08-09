@@ -49,6 +49,8 @@ public partial class ExamesRealizadosAM
     public int Situacao { get; set; }
 
     public int TotalImpresso { get; set; }
+
+    public bool Faturado { get; set; }
     
     public virtual Instituicao Instituicao { get; set; } = null!;
 

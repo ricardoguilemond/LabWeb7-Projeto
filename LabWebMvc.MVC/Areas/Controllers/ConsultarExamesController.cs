@@ -150,7 +150,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         situacaoExame = item.SituacaoExame,
                         statusTexto,
                         statusCor,
-                        acoes = $"<a id='{item.Id}' class='grid_itens' onclick=clickDeleteExame(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>"
+                        acoes = item.Faturado
+                            ? $"<span title='Exame faturado — imexível'><i class='fa-solid fa-lock' style='color: #999;'></i></span>"
+                            : $"<a id='{item.Id}' class='grid_itens' onclick=clickDeleteExame(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>"
                     };
                 }).ToList();
 
@@ -271,6 +273,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     DataIni = e.DataIni,
                     Liberacao = e.Liberacao,
                     Baixado = e.Baixado,
+                    Faturado = e.Faturado,
                     SituacaoExame = situacaoExame
                 });
 
@@ -295,6 +298,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     DataIni = e.DataIni,
                     Liberacao = e.Liberacao,
                     Baixado = e.Baixado,
+                    Faturado = e.Faturado,
                     SituacaoExame = situacaoExame
                 });
 
@@ -470,6 +474,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (exame == null)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Exame não encontrado", action = "", sucesso = false });
 
+            // Bloqueio: exame faturado não pode ser excluído
+            if (exame.Faturado)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Exame está faturado e não pode ser excluído. Desbloqueie na tela de Manutenção de Faturamento.", action = "", sucesso = false });
+
             var itens = await _db.ItensExamesRealizados
                 .AsNoTracking()
                 .Where(i => i.ExameRealizadoId == id)
@@ -543,6 +551,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             if (item == null)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Item de exame não encontrado", action = "", sucesso = false });
+
+            // Bloqueio: exame faturado não permite exclusão de itens
+            var examePai = await _db.ExamesRealizados.AsNoTracking().FirstOrDefaultAsync(e => e.Id == item.ExameRealizadoId);
+            if (examePai?.Faturado == true)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Exame está faturado. Itens não podem ser excluídos. Desbloqueie na tela de Manutenção de Faturamento.", action = "", sucesso = false });
 
             if (!string.IsNullOrEmpty(item.Resultado))
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Este item possui resultado lançado e não pode ser excluído", action = "", sucesso = false });

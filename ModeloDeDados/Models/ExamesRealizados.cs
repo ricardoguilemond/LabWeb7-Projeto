@@ -51,6 +51,8 @@ public partial class ExamesRealizados
 
     public int TotalImpresso { get; set; }
 
+    public bool Faturado { get; set; }
+
     public virtual ICollection<ExamesExportados> ExamesExportados { get; set; } = new List<ExamesExportados>();
 
     public virtual ICollection<FichasInternas> FichasInternas { get; set; } = new List<FichasInternas>();

@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace LabWebMvc.MVC.Areas.Controllers
 {
@@ -454,6 +456,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             // Seleciona exames (ativos + arquivados/baixados quando solicitado)
             var exames = await SelecionarExamesAsync(inicio, fim, filtro);
 
+            // Aciona flag Faturado=true nos exames incluídos no relatório (antes de renderizar)
+            await AcionarFlagFaturadoAsync(exames);
+
             // --- Batch de itens: 2 queries fixas no lugar de N+1 ---
             var idsAtivos = exames.Where(e => !e.OrigemAM).Select(e => e.Id).ToList();
             var idsAM    = exames.Where(e => e.OrigemAM).Select(e => e.Id).ToList();
@@ -666,6 +671,45 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
 
             await _db.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Aciona flag Faturado=true nos exames incluídos no relatório.
+        /// Executado antes da renderização, sem impacto perceptível no tempo de geração.
+        /// Re-geração reativa o flag automaticamente (se foi desmarcado na Manutenção).
+        /// </summary>
+        private async Task AcionarFlagFaturadoAsync(List<ExameFaturamentoFonte> exames)
+        {
+            try
+            {
+                var idsAtivos = exames.Where(e => !e.OrigemAM).Select(e => e.Id).ToArray();
+                var idsAM = exames.Where(e => e.OrigemAM).Select(e => e.Id).ToArray();
+
+                if (idsAtivos.Length > 0)
+                {
+                    var paramAtivos = new NpgsqlParameter("ids", NpgsqlDbType.Array | NpgsqlDbType.Integer) { Value = idsAtivos };
+                    await _db.Database.ExecuteSqlRawAsync(
+                        "UPDATE \"ExamesRealizados\" SET \"Faturado\" = true WHERE \"Id\" = ANY(@ids)",
+                        new[] { paramAtivos });
+
+                    _logger.LogInformation("AcionarFlagFaturado: {Total} exames ativos marcados como Faturado", idsAtivos.Length);
+                }
+
+                if (idsAM.Length > 0)
+                {
+                    var paramAM = new NpgsqlParameter("ids", NpgsqlDbType.Array | NpgsqlDbType.Integer) { Value = idsAM };
+                    await _db.Database.ExecuteSqlRawAsync(
+                        "UPDATE \"ExamesRealizadosAM\" SET \"Faturado\" = true WHERE \"Id\" = ANY(@ids)",
+                        new[] { paramAM });
+
+                    _logger.LogInformation("AcionarFlagFaturado: {Total} exames AM marcados como Faturado", idsAM.Length);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AcionarFlagFaturado: erro ao atualizar flag Faturado nos exames do relatório");
+                // Não lança exceção — o relatório deve ser gerado mesmo se o flag falhar
+            }
         }
 
         private async Task<List<ExameFaturamentoFonte>> SelecionarExamesAsync(DateTime inicio, DateTime fim, vmRelatorioFaturamento filtro)

@@ -904,7 +904,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     Baixado = 1,
                     EnviarEmail = exame.EnviarEmail,
                     Situacao = 4,
-                    TotalImpresso = exame.TotalImpresso
+                    TotalImpresso = exame.TotalImpresso,
+                    Faturado = exame.Faturado
                 };
 
                 _db.ExamesRealizadosAM.Add(novoAM);
