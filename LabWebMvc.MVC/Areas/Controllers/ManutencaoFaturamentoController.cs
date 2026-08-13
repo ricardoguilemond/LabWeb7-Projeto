@@ -146,7 +146,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         crm = exame.Medicos?.CRM ?? "",
                         medicoNome = exame.Medicos?.NomeMedico ?? "",
                         dataExame = exame.DataExame?.ToString("dd/MM/yyyy") ?? "",
-                        faturado = exame.Faturado
+                        faturado = exame.Faturado,
+                        emCatalogoRecebimentos = exame.EmCatalogoRecebimentos
                     },
                     itens
                 });
@@ -186,6 +187,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 if (exame.Faturado)
                     return Json(new { sucesso = false, mensagem = "Exame faturado. Desmarque o flag Faturado antes de editar valores." });
+
+                if (exame.EmCatalogoRecebimentos)
+                    return Json(new { sucesso = false, mensagem = "Exame consta no Catálogo de Recebimentos. Não é permitido alterar valores." });
 
                 item.ValorItem = valorItem;
                 await _db.SaveChangesAsync();

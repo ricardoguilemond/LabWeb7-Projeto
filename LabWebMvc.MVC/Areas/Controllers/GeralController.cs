@@ -140,26 +140,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             return RedirectToAction("AcessoValidado", "Mensagem", new { retornoDeRota = retornoDeRota });
         }
 
-        //Sobrescrito
-        //VALIDAÇÃO EXCLUSIVA PARA REQUISIÇÃO ORIGINAL - LANÇAR EXAMES DOS PACIENTES:
-        [TypeFilter(typeof(SessionFilter))]  //observar a classe ValidacoesDeSessao que iniciou essa tratativa aqui.
-        public IActionResult Validacao(string retornoDeRota, string titulo, int totalRegistros = 0, int totalTabela = 0, ICollection<Requisitar>? dados = null, string? partialView = null)
-        {
-            ViewBag.TextoMenu = new object[] { titulo, false };
-            ViewBag.TotalRegistros = totalRegistros.ToString();
-            ViewBag.TotalTabela = totalTabela.ToString();
-            ViewBag.ListaDados = dados;
-            ViewBag.SessionUF = Convert.ToString(_httpContext!.Session.GetString("SessionUF"));
-
-            if (_validador.SessaoValida())
-            {
-                if (!string.IsNullOrEmpty(partialView))
-                    return PartialView(partialView);  //nos casos em que temos uma partial view num grid/table
-                else
-                    return View();
-            }
-            return RedirectToAction("AcessoValidado", "Mensagem", new { retornoDeRota = retornoDeRota });
-        }
+        //Feito pelo Qoder em 12/08/2026 — removida sobrecarga com ICollection<Requisitar> (tabela eliminada).
+        // A chamada no RequisitarController.Index agora utiliza a sobrecarga com ICollection<PlanoExames>.
 
         [HttpGet]
         [TypeFilter(typeof(SessionFilter))]

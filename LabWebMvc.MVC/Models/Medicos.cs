@@ -28,5 +28,4 @@ public partial class Medicos
 
     public virtual ICollection<FichasPlanilhas> FichasPlanilhas { get; set; } = [];
 
-    public virtual ICollection<Requisitar> Requisitar { get; set; } = [];
 }

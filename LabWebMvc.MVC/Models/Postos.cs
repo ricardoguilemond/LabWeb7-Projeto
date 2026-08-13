@@ -36,5 +36,4 @@ public partial class Postos
 
     public virtual ICollection<ExamesRealizadosAM> ExamesRealizadosAM { get; set; } = [];
 
-    public virtual ICollection<Requisitar> Requisitar { get; set; } = [];
 }

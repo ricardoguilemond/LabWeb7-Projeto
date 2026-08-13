@@ -1,0 +1,201 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using LabWebMvc.MVC.ViewModel
+@model vmContasRecebimento
+
+<div class="card-secao">
+    <div class="card-secao-header d-flex justify-content-between align-items-center">
+        <span><i class="fa-solid fa-wallet"></i> Contas de Recebimento</span>
+        <button id="btnNovaConta" class="btn btn-sm btn-success"><i class="fa-solid fa-plus"></i> Nova Conta</button>
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive">
+            <table id="contasTable" class="display compact order-column stripe table-hover nowrap" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Identificação / Observação</th>
+                        <th>Padrão Portaria</th>
+                        <th>Ativo</th>
+                        <th>Opções</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalConta" tabindex="-1" aria-labelledby="modalContaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalContaLabel">Conta de Recebimento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formConta">
+                    <input type="hidden" id="Id" name="Id" />
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label for="Nome" class="form-label">Nome <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="Nome" name="Nome" maxlength="100" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="Tipo" class="form-label">Tipo <span class="text-danger">*</span></label>
+                            <select class="form-select" id="Tipo" name="Tipo" required>
+                                <option value="1">Caixa</option>
+                                <option value="2">Banco</option>
+                                <option value="3">Cofre</option>
+                                <option value="4">Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="Identificacao" class="form-label">Identificação ou Observação</label>
+                            <input type="text" class="form-control" id="Identificacao" name="Identificacao" maxlength="100" />
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="PadraoPortaria" name="PadraoPortaria" />
+                                <label class="form-check-label" for="PadraoPortaria">Conta Padrão da Portaria</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="Ativo" name="Ativo" checked />
+                                <label class="form-check-label" for="Ativo">Ativo</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnSalvarConta" class="btn btn-primary"><i class="fa-solid fa-save"></i> Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            var table = $('#contasTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/ContasRecebimento/Listar',
+                    type: 'POST'
+                },
+                pageLength: 10,
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'id', name: 'id' },
+                    { data: 'nome', name: 'nome' },
+                    { data: 'tipo', name: 'tipo', orderable: false },
+                    { data: 'identificacao', name: 'identificacao', orderable: false },
+                    {
+                        data: 'padraoPortaria',
+                        name: 'padraoPortaria',
+                        orderable: false,
+                        render: function (data) {
+                            return data ? '<span class="badge bg-success">Sim</span>' : '<span class="badge bg-secondary">Não</span>';
+                        }
+                    },
+                    {
+                        data: 'ativo',
+                        name: 'ativo',
+                        render: function (data) {
+                            return data ? '<span class="badge bg-success">Sim</span>' : '<span class="badge bg-secondary">Não</span>';
+                        }
+                    },
+                    { data: 'acoes', name: 'acoes', orderable: false, searchable: false }
+                ],
+                language: {
+                    url: '/lib/datatables/i18n/pt-BR.json'
+                }
+            });
+
+            $('#btnNovaConta').on('click', function () {
+                limparFormulario();
+                $('#modalContaLabel').text('Nova Conta de Recebimento');
+                $('#modalConta').modal('show');
+            });
+
+            $('#contasTable tbody').on('click', '.btn-editar', function () {
+                var id = $(this).data('id');
+                $.get('/ContasRecebimento/Obter/' + id)
+                    .done(function (res) {
+                        if (res.sucesso) {
+                            preencherFormulario(res.dados);
+                            $('#modalContaLabel').text('Editar Conta de Recebimento');
+                            $('#modalConta').modal('show');
+                        } else {
+                            alert(res.mensagem);
+                        }
+                    })
+                    .fail(function () {
+                        alert('Erro ao carregar conta.');
+                    });
+            });
+
+            $('#btnSalvarConta').on('click', function () {
+                var form = document.getElementById('formConta');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                var dados = {
+                    Id: parseInt($('#Id').val()) || 0,
+                    Nome: $('#Nome').val(),
+                    Tipo: parseInt($('#Tipo').val()),
+                    Identificacao: $('#Identificacao').val(),
+                    PadraoPortaria: $('#PadraoPortaria').is(':checked'),
+                    Ativo: $('#Ativo').is(':checked')
+                };
+
+                $.ajax({
+                    url: '/ContasRecebimento/Salvar',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(dados),
+                    success: function (res) {
+                        if (res.sucesso) {
+                            $('#modalConta').modal('hide');
+                            table.ajax.reload();
+                        } else {
+                            var msg = res.mensagem;
+                            if (res.detalhes) {
+                                msg += '\n\nDetalhes técnicos:\n' + res.detalhes;
+                            }
+                            alert(msg);
+                        }
+                    },
+                    error: function () {
+                        alert('Erro ao salvar conta.');
+                    }
+                });
+            });
+
+            function limparFormulario() {
+                $('#formConta')[0].reset();
+                $('#Id').val('0');
+                $('#Tipo').val('1');
+                $('#Ativo').prop('checked', true);
+            }
+
+            function preencherFormulario(dados) {
+                $('#Id').val(dados.id);
+                $('#Nome').val(dados.nome);
+                $('#Tipo').val(dados.tipo);
+                $('#Identificacao').val(dados.identificacao);
+                $('#PadraoPortaria').prop('checked', dados.padraoPortaria);
+                $('#Ativo').prop('checked', dados.ativo);
+            }
+        });
+    </script>
+}

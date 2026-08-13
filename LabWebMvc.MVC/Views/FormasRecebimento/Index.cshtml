@@ -1,0 +1,194 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using LabWebMvc.MVC.ViewModel
+@model vmFormasRecebimento
+
+<div class="card-secao">
+    <div class="card-secao-header d-flex justify-content-between align-items-center">
+        <span><i class="fa-solid fa-money-bill-wave"></i> Formas de Recebimento</span>
+        <button id="btnNovaForma" class="btn btn-sm btn-success"><i class="fa-solid fa-plus"></i> Nova Forma</button>
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive">
+            <table id="formasTable" class="display compact order-column stripe table-hover nowrap" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Nome</th>
+                        <th>Permite Particular</th>
+                        <th>Permite Instituição</th>
+                        <th>Ativo</th>
+                        <th>Opções</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalForma" tabindex="-1" aria-labelledby="modalFormaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalFormaLabel">Forma de Recebimento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formForma">
+                    <input type="hidden" id="Id" name="Id" />
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="Nome" class="form-label">Nome <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="Nome" name="Nome" maxlength="100" required />
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="PermiteParticular" name="PermiteParticular" checked />
+                                <label class="form-check-label" for="PermiteParticular">Permite Particular</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="PermiteInstituicao" name="PermiteInstituicao" checked />
+                                <label class="form-check-label" for="PermiteInstituicao">Permite Instituição</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="Ativo" name="Ativo" checked />
+                                <label class="form-check-label" for="Ativo">Ativo</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnSalvarForma" class="btn btn-primary"><i class="fa-solid fa-save"></i> Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            var table = $('#formasTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/FormasRecebimento/Listar',
+                    type: 'POST'
+                },
+                pageLength: 10,
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'id', name: 'id' },
+                    { data: 'nome', name: 'nome' },
+                    {
+                        data: 'permiteParticular',
+                        name: 'permiteParticular',
+                        orderable: false,
+                        render: function (data) {
+                            return data ? '<span class="badge bg-success">Sim</span>' : '<span class="badge bg-secondary">Não</span>';
+                        }
+                    },
+                    {
+                        data: 'permiteInstituicao',
+                        name: 'permiteInstituicao',
+                        orderable: false,
+                        render: function (data) {
+                            return data ? '<span class="badge bg-success">Sim</span>' : '<span class="badge bg-secondary">Não</span>';
+                        }
+                    },
+                    {
+                        data: 'ativo',
+                        name: 'ativo',
+                        render: function (data) {
+                            return data ? '<span class="badge bg-success">Sim</span>' : '<span class="badge bg-secondary">Não</span>';
+                        }
+                    },
+                    { data: 'acoes', name: 'acoes', orderable: false, searchable: false }
+                ],
+                language: {
+                    url: '/lib/datatables/i18n/pt-BR.json'
+                }
+            });
+
+            $('#btnNovaForma').on('click', function () {
+                limparFormulario();
+                $('#modalFormaLabel').text('Nova Forma de Recebimento');
+                $('#modalForma').modal('show');
+            });
+
+            $('#formasTable tbody').on('click', '.btn-editar', function () {
+                var id = $(this).data('id');
+                $.get('/FormasRecebimento/Obter/' + id)
+                    .done(function (res) {
+                        if (res.sucesso) {
+                            preencherFormulario(res.dados);
+                            $('#modalFormaLabel').text('Editar Forma de Recebimento');
+                            $('#modalForma').modal('show');
+                        } else {
+                            alert(res.mensagem);
+                        }
+                    })
+                    .fail(function () {
+                        alert('Erro ao carregar forma.');
+                    });
+            });
+
+            $('#btnSalvarForma').on('click', function () {
+                var form = document.getElementById('formForma');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                var dados = {
+                    Id: parseInt($('#Id').val()) || 0,
+                    Nome: $('#Nome').val(),
+                    PermiteParticular: $('#PermiteParticular').is(':checked'),
+                    PermiteInstituicao: $('#PermiteInstituicao').is(':checked'),
+                    Ativo: $('#Ativo').is(':checked')
+                };
+
+                $.ajax({
+                    url: '/FormasRecebimento/Salvar',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(dados),
+                    success: function (res) {
+                        if (res.sucesso) {
+                            $('#modalForma').modal('hide');
+                            table.ajax.reload();
+                        } else {
+                            alert(res.mensagem);
+                        }
+                    },
+                    error: function () {
+                        alert('Erro ao salvar forma.');
+                    }
+                });
+            });
+
+            function limparFormulario() {
+                $('#formForma')[0].reset();
+                $('#Id').val('0');
+                $('#PermiteParticular').prop('checked', true);
+                $('#PermiteInstituicao').prop('checked', true);
+                $('#Ativo').prop('checked', true);
+            }
+
+            function preencherFormulario(dados) {
+                $('#Id').val(dados.id);
+                $('#Nome').val(dados.nome);
+                $('#PermiteParticular').prop('checked', dados.permiteParticular);
+                $('#PermiteInstituicao').prop('checked', dados.permiteInstituicao);
+                $('#Ativo').prop('checked', dados.ativo);
+            }
+        });
+    </script>
+}

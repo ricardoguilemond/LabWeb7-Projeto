@@ -342,8 +342,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             //Feito pelo Kiro em 20/04/2026
             // Verifica se o médico possui vínculos antes de excluir
-            bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.MedicoId == id)
-                               || await _db.ExamesRealizados.AnyAsync(e => e.MedicoId == id)
+            //Feito pelo Qoder em 12/08/2026 — removido _db.Requisitar.AnyAsync (tabela eliminada)
+            bool possuiVinculos = await _db.ExamesRealizados.AnyAsync(e => e.MedicoId == id)
                                || await _db.ExamesPendentes.AnyAsync(e => e.MedicoId == id);
 
             if (possuiVinculos)

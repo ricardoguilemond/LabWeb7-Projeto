@@ -447,9 +447,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //Feito pelo Kiro em 20/04/2026
         public async Task<IActionResult> ExcluirClasseExames(int id)
         {
-            // 1) Verificação de vínculos diretos: ExamesPendentes e Requisitar
-            bool possuiVinculosDiretos = await _db.ExamesPendentes.AnyAsync(e => e.ClasseExamesId == id)
-                                      || await _db.Requisitar.AnyAsync(r => r.ClasseExamesId == id);
+            // 1) Verificação de vínculos diretos: ExamesPendentes
+            //Feito pelo Qoder em 12/08/2026 — removido _db.Requisitar.AnyAsync (tabela eliminada)
+            bool possuiVinculosDiretos = await _db.ExamesPendentes.AnyAsync(e => e.ClasseExamesId == id);
 
             if (possuiVinculosDiretos)
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de Exames possui exames pendentes ou requisições vinculadas e não pode ser excluída", action = "", sucesso = false });
@@ -480,10 +480,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     }
 
                     // Re-verificação dentro da transação (outro usuário pode ter vinculado dados entre a verificação e o lock)
+                    //Feito pelo Qoder em 12/08/2026 — removido _db.Requisitar.AnyAsync (tabela eliminada)
                     bool vinculosCriados = await _db.ItensExamesRealizados.AnyAsync(i => i.ClasseExamesId == id)
                                         || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ClasseExamesId == id)
-                                        || await _db.ExamesPendentes.AnyAsync(e => e.ClasseExamesId == id)
-                                        || await _db.Requisitar.AnyAsync(r => r.ClasseExamesId == id);
+                                        || await _db.ExamesPendentes.AnyAsync(e => e.ClasseExamesId == id);
 
                     if (vinculosCriados)
                     {

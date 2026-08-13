@@ -184,6 +184,7 @@
     <script>
         var _codigoExameAtual = 0;
         var _faturadoAtual = false;
+        var _emCatalogoAtual = false;
         var _itensOriginais = [];
 
         // Exclusividade dos campos de busca: Sequencial e Código Exame são mutuamente exclusivos
@@ -239,6 +240,7 @@
         function preencherExame(exame, itens) {
             _codigoExameAtual = exame.codigoExameResultado;
             _faturadoAtual = exame.faturado;
+            _emCatalogoAtual = exame.emCatalogoRecebimentos;
 
             document.getElementById('cardExame').style.display = '';
             document.getElementById('cardItens').style.display = '';
@@ -268,7 +270,10 @@
 
         function atualizarStatusFaturado(faturado) {
             var lbl = document.getElementById('lblFaturadoStatus');
-            if (faturado) {
+            if (_emCatalogoAtual) {
+                lbl.textContent = '(Em Catálogo de Recebimentos — valores bloqueados)';
+                lbl.className = 'text-muted ms-2 text-warning fw-bold';
+            } else if (faturado) {
                 lbl.textContent = '(Exame faturado — valores bloqueados)';
                 lbl.className = 'text-muted ms-2 text-danger';
             } else {
@@ -339,7 +344,7 @@
 
                 var tdValor = document.createElement('td');
                 tdValor.className = 'text-end';
-                if (_faturadoAtual) {
+                if (_faturadoAtual || _emCatalogoAtual) {
                     tdValor.textContent = item.valorItem;
                 } else {
                     tdValor.innerHTML = '<span class="valor-display" style="cursor:pointer;" onclick="iniciarEdicao(this, ' + item.id + ', \'' + item.valorItem.replace(',', '.') + '\')" title="Clique para editar">' + item.valorItem + '</span>';
@@ -356,7 +361,7 @@
 
         // Edição inline do ValorItem
         function iniciarEdicao(span, itemId, valorAtual) {
-            if (_faturadoAtual) return;
+            if (_faturadoAtual || _emCatalogoAtual) return;
 
             var input = document.createElement('input');
             input.type = 'number';

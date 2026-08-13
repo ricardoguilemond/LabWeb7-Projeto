@@ -1,0 +1,81 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using LabWebMvc.MVC.ViewModel
+@model vmCatalogoRecebimentoFiltroRelatorio
+
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-file-lines"></i> Relatório do Catálogo de Recebimentos
+    </div>
+    <div class="card-secao-body">
+        <form asp-action="GerarRelatorio" asp-controller="CatalogoRecebimentos" method="post">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label asp-for="DataIni" class="form-label">Data Inicial <span class="text-danger">*</span></label>
+                    <input asp-for="DataIni" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="DataFim" class="form-label">Data Final <span class="text-danger">*</span></label>
+                    <input asp-for="DataFim" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="InstituicaoId" class="form-label">Instituição</label>
+                    <select asp-for="InstituicaoId" class="form-select form-select-sm">
+                        <option value="">Todas</option>
+                        @foreach (var inst in Model.Instituicoes)
+                        {
+                            <option value="@inst.Value">@inst.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="FormaRecebimentoId" class="form-label">Forma de Recebimento</label>
+                    <select asp-for="FormaRecebimentoId" class="form-select form-select-sm">
+                        <option value="">Todas</option>
+                        @foreach (var f in Model.FormasRecebimento)
+                        {
+                            <option value="@f.Value">@f.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="ContaRecebimentoId" class="form-label">Conta de Recebimento</label>
+                    <select asp-for="ContaRecebimentoId" class="form-select form-select-sm">
+                        <option value="">Todas</option>
+                        @foreach (var c in Model.ContasRecebimento)
+                        {
+                            <option value="@c.Value">@c.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Ordenacao" class="form-label">Ordenação</label>
+                    <select asp-for="Ordenacao" class="form-select form-select-sm">
+                        <option value="0">Data de Recebimento</option>
+                        <option value="1">Instituição</option>
+                        <option value="2">Forma de Pagamento</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="FormatoSaida" class="form-label">Formato</label>
+                    <select asp-for="FormatoSaida" class="form-select form-select-sm">
+                        <option value="0">PDF</option>
+                        <option value="1">HTML</option>
+                        <option value="2">Word (.docx)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="fa-solid fa-file-export"></i> Gerar Relatório
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (TempData["MensagemErro"] != null)
+{
+    <div class="alert alert-danger mt-3">
+        @TempData["MensagemErro"]
+    </div>
+}

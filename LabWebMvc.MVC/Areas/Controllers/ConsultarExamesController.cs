@@ -513,11 +513,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 _db.ItensExamesRealizados.RemoveRange(itensParaExcluir);
 
-                var requisitarVinculados = await _db.Requisitar
-                    .Where(r => r.ExameRealizadoId == id)
-                    .ToListAsync();
-
-                _db.Requisitar.RemoveRange(requisitarVinculados);
+                //Feito pelo Qoder em 12/08/2026 — removido bloco de exclusão de Requisitar (tabela eliminada)
 
                 var exameParaExcluir = await _db.ExamesRealizados
                     .FirstOrDefaultAsync(e => e.Id == id);
@@ -560,13 +556,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!string.IsNullOrEmpty(item.Resultado))
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Este item possui resultado lançado e não pode ser excluído", action = "", sucesso = false });
 
-            // Verificar se o item correspondente existe em Requisitar
-            var requisitarItem = await _db.Requisitar
-                .FirstOrDefaultAsync(r => r.ExameRealizadoId == item.ExameRealizadoId
-                                       && r.ContaExame == item.ContaExame);
-
-            if (requisitarItem == null)
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Item correspondente não encontrado na tabela Requisitar. Exclusão não permitida.", action = "", sucesso = false });
+            //Feito pelo Qoder em 12/08/2026 — removida verificação em Requisitar (tabela eliminada).
+            // A existência do item em ItensExamesRealizados já é suficiente para permitir a exclusão.
+            if (item == null)
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Item de exame não encontrado.", action = "", sucesso = false });
 
             var transaction = await _db.Database.BeginTransactionAsync();
             try
@@ -578,8 +571,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 if (itemParaExcluir != null)
                     _db.ItensExamesRealizados.Remove(itemParaExcluir);
 
-                // Excluir o item correspondente em Requisitar
-                _db.Requisitar.Remove(requisitarItem);
+                //Feito pelo Qoder em 12/08/2026 — removida exclusão em Requisitar (tabela eliminada)
 
                 await _db.SaveChangesAsync();
 

@@ -51,7 +51,9 @@ public partial class ExamesRealizadosAM
     public int TotalImpresso { get; set; }
 
     public bool Faturado { get; set; }
-    
+
+    public bool EmCatalogoRecebimentos { get; set; }
+
     public virtual Instituicao Instituicao { get; set; } = null!;
 
     public virtual ICollection<ItensExamesRealizadosAM> ItensExamesRealizadosAM { get; set; } = [];

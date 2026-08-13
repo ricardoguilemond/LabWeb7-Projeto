@@ -55,6 +55,10 @@ public partial class ExamesRealizadosAM
 
     public int TotalImpresso { get; set; }
 
+    public bool Faturado { get; set; }
+
+    public bool EmCatalogoRecebimentos { get; set; }
+
     public virtual ClasseExames ClasseExames { get; set; } = null!;
 
     public virtual Instituicao Instituicao { get; set; } = null!;

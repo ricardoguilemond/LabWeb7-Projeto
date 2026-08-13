@@ -45,72 +45,20 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ContarRequisicoes")]
-        public async Task<IActionResult> ContarRequisicoes(string? dataLimite)
+        //Feito pelo Qoder em 12/08/2026 — desativado: tabela Requisitar eliminada.
+        // Mantido o endpoint para compatibilidade com a interface de manutenção.
+        public IActionResult ContarRequisicoes(string? dataLimite)
         {
-            DateTime limite;
-            if (!string.IsNullOrWhiteSpace(dataLimite))
-                limite = dataLimite.Trim().FormataData("dd/MM/yyyy", true);
-            else
-                limite = DateTime.Today.AddMonths(-12);
-
-            var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(limite);
-
-            var idsExamesAtivos = _db.ExamesRealizados.Select(e => e.Id);
-
-            int total = await _db.Requisitar
-                .Where(r => r.DataIni <= fimUtc
-                    && (r.ExameRealizadoId == null || !idsExamesAtivos.Contains(r.ExameRealizadoId.Value)))
-                .CountAsync();
-
-            return Json(new { sucesso = true, total });
+            return Json(new { sucesso = true, total = 0, mensagem = "Compactação de requisições desativada (tabela Requisitar eliminada)." });
         }
 
         [TypeFilter(typeof(SessionFilter))]
         [HttpPost]
         [Route("ExecutarCompactacao")]
-        public async Task<IActionResult> ExecutarCompactacao(string? dataLimite)
+        //Feito pelo Qoder em 12/08/2026 — desativado: tabela Requisitar eliminada.
+        public IActionResult ExecutarCompactacao(string? dataLimite)
         {
-            try
-            {
-                DateTime limite;
-                if (!string.IsNullOrWhiteSpace(dataLimite))
-                    limite = dataLimite.Trim().FormataData("dd/MM/yyyy", true);
-                else
-                    limite = DateTime.Today.AddMonths(-12);
-
-                var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(limite);
-
-                var idsExamesAtivos = _db.ExamesRealizados.Select(e => e.Id);
-
-                int totalRemovido = 0;
-                int lote;
-
-                do
-                {
-                    var registros = await _db.Requisitar
-                        .Where(r => r.DataIni <= fimUtc
-                            && (r.ExameRealizadoId == null || !idsExamesAtivos.Contains(r.ExameRealizadoId.Value)))
-                        .Take(1000)
-                        .ToListAsync();
-
-                    lote = registros.Count;
-                    if (lote > 0)
-                    {
-                        _db.Requisitar.RemoveRange(registros);
-                        await _db.SaveChangesAsync();
-                        totalRemovido += lote;
-                    }
-                } while (lote == 1000);
-
-                _eventLogHelper.LogEventViewer($"[Manutenção] Compactação de Requisições: {totalRemovido} registros removidos até {limite:dd/MM/yyyy}", "wInformation");
-
-                return Json(new { sucesso = true, totalRemovido, mensagem = $"{totalRemovido} registros compactados com sucesso." });
-            }
-            catch (Exception ex)
-            {
-                _eventLogHelper.LogEventViewer("[Manutenção] Erro na compactação: " + ex.Message, "wError");
-                return Json(new { sucesso = false, mensagem = "Erro ao compactar requisições. Detalhe: " + ex.Message });
-            }
+            return Json(new { sucesso = true, totalRemovido = 0, mensagem = "Compactação de requisições desativada (tabela Requisitar eliminada)." });
         }
 
         //Feito pelo Kiro em 03/07/2026

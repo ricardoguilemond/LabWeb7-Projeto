@@ -1,0 +1,226 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using LabWebMvc.MVC.ViewModel
+@model vmCatalogoRecebimentoConsulta
+
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-magnifying-glass"></i> Consulta do Catálogo de Recebimentos
+    </div>
+    <div class="card-secao-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label for="txtDataIni" class="form-label">Data Inicial</label>
+                <input type="date" id="txtDataIni" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2">
+                <label for="txtDataFim" class="form-label">Data Final</label>
+                <input type="date" id="txtDataFim" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-3">
+                <label for="selInstituicao" class="form-label">Instituição</label>
+                <select id="selInstituicao" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    @foreach (var inst in Model.Instituicoes)
+                    {
+                        <option value="@inst.Value">@inst.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="selForma" class="form-label">Forma</label>
+                <select id="selForma" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    @foreach (var f in Model.FormasRecebimento)
+                    {
+                        <option value="@f.Value">@f.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="selConta" class="form-label">Conta</label>
+                <select id="selConta" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    @foreach (var c in Model.ContasRecebimento)
+                    {
+                        <option value="@c.Value">@c.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="button" id="btnBuscar" class="btn btn-primary btn-sm w-100">
+                    <i class="fa-solid fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card-secao">
+    <div class="card-secao-body">
+        <div class="table-responsive">
+            <table id="catalogosTable" class="display compact order-column stripe table-hover nowrap" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Data</th>
+                        <th>Instituição</th>
+                        <th>Paciente</th>
+                        <th>Período</th>
+                        <th>Valor Total</th>
+                        <th>Origem</th>
+                        <th>Status</th>
+                        <th>Opções</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes -->
+<div class="modal fade" id="modalDetalhes" tabindex="-1" aria-labelledby="modalDetalhesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDetalhesLabel">Detalhes do Recebimento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-3"><label class="form-label">Id</label><input type="text" id="detId" class="form-control form-control-sm" readonly /></div>
+                    <div class="col-md-3"><label class="form-label">Data</label><input type="text" id="detData" class="form-control form-control-sm" readonly /></div>
+                    <div class="col-md-3"><label class="form-label">Origem</label><input type="text" id="detOrigem" class="form-control form-control-sm" readonly /></div>
+                    <div class="col-md-3"><label class="form-label">Status</label><input type="text" id="detStatus" class="form-control form-control-sm" readonly /></div>
+                    <div class="col-md-6"><label class="form-label">Instituição</label><input type="text" id="detInstituicao" class="form-control form-control-sm" readonly /></div>
+                    <div class="col-md-6"><label class="form-label">Paciente</label><input type="text" id="detPaciente" class="form-control form-control-sm" readonly /></div>
+                    <div class="col-md-4"><label class="form-label">Período</label><input type="text" id="detPeriodo" class="form-control form-control-sm" readonly /></div>
+                    <div class="col-md-4"><label class="form-label">Valor Total</label><input type="text" id="detValor" class="form-control form-control-sm text-end" readonly /></div>
+                    <div class="col-md-4"><label class="form-label">Registrado por</label><input type="text" id="detUsuario" class="form-control form-control-sm" readonly /></div>
+                </div>
+
+                <ul class="nav nav-tabs" id="detTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-exames-tab" data-bs-toggle="tab" data-bs-target="#tab-exames" type="button">Exames</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-formas-tab" data-bs-toggle="tab" data-bs-target="#tab-formas" type="button">Formas</button>
+                    </li>
+                </ul>
+                <div class="tab-content border border-top-0 p-3" id="detTabsContent">
+                    <div class="tab-pane fade show active" id="tab-exames">
+                        <table class="table table-sm table-striped">
+                            <thead><tr><th>Código</th><th>Sequencial</th><th class="text-end">Valor</th></tr></thead>
+                            <tbody id="detExamesBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane fade" id="tab-formas">
+                        <table class="table table-sm table-striped">
+                            <thead><tr><th>Forma</th><th>Conta</th><th class="text-end">Valor</th><th>Data</th><th>Observação</th></tr></thead>
+                            <tbody id="detFormasBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        var table;
+
+        $(document).ready(function () {
+            table = $('#catalogosTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/CatalogoRecebimentos/ListarCatalogos',
+                    type: 'POST',
+                    data: function (d) {
+                        d.dataIni = $('#txtDataIni').val();
+                        d.dataFim = $('#txtDataFim').val();
+                        d.instituicaoId = $('#selInstituicao').val();
+                        d.formaRecebimentoId = $('#selForma').val();
+                        d.contaRecebimentoId = $('#selConta').val();
+                    }
+                },
+                pageLength: 10,
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'id', name: 'id' },
+                    { data: 'dataRecebimento', name: 'dataRecebimento' },
+                    { data: 'instituicao', name: 'instituicao' },
+                    { data: 'paciente', name: 'paciente' },
+                    { data: 'periodo', name: 'periodo', orderable: false },
+                    { data: 'valorTotal', name: 'valorTotal', className: 'text-end' },
+                    { data: 'origem', name: 'origem', orderable: false },
+                    { data: 'status', name: 'status', orderable: false },
+                    { data: 'acoes', name: 'acoes', orderable: false, searchable: false }
+                ],
+                language: {
+                    url: '/lib/datatables/i18n/pt-BR.json'
+                }
+            });
+
+            $('#btnBuscar').on('click', function () {
+                table.ajax.reload();
+            });
+
+            $('#catalogosTable tbody').on('click', '.btn-detalhes', function () {
+                var id = $(this).data('id');
+                carregarDetalhes(id);
+            });
+        });
+
+        function carregarDetalhes(id) {
+            $.get('/CatalogoRecebimentos/ObterDetalhes/' + id)
+                .done(function (res) {
+                    if (res.sucesso) {
+                        $('#detId').val(res.catalogo.id);
+                        $('#detData').val(res.catalogo.dataRecebimento);
+                        $('#detOrigem').val(res.catalogo.origemDescricao);
+                        $('#detStatus').val(res.catalogo.status);
+                        $('#detInstituicao').val(res.catalogo.instituicao);
+                        $('#detPaciente').val(res.catalogo.paciente);
+                        $('#detPeriodo').val(res.catalogo.periodoFaturamento);
+                        $('#detValor').val(res.catalogo.valorTotal.toFixed(2).replace('.', ','));
+                        $('#detUsuario').val(res.catalogo.usuarioRegistro);
+
+                        var tbodyExames = $('#detExamesBody');
+                        tbodyExames.empty();
+                        res.exames.forEach(function (e) {
+                            tbodyExames.append('<tr>' +
+                                '<td>' + e.exameRealizadoId + '</td>' +
+                                '<td>' + e.sequencial + '</td>' +
+                                '<td class="text-end">' + e.valor.toFixed(2).replace('.', ',') + '</td>' +
+                                '</tr>');
+                        });
+
+                        var tbodyFormas = $('#detFormasBody');
+                        tbodyFormas.empty();
+                        res.formas.forEach(function (f) {
+                            tbodyFormas.append('<tr>' +
+                                '<td>' + f.formaNome + '</td>' +
+                                '<td>' + f.contaNome + '</td>' +
+                                '<td class="text-end">' + f.valor.toFixed(2).replace('.', ',') + '</td>' +
+                                '<td>' + f.dataRecebimento + '</td>' +
+                                '<td>' + (f.observacao || '') + '</td>' +
+                                '</tr>');
+                        });
+
+                        $('#modalDetalhes').modal('show');
+                    } else {
+                        alert(res.mensagem);
+                    }
+                })
+                .fail(function () {
+                    alert('Erro ao carregar detalhes.');
+                });
+        }
+    </script>
+}

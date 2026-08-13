@@ -294,17 +294,44 @@
             // Reduzido de 1000ms para 200ms — o delay original mantinha o overlay
             // de loading por 1 segundo mesmo com a página já renderizada.
             // O DataTables exibe seu próprio "Carregando..." via language.loadingRecords.
+            function esconderLoading() {
+                if (modalLoading && modalLoading.parentNode === document.body) {
+                    document.body.removeChild(modalLoading);
+                }
+                if (loading) {
+                    loading.style.display = "none";
+                }
+            }
+
             window.onload = function () {
-                setTimeout(function () {
-                    if (modalLoading && modalLoading.parentNode === document.body) {
-                        document.body.removeChild(modalLoading);
-                    }
-                    if (loading) {
-                        loading.style.display = "none";
-                    }
-                }, 200);
+                setTimeout(esconderLoading, 200);
             };
             //..Kiro
+
+            //Feito pelo Qoder em 12/08/2026
+            // Fallback de segurança: se window.onload não disparar (erro JS,
+            // recurso pendente, etc.), garante a remoção do overlay após 2,5s.
+            // Também expõe a função globalmente para uso manual.
+            window.esconderLoadingGlobal = esconderLoading;
+
+            document.addEventListener('DOMContentLoaded', function () {
+                // Primeira tentativa rápida: se a página já estiver carregada
+                // quando este script executar, remove imediatamente.
+                if (document.readyState === 'complete') {
+                    esconderLoading();
+                    return;
+                }
+
+                // Timeout de segurança: remove o overlay mesmo se window.onload
+                // falhar por algum motivo.
+                setTimeout(function () {
+                    if (modalLoading && modalLoading.parentNode === document.body) {
+                        console.warn('[LabWeb7] Removendo overlay de loading via fallback (window.onload não disparou).');
+                        esconderLoading();
+                    }
+                }, 2500);
+            });
+            //..Qoder
         </script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {

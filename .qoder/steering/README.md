@@ -88,6 +88,17 @@ Esta pasta contém os **steering files** do Qoder para o projeto LabWeb7. Estas 
 
 **Uso:** Acionar ao trabalhar com Plano de Exames
 
+### 6. **regras-tela-requisitar.md**
+**Trigger:** `always` (sempre ativo)  
+**Conteúdo:**
+- ❌ Proteção contra alterações não autorizadas na tela Requisitar
+- ✅ Funcionalidades críticas que não devem ser alteradas
+- ✅ Problemas históricos conhecidos e como evitá-los
+- ✅ Checklist obrigatório antes de alterar a tela
+- ✅ Lista de arquivos protegidos
+
+**Uso:** Aplicado em TODAS as operações — leitura obrigatória antes de tocar na tela Requisitar
+
 ---
 
 ### 6. **analise-integrada.md**
@@ -142,6 +153,7 @@ Esta pasta contém os **steering files** do Qoder para o projeto LabWeb7. Estas 
 ├── regras-banco-dados.md
 ├── regras-controllers-views.md
 ├── regras-plano-exames.md
+├── regras-tela-requisitar.md
 └── analise-integrada.md
 ```
 
@@ -158,7 +170,8 @@ Esta pasta contém os **steering files** do Qoder para o projeto LabWeb7. Estas 
 
 ### Funcionalidades Específicas (Acionar Manualmente)
 6. 🔧 `regras-plano-exames.md` - Ao trabalhar com Plano de Exames
-7. 🔧 `analise-integrada.md` - Ao validar consistência do banco
+7. ⚠️ `regras-tela-requisitar.md` - Proteção permanente da tela Requisitar (sempre consultar)
+8. 🔧 `analise-integrada.md` - Ao validar consistência do banco
 
 ---
 

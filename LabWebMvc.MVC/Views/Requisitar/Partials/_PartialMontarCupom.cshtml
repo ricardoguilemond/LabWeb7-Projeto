@@ -36,16 +36,16 @@
     }
 </style>
 <script>
+    //Feito pelo Qoder em 12/08/2026
+    // Reinicializa o DataTable do cupom sempre que a partial for renderizada.
+    // O localStorage anterior impedia a reexecução após recargas via AJAX.
     $(document).ready(function () {
-        // Verifica se já foi executada anteriormente
-        if (!localStorage.getItem("configTableCupomExecuted")) {
-
-            configTableCupom(); // Por prevenção, executa a função somente uma única vez no primeiro carregamento da página!
-
-            // Marca como executada no localStorage, para depois evitar que carregue de novo ao atualizar a página!
-            localStorage.setItem("configTableCupomExecuted", true);
-        } 
+        if ($.fn.dataTable.isDataTable('#modeloTableCupom')) {
+            $('#modeloTableCupom').DataTable().destroy();
+        }
+        configTableCupom();
     }); //FIM do $(document).ready
+    //..Qoder
 </script>
 <div class="table-responsive">
     <table id="modeloTableCupom" name="datatable" data-order='[[ 0, "asc" ]]' class="display compact order-column table-striped table-hover nowrap tb-cupom" style="margin-top: 4px;">

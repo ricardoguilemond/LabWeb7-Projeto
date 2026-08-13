@@ -57,20 +57,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
             MontaControllers("IncluirRequisicao", "Requisição de Exames");
             if (Conteudo == null) Conteudo = string.Empty; else Conteudo = Conteudo.Trim();
 
-            List<Requisitar> dados = [];
-
-            int totalTabela = 0;
-
-            if (string.IsNullOrEmpty(Conteudo)) registros = 100; //quando não tem dados para filtrar
-
-            totalTabela = await _db.Requisitar.AsNoTracking().CountAsync();
-
-            dados = await _db.Requisitar.AsNoTracking().OrderByDescending(o => o.Id).Take(registros).ToListAsync();
-
-            int totalRegistros = dados.Count();
+            //Feito pelo Qoder em 12/08/2026
+            // Index simplificado: o grid de lançamentos do dia é carregado via AJAX
+            // pelo endpoint GetLancamentosHoje, que consulta ExamesRealizados.
+            // Não é mais necessário carregar dados de Requisitar aqui.
+            if (string.IsNullOrEmpty(Conteudo)) registros = 100;
 
             ViewBag.TextoMenu = new object[] { "Requisição de Exames", false };
-            var vmIndex = new vmRequisitar { ListaDados = dados.Cast<dynamic>().ToList() };
+            var vmIndex = new vmRequisitar();
             return View(vmIndex);
         }
 
@@ -208,7 +202,34 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 };
         }
 
-        private List<Requisitar> CriarRequisicoes(vmRequisitar vm)
+        //Feito pelo Qoder em 12/08/2026
+        // DTO interno para transportar dados do cupom para os métodos de persistência.
+        // Substitui a antiga entidade Requisitar como intermediário.
+        private sealed class DadosItemCupom
+        {
+            public int ClasseExamesId { get; init; }
+            public string ClasseExamesNome { get; init; } = null!;
+            public string RefExame { get; init; } = null!;
+            public string? RefItem { get; init; }
+            public string ContaExame { get; init; } = null!;
+            public string? Descricao { get; init; }
+            public decimal? ValorItem { get; init; }
+            public int Etiqueta { get; init; }
+            public int Etiquetas { get; init; }
+            public string? LaboratorioApoio { get; init; }
+            public string? ControleApoio { get; init; }
+            public string? LaboratorioExterno { get; init; }
+            public string? MaterialSaida { get; init; }
+            public string? MaterialRetorno { get; init; }
+            public DateTime DataIni { get; init; }
+            public DateTime DataEntregaParcial { get; init; }
+        }
+
+        /// <summary>
+        /// Constrói a lista de itens do cupom a partir do vm.ListaCupom (PlanoExames),
+        /// enriquecendo com dados do cabeçalho (datas, laboratório, etc.).
+        /// </summary>
+        private List<DadosItemCupom> ConstruirItensDoCupom(vmRequisitar vm)
         {
             // ObterDataHoraUtc() retorna UTC do servidor PostgreSQL — fonte canônica
             // Fallback: DateTime.UtcNow do servidor de aplicação
@@ -219,75 +240,35 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 ? _geralController.ConverterLocalParaUtc(vm.DataEntregaParcial.Value)
                 : dataIni.AddDays(7);
 
-            var listaRequisitar = new List<Requisitar>();
+            var lista = new List<DadosItemCupom>();
 
-            int ordem = 0;
-
-            // Para cada item do cupom, cria um Requisitar separado
             if (vm.ListaCupom != null)
             {
-                foreach (var itemCupom in vm.ListaCupom)
+                foreach (var item in vm.ListaCupom)
                 {
-                    var requisicao = new Requisitar();
-                    ordem++;
-
-                    // Dados para serem salvos na Requisição
-                    // Vincula IDs e navegações
-                    requisicao.PacienteId = vm.VmPacientes.Id;
-                    requisicao.ClasseExamesId = itemCupom.ClasseExamesId;       // Título da Folha
-                    requisicao.ClasseExamesNome = (itemCupom.RefExame ?? "").ToUpperInvariant();    // Nome da Folha
-                    requisicao.OrdemItem = ordem;
-                    requisicao.RefExame = (itemCupom.RefExame ?? "").ToUpperInvariant();
-                    requisicao.RefItem = itemCupom.RefItem;
-                    requisicao.ContaExame = itemCupom.ContaExame;
-                    requisicao.InstituicaoId = vm.VmInstituicao.Id;
-                    requisicao.PostoId = vm.VmPostos?.Id;
-                    requisicao.TabelaExamesId = vm.VmTabelaExames.Id;
-                    requisicao.MedicoId = vm.VmMedicos.Id;
-
-                    // Dados do Laboratóio de Apoio e materiais enviados
-                    //requisicao.LaboratorioApoio =
-                    //requisicao.ControleApoio =
-                    //requisicao.LaboratorioExterno =
-                    //requisicao.MaterialSaida =
-
-                    // Dados do exame
-                    requisicao.Descricao = itemCupom.Descricao;
-                    requisicao.ValorItem = itemCupom.ValorItem ?? 0.00m;
-                    requisicao.Etiquetas = itemCupom.Etiquetas;
-
-                    // Datas
-                    requisicao.DataIni = dataIni;
-                    requisicao.DataEntregaParcial = dataEntregaParcial;
-
-                    // Flags de controle
-                    requisicao.Liberado = 0;
-                    requisicao.Baixado = 0;
-
-                    listaRequisitar.Add(requisicao);
+                    lista.Add(new DadosItemCupom
+                    {
+                        ClasseExamesId       = item.ClasseExamesId,
+                        ClasseExamesNome     = (item.RefExame ?? "").ToUpperInvariant(),
+                        RefExame             = (item.RefExame ?? "").ToUpperInvariant(),
+                        RefItem              = item.RefItem,
+                        ContaExame           = item.ContaExame,
+                        Descricao            = item.Descricao,
+                        ValorItem            = item.ValorItem ?? 0.00m,
+                        Etiqueta             = item.Etiqueta,
+                        Etiquetas            = item.Etiquetas,
+                        LaboratorioApoio     = vm.LaboratorioApoio,
+                        ControleApoio        = vm.ControleApoio,
+                        LaboratorioExterno   = item.LaboratorioExterno,
+                        MaterialSaida        = null,
+                        MaterialRetorno      = null,
+                        DataIni              = dataIni,
+                        DataEntregaParcial   = dataEntregaParcial
+                    });
                 }
             }
 
-            return listaRequisitar;
-        }
-
-        private async Task<int> PersistirDadosRequisitarAsync(List<Requisitar> listaRequisitar, int pacienteId, int medicoId)
-        {
-            // Associa paciente, médico e instituição a cada requisição
-            foreach (var r in listaRequisitar)
-            {
-                r.PacienteId = pacienteId;   // Associa por navegação e nunca será nulo ou não poderia ser
-                r.MedicoId = medicoId;       // Associa por navegação e nunca será nulo ou não poderia ser
-            }
-
-            // Adiciona todas as requisições
-            _db.Requisitar.AddRange(listaRequisitar);
-
-            // Salva tudo de uma vez. EF Core detecta novas entidades e gera IDs
-            await _db.SaveChangesAsync();
-
-            // Retorna o Id da primeira requisição (ou outro critério)
-            return listaRequisitar.FirstOrDefault()?.Id ?? 0;
+            return lista;
         }
 
         //Gera o código sequencial do exame por instituição
@@ -350,15 +331,16 @@ namespace LabWebMvc.MVC.Areas.Controllers
         //Feito pelo Kiro em 03/05/2026
         // APENAS INCLUSÃO NOVA — cria header ExamesRealizados + ItensExamesRealizados.
         // A edição é controlada pelo orquestrador SalvarRequisicao.
-        // Retorna o ExameRealizadoId gerado para propagar ao Requisitar.
-        private async Task<int> SalvarExameRealizadoAsync(vmRequisitar vm, List<Requisitar> listaRequisitar)
+        //Feito pelo Qoder em 12/08/2026 — alterado para receber List<DadosItemCupom> em vez de List<Requisitar>.
+        // Retorna o ExameRealizadoId gerado.
+        private async Task<int> SalvarExameRealizadoAsync(vmRequisitar vm, List<DadosItemCupom> listaItens)
         {
-            if (vm == null || listaRequisitar == null || !listaRequisitar.Any())
+            if (vm == null || listaItens == null || !listaItens.Any())
                 return 0;
 
             try
             {
-                var primeiroRequisitar = listaRequisitar.First();
+                var primeiroItem = listaItens.First();
                 int seq = await GeraSequencialAsync(vm.VmInstituicao?.Sigla!, _db);
 
                 var exame = new ExamesRealizados
@@ -371,10 +353,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     Sequencial = seq,
                     LaboratorioApoio = vm.LaboratorioApoio,
                     ControleApoio = vm.ControleApoio ?? string.Empty,
-                    DataIni = primeiroRequisitar.DataIni,
+                    DataIni = primeiroItem.DataIni,
                     Liberacao = 0,
                     DataExame = _geralController.ObterDataHoraUtc(),
-                    DataColeta = primeiroRequisitar.DataIni.ToString("yyyy-MM-dd"),
+                    DataColeta = primeiroItem.DataIni.ToString("yyyy-MM-dd"),
                     Baixado = 0,
                     EnviarEmail = 0,
                     Situacao = 0,
@@ -391,7 +373,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 int ordemItem = 0;
                 var itensExames = new List<ItensExamesRealizados>();
 
-                foreach (var item in listaRequisitar)
+                foreach (var item in listaItens)
                 {
                     string contaExame = item.ContaExame ?? "";
                     bool ehPrincipal = contaExame.Length >= 4 && contaExame.Substring(contaExame.Length - 4) == "0000";
@@ -598,7 +580,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // Decisão inclusão vs edição: exclusivamente por ExameRealizadoId.
 
                 int exameRealizadoId = vm.ExameRealizadoId;
-                List<Requisitar> listaRequisitar = CriarRequisicoes(vm);
+                //Feito pelo Qoder em 12/08/2026 — substituído CriarRequisicoes por ConstruirItensDoCupom
+                List<DadosItemCupom> listaItens = ConstruirItensDoCupom(vm);
 
                 // Variáveis locais validadas — ValidarDadosDominio garante que não são nulos
                 int pacienteIdValidado = vm.VmPacientes?.Id ?? 0;
@@ -631,19 +614,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     if (itensAntigos.Any())
                         _db.ItensExamesRealizados.RemoveRange(itensAntigos);
 
-                    // 4. Excluir Requisitar por ExameRealizadoId
-                    var requisitarAntigos = await _db.Requisitar
-                        .Where(r => r.ExameRealizadoId == exameRealizadoId)
-                        .ToListAsync();
-                    if (requisitarAntigos.Any())
-                        _db.Requisitar.RemoveRange(requisitarAntigos);
-
                     await _db.SaveChangesAsync();
 
-                    // 5. Inserir novos ItensExamesRealizados
+                    // 4. Inserir novos ItensExamesRealizados
+                    //Feito pelo Qoder em 12/08/2026 — usa DadosItemCupom em vez de Requisitar
                     int ordemItem = 0;
                     var novosItens = new List<ItensExamesRealizados>();
-                    foreach (var item in listaRequisitar)
+                    foreach (var item in listaItens)
                     {
                         novosItens.Add(new ItensExamesRealizados
                         {
@@ -673,35 +650,22 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     }
                     _db.ItensExamesRealizados.AddRange(novosItens);
 
-                    // 6. Inserir novos Requisitar com ExameRealizadoId
-                    foreach (var req in listaRequisitar)
-                    {
-                        req.ExameRealizadoId = exameRealizadoId;
-                    }
-                    registroID = await PersistirDadosRequisitarAsync(listaRequisitar, pacienteIdValidado, medicoIdValidado);
-
                     await _db.SaveChangesAsync();
                 }
                 else
                 {
                     // === INCLUSÃO NOVA ===
                     // SalvarExameRealizadoAsync cria header + itens e retorna o Id
-                    exameRealizadoId = await SalvarExameRealizadoAsync(vm, listaRequisitar);
+                    //Feito pelo Qoder em 12/08/2026 — passa listaItens (DadosItemCupom) em vez de listaRequisitar
+                    exameRealizadoId = await SalvarExameRealizadoAsync(vm, listaItens);
                     if (exameRealizadoId <= 0)
                     {
                         await transaction.RollbackAsync();
                         return Ok(new ApiResult(false, "Falha ao salvar dados na tabela de Exames.", redirecionaUrl, null));
                     }
-
-                    // Propagar ExameRealizadoId a todos os registros Requisitar
-                    foreach (var req in listaRequisitar)
-                    {
-                        req.ExameRealizadoId = exameRealizadoId;
-                    }
-                    registroID = await PersistirDadosRequisitarAsync(listaRequisitar, pacienteIdValidado, medicoIdValidado);
                 }
 
-                if (registroID <= 0)
+                if (exameRealizadoId <= 0)
                 {
                     await transaction.RollbackAsync();
                     return Ok(new ApiResult(false, "Falha ao salvar dados na tabela de Requisitos.", redirecionaUrl, null));
@@ -1196,110 +1160,96 @@ namespace LabWebMvc.MVC.Areas.Controllers
             var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
 
             //Feito pelo Kiro em 02/05/2026
-            // Filtra por PacienteId + Data + TabelaExamesId para identificar
-            // a requisição específica quando o paciente tem múltiplas no mesmo dia.
-            var query = _db.Requisitar
-                .Include(r => r.Pacientes)
-                .Include(r => r.Medicos)
-                .Include(r => r.Instituicao)
-                .Include(r => r.Posto)
-                .Include(r => r.TabelaExames)
-                .Where(r => r.PacienteId == pacienteId
-                         && r.DataIni >= dataInicio
-                         && r.DataIni <= dataFim);
+            //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados + ItensExamesRealizados
+            // Filtra o header (ExamesRealizados) por PacienteId + Data + TabelaExamesId.
+            var headerQuery = _db.ExamesRealizados
+                .Include(e => e.Pacientes)
+                .Include(e => e.Medicos)
+                .Include(e => e.Instituicao)
+                .Include(e => e.Postos)
+                .Include(e => e.TabelaExames)
+                .Where(e => e.PacienteId == pacienteId
+                         && e.DataIni >= dataInicio
+                         && e.DataIni <= dataFim);
 
             if (tabelaExamesId > 0)
-                query = query.Where(r => r.TabelaExamesId == tabelaExamesId);
+                headerQuery = headerQuery.Where(e => e.TabelaExamesId == tabelaExamesId);
 
-            var itens = query
-                .OrderBy(r => r.OrdemItem)
+            var header = headerQuery.AsNoTracking().FirstOrDefault();
+
+            if (header == null)
+                return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para este paciente na data informada." });
+
+            // Busca os itens vinculados ao header
+            var itens = _db.ItensExamesRealizados
                 .AsNoTracking()
+                .Where(i => i.ExameRealizadoId == header.Id)
+                .OrderBy(i => i.OrdemItem)
                 .ToList();
-            //..Kiro
 
             if (!itens.Any())
                 return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para este paciente na data informada." });
 
-            //Feito pelo Qoder em 04/06/2026
-            // Verifica se algum item na tabela ItensExamesRealizados possui resultado lançado.
-            // O campo Resultado da tabela Requisitar NÃO é utilizado pelo usuário, apenas o de ItensExamesRealizados é relevante para laudos e relatórios.
-            bool temResultadoItensExames = false;
-            var exameRealizadoIdsParaVerificacao = itens
-                .Where(r => r.ExameRealizadoId.HasValue && r.ExameRealizadoId.Value > 0)
-                .Select(r => r.ExameRealizadoId!.Value)
-                .Distinct()
-                .ToList();
-            
-            if (exameRealizadoIdsParaVerificacao.Any())
-            {
-                temResultadoItensExames = _db.ItensExamesRealizados
-                    .AsNoTracking()
-                    .Any(i => exameRealizadoIdsParaVerificacao.Contains(i.ExameRealizadoId) 
-                           && !string.IsNullOrWhiteSpace(i.Resultado));
-            }
+            // Verifica se algum item possui resultado lançado (bloqueia edição)
+            bool temResultadoItensExames = itens.Any(i => !string.IsNullOrWhiteSpace(i.Resultado));
             
             if (temResultadoItensExames)
             {
                 return Json(new { sucesso = false, mensagem = "Esta requisição não pode ser editada pois existem resultados lançados nos itens de exames realizados." });
             }
-            //..Qoder
-
-            var primeiro = itens.First();
 
             // Monta a lista de itens do cupom para recarregar no formulário
             var listaCupom = itens.Select(r => new
             {
-                id          = r.Id,
-                contaExame  = r.ContaExame,
-                descricao   = r.Descricao,
-                valorItem   = r.ValorItem,
-                refExame    = r.RefExame,
-                refItem     = r.RefItem,
+                id             = r.Id,
+                contaExame     = r.ContaExame,
+                descricao      = r.Descricao,
+                valorItem      = r.ValorItem,
+                refExame       = r.RefExame,
+                refItem        = r.RefItem,
                 classeExamesId = r.ClasseExamesId,
-                etiquetas   = r.Etiquetas
+                etiquetas      = r.Etiquetas
             }).ToList();
 
             var resultado = new
             {
-                sucesso    = true,
-                pacienteId = primeiro.PacienteId,
-                nomePaciente      = primeiro.Pacientes?.NomePaciente ?? "",
-                nascimento        = primeiro.Pacientes?.Nascimento.ToString("yyyy-MM-dd") ?? "",
-                cpfPaciente       = primeiro.Pacientes?.CPF ?? "",
-                telefone          = primeiro.Pacientes?.Telefone ?? "",
-                email             = primeiro.Pacientes?.Email ?? "",
-                nomeMae           = primeiro.Pacientes?.NomeMae ?? "",
-                naturalidade      = primeiro.Pacientes?.Naturalidade ?? "",
-                nacionalidade     = primeiro.Pacientes?.Nacionalidade ?? "",
-                profissao         = primeiro.Pacientes?.Profissao ?? "",
-                cep               = primeiro.Pacientes?.CEP ?? "",
-                logradouro        = primeiro.Pacientes?.Logradouro ?? "",
-                endereco          = primeiro.Pacientes?.Endereco ?? "",
-                numero            = primeiro.Pacientes?.Numero ?? "",
-                complemento       = primeiro.Pacientes?.Complemento ?? "",
-                bairro            = primeiro.Pacientes?.Bairro ?? "",
-                cidade            = primeiro.Pacientes?.Cidade ?? "",
-                uf                = primeiro.Pacientes?.UF ?? "",
-                observacao        = primeiro.Pacientes?.Observacao ?? "",
-                sexo              = primeiro.Pacientes?.Sexo ?? "",
-                estadoCivil       = (int)(primeiro.Pacientes?.EstadoCivil ?? 0),
-                tempoGestacao     = (int)(primeiro.Pacientes?.TempoGestacao ?? 0),
-                dum               = primeiro.Pacientes?.DUM?.ToString("yyyy-MM-dd") ?? "",
-                medicoId          = primeiro.MedicoId,
-                nomeMedico        = primeiro.Medicos?.NomeMedico ?? "",
-                crm               = primeiro.Medicos?.CRM ?? "",
-                instituicaoId     = primeiro.InstituicaoId,
-                siglaInstituicao  = primeiro.Instituicao?.Sigla ?? "",
-                nomeInstituicao   = primeiro.Instituicao?.Nome ?? "",
-                postoId           = primeiro.PostoId ?? 0,
-                nomePosto         = primeiro.Posto?.NomePosto ?? "",
-                tabelaExamesId    = primeiro.TabelaExamesId,
-                siglaTabela       = primeiro.TabelaExames?.SiglaTabela ?? "",
-                nomeTabela        = primeiro.TabelaExames?.NomeTabela ?? "",
-                dataIni           = primeiro.DataIni.ToString("dd/MM/yyyy"),
-                //Feito pelo Kiro em 03/05/2026
-                exameRealizadoId  = primeiro.ExameRealizadoId ?? 0,
-                //..Kiro
+                sucesso             = true,
+                pacienteId          = header.PacienteId,
+                nomePaciente        = header.Pacientes?.NomePaciente ?? "",
+                nascimento          = header.Pacientes?.Nascimento.ToString("yyyy-MM-dd") ?? "",
+                cpfPaciente         = header.Pacientes?.CPF ?? "",
+                telefone            = header.Pacientes?.Telefone ?? "",
+                email               = header.Pacientes?.Email ?? "",
+                nomeMae             = header.Pacientes?.NomeMae ?? "",
+                naturalidade        = header.Pacientes?.Naturalidade ?? "",
+                nacionalidade       = header.Pacientes?.Nacionalidade ?? "",
+                profissao           = header.Pacientes?.Profissao ?? "",
+                cep                 = header.Pacientes?.CEP ?? "",
+                logradouro          = header.Pacientes?.Logradouro ?? "",
+                endereco            = header.Pacientes?.Endereco ?? "",
+                numero              = header.Pacientes?.Numero ?? "",
+                complemento         = header.Pacientes?.Complemento ?? "",
+                bairro              = header.Pacientes?.Bairro ?? "",
+                cidade              = header.Pacientes?.Cidade ?? "",
+                uf                  = header.Pacientes?.UF ?? "",
+                observacao          = header.Pacientes?.Observacao ?? "",
+                sexo                = header.Pacientes?.Sexo ?? "",
+                estadoCivil         = (int)(header.Pacientes?.EstadoCivil ?? 0),
+                tempoGestacao       = (int)(header.Pacientes?.TempoGestacao ?? 0),
+                dum                 = header.Pacientes?.DUM?.ToString("yyyy-MM-dd") ?? "",
+                medicoId            = header.MedicoId,
+                nomeMedico          = header.Medicos?.NomeMedico ?? "",
+                crm                 = header.Medicos?.CRM ?? "",
+                instituicaoId       = header.InstituicaoId,
+                siglaInstituicao    = header.Instituicao?.Sigla ?? "",
+                nomeInstituicao     = header.Instituicao?.Nome ?? "",
+                postoId             = header.PostoId ?? 0,
+                nomePosto           = header.Postos?.NomePosto ?? "",
+                tabelaExamesId      = header.TabelaExamesId,
+                siglaTabela         = header.TabelaExames?.SiglaTabela ?? "",
+                nomeTabela          = header.TabelaExames?.NomeTabela ?? "",
+                dataIni             = header.DataIni.ToString("dd/MM/yyyy"),
+                exameRealizadoId    = header.Id,
                 listaCupom
             };
 
@@ -1335,14 +1285,24 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
                     var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
 
-                    // Busca os itens da requisição do paciente na data
-                    var itensRequisicao = await _db.Requisitar
+                    //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados + ItensExamesRealizados
+                    // Busca o header da requisição do paciente na data
+                    var header = await _db.ExamesRealizados
                         .AsNoTracking()
-                        .Where(r => r.PacienteId == pacienteId
-                                 && r.DataIni >= dataInicio
-                                 && r.DataIni <= dataFim)
-                        .Select(r => new { r.ContaExame, r.TabelaExamesId })
-                        .ToListAsync();
+                        .Where(e => e.PacienteId == pacienteId
+                                 && e.DataIni >= dataInicio
+                                 && e.DataIni <= dataFim)
+                        .Select(e => new { e.Id, e.TabelaExamesId })
+                        .FirstOrDefaultAsync();
+
+                    if (header != null)
+                    {
+                        // Busca os itens vinculados ao header
+                        var itensRequisicao = await _db.ItensExamesRealizados
+                            .AsNoTracking()
+                            .Where(i => i.ExameRealizadoId == header.Id)
+                            .Select(i => new { i.ContaExame, TabelaExamesId = header.TabelaExamesId })
+                            .ToListAsync();
 
                     if (itensRequisicao.Any())
                     {
@@ -1363,6 +1323,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             ListaAcumulativa.Instancia.AdicionarCupom(usuarioId, planoExames);
                         }
                     }
+                    } // fim if (header != null)
                 }
             }
 
@@ -1383,7 +1344,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         //Feito pelo Kiro em 01/05/2026
         /// <summary>
-        /// Exclui todos os itens de Requisitar do paciente na data.
+        /// Exclui a requisição (header ExamesRealizados + itens ItensExamesRealizados).
         /// Bloqueia a exclusão se qualquer item já possuir resultado lançado.
         /// Mantém o cadastro do paciente e do médico intactos.
         /// </summary>
@@ -1398,117 +1359,63 @@ namespace LabWebMvc.MVC.Areas.Controllers
             // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
             var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(vm.Data.Value.Date);
 
-            //Feito pelo Qoder em 31/05/2026
+            //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados
             // Filtro primário: ExameRealizadoId (header da sessão), quando informado.
-            // Garante que apenas os itens da sessão exibida no grid sejam excluídos,
-            // mesmo quando o paciente possui múltiplas sessões (ExamesRealizados) no mesmo dia.
-            // Fallback: filtro antigo por PacienteId + DataIni (compatibilidade).
-            IQueryable<Requisitar> query = _db.Requisitar;
+            // Fallback: filtro por PacienteId + DataIni (compatibilidade).
+            var headersQuery = _db.ExamesRealizados.AsQueryable();
             if (vm.ExameRealizadoId.HasValue && vm.ExameRealizadoId.Value > 0)
             {
-                query = query.Where(r => r.ExameRealizadoId == vm.ExameRealizadoId.Value);
+                headersQuery = headersQuery.Where(e => e.Id == vm.ExameRealizadoId.Value);
             }
             else
             {
-                query = query.Where(r => r.PacienteId == vm.IdPaciente
-                                      && r.DataIni >= dataInicio
-                                      && r.DataIni <= dataFim);
+                headersQuery = headersQuery.Where(e => e.PacienteId == vm.IdPaciente
+                                                    && e.DataIni >= dataInicio
+                                                    && e.DataIni <= dataFim);
                 if (vm.TabelaExamesId > 0)
-                    query = query.Where(r => r.TabelaExamesId == vm.TabelaExamesId);
+                    headersQuery = headersQuery.Where(e => e.TabelaExamesId == vm.TabelaExamesId);
             }
 
-            var itens = await query.ToListAsync();
-            //..Qoder
+            var headers = await headersQuery.ToListAsync();
 
-            if (!itens.Any())
+            if (!headers.Any())
                 return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para exclusão." });
 
-            //Feito pelo Qoder em 04/06/2026
-            // Verifica se algum item na tabela ItensExamesRealizados possui resultado lançado.
-            // O campo Resultado da tabela Requisitar NÃO é utilizado pelo usuário, apenas o de ItensExamesRealizados é relevante para laudos e relatórios.
-            bool temResultadoItensExames = false;
-            var exameRealizadoIdsParaVerificacao = itens
-                .Where(r => r.ExameRealizadoId.HasValue && r.ExameRealizadoId.Value > 0)
-                .Select(r => r.ExameRealizadoId!.Value)
-                .Distinct()
-                .ToList();
-            
-            if (exameRealizadoIdsParaVerificacao.Any())
-            {
-                temResultadoItensExames = await _db.ItensExamesRealizados
-                    .AnyAsync(i => exameRealizadoIdsParaVerificacao.Contains(i.ExameRealizadoId) 
-                                && !string.IsNullOrWhiteSpace(i.Resultado));
-            }
+            // Verifica se algum item possui resultado lançado (bloqueia exclusão)
+            var exameRealizadoIds = headers.Select(h => h.Id).ToList();
+            bool temResultadoItensExames = await _db.ItensExamesRealizados
+                .AnyAsync(i => exameRealizadoIds.Contains(i.ExameRealizadoId)
+                            && !string.IsNullOrWhiteSpace(i.Resultado));
             
             if (temResultadoItensExames)
             {
                 return Json(new { sucesso = false, mensagem = "Esta requisição não pode ser excluída pois existem resultados lançados nos itens de exames realizados." });
             }
-            //..Qoder
 
             try
             {
                 using var transaction = await _db.Database.BeginTransactionAsync();
 
-                //Feito pelo Qoder em 31/05/2026
-                // Coleta os ExameRealizadoId distintos vinculados aos itens que serão excluídos.
-                // Esses Ids serão usados para cascata em ItensExamesRealizados e ExamesRealizados.
-                var exameRealizadoIds = itens
-                    .Where(r => r.ExameRealizadoId.HasValue && r.ExameRealizadoId.Value > 0)
-                    .Select(r => r.ExameRealizadoId!.Value)
-                    .Distinct()
-                    .ToList();
-                //..Qoder
-
-                _db.Requisitar.RemoveRange(itens);
-                await _db.SaveChangesAsync();
-
-                //Feito pelo Qoder em 31/05/2026
-                // Cascata 1: exclui ItensExamesRealizados vinculados aos mesmos ExameRealizadoId.
-                int itensHeaderRemovidos = 0;
-                int headersRemovidos = 0;
-                if (exameRealizadoIds.Any())
+                // Cascata: exclui ItensExamesRealizados vinculados aos headers
+                int itensRemovidos = 0;
+                var itensParaRemover = await _db.ItensExamesRealizados
+                    .Where(i => exameRealizadoIds.Contains(i.ExameRealizadoId))
+                    .ToListAsync();
+                if (itensParaRemover.Any())
                 {
-                    var itensHeader = await _db.ItensExamesRealizados
-                        .Where(i => exameRealizadoIds.Contains(i.ExameRealizadoId))
-                        .ToListAsync();
-                    if (itensHeader.Any())
-                    {
-                        itensHeaderRemovidos = itensHeader.Count;
-                        _db.ItensExamesRealizados.RemoveRange(itensHeader);
-                        await _db.SaveChangesAsync();
-                    }
-
-                    // Cascata 2: para cada ExameRealizadoId, se não restar nenhum registro
-                    // em Requisitar referenciando-o, remove o header em ExamesRealizados.
-                    foreach (var exId in exameRealizadoIds)
-                    {
-                        bool aindaTemRequisitar = await _db.Requisitar
-                            .AnyAsync(r => r.ExameRealizadoId == exId);
-                        if (!aindaTemRequisitar)
-                        {
-                            var header = await _db.ExamesRealizados.FirstOrDefaultAsync(e => e.Id == exId);
-                            if (header != null)
-                            {
-                                _db.ExamesRealizados.Remove(header);
-                                headersRemovidos++;
-                            }
-                        }
-                    }
-                    if (headersRemovidos > 0)
-                        await _db.SaveChangesAsync();
+                    itensRemovidos = itensParaRemover.Count;
+                    _db.ItensExamesRealizados.RemoveRange(itensParaRemover);
+                    await _db.SaveChangesAsync();
                 }
-                //..Qoder
+
+                // Remove os headers (ExamesRealizados)
+                _db.ExamesRealizados.RemoveRange(headers);
+                await _db.SaveChangesAsync();
 
                 await transaction.CommitAsync();
 
-                //Feito pelo Qoder em 31/05/2026 — mensagem detalhada da cascata.
-                var msg = $"{itens.Count} item(ns) de Requisitar excluído(s)";
-                if (itensHeaderRemovidos > 0) msg += $", {itensHeaderRemovidos} item(ns) de ItensExamesRealizados";
-                if (headersRemovidos > 0)     msg += $", {headersRemovidos} sessão(ões) de ExamesRealizados";
-                msg += ".";
+                var msg = $"{itensRemovidos} item(ns) excluído(s), {headers.Count} sessão(ões) de ExamesRealizados.";
                 return Json(new { sucesso = true, mensagem = msg });
-                //..Qoder
             }
             catch (Exception ex)
             {
@@ -1544,31 +1451,37 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //Filtra por TabelaExamesId quando disponível para evitar incluir
             // itens de outras requisições do mesmo paciente no mesmo dia.
             // Usa range UTC em vez de .Date (Npgsql 8.x + timestamptz)
+            //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados + ItensExamesRealizados
             var (dataInicioUtc, dataFimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
-            var queryExames = _db.Requisitar
-                         .Where(r => r.PacienteId == vm.IdPaciente
-                                  && r.DataIni >= dataInicioUtc
-                                  && r.DataIni <= dataFimUtc);
+            var headerQuery = _db.ExamesRealizados
+                         .Where(e => e.PacienteId == vm.IdPaciente
+                                  && e.DataIni >= dataInicioUtc
+                                  && e.DataIni <= dataFimUtc);
 
             if (vm.TabelaExamesId > 0)
-                queryExames = queryExames.Where(r => r.TabelaExamesId == vm.TabelaExamesId);
+                headerQuery = headerQuery.Where(e => e.TabelaExamesId == vm.TabelaExamesId);
 
-            var exames = queryExames.OrderBy(r => r.Id).ToList();
-            //..Kiro
+            var header = headerQuery.FirstOrDefault();
 
-            if (!exames.Any())
+            if (header == null)
+                return Content("Nenhuma requisição de exame encontrada para esta data.", "text/plain");
+
+            // Busca os itens vinculados ao header
+            var itens = _db.ItensExamesRealizados
+                .Where(i => i.ExameRealizadoId == header.Id)
+                .OrderBy(i => i.OrdemItem)
+                .ToList();
+
+            if (!itens.Any())
                 return Content("Nenhuma requisição de exame encontrada para esta data.", "text/plain");
 
             int codigoPaciente = paciente.Id;
             string nomePaciente = paciente.NomePaciente.ToUpper();
 
-            int instituicaoId = exames.FirstOrDefault()?.InstituicaoId ?? 0;
-            int tabelaExamesId = exames.FirstOrDefault()?.TabelaExamesId ?? 0;
-            //Feito pelo Kiro em 03/05/2026
-            // Código do exame = ExameRealizadoId (vínculo lógico com ExamesRealizados.Id)
-            // Nunca usar Requisitar.Id como código do exame.
-            string codigoExame = exames.FirstOrDefault()?.ExameRealizadoId?.ToString() ?? "-";
-            //..Kiro 
+            int instituicaoId = header.InstituicaoId;
+            int tabelaExamesId = header.TabelaExamesId;
+            // Código do exame = ExameRealizadoId (header.Id)
+            string codigoExame = header.Id.ToString();
 
             string nomeInstituicao = _db.Instituicao.Where(s => s.Id == instituicaoId).FirstOrDefault()?.Nome ?? "N/A";
 
@@ -1625,10 +1538,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             int contador = 0;
 
-            foreach (var exame in exames)
+            foreach (var item in itens)
             {
                 contador++;
-                AppendTextoQuebrado(sb, $"{contador}) {exame.Descricao}");
+                AppendTextoQuebrado(sb, $"{contador}) {item.Descricao}");
             }
 
             AppendTextoQuebrado(sb, $"-");
@@ -1726,8 +1639,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
         }
         //..Kiro
 
-        // Feito pelo Qoder em 31/05/2026
-        // Retorna os itens da tabela Requisitar (detalhes de exames) vinculados
+        // Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ItensExamesRealizados.
+        // Retorna os itens da tabela ItensExamesRealizados vinculados
         // a um ExameRealizadoId. Usado pela expansão master/detail do grid de
         // Requisições de Hoje.
         [TypeFilter(typeof(SessionFilter))]
@@ -1737,19 +1650,19 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             try
             {
-                var itens = _db.Requisitar
+                var itens = _db.ItensExamesRealizados
                     .AsNoTracking()
-                    .Where(r => r.ExameRealizadoId == exameRealizadoId)
-                    .OrderBy(r => r.OrdemItem)
-                    .Select(r => new
+                    .Where(i => i.ExameRealizadoId == exameRealizadoId)
+                    .OrderBy(i => i.OrdemItem)
+                    .Select(i => new
                     {
-                        r.Id,
-                        r.ClasseExamesNome,
-                        r.ContaExame,
-                        r.Descricao,
-                        ValorItem = r.ValorItem != null ? r.ValorItem.Value.ToString("N2") : "-",
-                        r.Etiquetas,
-                        r.OrdemItem
+                        i.Id,
+                        i.ClasseExamesNome,
+                        i.ContaExame,
+                        i.Descricao,
+                        ValorItem = i.ValorItem != null ? i.ValorItem.Value.ToString("N2") : "-",
+                        i.Etiquetas,
+                        i.OrdemItem
                     })
                     .ToList();
 

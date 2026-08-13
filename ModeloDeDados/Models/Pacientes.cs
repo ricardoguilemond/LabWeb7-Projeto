@@ -101,5 +101,4 @@ public partial class Pacientes
 
     public virtual ICollection<ItensExamesRealizadosAM> ItensExamesRealizadosAM { get; set; } = new List<ItensExamesRealizadosAM>();
 
-    public virtual ICollection<Requisitar> Requisitar { get; set; } = new List<Requisitar>();
 }

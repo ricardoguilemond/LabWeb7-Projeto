@@ -1,0 +1,460 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using LabWebMvc.MVC.ViewModel
+@model vmCatalogoRecebimento
+
+<div class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-money-bill-wave"></i> Catálogo de Recebimentos — Lançamento
+    </div>
+    <div class="card-secao-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="txtDataIni" class="form-label">Data Inicial <span class="text-danger">*</span></label>
+                <input type="date" id="txtDataIni" class="form-control form-control-sm" value="@Model.DataIni.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label for="txtDataFim" class="form-label">Data Final <span class="text-danger">*</span></label>
+                <input type="date" id="txtDataFim" class="form-control form-control-sm" value="@Model.DataFim.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4">
+                <label for="selInstituicao" class="form-label">Instituição</label>
+                <select id="selInstituicao" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    @foreach (var inst in Model.Instituicoes)
+                    {
+                        <option value="@inst.Value">@inst.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="button" id="btnBuscar" class="btn btn-primary btn-sm w-100">
+                    <i class="fa-solid fa-search"></i> Buscar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card-secao" id="cardResultado" style="display:none;">
+    <div class="card-secao-header d-flex justify-content-between align-items-center">
+        <span><i class="fa-solid fa-list-check"></i> Exames Disponíveis</span>
+        <button type="button" id="btnReceber" class="btn btn-success btn-sm" disabled>
+            <i class="fa-solid fa-cash-register"></i> Receber Selecionados
+        </button>
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive">
+            <table id="examesTable" class="display compact order-column stripe table-hover nowrap" style="width:100%">
+                <thead>
+                    <tr>
+                        <th style="width:30px;"><input type="checkbox" id="chkTodos" /></th>
+                        <th>Código</th>
+                        <th>Paciente</th>
+                        <th>CPF</th>
+                        <th>Instituição</th>
+                        <th>Sequencial</th>
+                        <th>Data Exame</th>
+                        <th>Valor Total</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Lançamento -->
+<div class="modal fade" id="modalRecebimento" tabindex="-1" aria-labelledby="modalRecebimentoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRecebimentoLabel">Lançar Recebimento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Paciente</label>
+                        <input type="text" id="txtPacienteModal" class="form-control form-control-sm" readonly />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data do Recebimento</label>
+                        <input type="date" id="txtDataRecebimento" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Período Faturamento</label>
+                        <input type="text" id="txtPeriodoFaturamento" class="form-control form-control-sm" placeholder="MM/AAAA" maxlength="7" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Valor Total</label>
+                        <input type="text" id="txtValorTotalModal" class="form-control form-control-sm text-end fw-bold" readonly />
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-light"><i class="fa-solid fa-file-medical"></i> Exames Selecionados</div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height:180px;">
+                            <table class="table table-sm table-striped mb-0" id="tblExamesSelecionados">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Instituição</th>
+                                        <th>Sequencial</th>
+                                        <th>Data</th>
+                                        <th class="text-end">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <span><i class="fa-solid fa-wallet"></i> Formas de Recebimento</span>
+                        <button type="button" id="btnAdicionarForma" class="btn btn-sm btn-success"><i class="fa-solid fa-plus"></i> Adicionar</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm" id="tblFormas">
+                                <thead>
+                                    <tr>
+                                        <th>Forma</th>
+                                        <th>Conta</th>
+                                        <th>Valor</th>
+                                        <th>Data</th>
+                                        <th>Observação</th>
+                                        <th style="width:40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Total Informado:</th>
+                                        <th class="text-end" id="lblTotalFormas">0,00</th>
+                                        <th colspan="3"></th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Diferença:</th>
+                                        <th class="text-end" id="lblDiferenca">0,00</th>
+                                        <th colspan="3"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="txtObservacao" class="form-label">Observação</label>
+                    <textarea id="txtObservacao" class="form-control form-control-sm" rows="2" maxlength="2000"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirmarRecebimento" class="btn btn-primary"><i class="fa-solid fa-save"></i> Confirmar Recebimento</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        var table;
+        var _listaFormas = [];
+        var _listaContas = [];
+        var _examesSelecionados = [];
+
+        $(document).ready(function () {
+            carregarDadosAuxiliares();
+
+            table = $('#examesTable').DataTable({
+                processing: true,
+                serverSide: true,
+                searching: true,
+                ajax: {
+                    url: '/CatalogoRecebimentos/ListarExames',
+                    type: 'POST',
+                    data: function (d) {
+                        d.dataIni = $('#txtDataIni').val();
+                        d.dataFim = $('#txtDataFim').val();
+                        d.instituicaoId = $('#selInstituicao').val();
+                    }
+                },
+                pageLength: 10,
+                order: [[1, 'desc']],
+                columns: [
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function (data) {
+                            return '<input type="checkbox" class="chk-exame" data-id="' + data.exameRealizadoId + '" data-pacienteid="' + data.pacienteId + '" />';
+                        }
+                    },
+                    { data: 'exameRealizadoId', name: 'exameRealizadoId' },
+                    { data: 'nomePaciente', name: 'nomePaciente' },
+                    { data: 'cpf', name: 'cpf', orderable: false },
+                    { data: 'siglaInstituicao', name: 'siglaInstituicao' },
+                    { data: 'sequencial', name: 'sequencial' },
+                    { data: 'dataExame', name: 'dataExame', orderable: false },
+                    { data: 'valorTotal', name: 'valorTotal', orderable: false, className: 'text-end' }
+                ],
+                language: {
+                    url: '/lib/datatables/i18n/pt-BR.json'
+                },
+                drawCallback: function () {
+                    atualizarCheckboxMaster();
+                    atualizarBotaoReceber();
+                }
+            });
+
+            $('#btnBuscar').on('click', function () {
+                if (!$('#txtDataIni').val() || !$('#txtDataFim').val()) {
+                    alert('Informe o período de busca.');
+                    return;
+                }
+                $('#cardResultado').show();
+                table.ajax.reload();
+            });
+
+            $('#chkTodos').on('change', function () {
+                var marcado = $(this).is(':checked');
+                $('#examesTable tbody .chk-exame').prop('checked', marcado);
+                atualizarBotaoReceber();
+            });
+
+            $('#examesTable tbody').on('change', '.chk-exame', function () {
+                atualizarCheckboxMaster();
+                atualizarBotaoReceber();
+            });
+
+            $('#btnReceber').on('click', function () {
+                abrirModalRecebimento();
+            });
+
+            $('#btnAdicionarForma').on('click', function () {
+                adicionarLinhaForma();
+            });
+
+            $('#tblFormas tbody').on('click', '.btn-remover-forma', function () {
+                $(this).closest('tr').remove();
+                calcularTotaisFormas();
+            });
+
+            $('#tblFormas tbody').on('input', '.forma-valor', function () {
+                calcularTotaisFormas();
+            });
+
+            $('#btnConfirmarRecebimento').on('click', function () {
+                salvarRecebimento();
+            });
+        });
+
+        function carregarDadosAuxiliares() {
+            $.get('/CatalogoRecebimentos/DadosAuxiliares')
+                .done(function (res) {
+                    if (res.sucesso) {
+                        _listaFormas = res.formas;
+                        _listaContas = res.contas;
+                    }
+                });
+        }
+
+        function atualizarCheckboxMaster() {
+            var total = $('#examesTable tbody .chk-exame').length;
+            var marcados = $('#examesTable tbody .chk-exame:checked').length;
+            $('#chkTodos').prop('checked', total > 0 && total === marcados);
+        }
+
+        function atualizarBotaoReceber() {
+            var selecionados = $('#examesTable tbody .chk-exame:checked').length;
+            $('#btnReceber').prop('disabled', selecionados === 0);
+        }
+
+        function abrirModalRecebimento() {
+            _examesSelecionados = [];
+            var pacienteId = null;
+            var pacienteNome = '';
+            var instituicaoId = null;
+            var valorTotal = 0;
+            var todosMesmoPaciente = true;
+            var todosMesmaInstituicao = true;
+
+            $('#examesTable tbody .chk-exame:checked').each(function () {
+                var row = table.row($(this).closest('tr')).data();
+                _examesSelecionados.push(row);
+
+                if (pacienteId === null) {
+                    pacienteId = row.pacienteId;
+                    pacienteNome = row.nomePaciente;
+                    instituicaoId = row.instituicaoId;
+                } else {
+                    if (row.pacienteId !== pacienteId) todosMesmoPaciente = false;
+                    if (row.instituicaoId !== instituicaoId) todosMesmaInstituicao = false;
+                }
+
+                var valor = parseFloat((row.valorTotal || '0').replace('.', '').replace(',', '.'));
+                valorTotal += valor;
+            });
+
+            if (!todosMesmoPaciente) {
+                alert('Selecione exames de apenas um paciente por lançamento.');
+                return;
+            }
+
+            if (!todosMesmaInstituicao) {
+                alert('Selecione exames de apenas uma instituição por lançamento.');
+                return;
+            }
+
+            $('#txtPacienteModal').val(pacienteNome);
+            $('#txtValorTotalModal').val(valorTotal.toFixed(2).replace('.', ','));
+            $('#txtPeriodoFaturamento').val('');
+            $('#txtObservacao').val('');
+
+            var tbody = $('#tblExamesSelecionados tbody');
+            tbody.empty();
+            _examesSelecionados.forEach(function (e) {
+                tbody.append('<tr>' +
+                    '<td>' + e.exameRealizadoId + '</td>' +
+                    '<td>' + e.siglaInstituicao + '</td>' +
+                    '<td>' + e.sequencial + '</td>' +
+                    '<td>' + e.dataExame + '</td>' +
+                    '<td class="text-end">' + e.valorTotal + '</td>' +
+                    '</tr>');
+            });
+
+            $('#tblFormas tbody').empty();
+            adicionarLinhaForma();
+            calcularTotaisFormas();
+
+            $('#modalRecebimento').modal('show');
+        }
+
+        function adicionarLinhaForma() {
+            var optionsFormas = _listaFormas.map(function (f) {
+                return '<option value="' + f.id + '">' + f.nome + '</option>';
+            }).join('');
+
+            var optionsContas = _listaContas.map(function (c) {
+                return '<option value="' + c.id + '">' + c.nome + '</option>';
+            }).join('');
+
+            var linha = '<tr>' +
+                '<td><select class="form-select form-select-sm forma-id">' + optionsFormas + '</select></td>' +
+                '<td><select class="form-select form-select-sm conta-id">' + optionsContas + '</select></td>' +
+                '<td><input type="number" step="0.01" class="form-control form-control-sm text-end forma-valor" value="0,00" /></td>' +
+                '<td><input type="date" class="form-control form-control-sm forma-data" value="' + new Date().toISOString().split('T')[0] + '" /></td>' +
+                '<td><input type="text" class="form-control form-control-sm forma-obs" maxlength="2000" /></td>' +
+                '<td><button type="button" class="btn btn-sm btn-danger btn-remover-forma"><i class="fa-solid fa-trash"></i></button></td>' +
+                '</tr>';
+
+            $('#tblFormas tbody').append(linha);
+        }
+
+        function calcularTotaisFormas() {
+            var total = 0;
+            $('#tblFormas tbody tr').each(function () {
+                var valor = parseFloat($(this).find('.forma-valor').val().replace('.', '').replace(',', '.')) || 0;
+                total += valor;
+            });
+
+            var valorTotalTexto = $('#txtValorTotalModal').val().replace('.', '').replace(',', '.');
+            var valorTotal = parseFloat(valorTotalTexto) || 0;
+            var diferenca = total - valorTotal;
+
+            $('#lblTotalFormas').text(total.toFixed(2).replace('.', ','));
+            $('#lblDiferenca').text(diferenca.toFixed(2).replace('.', ','));
+
+            var cor = diferenca === 0 ? 'text-success' : 'text-danger';
+            $('#lblDiferenca').removeClass('text-success text-danger').addClass(cor);
+        }
+
+        function salvarRecebimento() {
+            if (_examesSelecionados.length === 0) {
+                alert('Nenhum exame selecionado.');
+                return;
+            }
+
+            var examesIds = _examesSelecionados.map(function (e) { return e.exameRealizadoId; });
+            var pacienteId = _examesSelecionados[0].pacienteId;
+            var instituicaoId = _examesSelecionados[0].instituicaoId;
+            var valorTotalTexto = $('#txtValorTotalModal').val().replace('.', '').replace(',', '.');
+            var valorTotal = parseFloat(valorTotalTexto) || 0;
+
+            var formas = [];
+            var formasValidas = true;
+            $('#tblFormas tbody tr').each(function () {
+                var formaId = parseInt($(this).find('.forma-id').val()) || 0;
+                var contaId = parseInt($(this).find('.conta-id').val()) || 0;
+                var valor = parseFloat($(this).find('.forma-valor').val().replace('.', '').replace(',', '.')) || 0;
+                var data = $(this).find('.forma-data').val();
+                var obs = $(this).find('.forma-obs').val();
+
+                if (formaId <= 0 || contaId <= 0) {
+                    formasValidas = false;
+                    return false;
+                }
+
+                formas.push({
+                    FormaRecebimentoId: formaId,
+                    ContaRecebimentoId: contaId,
+                    Valor: valor,
+                    DataRecebimento: data,
+                    Observacao: obs
+                });
+            });
+
+            if (!formasValidas) {
+                alert('Selecione a forma e a conta em todas as linhas.');
+                return;
+            }
+
+            if (formas.length === 0) {
+                alert('Informe pelo menos uma forma de recebimento.');
+                return;
+            }
+
+            var totalFormas = formas.reduce(function (acc, f) { return acc + f.Valor; }, 0);
+            if (Math.abs(totalFormas - valorTotal) > 0.01) {
+                alert('A soma das formas deve ser igual ao valor total dos exames.');
+                return;
+            }
+
+            var dados = {
+                Origem: 2,
+                InstituicaoId: instituicaoId,
+                PacienteId: pacienteId,
+                PeriodoFaturamento: $('#txtPeriodoFaturamento').val(),
+                ValorTotal: valorTotal,
+                DataRecebimento: $('#txtDataRecebimento').val(),
+                Observacao: $('#txtObservacao').val(),
+                ExamesRealizadosIds: examesIds,
+                Formas: formas
+            };
+
+            $.ajax({
+                url: '/CatalogoRecebimentos/Salvar',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(dados),
+                success: function (res) {
+                    if (res.sucesso) {
+                        $('#modalRecebimento').modal('hide');
+                        table.ajax.reload();
+                        alert(res.mensagem);
+                    } else {
+                        alert(res.mensagem);
+                    }
+                },
+                error: function () {
+                    alert('Erro ao salvar catálogo de recebimentos.');
+                }
+            });
+        }
+    </script>
+}

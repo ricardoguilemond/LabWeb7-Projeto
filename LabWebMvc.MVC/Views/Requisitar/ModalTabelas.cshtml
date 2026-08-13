@@ -54,7 +54,15 @@
             
                         // Montando/atualizando o grid de exames referente a Tabela de Exames (para lançamento no paciente)
                         const url = '@Url.Action(nameof(RequisitarController.PartialLancarExames), "Requisitar")';
-                        $('#conteudoListaDeExames').load(`${url}?tabelaExamesId=${data.vm.tabelaExamesId}`);  //obs: é com crase, pois tem interpolação javascript!
+                        $('#conteudoListaDeExames').load(`${url}?tabelaExamesId=${data.vm.tabelaExamesId}`, function () {
+                            //Feito pelo Qoder em 12/08/2026
+                            // A partial carregada via AJAX não executa seu $(document).ready,
+                            // então é necessário re-inicializar o grid de exames manualmente.
+                            if (typeof window.inicializarLancarExames === 'function') {
+                                window.inicializarLancarExames();
+                            }
+                            //..Qoder
+                        });  //obs: é com crase, pois tem interpolação javascript!
 
                         //Atualizando o grid de Cupom, cada vez que reabrir a tabela e preços, para que o usuário possa escolher os itens.
                         //Feito pelo Kiro em 02/05/2026 — passa id=0 para esvaziar a ListaAcumulativa no servidor

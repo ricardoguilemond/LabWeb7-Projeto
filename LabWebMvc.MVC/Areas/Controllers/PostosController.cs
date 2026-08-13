@@ -431,8 +431,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //Feito pelo Kiro em 20/04/2026
             // Verifica se o posto possui vínculos antes de excluir
             //Feito pelo Qoder em 21/04/2026 - inclui verificação em ExamesRealizadosAM (D5)
-            bool possuiVinculos = await _db.Requisitar.AnyAsync(r => r.PostoId == id)
-                               || await _db.ExamesRealizados.AnyAsync(e => e.PostoId == id)
+            //Feito pelo Qoder em 12/08/2026 — removido _db.Requisitar.AnyAsync (tabela eliminada)
+            bool possuiVinculos = await _db.ExamesRealizados.AnyAsync(e => e.PostoId == id)
                                || await _db.ExamesRealizadosAM.AnyAsync(e => e.PostoId == id);
             //..Qoder
 

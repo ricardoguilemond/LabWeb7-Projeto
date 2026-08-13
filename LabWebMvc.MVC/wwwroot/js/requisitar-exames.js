@@ -30,6 +30,13 @@ const ModalManager = (() => {
 $(document).ready(function () {
     var examesConfig = document.getElementById('examesConfig');
     var urlMontarItensCupom = examesConfig.dataset.urlMontarItensCupom;
+    // Fallbacks para URLs relativas: garantem funcionamento mesmo se a View
+    // não tiver sido recompilada e os data-attributes ainda não existirem.
+    var urlModalMedicos = examesConfig.dataset.urlModalMedicos || 'ModalMedicos';
+    var urlModalInstituicoes = examesConfig.dataset.urlModalInstituicoes || 'ModalInstituicoes';
+    var urlModalPostos = examesConfig.dataset.urlModalPostos || 'ModalPostos';
+    var urlModalTabelas = examesConfig.dataset.urlModalTabelas || 'ModalTabelas';
+    var urlRetornoMedico = examesConfig.dataset.urlRetornoMedico || 'RetornoDoModalMedico';
 
     const teclasPermitidas = ['Enter', 'ArrowUp', 'ArrowDown'];
     const modaisCarregados = {
@@ -123,7 +130,7 @@ $(document).ready(function () {
             if (inputEscrito.length === 0) {
                 // Campo vazio: abre o modal
                 if (!modaisCarregados.Medico) {
-                    $('#modalTriggerMedico').load("ModalMedicos", function () {
+                    $('#modalTriggerMedico').load(urlModalMedicos, function () {
                         modaisCarregados.Medico = true;
                         setTimeout(() => {
                             ModalManager.abrir('modeloTableModalMedicos');
@@ -139,7 +146,7 @@ $(document).ready(function () {
 
             // Campo com texto: busca direta pelo nome/CRM parcial
             $.ajax({
-                url: 'RetornoDoModalMedico',
+                url: urlRetornoMedico,
                 type: 'GET',
                 data: { id: inputEscrito },
                 cache: false,
@@ -148,7 +155,7 @@ $(document).ready(function () {
                     if (!data || !data.vm || !data.vm.nomeMedico) {
                         // Não encontrou: abre o modal com o texto já filtrado
                         if (!modaisCarregados.Medico) {
-                            $('#modalTriggerMedico').load("ModalMedicos", function () {
+                            $('#modalTriggerMedico').load(urlModalMedicos, function () {
                                 modaisCarregados.Medico = true;
                                 setTimeout(() => {
                                     ModalManager.abrir('modeloTableModalMedicos');
@@ -197,7 +204,7 @@ $(document).ready(function () {
                             case "buscaSiglaInstituicao":
                             case "buscaNomeInstituicao":
                                 if (!modaisCarregados.Instituicao) {
-                                    $('#modalTriggerInstituicao').load("ModalInstituicoes", function () {
+                                    $('#modalTriggerInstituicao').load(urlModalInstituicoes, function () {
                                         modaisCarregados.Instituicao = true;
                                         setTimeout(() => {
                                             ModalManager.abrir('modeloTableModalInstituicao');
@@ -223,7 +230,7 @@ $(document).ready(function () {
                                 }
                                 //..Qoder
                                 if (!modaisCarregados.Posto) {
-                                    $('#modalTriggerPosto').load("ModalPostos?InstituicaoId=" + instIdPosto, function () {
+                                    $('#modalTriggerPosto').load(urlModalPostos + "?InstituicaoId=" + instIdPosto, function () {
                                         modaisCarregados.Posto = true;
                                         setTimeout(() => {
                                             ModalManager.abrir('modeloTableModalPostos');
@@ -239,7 +246,7 @@ $(document).ready(function () {
                             case "buscaSiglaTabela":
                             case "buscaNomeTabela":
                                 if (!modaisCarregados.Tabela) {
-                                    $('#modalTriggerTabela').load("ModalTabelas", function () {
+                                    $('#modalTriggerTabela').load(urlModalTabelas, function () {
                                         modaisCarregados.Tabela = true;
                                         setTimeout(() => {
                                             ModalManager.abrir('modeloTableModalTabelas');

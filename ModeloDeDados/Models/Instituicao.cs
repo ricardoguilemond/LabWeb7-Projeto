@@ -93,5 +93,4 @@ public partial class Instituicao
 
     public virtual ICollection<Postos> Postos { get; set; } = new List<Postos>();
 
-    public virtual ICollection<Requisitar> Requisitar { get; set; } = new List<Requisitar>();
 }

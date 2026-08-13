@@ -98,7 +98,7 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
                     if (valorOrigem == null || valorOrigem == DBNull.Value || string.IsNullOrWhiteSpace(valorOrigem.ToString()))
                     {
                         aviso = "Valor nulo/vazio preenchido com '1900-01-01' para coluna timestamp";
-                        return new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).ToUniversalTime();
+                        return new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                     }
 
                     return ConverterParaTimestamp(valorOrigem, out aviso);
@@ -179,7 +179,7 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
                 return 0m;
 
             if (pg.Contains("TIMESTAMP"))
-                return new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).ToUniversalTime();
+                return new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             if (pg.Contains("DATE") && !pg.Contains("TIMESTAMP"))
                 return new DateTime(1900, 1, 1);
@@ -205,7 +205,7 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
                 return 0m;
 
             if (pg.Contains("TIMESTAMP"))
-                return new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Unspecified).ToUniversalTime();
+                return new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             if (pg.Contains("DATE") && !pg.Contains("TIMESTAMP"))
                 return new DateTime(1900, 1, 1);
@@ -354,13 +354,21 @@ namespace LabWebMvc.MVC.Integracoes.Importacao
             else
                 data = Convert.ToDateTime(valor);
 
-            // Firebird nao armazena timezone. Datas sem timezone sao tratadas como UTC
-            // para evitar deslocamentos causados por conversao Local -> UTC.
+            // Firebird nao armazena timezone. Pelo padrão do sistema, datas/horas
+            // do laboratório são consideradas no fuso America/Sao_Paulo e convertidas
+            // para UTC antes da persistência em colunas TIMESTAMPTZ.
             if (data.Kind == DateTimeKind.Unspecified)
-                data = DateTime.SpecifyKind(data, DateTimeKind.Utc);
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+                data = TimeZoneInfo.ConvertTimeToUtc(data, tz);
+            }
+            else if (data.Kind == DateTimeKind.Local)
+            {
+                data = data.ToUniversalTime();
+            }
 
             // Npgsql 8+ exige DateTime com Kind=Utc para timestamptz.
-            var resultado = data.ToUniversalTime();
+            var resultado = data;
 
             // Log de diagnostico para datas suspeitas (muito antigas).
             if (resultado.Year < 1800)

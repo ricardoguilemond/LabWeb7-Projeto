@@ -53,6 +53,10 @@ public partial class ExamesRealizados
 
     public bool Faturado { get; set; }
 
+    public bool EmCatalogoRecebimentos { get; set; }
+
+    public virtual ICollection<CatalogoRecebimentosExames> CatalogoRecebimentosExames { get; set; } = new List<CatalogoRecebimentosExames>();
+
     public virtual ICollection<ExamesExportados> ExamesExportados { get; set; } = new List<ExamesExportados>();
 
     public virtual ICollection<FichasInternas> FichasInternas { get; set; } = new List<FichasInternas>();

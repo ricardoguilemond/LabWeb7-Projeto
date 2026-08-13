@@ -491,7 +491,15 @@ public class Db : DbContext
     public virtual DbSet<ExameReferencia> ExameReferencia { get; set; }
     //..Kiro
 
+    public virtual DbSet<CatalogoRecebimentos> CatalogoRecebimentos { get; set; }
+
+    public virtual DbSet<CatalogoRecebimentosExames> CatalogoRecebimentosExames { get; set; }
+
+    public virtual DbSet<CatalogoRecebimentosFormas> CatalogoRecebimentosFormas { get; set; }
+
     public virtual DbSet<ClasseExames> ClasseExames { get; set; }
+
+    public virtual DbSet<ContasRecebimento> ContasRecebimento { get; set; }
 
     public virtual DbSet<ControleConcorrencia> ControleConcorrencia { get; set; }
 
@@ -526,6 +534,8 @@ public class Db : DbContext
     public virtual DbSet<FichasInternas> FichasInternas { get; set; }
 
     public virtual DbSet<FichasLotes> FichasLotes { get; set; }
+
+    public virtual DbSet<FormasRecebimento> FormasRecebimento { get; set; }
 
     public virtual DbSet<FichasPlanilhas> FichasPlanilhas { get; set; }
 
@@ -565,7 +575,7 @@ public class Db : DbContext
 
     public virtual DbSet<ReCaptchaMonitoramento> ReCaptchaMonitoramento { get; set; }
 
-    public virtual DbSet<Requisitar> Requisitar { get; set; }
+    //Feito pelo Qoder em 12/08/2026 — removido DbSet<Requisitar> (tabela eliminada na refatoração).
 
     public virtual DbSet<Senhas> Senhas { get; set; }
 
@@ -2146,95 +2156,7 @@ public class Db : DbContext
             // QuantidadeSolicitacoes, AnoReferencia e MesReferencia são int — não precisam de HasMaxLength
         });
 
-        modelBuilder.Entity<Requisitar>(entity =>
-        {
-            entity.ToTable("Requisitar");
-            entity.HasKey(e => e.Id).HasName("iRequisitar1");
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-
-            entity.Property(e => e.ClasseExamesNome)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.ContaExame)
-                .HasMaxLength(11)
-                .IsUnicode(false);
-            entity.Property(e => e.ControleApoio)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.DataEntregaParcial).HasColumnType("timestamp with time zone");
-            entity.Property(e => e.DataIni).HasColumnType("timestamp with time zone");
-            entity.Property(e => e.Descricao)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.LaboratorioApoio)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.LaboratorioExterno)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.MaterialRetorno)
-                .HasMaxLength(16)
-                .IsUnicode(false);
-            entity.Property(e => e.MaterialSaida)
-                .HasMaxLength(16)
-                .IsUnicode(false);
-            entity.Property(e => e.RefExame)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.RefItem)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.Referencia)
-                .HasMaxLength(60)
-                .IsUnicode(false);
-            //Feito pelo Qoder em 04/06/2026 - Campo Resultado removido do Model Requisitar
-            // entity.Property(e => e.Resultado)
-            //     .HasMaxLength(30)
-            //     .IsUnicode(false);
-            entity.Property(e => e.UnidadeMedida)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.ValorItem).HasColumnType("decimal(18, 4)");
-
-            entity.HasOne(d => d.ClasseExames).WithMany(p => p.Requisitar)
-                .HasForeignKey(d => d.ClasseExamesId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("iRequisitar_ClasseExames");
-
-            entity.HasOne(d => d.Instituicao).WithMany(p => p.Requisitar)
-                .HasForeignKey(d => d.InstituicaoId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("iRequisitar_Instituicao");
-
-            entity.HasOne(d => d.Medicos).WithMany(p => p.Requisitar)
-                .HasForeignKey(d => d.MedicoId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("iRequisitar_Medicos");
-
-            entity.HasOne(d => d.Pacientes).WithMany(p => p.Requisitar)
-                .HasForeignKey(d => d.PacienteId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("iRequisitar_Pacientes");
-
-            entity.HasOne(d => d.TabelaExames).WithMany(p => p.Requisitar)
-                .HasForeignKey(d => d.TabelaExamesId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("iRequisitar_TabelaExames");
-
-            entity.Property(e => e.PostoId).IsRequired(false);
-
-            //Feito pelo Kiro em 03/05/2026
-            // ExameRealizadoId: vínculo lógico com ExamesRealizados.Id
-            // SEM FK física, SEM navegação — apenas coluna INT NULL.
-            entity.Property(e => e.ExameRealizadoId).IsRequired(false);
-            //..Kiro
-
-            entity.HasOne(d => d.Posto).WithMany(p => p.Requisitar)
-                .HasForeignKey(d => d.PostoId)
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("iRequisitar_Postos");
-        });
+        //Feito pelo Qoder em 12/08/2026 — removida configuração Entity<Requisitar> (tabela eliminada na refatoração).
 
         modelBuilder.Entity<Senhas>(entity =>
         {
@@ -2458,6 +2380,97 @@ public class Db : DbContext
                 .HasConstraintName("iExameReferencia_TabelaExames");
         });
         //..Kiro
+
+        //Feito pelo Qoder em 09/08/2026
+        // Mapeamento das entidades do Catálogo de Recebimentos
+        modelBuilder.Entity<CatalogoRecebimentos>(entity =>
+        {
+            entity.ToTable("CatalogoRecebimentos");
+            entity.HasKey(e => e.Id).HasName("iCatalogoRecebimentos1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+            entity.Property(e => e.PeriodoFaturamento).HasMaxLength(10).IsUnicode(false);
+            entity.Property(e => e.ValorTotal).HasPrecision(18, 2);
+            entity.Property(e => e.Observacao).HasMaxLength(2000).IsUnicode(false);
+            entity.Property(e => e.UsuarioRegistro).HasMaxLength(100).IsUnicode(false);
+            entity.Property(e => e.DataRegistro).HasColumnType("timestamp with time zone");
+
+            entity.HasOne(d => d.Instituicao).WithMany()
+                .HasForeignKey(d => d.InstituicaoId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("iCatalogoRecebimentos_Instituicao");
+
+            entity.HasOne(d => d.Paciente).WithMany()
+                .HasForeignKey(d => d.PacienteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("iCatalogoRecebimentos_Paciente");
+        });
+
+        modelBuilder.Entity<CatalogoRecebimentosExames>(entity =>
+        {
+            entity.ToTable("CatalogoRecebimentosExames");
+            entity.HasKey(e => e.Id).HasName("iCatalogoRecebimentosExames1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+            entity.Property(e => e.Valor).HasPrecision(18, 2);
+
+            entity.HasOne(d => d.CatalogoRecebimento).WithMany(p => p.CatalogoRecebimentosExames)
+                .HasForeignKey(d => d.CatalogoRecebimentoId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("iCatalogoRecebimentosExames_Catalogo");
+
+            entity.HasOne(d => d.ExameRealizado).WithMany(p => p.CatalogoRecebimentosExames)
+                .HasForeignKey(d => d.ExameRealizadoId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("iCatalogoRecebimentosExames_Exame");
+        });
+
+        modelBuilder.Entity<CatalogoRecebimentosFormas>(entity =>
+        {
+            entity.ToTable("CatalogoRecebimentosFormas");
+            entity.HasKey(e => e.Id).HasName("iCatalogoRecebimentosFormas1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+            entity.Property(e => e.Valor).HasPrecision(18, 2);
+            entity.Property(e => e.Observacao).HasMaxLength(2000).IsUnicode(false);
+
+            entity.HasOne(d => d.CatalogoRecebimento).WithMany(p => p.CatalogoRecebimentosFormas)
+                .HasForeignKey(d => d.CatalogoRecebimentoId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("iCatalogoRecebimentosFormas_Catalogo");
+
+            entity.HasOne(d => d.FormaRecebimento).WithMany(p => p.CatalogoRecebimentosFormas)
+                .HasForeignKey(d => d.FormaRecebimentoId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("iCatalogoRecebimentosFormas_Forma");
+
+            entity.HasOne(d => d.ContaRecebimento).WithMany(p => p.CatalogoRecebimentosFormas)
+                .HasForeignKey(d => d.ContaRecebimentoId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("iCatalogoRecebimentosFormas_Conta");
+        });
+
+        modelBuilder.Entity<ContasRecebimento>(entity =>
+        {
+            entity.ToTable("ContasRecebimento");
+            entity.HasKey(e => e.Id).HasName("iContasRecebimento1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+            entity.Property(e => e.Nome).HasMaxLength(100).IsUnicode(false);
+            entity.Property(e => e.Identificacao).HasMaxLength(100).IsUnicode(false);
+            entity.Property(e => e.DataRegistro).HasColumnType("timestamp with time zone");
+        });
+
+        modelBuilder.Entity<FormasRecebimento>(entity =>
+        {
+            entity.ToTable("FormasRecebimento");
+            entity.HasKey(e => e.Id).HasName("iFormasRecebimento1");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+            entity.Property(e => e.Nome).HasMaxLength(100).IsUnicode(false);
+            entity.Property(e => e.DataRegistro).HasColumnType("timestamp with time zone");
+        });
+        //..Qoder
 
     }
 }

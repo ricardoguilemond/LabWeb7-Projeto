@@ -18,12 +18,16 @@
 </style>
 <script>
     // Feito pelo Qoder em 21/04/2026 — convertido $.ajax → fetch; deselecionar remove o item do cupom
+    // Atualizado em 12/08/2026 para usar data-attributes da view principal,
+    // evitando URLs hardcoded que quebram quando a rota base muda.
     function montarCupomPorId(id) {
         if (!id) {
             console.warn('ID inválido ou ausente.');
             return;
         }
-        fetch('/PartialMontarItensCupom?id=' + id, { method: 'GET' })
+        var config = document.getElementById('lancarExamesConfig');
+        var url = (config && config.dataset.urlMontarItensCupom) || '/Requisitar/PartialMontarItensCupom';
+        fetch(url + '?id=' + id, { method: 'GET' })
         .then(function (r) { return r.text(); })
         .then(function (data) {
             document.getElementById('conteudoItensCupomCaixa').innerHTML = data;
@@ -38,7 +42,9 @@
             console.warn('ID inválido ou ausente.');
             return;
         }
-        fetch('/RemoverExameCupom?id=' + id, { method: 'GET' })
+        var config = document.getElementById('lancarExamesConfig');
+        var url = (config && config.dataset.urlRemoverExameCupom) || '/Requisitar/RemoverExameCupom';
+        fetch(url + '?id=' + id, { method: 'GET' })
         .then(function (r) { return r.text(); })
         .then(function (data) {
             document.getElementById('conteudoItensCupomCaixa').innerHTML = data;
@@ -49,7 +55,15 @@
     }
     //..Qoder
 
-    $(document).ready(function () {
+    //Feito pelo Qoder em 12/08/2026
+    // Função global para (re)inicializar o grid de exames.
+    // É chamada no document.ready da carga inicial e também após recargas via AJAX
+    // (edição de requisição / troca de tabela), quando o ready não dispara.
+    window.inicializarLancarExames = function () {
+        // Destrói o DataTable anterior para evitar conflito de ID ao recarregar
+        if ($.fn.dataTable.isDataTable('#modeloTableCompacta')) {
+            $('#modeloTableCompacta').DataTable().destroy();
+        }
 
         //Feito pelo Kiro em 02/05/2026
         // Handler de clique registrado ANTES do configTableCompacta para garantir
@@ -76,28 +90,62 @@
 
         //Excuta Ajax no campo search para localizar o primeiro item visível do grid
         const campoSearch = document.getElementById('customSearchBox');
-        campoSearch.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
+        if (campoSearch) {
+            // Remove listener anterior para evitar duplicação ao reinicializar
+            const novoCampoSearch = campoSearch.cloneNode(true);
+            campoSearch.parentNode.replaceChild(novoCampoSearch, campoSearch);
 
-                const texto = campoSearch.value.trim();
-
-                const primeiraLinha = document.querySelector('#modeloTableCompacta tbody tr:not(.dtr-hidden):not(.dataTables_empty)');
-                if (!primeiraLinha) {
-                    //console.warn('Nenhuma linha visível após filtro.');
-                    return;
+            //Feito pelo Qoder em 13/08/2026
+            // Filtra o grid em tempo real enquanto o usuário digita.
+            novoCampoSearch.addEventListener('input', function () {
+                const tabela = $.fn.dataTable.isDataTable('#modeloTableCompacta')
+                    ? $('#modeloTableCompacta').DataTable()
+                    : null;
+                if (tabela) {
+                    tabela.search(this.value).draw();
                 }
+            });
 
-                const id = primeiraLinha.dataset.id;
-                if (!id) {
-                    //console.warn('ID não encontrado na linha. Verifique se há atributo data-id.');
-                    return;
+            novoCampoSearch.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+
+                    const tabela = $.fn.dataTable.isDataTable('#modeloTableCompacta')
+                        ? $('#modeloTableCompacta').DataTable()
+                        : null;
+                    if (tabela) {
+                        tabela.search(novoCampoSearch.value).draw();
+                    }
+
+                    const primeiraLinha = document.querySelector('#modeloTableCompacta tbody tr:not(.dtr-hidden):not(.dataTables_empty)');
+                    if (!primeiraLinha) {
+                        //console.warn('Nenhuma linha visível após filtro.');
+                        return;
+                    }
+
+                    const id = primeiraLinha.dataset.id;
+                    if (!id) {
+                        //console.warn('ID não encontrado na linha. Verifique se há atributo data-id.');
+                        return;
+                    }
+
+                    montarCupomPorId(id);
+
+                    // Limpa o campo de busca e restaura a lista completa para a próxima seleção
+                    novoCampoSearch.value = '';
+                    if (tabela) {
+                        tabela.search('').draw();
+                    }
                 }
-
-                montarCupomPorId(id);
-            }
-        });
+            });
+            //..Qoder
+        }
         //..
+    };
+    //..Qoder
+
+    $(document).ready(function () {
+        window.inicializarLancarExames();
 
         //declarações para controle de formulário no submmit ::: TROCA ENTRE "Formulário Completo" e "Formulário Simples"
         var numeroItemTabela = $(".itemTabelaExame").val(1); //declara apenas, porque aqui ainda fica o default do Combobox, colocamos 1 = SUS!
@@ -188,9 +236,9 @@
             {
                 @foreach (var item in ViewBag.ListaDeExames)
                 {
-                    @Html.Raw("<tr class='noSelectedLinha' data-id='" + @item.Id.ToString() + "' name='itemLancarExame' title='Selecionar' style='width: 90%;'>")
-                    @Html.Raw("<td data-id='" + @item.Id.ToString() + "' style = 'width:7%;'>" + Utils.FormataContaView(@item.ContaExame.ToString()) + "</td>")
-                    @Html.Raw("<td style='width:90%;'>" + @item.Descricao + "</td>")
+                    @Html.Raw("<tr class='noSelectedLinha' data-id='" + @item.Id.ToString() + "' name='itemLancarExame' title='Selecionar'>")
+                    @Html.Raw("<td data-id='" + @item.Id.ToString() + "' style='white-space:nowrap;'>" + Utils.FormataContaView(@item.ContaExame.ToString()) + "</td>")
+                    @Html.Raw("<td>" + @item.Descricao + "</td>")
                     @Html.Raw("</tr>")
                 }
             }

@@ -570,17 +570,16 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             //Feito pelo Kiro em 20/04/2026
             // Verifica se a ContaExame está sendo utilizada em exames realizados, AM ou requisições
+            //Feito pelo Qoder em 12/08/2026 — removido _db.Requisitar.AnyAsync (tabela eliminada)
             bool possuiVinculos = await _db.ItensExamesRealizados.AnyAsync(i => i.ContaExame == contaExame)
-                               || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ContaExame == contaExame)
-                               || await _db.Requisitar.AnyAsync(r => r.ContaExame == contaExame);
+                               || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ContaExame == contaExame);
 
             // Se for conta principal (termina em 0000), verificar também os itens filhos
             if (!possuiVinculos && contaExame.Substring(7, 4) == "0000")
             {
                 string prefixoConta = contaExame.Substring(0, 7);
                 possuiVinculos = await _db.ItensExamesRealizados.AnyAsync(i => i.ContaExame.StartsWith(prefixoConta))
-                              || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ContaExame.StartsWith(prefixoConta))
-                              || await _db.Requisitar.AnyAsync(r => r.ContaExame.StartsWith(prefixoConta));
+                              || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ContaExame.StartsWith(prefixoConta));
             }
 
             if (possuiVinculos)

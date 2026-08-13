@@ -123,23 +123,25 @@ function configTableCompacta() {
         // o primeiro clique era consumido pelo DataTables e não chegava ao handler.
         select: false,
         //..Kiro
-        fixedColumns: {
-            left: -1,
-            right: 1,
-        },
-        autoWidth: true,
-        responsive: true,
+        //Feito pelo Qoder em 13/08/2026
+        // Desabilita o modo responsivo que estava colapsando a coluna de descrição
+        // para linhas de detalhe, prejudicando a leitura do Roll de Exames.
+        autoWidth: false,
+        responsive: false,
         paging: false,           //para scrollY
         scrollCollapse: true,    //para scrollY
         scrollY: '50vh',         //para scrollY  //total de umas 17 linhas no grid da tabela
         scrollX: false,
+        //..Qoder
     });   //.draw();
     //$("input[type='search']")[0].focus(); //coloca o foco no search
-    //Configura o campo de busca personalizado, o input fica no cshtml com o id "customSearchBox".
-    document.getElementById('customSearchBox').addEventListener('keyup', function () {
-        tabela.search(this.value).draw();
-    });
 }
+
+//Feito pelo Qoder em 13/08/2026
+// O listener do campo de busca personalizado foi movido para _PartialLancarExames.cshtml
+// (função window.inicializarLancarExames), porque aquele script clona o input ao reinicializar
+// e remove listeners adicionados anteriormente.
+//..Qoder
 //..
 /* 
  *  MODELO Exclusivo para as tabelas de MODAL 

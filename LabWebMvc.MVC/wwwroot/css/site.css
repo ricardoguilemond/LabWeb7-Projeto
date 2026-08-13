@@ -722,8 +722,22 @@ a {
 
 #layoutSidenav_nav {
     width: auto;
-    width: 230px;
+    width: 280px;
     white-space: nowrap;
+}
+
+/* Reduz levemente a fonte das opções do menu lateral para melhor aproveitamento */
+.sb-sidenav .sb-sidenav-menu .nav .nav-link {
+    font-size: 0.9rem;
+}
+
+/* Ajusta largura da marca e do conteúdo para acompanhar o menu */
+.sb-topnav .navbar-brand {
+    width: 275px;
+}
+
+.sb-nav-fixed #layoutSidenav #layoutSidenav_content {
+    padding-left: 275px;
 }
 
 .sb-sidenav .nav-link {
@@ -736,9 +750,26 @@ a {
     min-height: 1.0rem; /* ajuste altura da caixa invisível da opção do menu */
 }
 
+/* Itens aninhados permitem quebra de linha natural, evitando corte e "pulo" no hover */
+.sb-sidenav-menu-nested .nav-link {
+    white-space: normal !important;
+    word-wrap: break-word;
+    line-height: 1.3;
+}
+
+/* Recua menos os itens aninhados para aproveitar melhor a largura do menu */
+.sb-sidenav-menu-nested {
+    margin-left: 1rem;
+}
+
     .sb-sidenav .nav-link:hover {
         white-space: normal; /* Quebra a linha ao passar mouse para ver o texto completo */
     }
+
+/* Labels de checkbox e radiobox devem ficar sempre na mesma linha */
+.form-check-label {
+    white-space: nowrap;
+}
 
 .sb-sidenav .nav-item {
     margin-bottom: 0.1rem; /* diminui espaço entre os itens da lista */
@@ -748,8 +779,8 @@ a {
 /*
     MODAL DE MENSAGENS EM TELA
 */
-/* The Modal (foreground) */
-.modal {
+/* The Modal (foreground) — limitado ao modal antigo myModal para não afetar os modais Bootstrap 5 */
+#myModal.modal {
     display: block;
     position: fixed !important; /* Stay in place */
     z-index: 3000 !important; /* Sit on top */

@@ -48,5 +48,4 @@ public partial class ClasseExames
 
     public virtual ICollection<ItensExamesRealizadosAM> ItensExamesRealizadosAM { get; set; } = [];
 
-    public virtual ICollection<Requisitar> Requisitar { get; set; } = [];
 }

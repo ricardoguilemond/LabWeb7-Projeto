@@ -142,7 +142,8 @@
                         $('#buttonLimpaFormulario').trigger('click');
                         //Feito pelo Kiro em 02/05/2026
                         // Esvazia o cupom em tela e no servidor após salvamento
-                        fetch('/PartialMontarItensCupom?id=0', { method: 'GET' })
+                        var urlMontarItensCupom = document.getElementById('lancarExamesConfig').dataset.urlMontarItensCupom;
+                        fetch(urlMontarItensCupom + '?id=0', { method: 'GET' })
                         .then(function (r) { return r.text(); })
                         .then(function (html) {
                             document.getElementById('conteudoItensCupomCaixa').innerHTML = html;
@@ -249,7 +250,12 @@
           data-url-plano-exames-itens="@Url.Action("PlanoExamesItens", "Requisitar")"
           data-url-remover-exame-cupom="@Url.Action("RemoverExameCupom", "Requisitar")"></span>
     <span id="examesConfig" hidden
-          data-url-montar-itens-cupom="@Url.Action("PartialMontarItensCupom", "Requisitar")"></span>
+          data-url-montar-itens-cupom="@Url.Action("PartialMontarItensCupom", "Requisitar")"
+          data-url-modal-medicos="@Url.Action("ModalMedicos", "Requisitar")"
+          data-url-modal-instituicoes="@Url.Action("ModalInstituicoes", "Requisitar")"
+          data-url-modal-postos="@Url.Action("ModalPostos", "Requisitar")"
+          data-url-modal-tabelas="@Url.Action("ModalTabelas", "Requisitar")"
+          data-url-retorno-medico="@Url.Action("RetornoDoModalMedico", "Requisitar")"></span>
     <!-- ..Qoder -->
 
     @*     <script type="text/javascript">
