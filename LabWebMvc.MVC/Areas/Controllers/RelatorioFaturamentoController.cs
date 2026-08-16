@@ -158,6 +158,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Include(e => e.TabelaExames)
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Situacao >= 1)
                 .Where(e => e.Liberacao == 1)
                 .Where(e => incluirBaixados || e.Baixado != 1)
                 .Where(e => e.TabelaExames != null)
@@ -192,6 +193,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                     .Where(e => e.Liberacao == 1)
                     .Where(e => e.TabelaExames != null)
+                    //Feito pelo Qoder em 15/08/2026 — item 5.4 do plano: oculta registros
+                    // baixados não enviados para análise (Situacao == 0).
+                    .Where(e => e.Situacao >= 1)
+                    //..Qoder
                     .AsQueryable();
 
                 if (ids != null && ids.Count > 0)
@@ -219,6 +224,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Include(e => e.TabelaExames)
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => !e.DataFim.HasValue)
+                .Where(e => e.Situacao >= 1)
                 .Where(e => e.Liberacao == 1)
                 .Where(e => incluirBaixados || e.Baixado != 1)
                 .Where(e => ids != null && ids.Count > 0 ? ids.Contains(e.InstituicaoId) : true)
@@ -278,6 +284,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             var idsAtivos = await _db.ExamesRealizados
                 .AsNoTracking()
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim
+                         && e.Situacao >= 1
                          && e.Liberacao == 1 && e.Baixado != 1
                          && e.InstituicaoId > 0)
                 .Select(e => e.InstituicaoId)
@@ -289,9 +296,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 var idsAm = await _db.ExamesRealizadosAM
                     .AsNoTracking()
+                    //Feito pelo Qoder em 15/08/2026 — item 5.4 do plano: oculta registros
+                    // baixados não enviados para análise (Situacao == 0).
                     .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim
                              && e.Liberacao == 1
-                             && e.InstituicaoId > 0)
+                             && e.InstituicaoId > 0
+                             && e.Situacao >= 1)
+                    //..Qoder
                     .Select(e => e.InstituicaoId)
                     .Distinct()
                     .ToListAsync();
@@ -338,6 +349,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .AsNoTracking()
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Situacao >= 1)
                 .CountAsync();
             _logger.LogInformation("ObterTabelasAsync: totalExamesRealizados no periodo={Total}", totalExamesPeriodo);
 
@@ -345,6 +357,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .AsNoTracking()
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Situacao >= 1)
                 .Where(e => e.Liberacao == 1)
                 .CountAsync();
             _logger.LogInformation("ObterTabelasAsync: apos Liberacao==1 ={Total}", liberados);
@@ -353,6 +366,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .AsNoTracking()
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Situacao >= 1)
                 .Where(e => e.Liberacao == 1)
                 .Where(e => incluirBaixados || e.Baixado != 1)
                 .CountAsync();
@@ -362,6 +376,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .AsNoTracking()
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Situacao >= 1)
                 .Where(e => e.Liberacao == 1)
                 .Where(e => incluirBaixados || e.Baixado != 1)
                 .Where(e => e.TabelaExames != null)
@@ -372,6 +387,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .AsNoTracking()
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Situacao >= 1)
                 .Where(e => e.Liberacao == 1)
                 .Where(e => incluirBaixados || e.Baixado != 1)
                 .Where(e => e.TabelaExames != null)
@@ -401,6 +417,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                     .Where(e => e.Liberacao == 1)
                     .Where(e => e.TabelaExames != null)
+                    //Feito pelo Qoder em 15/08/2026 — item 5.4 do plano: oculta registros
+                    // baixados não enviados para análise (Situacao == 0).
+                    .Where(e => e.Situacao >= 1)
+                    //..Qoder
                     .AsQueryable();
 
                 if (instituicoes != null && instituicoes.Count > 0)
@@ -720,12 +740,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .AsNoTracking()
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Situacao >= 1)
                 .CountAsync();
 
             var totalLiberadosNaoBaixados = await _db.ExamesRealizados
                 .AsNoTracking()
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Situacao >= 1)
                 .Where(e => e.Liberacao == 1 && e.Baixado != 1)
                 .CountAsync();
 
@@ -740,6 +762,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Include(e => e.Pacientes)
                 .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                 .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
+                .Where(e => e.Situacao >= 1)
                 .Where(e => e.Liberacao == 1 && e.Baixado != 1)
                 .AsQueryable();
 
@@ -792,6 +815,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .Where(e => TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataIni, "UTC").Date <= fim)
                     .Where(e => e.DataFim.HasValue && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date >= inicio && TimeZoneInfo.ConvertTimeBySystemTimeZoneId(e.DataFim.Value, "UTC").Date <= fim)
                     .Where(e => e.Liberacao == 1)
+                    //Feito pelo Qoder em 15/08/2026 — item 5.4 do plano: oculta registros
+                    // baixados não enviados para análise (Situacao == 0).
+                    .Where(e => e.Situacao >= 1)
+                    //..Qoder
                     .AsQueryable();
 
                 if (filtro.InstituicoesSelecionadas.Count > 0)

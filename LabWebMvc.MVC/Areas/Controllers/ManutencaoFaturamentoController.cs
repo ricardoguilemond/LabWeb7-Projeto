@@ -80,7 +80,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .Include(e => e.Instituicao)
                     .Include(e => e.TabelaExames)
                     .Include(e => e.Medicos)
-                    .Where(e => e.Liberacao == 1 && e.Baixado != 1)
+                    .Where(e => e.Situacao >= 1 && e.Liberacao == 1 && e.Baixado != 1)
                     .AsQueryable();
 
                 if (buscaPorCodigo)
@@ -180,7 +180,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // Verificar flag Faturado do exame pai
                 var exame = await _db.ExamesRealizados
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(e => e.Id == item.ExameRealizadoId);
+                    .FirstOrDefaultAsync(e => e.Id == item.ExameRealizadoId && e.Situacao >= 1);
 
                 if (exame == null)
                     return Json(new { sucesso = false, mensagem = "Exame não encontrado." });
@@ -220,7 +220,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             try
             {
                 var exame = await _db.ExamesRealizados
-                    .FirstOrDefaultAsync(e => e.Id == codigoExame);
+                    .FirstOrDefaultAsync(e => e.Id == codigoExame && e.Situacao >= 1);
 
                 if (exame == null)
                     return Json(new { sucesso = false, mensagem = "Exame não encontrado." });

@@ -10,11 +10,13 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-2">
                 <label for="txtDataIni" class="form-label">Data Inicial</label>
-                <input type="date" id="txtDataIni" class="form-control form-control-sm" />
+                @* Feito pelo Qoder em 16/08/2026: default = data de hoje *@
+                <input type="date" id="txtDataIni" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
             </div>
             <div class="col-md-2">
                 <label for="txtDataFim" class="form-label">Data Final</label>
-                <input type="date" id="txtDataFim" class="form-control form-control-sm" />
+                @* Feito pelo Qoder em 16/08/2026: default = data de hoje *@
+                <input type="date" id="txtDataFim" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
             </div>
             <div class="col-md-3">
                 <label for="selInstituicao" class="form-label">Instituição</label>
@@ -64,6 +66,8 @@
                         <th>Id</th>
                         <th>Data</th>
                         <th>Instituição</th>
+                        @* Feito pelo Qoder em 16/08/2026: coluna de tabela de preços (sigla e nome) *@
+                        <th>Tabela de Preços</th>
                         <th>Paciente</th>
                         <th>Período</th>
                         <th>Valor Total</th>
@@ -96,6 +100,12 @@
                     <div class="col-md-6"><label class="form-label">Paciente</label><input type="text" id="detPaciente" class="form-control form-control-sm" readonly /></div>
                     <div class="col-md-4"><label class="form-label">Período</label><input type="text" id="detPeriodo" class="form-control form-control-sm" readonly /></div>
                     <div class="col-md-4"><label class="form-label">Valor Total</label><input type="text" id="detValor" class="form-control form-control-sm text-end" readonly /></div>
+                    @*Feito pelo Qoder em 16/08/2026 — desconto concedido no recebimento*@
+                    <div class="col-md-4"><label class="form-label">Desconto</label><input type="text" id="detDesconto" class="form-control form-control-sm text-end" readonly /></div>
+                    @*..Qoder*@
+                    @*Feito pelo Qoder em 16/08/2026 — cobrança: Instituição ou Paciente*@
+                    <div class="col-md-4"><label class="form-label">Cobrança</label><input type="text" id="detCobranca" class="form-control form-control-sm" readonly /></div>
+                    @*..Qoder*@
                     <div class="col-md-4"><label class="form-label">Registrado por</label><input type="text" id="detUsuario" class="form-control form-control-sm" readonly /></div>
                 </div>
 
@@ -129,6 +139,76 @@
     </div>
 </div>
 
+@*Feito pelo Qoder em 16/08/2026 — Modal de Baixa de Título Pendente (cobrança à instituição)*@
+<div class="modal fade" id="modalReceberPendente" tabindex="-1" aria-labelledby="modalReceberPendenteLabel">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalReceberPendenteLabel"><i class="fa-solid fa-hand-holding-dollar"></i> Receber Título Pendente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="hddCatalogoPendenteId" />
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Paciente</label>
+                        <input type="text" id="txtPacientePendente" class="form-control form-control-sm" readonly />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Valor a Receber</label>
+                        <input type="text" id="txtValorPendente" class="form-control form-control-sm text-end fw-bold" readonly />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Período (MM/AAAA)</label>
+                        <input type="text" id="txtPeriodoPendente" class="form-control form-control-sm" placeholder="MM/AAAA" maxlength="7" />
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <span><i class="fa-solid fa-wallet"></i> Formas de Recebimento</span>
+                        <button type="button" id="btnAdicionarFormaPendente" class="btn btn-sm btn-success"><i class="fa-solid fa-plus"></i> Adicionar</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm" id="tblFormasPendente">
+                                <thead>
+                                    <tr>
+                                        <th>Forma</th>
+                                        <th>Conta</th>
+                                        <th>Valor</th>
+                                        <th>Data</th>
+                                        <th>Observação</th>
+                                        <th style="width:40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Total Informado:</th>
+                                        <th class="text-end" id="lblTotalFormasPendente">0,00</th>
+                                        <th colspan="3"></th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Diferença:</th>
+                                        <th class="text-end" id="lblDiferencaPendente">0,00</th>
+                                        <th colspan="3"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirmarReceberPendente" class="btn btn-primary"><i class="fa-solid fa-save"></i> Confirmar Recebimento</button>
+            </div>
+        </div>
+    </div>
+</div>
+@*..Qoder*@
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
@@ -155,6 +235,9 @@
                     { data: 'id', name: 'id' },
                     { data: 'dataRecebimento', name: 'dataRecebimento' },
                     { data: 'instituicao', name: 'instituicao' },
+                    //Feito pelo Qoder em 16/08/2026
+                    { data: 'tabelaPreco', name: 'tabelaPreco', orderable: false },
+                    //..Qoder
                     { data: 'paciente', name: 'paciente' },
                     { data: 'periodo', name: 'periodo', orderable: false },
                     { data: 'valorTotal', name: 'valorTotal', className: 'text-end' },
@@ -175,6 +258,33 @@
                 var id = $(this).data('id');
                 carregarDetalhes(id);
             });
+
+            //Feito pelo Qoder em 16/08/2026 — baixa de título pendente (cobrança à instituição)
+            $('#catalogosTable tbody').on('click', '.btn-receber-pendente', function () {
+                abrirReceberPendente($(this).data('id'));
+            });
+
+            $('#btnAdicionarFormaPendente').on('click', function () {
+                adicionarLinhaFormaPendente();
+            });
+
+            $('#tblFormasPendente tbody').on('click', '.btn-remover-forma-pendente', function () {
+                $(this).closest('tr').remove();
+                calcularTotaisFormasPendente();
+            });
+
+            $('#tblFormasPendente tbody').on('input', '.forma-valor-pendente', function () {
+                calcularTotaisFormasPendente();
+            });
+
+            $('#tblFormasPendente tbody').on('focus', '.forma-valor-pendente', function () {
+                $(this).val('');
+            });
+
+            $('#btnConfirmarReceberPendente').on('click', function () {
+                salvarReceberPendente();
+            });
+            //..Qoder
         });
 
         function carregarDetalhes(id) {
@@ -189,6 +299,10 @@
                         $('#detPaciente').val(res.catalogo.paciente);
                         $('#detPeriodo').val(res.catalogo.periodoFaturamento);
                         $('#detValor').val(res.catalogo.valorTotal.toFixed(2).replace('.', ','));
+                        //Feito pelo Qoder em 16/08/2026
+                        $('#detDesconto').val((res.catalogo.valorDesconto || 0).toFixed(2).replace('.', ','));
+                        $('#detCobranca').val(res.catalogo.cobrancaInstituicao ? 'Instituição' : 'Paciente');
+                        //..Qoder
                         $('#detUsuario').val(res.catalogo.usuarioRegistro);
 
                         var tbodyExames = $('#detExamesBody');
@@ -222,5 +336,168 @@
                     alert('Erro ao carregar detalhes.');
                 });
         }
+
+        //Feito pelo Qoder em 16/08/2026 — baixa de título pendente (cobrança à instituição)
+        function parseValorPendente(texto) {
+            texto = (texto || '').trim();
+            if (!texto) return 0;
+            if (texto.indexOf(',') >= 0) {
+                return parseFloat(texto.replace(/\./g, '').replace(',', '.')) || 0;
+            }
+            return parseFloat(texto) || 0;
+        }
+
+        function opcoesSelectPendente(seletor) {
+            var opts = '';
+            $(seletor + ' option').each(function () {
+                if ($(this).val() !== '') opts += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
+            });
+            return opts;
+        }
+
+        function adicionarLinhaFormaPendente() {
+            //Feito pelo Qoder em 16/08/2026 — selects iniciam em "Selecione" e valor vazio:
+            // todos os campos da linha são obrigatórios e escolhidos pelo usuário.
+            var linha = '<tr>' +
+                '<td><select class="form-select form-select-sm forma-id-pendente"><option value="0">Selecione</option>' + opcoesSelectPendente('#selForma') + '</select></td>' +
+                '<td><select class="form-select form-select-sm conta-id-pendente"><option value="0">Selecione</option>' + opcoesSelectPendente('#selConta') + '</select></td>' +
+                '<td><input type="text" inputmode="decimal" class="form-control form-control-sm text-end forma-valor-pendente" value="" placeholder="0,00" /></td>' +
+                '<td><input type="date" class="form-control form-control-sm forma-data-pendente" value="' + new Date().toISOString().split('T')[0] + '" /></td>' +
+                '<td><input type="text" class="form-control form-control-sm forma-obs-pendente" maxlength="2000" /></td>' +
+                '<td><button type="button" class="btn btn-sm btn-danger btn-remover-forma-pendente"><i class="fa-solid fa-trash"></i></button></td>' +
+                '</tr>';
+            //..Qoder
+            $('#tblFormasPendente tbody').append(linha);
+        }
+
+        function valorPendenteAtual() {
+            return parseValorPendente($('#txtValorPendente').val());
+        }
+
+        function calcularTotaisFormasPendente() {
+            var total = 0;
+            $('#tblFormasPendente tbody tr').each(function () {
+                total += parseValorPendente($(this).find('.forma-valor-pendente').val());
+            });
+            var diferenca = total - valorPendenteAtual();
+            $('#lblTotalFormasPendente').text(total.toFixed(2).replace('.', ','));
+            $('#lblDiferencaPendente').text(diferenca.toFixed(2).replace('.', ','));
+            var cor = Math.abs(diferenca) < 0.01 ? 'text-success' : 'text-danger';
+            $('#lblDiferencaPendente').removeClass('text-success text-danger').addClass(cor);
+        }
+
+        function abrirReceberPendente(id) {
+            $.get('/CatalogoRecebimentos/ObterDetalhes/' + id)
+                .done(function (res) {
+                    if (!res.sucesso) {
+                        clickAviso('Atenção', res.mensagem, 'falha', null);
+                        return;
+                    }
+                    $('#hddCatalogoPendenteId').val(res.catalogo.id);
+                    $('#txtPacientePendente').val(res.catalogo.paciente);
+                    $('#txtValorPendente').val(res.catalogo.valorTotal.toFixed(2).replace('.', ','));
+                    $('#txtPeriodoPendente').val(res.catalogo.periodoFaturamento || '');
+                    $('#tblFormasPendente tbody').empty();
+                    //Feito pelo Qoder em 16/08/2026 — o box de formas inicia vazio:
+                    // a baixa só pode ser salva após o usuário adicionar e preencher as linhas.
+                    calcularTotaisFormasPendente();
+                    $('#modalReceberPendente').modal('show');
+                })
+                .fail(function () {
+                    clickAviso('Erro', 'Erro ao carregar o título pendente.', 'critica', null);
+                });
+        }
+
+        function salvarReceberPendente() {
+            var catalogoId = parseInt($('#hddCatalogoPendenteId').val()) || 0;
+            var periodo = $('#txtPeriodoPendente').val().trim();
+            if (!periodo) {
+                clickAviso('Atenção', 'Informe o período de faturamento (MM/AAAA).', 'falha', null);
+                return;
+            }
+
+            var formas = [];
+            var formasValidas = true;
+            $('#tblFormasPendente tbody tr').each(function () {
+                var formaId = parseInt($(this).find('.forma-id-pendente').val()) || 0;
+                var contaId = parseInt($(this).find('.conta-id-pendente').val()) || 0;
+                var valor = parseValorPendente($(this).find('.forma-valor-pendente').val());
+                var data = $(this).find('.forma-data-pendente').val();
+                var obs = $(this).find('.forma-obs-pendente').val();
+                if (formaId <= 0 || contaId <= 0) {
+                    clickAviso('Atenção', 'Selecione a forma e a conta em todas as linhas.', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                //Feito pelo Qoder em 16/08/2026 — valor, data e observação obrigatórios em cada linha
+                if (valor <= 0) {
+                    clickAviso('Atenção', 'Informe um valor maior que zero em todas as linhas.', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                if (!data) {
+                    clickAviso('Atenção', 'Informe a data em todas as linhas.', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                if (!(obs || '').trim()) {
+                    clickAviso('Atenção', 'Informe a observação em todas as linhas (use "." se necessário).', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                //..Qoder
+                formas.push({
+                    FormaRecebimentoId: formaId,
+                    ContaRecebimentoId: contaId,
+                    Valor: valor,
+                    DataRecebimento: data,
+                    Observacao: obs
+                });
+            });
+
+            if (!formasValidas) {
+                return;
+            }
+
+            if (formas.length === 0) {
+                clickAviso('Atenção', 'Informe pelo menos uma forma de recebimento.', 'falha', null);
+                return;
+            }
+
+            var totalFormas = formas.reduce(function (acc, f) { return acc + f.Valor; }, 0);
+            if (Math.abs(totalFormas - valorPendenteAtual()) > 0.01) {
+                clickAviso('Atenção', 'A soma das formas deve ser igual ao valor a receber.', 'falha', null);
+                return;
+            }
+
+            var btn = $('#btnConfirmarReceberPendente');
+            if (btn.prop('disabled')) return;
+            btn.prop('disabled', true);
+            if (typeof ShowProgress === 'function') ShowProgress();
+
+            $.ajax({
+                url: '/CatalogoRecebimentos/ReceberPendente',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ CatalogoId: catalogoId, PeriodoFaturamento: periodo, Formas: formas }),
+                success: function (res) {
+                    if (res.sucesso) {
+                        $('#modalReceberPendente').modal('hide');
+                        table.ajax.reload();
+                        clickAviso('Sucesso', res.mensagem, 'sucesso', null);
+                    } else {
+                        clickAviso('Atenção', res.mensagem, 'falha', null);
+                    }
+                },
+                error: function () {
+                    clickAviso('Erro', 'Erro ao registrar o recebimento.', 'critica', null);
+                },
+                complete: function () {
+                    if (typeof esconderLoading === 'function') esconderLoading();
+                    btn.prop('disabled', false);
+                }
+            });
+        }
+        //..Qoder
     </script>
 }

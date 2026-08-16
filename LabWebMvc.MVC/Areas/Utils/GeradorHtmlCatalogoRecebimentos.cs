@@ -56,6 +56,9 @@ namespace LabWebMvc.MVC.Areas.Utils
             sb.AppendLine("    <th>Instituição</th>");
             sb.AppendLine("    <th>Paciente</th>");
             sb.AppendLine("    <th>Período</th>");
+            //Feito pelo Qoder em 16/08/2026 — coluna de desconto concedido
+            sb.AppendLine("    <th style=\"text-align:right\">Desconto</th>");
+            //..Qoder
             sb.AppendLine("    <th style=\"text-align:right\">Total</th>");
             sb.AppendLine("  </tr></thead>");
             sb.AppendLine("  <tbody>");
@@ -69,13 +72,16 @@ namespace LabWebMvc.MVC.Areas.Utils
                 sb.AppendLine($"      <td>{EscHtml(rec.SiglaInstituicao)} - {EscHtml(rec.NomeInstituicao)}</td>");
                 sb.AppendLine($"      <td>{EscHtml(rec.NomePaciente)}</td>");
                 sb.AppendLine($"      <td>{EscHtml(rec.PeriodoFaturamento ?? "—")}</td>");
+                //Feito pelo Qoder em 16/08/2026 — desconto do registro
+                sb.AppendLine($"      <td class=\"td-valor\">{rec.ValorDesconto:C2}</td>");
+                //..Qoder
                 sb.AppendLine($"      <td class=\"td-valor\">{rec.ValorTotal:C2}</td>");
                 sb.AppendLine("    </tr>");
 
                 if (rec.Formas.Count > 0)
                 {
                     sb.AppendLine("    <tr>");
-                    sb.AppendLine("      <td colspan=\"7\" style=\"padding-left:24px;\">");
+                    sb.AppendLine("      <td colspan=\"8\" style=\"padding-left:24px;\">");
                     sb.AppendLine("        <strong>Formas:</strong> " + string.Join(" | ", rec.Formas.Select(f =>
                         $"{EscHtml(f.FormaNome)} / {EscHtml(f.ContaNome)}: {f.Valor:C2}")));
                     sb.AppendLine("      </td>");
@@ -84,7 +90,7 @@ namespace LabWebMvc.MVC.Areas.Utils
             }
 
             sb.AppendLine("    <tr class=\"tr-total\">");
-            sb.AppendLine("      <td colspan=\"6\" style=\"text-align:right\">TOTAL GERAL:</td>");
+            sb.AppendLine("      <td colspan=\"7\" style=\"text-align:right\">TOTAL GERAL:</td>");
             sb.AppendLine($"      <td class=\"td-valor\">{dados.ValorTotalGeral:C2}</td>");
             sb.AppendLine("    </tr>");
             sb.AppendLine("  </tbody>");
@@ -97,7 +103,9 @@ namespace LabWebMvc.MVC.Areas.Utils
             sb.AppendLine("    <tbody>");
             foreach (var total in dados.TotaisPorForma)
             {
-                sb.AppendLine($"      <tr><td>{EscHtml(total.Descricao)}</td><td class=\"td-valor\">{total.Valor:C2}</td></tr>");
+                //Feito pelo Qoder em 16/08/2026 — quantidade de itens entre parênteses
+                sb.AppendLine($"      <tr><td>({total.Quantidade}) {EscHtml(total.Descricao)}</td><td class=\"td-valor\">{total.Valor:C2}</td></tr>");
+                //..Qoder
             }
             sb.AppendLine("    </tbody>");
             sb.AppendLine("  </table>");
@@ -108,10 +116,35 @@ namespace LabWebMvc.MVC.Areas.Utils
             sb.AppendLine("    <tbody>");
             foreach (var total in dados.TotaisPorConta)
             {
-                sb.AppendLine($"      <tr><td>{EscHtml(total.Descricao)}</td><td class=\"td-valor\">{total.Valor:C2}</td></tr>");
+                //Feito pelo Qoder em 16/08/2026 — quantidade de itens entre parênteses
+                sb.AppendLine($"      <tr><td>({total.Quantidade}) {EscHtml(total.Descricao)}</td><td class=\"td-valor\">{total.Valor:C2}</td></tr>");
+                //..Qoder
             }
             sb.AppendLine("    </tbody>");
             sb.AppendLine("  </table>");
+
+            //Feito pelo Qoder em 16/08/2026 — seção de totais dos descontos
+            sb.AppendLine("  <h2>Totais dos Descontos</h2>");
+            sb.AppendLine("  <table style=\"width:50%\">");
+            sb.AppendLine("    <thead><tr><th>Descrição</th><th style=\"text-align:right\">Valor</th></tr></thead>");
+            sb.AppendLine("    <tbody>");
+            sb.AppendLine($"      <tr><td>({dados.QuantidadeDescontos}) Total de Descontos</td><td class=\"td-valor\">{dados.ValorDescontoGeral:C2}</td></tr>");
+            sb.AppendLine("    </tbody>");
+            sb.AppendLine("  </table>");
+            //..Qoder
+
+            //Feito pelo Qoder em 16/08/2026 — seção de totais por origem ao final
+            sb.AppendLine("  <h2>Totais por Origem</h2>");
+            sb.AppendLine("  <table style=\"width:50%\">");
+            sb.AppendLine("    <thead><tr><th>Origem</th><th style=\"text-align:right\">Valor</th></tr></thead>");
+            sb.AppendLine("    <tbody>");
+            foreach (var total in dados.TotaisPorOrigem)
+            {
+                sb.AppendLine($"      <tr><td>({total.Quantidade}) {EscHtml(total.Descricao)}</td><td class=\"td-valor\">{total.Valor:C2}</td></tr>");
+            }
+            sb.AppendLine("    </tbody>");
+            sb.AppendLine("  </table>");
+            //..Qoder
             sb.AppendLine("</div>");
 
             sb.AppendLine("</body>");

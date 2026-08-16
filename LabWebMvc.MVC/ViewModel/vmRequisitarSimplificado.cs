@@ -22,6 +22,17 @@
         // ExameRealizadoId: código do exame (vínculo lógico com ExamesRealizados.Id)
         public int? ExameRealizadoId { get; set; }
         //..Kiro
+
+        //Feito pelo Qoder em 15/08/2026
+        // Indicador visual no Grid de Requisições: exame já recebido
+        // (consta no Catálogo de Recebimentos).
+        public bool EmCatalogoRecebimentos { get; set; }
+        //..Qoder
+
+        //Feito pelo Qoder em 16/08/2026
+        // Indicador roxo: exame em catálogo pendente de cobrança à instituição.
+        public bool CobrancaInstituicaoPendente { get; set; }
+        //..Qoder
     }
 
     public class CupomRequisicaoViewModel

@@ -52,15 +52,34 @@ namespace LabWebMvc.MVC.Areas.Utils
                 body.InsertBefore(CriarParagrafo("Totais por Forma de Recebimento", "SubTituloNegrito"), sectPr);
                 foreach (var total in dados.TotaisPorForma)
                 {
-                    body.InsertBefore(CriarParagrafo($"{total.Descricao}: {total.Valor:N2}"), sectPr);
+                    //Feito pelo Qoder em 16/08/2026 — quantidade de itens entre parênteses
+                    body.InsertBefore(CriarParagrafo($"({total.Quantidade}) {total.Descricao}: {total.Valor:N2}"), sectPr);
+                    //..Qoder
                 }
 
                 body.InsertBefore(CriarParagrafoVazio(), sectPr);
                 body.InsertBefore(CriarParagrafo("Totais por Conta de Recebimento", "SubTituloNegrito"), sectPr);
                 foreach (var total in dados.TotaisPorConta)
                 {
-                    body.InsertBefore(CriarParagrafo($"{total.Descricao}: {total.Valor:N2}"), sectPr);
+                    //Feito pelo Qoder em 16/08/2026 — quantidade de itens entre parênteses
+                    body.InsertBefore(CriarParagrafo($"({total.Quantidade}) {total.Descricao}: {total.Valor:N2}"), sectPr);
+                    //..Qoder
                 }
+
+                //Feito pelo Qoder em 16/08/2026 — seção de totais dos descontos
+                body.InsertBefore(CriarParagrafoVazio(), sectPr);
+                body.InsertBefore(CriarParagrafo("Totais dos Descontos", "SubTituloNegrito"), sectPr);
+                body.InsertBefore(CriarParagrafo($"({dados.QuantidadeDescontos}) Total de Descontos: {dados.ValorDescontoGeral:N2}"), sectPr);
+                //..Qoder
+
+                //Feito pelo Qoder em 16/08/2026 — seção de totais por origem ao final
+                body.InsertBefore(CriarParagrafoVazio(), sectPr);
+                body.InsertBefore(CriarParagrafo("Totais por Origem", "SubTituloNegrito"), sectPr);
+                foreach (var total in dados.TotaisPorOrigem)
+                {
+                    body.InsertBefore(CriarParagrafo($"({total.Quantidade}) {total.Descricao}: {total.Valor:N2}"), sectPr);
+                }
+                //..Qoder
             }
 
             return stream.ToArray();
@@ -84,7 +103,7 @@ namespace LabWebMvc.MVC.Areas.Utils
         private static TableRow CriarLinhaHeader()
         {
             var row = new TableRow();
-            string[] headers = { "Id", "Data", "Origem", "Instituição", "Paciente", "Período", "Total" };
+            string[] headers = { "Id", "Data", "Origem", "Instituição", "Paciente", "Período", "Desconto", "Total" };
             foreach (var h in headers)
             {
                 row.AppendChild(CriarCelula(h, true));
@@ -101,17 +120,22 @@ namespace LabWebMvc.MVC.Areas.Utils
             row.AppendChild(CriarCelula($"{rec.SiglaInstituicao} - {rec.NomeInstituicao}"));
             row.AppendChild(CriarCelula(rec.NomePaciente));
             row.AppendChild(CriarCelula(rec.PeriodoFaturamento ?? ""));
+            //Feito pelo Qoder em 16/08/2026 — desconto do registro
+            row.AppendChild(CriarCelula(rec.ValorDesconto.ToString("N2"), false, true));
+            //..Qoder
             row.AppendChild(CriarCelula(rec.ValorTotal.ToString("N2"), false, true));
             return row;
         }
 
+        //Feito pelo Qoder em 16/08/2026 — 8 colunas: label ocupa 7 e o valor a última
         private static TableRow CriarLinhaTotal(decimal total)
         {
             var row = new TableRow();
-            row.AppendChild(new TableCell(new TableCellProperties(new GridSpan { Val = 6 }), new Paragraph(new Run(new RunProperties(new Bold()), new Text("TOTAL GERAL")))));
+            row.AppendChild(new TableCell(new TableCellProperties(new GridSpan { Val = 7 }), new Paragraph(new Run(new RunProperties(new Bold()), new Text("TOTAL GERAL")))));
             row.AppendChild(CriarCelula(total.ToString("N2"), false, true));
             return row;
         }
+        //..Qoder
 
         private static TableCell CriarCelula(string texto, bool negrito = false, bool direita = false)
         {

@@ -795,13 +795,17 @@ a {
 }
 
 /* Modal Content */
-.modal-content {
+/*Feito pelo Qoder em 15/08/2026 — escopo limitado ao #myModal (a regra global vazava
+  para os modais Bootstrap 5) e max-width para o aviso não ficar largo/vazar da tela.*/
+#myModal .modal-content {
     background-color: #fefefe;
     margin: auto;
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
+    max-width: 720px;
 }
+/*..Qoder*/
 
 /* Close Button padrão */
 .close {

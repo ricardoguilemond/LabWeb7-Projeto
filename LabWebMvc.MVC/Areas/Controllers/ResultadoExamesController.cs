@@ -194,7 +194,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Include(e => e.Pacientes)
                 .Include(e => e.Medicos)
                 .Include(e => e.TabelaExames)
-                .Where(e => e.Liberacao == 0 && e.Baixado == 0);
+                .Where(e => e.Liberacao == 0 && e.Baixado == 0 && e.Situacao >= 1);
 
             // Filtros backend
             if (!string.IsNullOrEmpty(dataInicial))

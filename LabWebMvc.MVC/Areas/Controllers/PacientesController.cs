@@ -611,7 +611,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     const int limiteMaximo = 200;
                     var query = _db.ExamesRealizados
                         .AsNoTracking()
-                        .Where(e => e.PacienteId == pacienteId);
+                        .Where(e => e.PacienteId == pacienteId && e.Situacao >= 1);
 
                     if (!string.IsNullOrEmpty(dataInicial))
                     {
@@ -679,7 +679,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                     var dadosExpandidos = await _db.ExamesRealizados
                         .AsNoTracking()
-                        .Where(e => e.PacienteId == pacienteId && e.DataIni >= dataLimite12Meses)
+                        .Where(e => e.PacienteId == pacienteId && e.Situacao >= 1 && e.DataIni >= dataLimite12Meses)
                         .OrderByDescending(e => e.DataIni)
                         .ThenByDescending(e => e.Id)
                         .Include(e => e.Instituicao)
@@ -729,7 +729,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // 1. Buscar os últimos 8 exames do paciente (limite máximo no banco)
                 var ultimos8 = await _db.ExamesRealizados
                     .AsNoTracking()
-                    .Where(e => e.PacienteId == pacienteId)
+                    .Where(e => e.PacienteId == pacienteId && e.Situacao >= 1)
                     .OrderByDescending(e => e.DataIni)
                     .ThenByDescending(e => e.Id)
                     .Take(maximoExames)
@@ -761,7 +761,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 // 3. Contar total para indicador de ocultos
                 int totalExames = await _db.ExamesRealizados
-                    .Where(e => e.PacienteId == pacienteId)
+                    .Where(e => e.PacienteId == pacienteId && e.Situacao >= 1)
                     .CountAsync();
 
                 int examesOcultos = totalExames - examesExibidos.Count;

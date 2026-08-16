@@ -58,8 +58,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (Conteudo == null) Conteudo = string.Empty; else Conteudo = Conteudo.Trim();
 
             //Feito pelo Qoder em 12/08/2026
-            // Index simplificado: o grid de lançamentos do dia é carregado via AJAX
-            // pelo endpoint GetLancamentosHoje, que consulta ExamesRealizados.
+            // Index simplificado: o grid de lançamentos é carregado via AJAX
+            // pelo endpoint GetRequisicoesNaoEnviadas, que consulta ExamesRealizados.
             // Não é mais necessário carregar dados de Requisitar aqui.
             if (string.IsNullOrEmpty(Conteudo)) registros = 100;
 
@@ -327,6 +327,31 @@ namespace LabWebMvc.MVC.Areas.Controllers
         }
         //..Qoder
 
+        //Feito pelo Qoder em 15/08/2026
+        // Espelha GeraControleApoioExame do Delphi (FRequisicaoExames.pas):
+        // protocolo diário no formato YYYYMMDD####, incrementando o sufixo a partir
+        // do MAX(ControleApoio) dos exames lançados no dia local.
+        private async Task<string> GerarControleApoioAsync()
+        {
+            var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(DateTime.Now.Date);
+
+            var maxControle = await _db.ExamesRealizados
+                .AsNoTracking()
+                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc
+                         && e.ControleApoio != null && e.ControleApoio != "")
+                .MaxAsync(e => e.ControleApoio);
+
+            string prefixo = DateTime.Now.ToString("yyyyMMdd");
+
+            if (string.IsNullOrEmpty(maxControle) || maxControle.Length < 12 || !maxControle.StartsWith(prefixo))
+                return prefixo + "0001";
+
+            return int.TryParse(maxControle.Substring(8), out int sufixo) && sufixo < 9999
+                ? prefixo + (sufixo + 1).ToString("0000")
+                : prefixo + "9999";
+        }
+        //..Qoder
+
         // Feito pelo Qoder em 21/04/2026 — método agora participa da transação externa passada por SalvarRequisicao
         //Feito pelo Kiro em 03/05/2026
         // APENAS INCLUSÃO NOVA — cria header ExamesRealizados + ItensExamesRealizados.
@@ -343,16 +368,23 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 var primeiroItem = listaItens.First();
                 int seq = await GeraSequencialAsync(vm.VmInstituicao?.Sigla!, _db);
 
+                //Feito pelo Qoder em 15/08/2026 — Laboratório de Apoio (Fase 1 do plano):
+                // LaboratorioApoio = sigla da instituição responsável (como no Delphi);
+                // ControleApoio = protocolo sequencial diário YYYYMMDD####.
+                string laboratorioApoioEfetivo = vm.VmInstituicao?.Sigla ?? vm.LaboratorioApoio ?? string.Empty;
+                string controleApoioEfetivo = await GerarControleApoioAsync();
+                //..Qoder
+
                 var exame = new ExamesRealizados
                 {
                     PacienteId = vm.VmPacientes?.Id ?? 0,
                     TabelaExamesId = vm.VmTabelaExames?.Id ?? 0,
                     InstituicaoId = vm.VmInstituicao?.Id ?? 0,
-                    PostoId = vm.VmPostos?.Id,
+                    PostoId = vm.VmPostos?.Id > 0 ? vm.VmPostos.Id : null,
                     MedicoId = vm.VmMedicos?.Id ?? 0,
                     Sequencial = seq,
-                    LaboratorioApoio = vm.LaboratorioApoio,
-                    ControleApoio = vm.ControleApoio ?? string.Empty,
+                    LaboratorioApoio = laboratorioApoioEfetivo,
+                    ControleApoio = controleApoioEfetivo,
                     DataIni = primeiroItem.DataIni,
                     Liberacao = 0,
                     DataExame = _geralController.ObterDataHoraUtc(),
@@ -404,7 +436,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                 TabelaExamesId = vm.VmTabelaExames!.Id,
                                 OrdemItem = ++ordemItem,
                                 RefExame = item.RefExame!,
-                                RefItem = item.RefItem!,
+                                RefItem = item.RefItem ?? string.Empty,
                                 ContaExame = item.ContaExame ?? "",
                                 Descricao = item.Descricao,
                                 ValorItem = item.ValorItem,
@@ -433,7 +465,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                     TabelaExamesId = vm.VmTabelaExames!.Id,
                                     OrdemItem = ++ordemItem,
                                     RefExame = sub.RefExame ?? item.RefExame!,
-                                    RefItem = sub.RefItem ?? item.RefItem!,
+                                    RefItem = (sub.RefItem ?? item.RefItem) ?? string.Empty,
                                     ContaExame = sub.ContaExame,
                                     Descricao = sub.Descricao,
                                     ValorItem = sub.ValorItem,
@@ -463,7 +495,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                 TabelaExamesId = vm.VmTabelaExames!.Id,
                                 OrdemItem = ++ordemItem,
                                 RefExame = item.RefExame!,
-                                RefItem = item.RefItem!,
+                                RefItem = item.RefItem ?? string.Empty,
                                 ContaExame = item.ContaExame ?? "",
                                 Descricao = item.Descricao,
                                 ValorItem = item.ValorItem,
@@ -494,7 +526,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             TabelaExamesId = vm.VmTabelaExames!.Id,
                             OrdemItem = ++ordemItem,
                             RefExame = item.RefExame!,
-                            RefItem = item.RefItem!,
+                            RefItem = item.RefItem ?? string.Empty,
                             ContaExame = item.ContaExame ?? "",
                             Descricao = item.Descricao,
                             ValorItem = item.ValorItem,
@@ -513,6 +545,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     }
                 }
 
+                //Feito pelo Qoder em 15/08/2026 — todos os itens herdam o LaboratorioApoio
+                // e o ControleApoio do header (mesmo valor, como no Delphi).
+                foreach (var it in itensExames)
+                {
+                    it.LaboratorioApoio = laboratorioApoioEfetivo;
+                    it.ControleApoio = controleApoioEfetivo;
+                }
+                //..Qoder
+
                 _db.ItensExamesRealizados.AddRange(itensExames);
                 await _db.SaveChangesAsync();
 
@@ -520,7 +561,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
             catch (Exception ex)
             {
-                _eventLogHelper.LogEventViewer($"Erro ao salvar exame realizado: {ex.Message}", "Error");
+                var detalhe = ex.InnerException != null
+                    ? $"{ex.Message} | Inner: {ex.InnerException.Message}"
+                    : ex.Message;
+                _eventLogHelper.LogEventViewer($"Erro ao salvar exame realizado: {detalhe}\n{ex.StackTrace}", "Error");
                 return 0;
             }
         }
@@ -531,7 +575,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("SalvarRequisicao")]
         [Produces("application/json")]
         [TypeFilter(typeof(SessionFilter))]
-        public async Task<IActionResult> SalvarRequisicao(vmRequisitar vm, int registroID)
+        public async Task<IActionResult> SalvarRequisicao([FromForm] vmRequisitar vm, int registroID = 0)
         {
             string? usuarioId = HttpContext.Session.GetString("SessionEmail");
             if (string.IsNullOrEmpty(usuarioId))
@@ -599,13 +643,24 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         return Ok(new ApiResult(false, $"Exame Realizado Id={exameRealizadoId} não encontrado. Não é possível editar.", redirecionaUrl, null));
                     }
 
+                    // 1.1. Bloqueia edição se o exame já foi enviado para análise
+                    if (headerExistente.Situacao >= 1)
+                    {
+                        await transaction.RollbackAsync();
+                        return Ok(new ApiResult(false, "Este exame já foi enviado para análise e só pode ser alterado pela tela de Consultar Exames.", redirecionaUrl, null));
+                    }
+
                     // 2. Atualizar header (sem recriar)
                     headerExistente.TabelaExamesId = vm.VmTabelaExames?.Id ?? headerExistente.TabelaExamesId;
                     headerExistente.InstituicaoId = vm.VmInstituicao?.Id ?? headerExistente.InstituicaoId;
-                    headerExistente.PostoId = vm.VmPostos?.Id ?? headerExistente.PostoId;
+                    headerExistente.PostoId = vm.VmPostos?.Id > 0 ? vm.VmPostos.Id : null;
                     headerExistente.MedicoId = vm.VmMedicos?.Id ?? headerExistente.MedicoId;
-                    headerExistente.LaboratorioApoio = vm.LaboratorioApoio;
-                    headerExistente.ControleApoio = vm.ControleApoio ?? string.Empty;
+                    //Feito pelo Qoder em 15/08/2026 — Laboratório de Apoio (Fase 1 do plano):
+                    // LaboratorioApoio segue a sigla da instituição efetiva após a edição
+                    // (preserva a existente se o vm não trouxer instituição);
+                    // ControleApoio é preservado — o protocolo nasce no lançamento.
+                    headerExistente.LaboratorioApoio = vm.VmInstituicao?.Sigla ?? headerExistente.LaboratorioApoio;
+                    //..Qoder
 
                     // 3. Excluir ItensExamesRealizados por ExameRealizadoId
                     var itensAntigos = await _db.ItensExamesRealizados
@@ -631,15 +686,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             TabelaExamesId = vm.VmTabelaExames!.Id,
                             OrdemItem = ++ordemItem,
                             RefExame = item.RefExame!,
-                            RefItem = item.RefItem!,
+                            RefItem = item.RefItem ?? string.Empty,
                             ContaExame = item.ContaExame,
                             Descricao = item.Descricao,
                             ValorItem = item.ValorItem,
                             Etiquetas = item.Etiquetas,
                             InstituicaoId = vm.VmInstituicao!.Id,
                             Sequencial = headerExistente.Sequencial,
-                            LaboratorioApoio = item.LaboratorioApoio,
-                            ControleApoio = item.ControleApoio,
+                            //Feito pelo Qoder em 15/08/2026 — itens recriados na edição
+                            // herdam LaboratorioApoio/ControleApoio do header (nunca null).
+                            LaboratorioApoio = headerExistente.LaboratorioApoio,
+                            ControleApoio = headerExistente.ControleApoio,
+                            //..Qoder
                             LaboratorioExterno = item.LaboratorioExterno,
                             MaterialSaida = item.MaterialSaida,
                             MaterialRetorno = item.MaterialRetorno,
@@ -664,13 +722,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         return Ok(new ApiResult(false, "Falha ao salvar dados na tabela de Exames.", redirecionaUrl, null));
                     }
                 }
-
-                if (exameRealizadoId <= 0)
-                {
-                    await transaction.RollbackAsync();
-                    return Ok(new ApiResult(false, "Falha ao salvar dados na tabela de Requisitos.", redirecionaUrl, null));
-                }
-                //..Kiro
 
                 await transaction.CommitAsync();
 
@@ -1180,6 +1231,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (header == null)
                 return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para este paciente na data informada." });
 
+            // Bloqueia edição se o exame já foi enviado para análise
+            if (header.Situacao >= 1)
+            {
+                return Json(new { sucesso = false, mensagem = "Este exame já foi enviado para análise e só pode ser alterado pela tela de Consultar Exames." });
+            }
+
             // Busca os itens vinculados ao header
             var itens = _db.ItensExamesRealizados
                 .AsNoTracking()
@@ -1250,6 +1307,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 nomeTabela          = header.TabelaExames?.NomeTabela ?? "",
                 dataIni             = header.DataIni.ToString("dd/MM/yyyy"),
                 exameRealizadoId    = header.Id,
+                //Feito pelo Qoder em 15/08/2026 — Laboratório de Apoio (Fase 1 do plano):
+                // retorna os campos para uso informativo/futuro no formulário.
+                laboratorioApoio    = header.LaboratorioApoio ?? "",
+                controleApoio       = header.ControleApoio ?? "",
+                //..Qoder
                 listaCupom
             };
 
@@ -1380,6 +1442,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             if (!headers.Any())
                 return Json(new { sucesso = false, mensagem = "Nenhuma requisição encontrada para exclusão." });
+
+            // Bloqueia exclusão se algum exame já foi enviado para análise
+            if (headers.Any(h => h.Situacao >= 1))
+            {
+                return Json(new { sucesso = false, mensagem = "Este exame já foi enviado para análise e só pode ser excluído pela tela de Consultar Exames." });
+            }
 
             // Verifica se algum item possui resultado lançado (bloqueia exclusão)
             var exameRealizadoIds = headers.Select(h => h.Id).ToList();
@@ -1587,29 +1655,23 @@ namespace LabWebMvc.MVC.Areas.Controllers
         }
         //..
 
-        //Lançamentos no partial Grid dos Lançamentos dos Exames do Dia
+        //Lançamentos no partial Grid de Requisições (não enviados para análise)
         //Feito pelo Kiro em 01/05/2026
         // Otimização de performance: query única com projeção direta + AsNoTracking.
-        // Antes: 2 roundtrips ao banco, 4 Includes (JOINs completos), GroupBy em memória.
-        // Agora: 1 roundtrip, subquery para MAX(Id) por paciente, projeção sem Include.
+        // Feito pelo Qoder em 15/08/2026 — renomeado de GetLancamentosHoje para
+        // GetRequisicoesNaoEnviadas e removido filtro por data. Agora lista todos
+        // os exames com Situacao == 0 (Pendente), ou seja, ainda não enviados
+        // para análise.
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
-        [Route("Requisitar/GetLancamentosHoje")]
-        public IActionResult GetLancamentosHoje()
+        [Route("Requisitar/GetRequisicoesNaoEnviadas")]
+        public IActionResult GetRequisicoesNaoEnviadas()
         {
             try
             {
-                // Range do dia em UTC — necessário para comparar com colunas timestamptz no Npgsql 8.x
-                // (DateTimeKind.Unspecified causa InvalidOperationException em timestamptz)
-                var (hojeInicio, hojeFim) = _geralController.ObterRangeDiaUtc();
-
-                // Feito pelo Qoder em 31/05/2026
-                // Consulta diretamente a tabela ExamesRealizados (header verdadeiro)
-                // em vez de agrupar a tabela Requisitar (itens). Cada linha do grid
-                // corresponde a um registro da tabela ExamesRealizados.
                 var lista = _db.ExamesRealizados
                     .AsNoTracking()
-                    .Where(e => e.DataIni >= hojeInicio && e.DataIni <= hojeFim)
+                    .Where(e => e.Situacao == 0)
                     .Select(e => new vmRequisitarSimplificado
                     {
                         Id                 = e.Id,
@@ -1623,7 +1685,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         LaboratorioApoio   = e.LaboratorioApoio ?? "-",
                         DataIni            = e.DataIni.ToString("dd/MM/yyyy"),
                         DataEntregaParcial = e.DataEntrega != null ? e.DataEntrega.Value.ToString("dd/MM/yyyy") : "",
-                        TabelaExamesId     = e.TabelaExamesId
+                        TabelaExamesId     = e.TabelaExamesId,
+                        //Feito pelo Qoder em 15/08/2026 — indicador visual de recebimento no grid.
+                        EmCatalogoRecebimentos = e.EmCatalogoRecebimentos
+                        //..Qoder
+                        ,
+                        //Feito pelo Qoder em 16/08/2026 — indicador roxo: catálogo pendente de cobrança à instituição.
+                        CobrancaInstituicaoPendente = _db.CatalogoRecebimentosExames.Any(v => v.ExameRealizadoId == e.Id && v.CatalogoRecebimento.Status == 0 && v.CatalogoRecebimento.CobrancaInstituicao)
+                        //..Qoder
                     })
                     .OrderByDescending(v => v.ExameRealizadoId)
                     .ToList();
@@ -1633,16 +1702,77 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
             catch (Exception ex)
             {
-                _eventLogHelper.LogEventViewer("GetLancamentosHoje ERRO: " + ex.Message + " | " + ex.StackTrace, "wError");
+                _eventLogHelper.LogEventViewer("GetRequisicoesNaoEnviadas ERRO: " + ex.Message + " | " + ex.StackTrace, "wError");
                 return Json(new { data = new List<vmRequisitarSimplificado>(), erro = ex.Message, stack = ex.StackTrace });
             }
         }
         //..Kiro
 
+        // Feito pelo Qoder em 15/08/2026 — envia o exame para análise,
+        // alterando a situação de 0 (Pendente) para 1 (Em Análise).
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("Requisitar/EnviarParaAnalise")]
+        public async Task<IActionResult> EnviarParaAnalise([FromForm] int exameRealizadoId)
+        {
+            try
+            {
+                var exame = await _db.ExamesRealizados.FindAsync(exameRealizadoId);
+                if (exame == null)
+                    return Json(new { sucesso = false, mensagem = "Exame não encontrado." });
+
+                if (exame.Situacao != 0)
+                    return Json(new { sucesso = false, mensagem = "Este exame já foi enviado para análise." });
+
+                //Feito pelo Qoder em 16/08/2026
+                // Regra de negócio: o envio para análise só é permitido após o
+                // recebimento na portaria — imediato do paciente (Status Recebido)
+                // ou cobrança à instituição (checkbox, título Pendente). Ambos
+                // marcam EmCatalogoRecebimentos = true no ato do lançamento.
+                if (!exame.EmCatalogoRecebimentos)
+                    return Json(new { sucesso = false, mensagem = "O exame só pode ser enviado para análise após o recebimento na portaria." });
+                //..Qoder
+
+                exame.Situacao = 1;
+                await _db.SaveChangesAsync();
+
+                _eventLogHelper.LogEventViewer($"Exame {exameRealizadoId} enviado para análise pelo usuário.", "Information");
+                return Json(new { sucesso = true, mensagem = "Exame enviado para análise com sucesso." });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer($"Erro ao enviar exame {exameRealizadoId} para análise: {ex.Message}", "wError");
+                return Json(new { sucesso = false, mensagem = "Erro ao enviar exame para análise: " + ex.Message });
+            }
+        }
+
+        // Feito pelo Qoder em 15/08/2026 — retorna a quantidade de exames
+        // pendentes (Situacao == 0) com mais de 24 horas de lançamento.
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpGet]
+        [Route("Requisitar/VerificarExamesPendentes")]
+        public IActionResult VerificarExamesPendentes()
+        {
+            try
+            {
+                var limite24Horas = DateTime.UtcNow.AddHours(-24);
+                int quantidade = _db.ExamesRealizados
+                    .AsNoTracking()
+                    .Count(e => e.Situacao == 0 && e.DataIni < limite24Horas);
+
+                return Json(new { quantidade });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("Erro ao verificar exames pendentes: " + ex.Message, "wError");
+                return Json(new { quantidade = 0 });
+            }
+        }
+
         // Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ItensExamesRealizados.
         // Retorna os itens da tabela ItensExamesRealizados vinculados
         // a um ExameRealizadoId. Usado pela expansão master/detail do grid de
-        // Requisições de Hoje.
+        // Requisições.
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("Requisitar/GetItensRequisicao")]

@@ -160,9 +160,25 @@
                     { data: 'id', name: 'id' },
                     { data: 'siglaTabela', name: 'siglaTabela', orderable: false },
                     { data: 'siglaInstituicao', name: 'siglaInstituicao', orderable: false },
-                    { data: 'nomeInstituicao', name: 'nomeInstituicao', orderable: false },
+                    {
+                        data: 'nomeInstituicao',
+                        name: 'nomeInstituicao',
+                        orderable: false,
+                        render: function (data, type, row) {
+                            if (!data) return '';
+                            return data.length > 25 ? data.substring(0, 25) + '...' : data;
+                        }
+                    },
                     { data: 'siglaPosto', name: 'siglaPosto', orderable: false },
-                    { data: 'nomePosto', name: 'nomePosto', orderable: false },
+                    {
+                        data: 'nomePosto',
+                        name: 'nomePosto',
+                        orderable: false,
+                        render: function (data, type, row) {
+                            if (!data) return '';
+                            return data.length > 25 ? data.substring(0, 25) + '...' : data;
+                        }
+                    },
                     { data: 'nomePaciente', name: 'nomePaciente', orderable: false },
                     { data: 'nascimento', name: 'nascimento', orderable: false },
                     { data: 'sequencial', name: 'sequencial', orderable: false },
@@ -316,6 +332,13 @@
             var id = $row.find('td:first').text();
             if (!id) return;
 
+            // Se clicar na mesma linha já expandida, fecha o detalhe
+            if ($row.hasClass('detail-parent-highlight')) {
+                $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
+                $row.removeClass('detail-parent-highlight group-border-top');
+                return;
+            }
+
             // Remove detalhe anterior (se existir)
             $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
             $('#modeloTable tbody tr.detail-parent-highlight').removeClass('detail-parent-highlight group-border-top');
@@ -375,8 +398,8 @@
     }
 
     function renderizarDetailInline($headerRow, itens, exameRealizadoId) {
-        // 7 colunas de detalhe: Classe, Ref.Exame, Ref.Item, ContaExame, Descrição, ValorItem, Etiquetas
-        // O grid header tem 10 colunas. Usamos colspan nas últimas para preencher.
+        // 9 colunas de detalhe: Folha, Principal, ContaExame, Descrição, ValorItem, Etiquetas, Lab.Apoio, Controle Apoio, Ação
+        // O grid header tem 12 colunas; o detalhe preenche todas (colspan na descrição e no fechamento).
 
         // Aplica moldura preta na linha principal (topo do grupo)
         $headerRow.addClass('group-border-top');
@@ -389,6 +412,10 @@
             '<td colspan="3">Descrição do Item</td>' +
             '<td style="white-space:nowrap; text-align:right;">Valor Item</td>' +
             '<td>Etiquetas</td>' +
+            //Feito pelo Qoder em 15/08/2026 — Laboratório de Apoio visível apenas no detalhe
+            '<td>Lab. Apoio</td>' +
+            '<td>Controle Apoio</td>' +
+            //..Qoder
             '<td style="text-align:center;">Ação</td>' +
             '<td colspan="1"></td>' +
             '</tr>';
@@ -404,8 +431,10 @@
                 '<td colspan="3">' + (item.descricao || '-') + '</td>' +
                 '<td style="text-align:right;">' + (item.valorItem || '-') + '</td>' +
                 '<td>' + (item.etiquetas || 0) + '</td>' +
+                '<td>' + (item.laboratorioApoio || '-') + '</td>' +
+                '<td style="white-space:nowrap;">' + (item.controleApoio || '-') + '</td>' +
                 '<td style="pointer-events:auto; text-align:center;">' +
-                '<a class="grid_itens" style="cursor:pointer; color:#dc3545;" title="Cancelar item" onclick="clickExcluirItemExame(' + item.id + ', ' + exameRealizadoId + ')"><i class="fa-sharp fa-solid fa-xmark"></i></a>' +
+                '<a class="grid_itens" style="cursor:pointer; color:#dc3545;" title="Cancelar item" onclick="clickExcluirItemExame(' + item.id + ', ' + exameRealizadoId + ')"><i class="fa-solid fa-trash-can"></i></a>' +
                 '</td>' +
                 '<td colspan="1"></td>' +
                 '</tr>';
@@ -424,7 +453,7 @@
         var totalHtml = '<tr class="detail-row group-border-bottom" style="font-weight:bold;">' +
             '<td colspan="7"></td>' +
             '<td style="text-align:right; pointer-events:none;">Total: R$ ' + totalFormatado + '</td>' +
-            '<td colspan="2"></td>' +
+            '<td colspan="4"></td>' +
             '</tr>';
         $lastInserted.after(totalHtml);
     }

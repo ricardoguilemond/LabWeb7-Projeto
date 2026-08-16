@@ -3,6 +3,21 @@
 @model List<vmRequisitarSimplificado>
 
 <style>
+    /* Remove espaços em branco à esquerda do grid */
+    #wrapperRequisitar {
+        padding-left: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    #modeloTableRequisitar {
+        margin-left: 0 !important;
+    }
+
+    #modeloTableRequisitar th:first-child,
+    #modeloTableRequisitar td:first-child {
+        padding-left: 4px !important;
+    }
+
     /* Barra superior/head igual ao rodapé/bottom */
     #wrapperRequisitar .dt-scroll-top {
         overflow-x: auto;
@@ -31,11 +46,39 @@
         margin: 0 1px;
     }
     /* Botões verde, amarelo e vermelho para cada linha do grid */
-    .btn-grid-req-verde   { background-color: #28a745; color: white; }
-    .btn-grid-req-amarelo { background-color: #ffc107; color: #333;  }
-    .btn-grid-req-vermelho{ background-color: #dc3545; color: white; }
-    .btn-grid-req-azul    { background-color: #0d6efd; color: white; }
-    .btn-grid-req:hover   { opacity: 0.82; }
+    .btn-grid-req-verde    { background-color: #28a745; color: white; }
+    .btn-grid-req-amarelo  { background-color: #ffc107; color: #333;  }
+    .btn-grid-req-vermelho { background-color: #dc3545; color: white; }
+    /*Feito pelo Qoder em 16/08/2026 — azul "escandaloso" (azul puro) para destacar o botão Receber*/
+    .btn-grid-req-azul     { background-color: #0000FF; color: white; }
+    /*..Qoder*/
+    .btn-grid-req-laranja  { background-color: #D35400; color: white; }
+    /*Feito pelo Qoder em 15/08/2026 — botão cinza: exame já recebido (Catálogo de Recebimentos)*/
+    .btn-grid-req-cinza    { background-color: #6c757d; color: white; cursor: default; }
+    /*..Qoder*/
+    /*Feito pelo Qoder em 16/08/2026 — botão roxo: título pendente de cobrança à instituição*/
+    .btn-grid-req-roxo     { background-color: #6f42c1; color: white; cursor: default; }
+    /*..Qoder*/
+    /*Feito pelo Qoder em 16/08/2026 — laranja desabilitado: envio para análise bloqueado até o recebimento na portaria*/
+    .btn-grid-req-laranja-desab { background-color: #D35400; color: white; opacity: .4; cursor: default; }
+    /*..Qoder*/
+    .btn-grid-req:hover    { opacity: 0.82; }
+
+    /*Feito pelo Qoder em 15/08/2026 — hint (tooltip) dos ícones acima do cursor.
+      Div fixa no body porque os td têm overflow:hidden e cortariam ::after.*/
+    #tooltipGridReq {
+        position: fixed;
+        z-index: 5000;
+        background-color: #222;
+        color: #fff;
+        font-size: 11px;
+        line-height: 1.4;
+        padding: 3px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+        pointer-events: none;
+    }
+    /*..Qoder*/
 
     /* Ajustando o tamanho dos fontes dos títulos dos campos, por Ricardo em 01/05/2026 */
     #wrapperRequisitar table.dataTable thead th,
@@ -66,16 +109,16 @@
 
     #modeloTableRequisitar th:nth-child(3),
     #modeloTableRequisitar td:nth-child(3) {
-        min-width: 180px !important;
-        width: 180px !important;
-        max-width: 180px !important;
+        min-width: 240px !important;
+        width: 240px !important;
+        max-width: 240px !important;
     }
 
     #modeloTableRequisitar th:nth-child(4),
     #modeloTableRequisitar td:nth-child(4) {
-        min-width: 90px !important;
-        width: 90px !important;
-        max-width: 90px !important;
+        min-width: 85px !important;
+        width: 85px !important;
+        max-width: 85px !important;
     }
 
     /* CSS sticky por Ricardo Guilemond em 01/05/2026 */
@@ -103,7 +146,7 @@
     #modeloTableRequisitar th:nth-child(4),
     #modeloTableRequisitar td:nth-child(4) {
         position: sticky !important;
-        left: 310px !important;
+        left: 370px !important;
         z-index: 10;
         box-shadow: 3px 0 5px -2px rgba(0,0,0,0.25);
     }
@@ -141,6 +184,17 @@
     }
     /*..Kiro*/
 
+    /* Alinha os inputs de filtro do footer às colunas */
+    #modeloTableRequisitar tfoot th input {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 40px !important;
+        padding-left: 4px !important;
+        border: 1px solid gray !important;
+        border-radius: 5px !important;
+    }
+
     /* Feito pelo Qoder em 31/05/2026 — estilos master/detail inline */
     #modeloTableRequisitar tbody tr.detail-row {
         background-color: #f0f8f0 !important;
@@ -176,6 +230,30 @@
 </style>
 
 <script>
+    //Feito pelo Qoder em 15/08/2026 — hint (tooltip) dos ícones acima do cursor:
+    // div position:fixed no body, fora dos td com overflow:hidden.
+    function removerTooltipGridReq() {
+        $('#tooltipGridReq').remove();
+    }
+
+    $(document).on('mouseenter', '.btn-grid-req[data-tooltip]', function () {
+        removerTooltipGridReq();
+        var texto = $(this).attr('data-tooltip');
+        if (!texto) return;
+        var rect = this.getBoundingClientRect();
+        var $tip = $('<div id="tooltipGridReq"></div>').text(texto);
+        $('body').append($tip);
+        var largura = $tip.outerWidth();
+        var altura = $tip.outerHeight();
+        var left = rect.left + rect.width / 2 - largura / 2;
+        left = Math.max(4, Math.min(left, $(window).width() - largura - 4));
+        $tip.css({ left: left + 'px', top: (rect.top - altura - 6) + 'px' });
+    }).on('mouseleave click', '.btn-grid-req[data-tooltip]', function () {
+        removerTooltipGridReq();
+    });
+    $(window).on('scroll', removerTooltipGridReq);
+    //..Qoder
+
     //Feito pelo Kiro em 01/05/2026
     // Configuração EXCLUSIVA do DataTables para o Grid de Requisições do Dia.
     // scrollX:true gera o div.dt-scroll-body com overflow-x:auto (barra horizontal no rodapé).
@@ -195,10 +273,10 @@
 
         const modeloTable = $('#modeloTableRequisitar').DataTable({
             ajax: {
-                url: '/Requisitar/GetLancamentosHoje',
+                url: '/Requisitar/GetRequisicoesNaoEnviadas',
                 dataSrc: 'data',
                 error: function (xhr, error, thrown) {
-                    console.error('GetLancamentosHoje erro:', xhr.status, xhr.responseText, thrown);
+                    console.error('GetRequisicoesNaoEnviadas erro:', xhr.status, xhr.responseText, thrown);
                 }
             },
             columns: [
@@ -210,38 +288,55 @@
                     }
                 },
                 { data: 'pacienteId',         width: '80px'  },
-                { data: 'nomePaciente',       width: '180px' },
-                { data: 'nascimento',         width: '90px'  },
-                { data: 'nomeInstituicao',    width: '280px' },
+                { data: 'nomePaciente',       width: '240px' },
+                { data: 'nascimento',         width: '85px'  },
+                { data: 'nomeInstituicao',    width: '160px' },
                 {
                     data: 'nomePosto',
-                    width: '90px',
+                    width: '80px',
                     render: function (data) {
                         return (data === '-') ? '-' : data;
                     }
                 },
-                { data: 'nomeTabela',         width: '320px' },
+                { data: 'nomeTabela',         width: '260px' },
                 {
                     data: 'laboratorioApoio',
-                    width: '120px',
+                    width: '110px',
                     render: function (data) {
                         return (data === '-') ? '-' : data;
                     }
                 },
-                { data: 'dataIni',            width: '90px'  },
+                { data: 'dataIni',            width: '85px'  },
                 {
                     data: null,
-                    width: '80px',
+                    width: '120px',
                     orderable: false,
                     searchable: false,
                     render: function (data, type, row) {
+                        //Feito pelo Qoder em 15/08/2026 — indicador visual de recebimento:
+                        // exame já constante no Catálogo de Recebimentos mostra botão cinza
+                        // (sem ação) no lugar do azul "Receber".
+                        //Feito pelo Qoder em 16/08/2026 — roxo: título pendente de cobrança à instituição.
                         var btnReceber = (row.exameRealizadoId && row.exameRealizadoId > 0)
-                            ? '<button class="btn-grid-req btn-grid-req-azul" title="Receber" onclick="abrirRecebimentoPortaria(' + row.exameRealizadoId + ')"><i class="fa-solid fa-cash-register"></i></button>'
+                            ? (row.cobrancaInstituicaoPendente
+                                ? '<button type="button" class="btn-grid-req btn-grid-req-roxo" data-tooltip="A cobrar da Instituição (título pendente)"><i class="fa-solid fa-hand-holding-dollar"></i></button>'
+                                : (row.emCatalogoRecebimentos
+                                    ? '<button type="button" class="btn-grid-req btn-grid-req-cinza" data-tooltip="Recebido (Catálogo de Recebimentos)"><i class="fa-solid fa-circle-check"></i></button>'
+                                    : '<button class="btn-grid-req btn-grid-req-azul" data-tooltip="Receber" onclick="abrirRecebimentoPortaria(' + row.exameRealizadoId + ')"><i class="fa-solid fa-cash-register"></i></button>'))
                             : '';
-                        return '<button class="btn-grid-req btn-grid-req-verde"    title="Reimprimir cupom"   onclick="reimprimirCupom('   + row.pacienteId + ', \'' + row.dataIni + '\')" ><i class="fa-solid fa-print"></i></button>'
-                             + '<button class="btn-grid-req btn-grid-req-amarelo"  title="Editar requisição"  onclick="editarRequisicao('  + row.pacienteId + ', \'' + row.dataIni + '\', ' + row.tabelaExamesId + ')" ><i class="fa-solid fa-pen"></i></button>'
-                             + '<button class="btn-grid-req btn-grid-req-vermelho" title="Excluir requisição" onclick="excluirRequisicao(' + row.pacienteId + ', \'' + row.dataIni + '\', ' + row.tabelaExamesId + ', ' + (row.exameRealizadoId || 0) + ')" ><i class="fa-solid fa-trash"></i></button>'
-                             + btnReceber;
+                        //..Qoder
+                        //Feito pelo Qoder em 15/08/2026 — ordem dos ícones definida pelo usuário:
+                        // editar, imprimir, receber, enviar para análise, excluir.
+                        return '<button class="btn-grid-req btn-grid-req-amarelo"  data-tooltip="Editar requisição"  onclick="editarRequisicao('  + row.pacienteId + ', \'' + row.dataIni + '\', ' + row.tabelaExamesId + ')" ><i class="fa-solid fa-pen"></i></button>'
+                             + '<button class="btn-grid-req btn-grid-req-verde"    data-tooltip="Reimprimir cupom"   onclick="reimprimirCupom('   + row.pacienteId + ', \'' + row.dataIni + '\')" ><i class="fa-solid fa-print"></i></button>'
+                             + btnReceber
+                             //Feito pelo Qoder em 16/08/2026 — envio para análise só após o recebimento na portaria
+                             // (imediato do paciente ou cobrança à instituição): sem recebimento, botão desabilitado.
+                             + (row.emCatalogoRecebimentos
+                                 ? '<button class="btn-grid-req btn-grid-req-laranja" data-tooltip="Enviar para Análise" onclick="enviarParaAnalise(' + (row.exameRealizadoId || 0) + ')" ><i class="fa-solid fa-flask"></i></button>'
+                                 : '<button type="button" class="btn-grid-req btn-grid-req-laranja-desab" data-tooltip="Realize o recebimento na portaria para enviar para análise"><i class="fa-solid fa-flask"></i></button>')
+                             + '<button class="btn-grid-req btn-grid-req-vermelho" data-tooltip="Excluir requisição" onclick="excluirRequisicao(' + row.pacienteId + ', \'' + row.dataIni + '\', ' + row.tabelaExamesId + ', ' + (row.exameRealizadoId || 0) + ')" ><i class="fa-solid fa-trash"></i></button>';
+                        //..Qoder
                     }
                 }
             ],
@@ -536,6 +631,141 @@
             });
         });
     }
+
+    // Feito pelo Qoder em 15/08/2026 — envia o exame para análise (botão laranja)
+    function enviarParaAnalise(exameRealizadoId) {
+        if (!exameRealizadoId || exameRealizadoId <= 0) {
+            clickAviso('Erro', 'Código do exame não identificado.', 'falha', null);
+            return;
+        }
+
+        Swal.fire({
+            title: 'Enviar para Análise',
+            text: 'Deseja enviar este exame para análise?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#D35400',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sim',
+            cancelButtonText: 'Não'
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+
+            $.ajax({
+                url: '/Requisitar/EnviarParaAnalise',
+                type: 'POST',
+                data: { exameRealizadoId: exameRealizadoId },
+                dataType: 'json',
+                success: function (data) {
+                    clickAviso(data.sucesso ? 'Enviado' : 'Não permitido', data.mensagem, data.sucesso ? 'sucesso' : 'falha', null);
+                    if (data.sucesso) {
+                        $('#modeloTableRequisitar').DataTable().ajax.reload();
+                        //Feito pelo Qoder em 15/08/2026 — reavalia o banner/contador de
+                        // pendentes imediatamente após o envio para análise.
+                        verificarExamesPendentes();
+                        //..Qoder
+                    }
+                },
+                error: function () {
+                    clickAviso('Erro', 'Falha ao enviar o exame para análise.', 'critica', null);
+                }
+            });
+        });
+    }
+
+    // Feito pelo Qoder em 15/08/2026 — verifica exames pendentes há mais de 24 horas
+    // e atualiza o banner e o contador no título do grid.
+    var intervaloVerificacaoPendentes = null;
+
+    function verificarExamesPendentes() {
+        $.ajax({
+            url: '/Requisitar/VerificarExamesPendentes',
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                atualizarAlertaPendentes(data.quantidade || 0);
+            }
+        });
+    }
+
+    function atualizarAlertaPendentes(quantidade) {
+        var $contador = $('#contadorPendentesGrid');
+        var $banner = $('#bannerExamesPendentes');
+        var $texto = $('#textoBannerExamesPendentes');
+
+        if (quantidade > 0) {
+            $contador.text(quantidade + ' pendente' + (quantidade > 1 ? 's' : '') + ' há +24h');
+            $contador.show();
+            $texto.text('Atenção: há ' + quantidade + ' exame(s) lançado(s) há mais de 24 horas aguardando envio para análise. ');
+            $banner.show();
+        } else {
+            $contador.hide();
+            $banner.hide();
+        }
+    }
+
+    function iniciarVerificacaoPendentes() {
+        verificarExamesPendentes();
+        if (intervaloVerificacaoPendentes) clearInterval(intervaloVerificacaoPendentes);
+        intervaloVerificacaoPendentes = setInterval(verificarExamesPendentes, 600000); // 10 minutos
+    }
+
+    function pararVerificacaoPendentes() {
+        if (intervaloVerificacaoPendentes) clearInterval(intervaloVerificacaoPendentes);
+    }
+
+    // Feito pelo Qoder em 15/08/2026 — filtro rápido "Ver" no banner: mostra apenas
+    // exames com mais de 24 horas. Binding delegado ($(document).on) porque o banner
+    // é renderizado DEPOIS deste script no DOM — o binding direto anterior nunca
+    // era anexado e o clique não fazia nada. Segundo clique limpa o filtro.
+    var filtroPendentes24hAtivo = false;
+
+    function filtroPendentes24h(settings, data) {
+        if (settings.nTable.id !== 'modeloTableRequisitar') return true;
+        var dataBr = data[8]; // coluna DT Entrada (índice 8)
+        if (!dataBr) return false;
+        var partes = dataBr.split('/');
+        var dataCell = new Date(partes[2], partes[1] - 1, partes[0]);
+        var limite = new Date();
+        limite.setHours(limite.getHours() - 24);
+        return dataCell < limite;
+    }
+
+    $(document).on('click', '#lnkVerExamesPendentes', function () {
+        var table = $('#modeloTableRequisitar').DataTable();
+        if (!filtroPendentes24hAtivo) {
+            $.fn.dataTable.ext.search.push(filtroPendentes24h);
+            filtroPendentes24hAtivo = true;
+            $(this).text('Limpar');
+            table.draw();
+            clickAviso('Filtro aplicado', 'Exibindo apenas exames pendentes há mais de 24 horas. Clique em "Limpar" no banner para remover o filtro.', 'sucesso', null);
+        } else {
+            var idx = $.fn.dataTable.ext.search.indexOf(filtroPendentes24h);
+            if (idx >= 0) $.fn.dataTable.ext.search.splice(idx, 1);
+            filtroPendentes24hAtivo = false;
+            $(this).text('Ver');
+            table.draw();
+            //Feito pelo Qoder em 15/08/2026 — se não houver mais pendências,
+            // o banner e o contador devem sumir da tela imediatamente.
+            verificarExamesPendentes();
+            //..Qoder
+        }
+    });
+    //..Qoder
+
+    // Pausa/retoma o polling conforme visibilidade da aba
+    $(document).on('visibilitychange', function () {
+        if (document.hidden) {
+            pararVerificacaoPendentes();
+        } else {
+            iniciarVerificacaoPendentes();
+        }
+    });
+
+    // Inicia a verificação ao carregar a página
+    $(document).ready(function () {
+        iniciarVerificacaoPendentes();
+    });
     //..Kiro
 
     // Feito pelo Qoder em 31/05/2026
@@ -571,7 +801,7 @@
             dataType: 'json',
             success: function (data) {
                 if (data.sucesso && data.itens && data.itens.length > 0) {
-                    renderizarDetailRequisicao($row, data.itens);
+                    renderizarDetailRequisicao($row, data.itens, exameRealizadoId);
                 } else {
                     var vazio = '<tr class="detail-row"><td colspan="10" style="text-align:center; font-style:italic;">Nenhum item encontrado para esta sessão.</td></tr>';
                     $row.after(vazio);
@@ -584,7 +814,7 @@
         });
     }
 
-    function renderizarDetailRequisicao($row, itens) {
+    function renderizarDetailRequisicao($row, itens, exameRealizadoId) {
         // Cabeçalho do detail — 10 colunas no grid principal
         var headerHtml = '<tr class="detail-header-row">' +
             '<td>Ordem</td>' +
@@ -593,7 +823,9 @@
             '<td colspan="2">Descrição do Item</td>' +
             '<td style="text-align:right;">Valor</td>' +
             '<td style="text-align:center;">Etiquetas</td>' +
-            '<td></td>' +
+            //Feito pelo Qoder em 15/08/2026 — coluna de exclusão de item no detalhe
+            '<td style="text-align:center;">Ação</td>' +
+            //..Qoder
             '</tr>';
         $row.after(headerHtml);
 
@@ -607,7 +839,12 @@
                 '<td colspan="2">' + (item.descricao || '-') + '</td>' +
                 '<td style="text-align:right;">' + (item.valorItem || '-') + '</td>' +
                 '<td style="text-align:center;">' + (item.etiquetas != null ? item.etiquetas : 0) + '</td>' +
-                '<td></td>' +
+                //Feito pelo Qoder em 15/08/2026 — lixeira por item (pointer-events:auto
+                // porque a linha de detalhe tem pointer-events:none)
+                '<td style="pointer-events:auto; text-align:center;">' +
+                '<a style="cursor:pointer; color:#dc3545;" title="Excluir item" onclick="clickExcluirItemRequisicao(' + item.id + ', ' + exameRealizadoId + ')"><i class="fa-solid fa-trash-can"></i></a>' +
+                '</td>' +
+                //..Qoder
                 '</tr>';
             $ultimo.after(rowHtml);
             $ultimo = $ultimo.next();
@@ -625,6 +862,43 @@
             '</tr>';
         $ultimo.after(totalHtml);
     }
+
+    //Feito pelo Qoder em 15/08/2026 — exclusão de item de exame no detalhe do Grid de Requisições.
+    // Reutiliza ConsultarExames/ExcluirItemExame (bloqueia faturado e item com resultado,
+    // reordena os itens restantes). Após excluir, recarrega o detalhe e o total.
+    function clickExcluirItemRequisicao(itemId, exameRealizadoId) {
+        Swal.fire({
+            title: 'Cancelar item de exame?',
+            html: 'Este item será excluído permanentemente da requisição.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Não'
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/ConsultarExames/ExcluirItemExame',
+                    data: { itemId: itemId },
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.sucesso) {
+                            clickAviso(data.titulo, data.mensagem, 'sucesso', null);
+                            $('#modeloTableRequisitar tbody tr.detail-row, #modeloTableRequisitar tbody tr.detail-header-row').remove();
+                            var $parentRow = $('#modeloTableRequisitar tbody tr.detail-parent-highlight');
+                            if ($parentRow.length) {
+                                carregarItensRequisicao($parentRow, exameRealizadoId);
+                            }
+                        } else {
+                            clickAviso(data.titulo, data.mensagem, 'critica', null);
+                        }
+                    }
+                });
+            }
+        });
+    }
+    //..Qoder
     // ..Qoder
 
     // Feito pelo Qoder em 2026
@@ -677,11 +951,19 @@
                     $('#txtPacientePortaria').val(res.exame.nomePaciente);
                     $('#txtInstituicaoPortaria').val(res.exame.siglaInstituicao);
                     $('#txtValorTotalPortaria').val(res.exame.valorTotal.toFixed(2).replace('.', ','));
+                    //Feito pelo Qoder em 16/08/2026 — desconto inicia zerado a cada abertura do modal
+                    $('#txtDescontoPortaria').val('0,00');
+                    //..Qoder
+                    //Feito pelo Qoder em 16/08/2026 — checkbox inicia desmarcado; formas visíveis
+                    $('#chkCobrarInstituicaoPortaria').prop('checked', false);
+                    aplicarModoCobrancaInstituicao();
+                    //..Qoder
                     $('#txtDataRecebimentoPortaria').val(new Date().toISOString().split('T')[0]);
                     $('#txtObservacaoPortaria').val('');
 
+                    //Feito pelo Qoder em 16/08/2026 — o box de formas inicia vazio:
+                    // o registro só pode ser salvo após o usuário adicionar e preencher as linhas.
                     $('#tblFormasPortaria tbody').empty();
-                    adicionarLinhaFormaPortaria();
                     calcularTotaisFormasPortaria();
 
                     $('#modalRecebimentoPortaria').modal('show');
@@ -694,18 +976,25 @@
     }
 
     function adicionarLinhaFormaPortaria() {
-        var optionsFormas = _listaFormasPortaria.map(function (f) {
+        //Feito pelo Qoder em 16/08/2026 — selects iniciam em "Selecione" e valor vazio:
+        // todos os campos da linha são obrigatórios e escolhidos pelo usuário.
+        var optionsFormas = '<option value="0">Selecione</option>' + _listaFormasPortaria.map(function (f) {
             return '<option value="' + f.id + '">' + f.nome + '</option>';
         }).join('');
 
-        var optionsContas = _listaContasPortaria.map(function (c) {
+        var optionsContas = '<option value="0">Selecione</option>' + _listaContasPortaria.map(function (c) {
             return '<option value="' + c.id + '">' + c.nome + '</option>';
         }).join('');
+        //..Qoder
 
         var linha = '<tr>' +
             '<td><select class="form-select form-select-sm forma-id-portaria">' + optionsFormas + '</select></td>' +
             '<td><select class="form-select form-select-sm conta-id-portaria">' + optionsContas + '</select></td>' +
-            '<td><input type="number" step="0.01" class="form-control form-control-sm text-end forma-valor-portaria" value="0,00" /></td>' +
+            //Feito pelo Qoder em 16/08/2026
+            // Campo em texto com inputmode decimal: type="number" descartava a vírgula
+            // (separador decimal pt-BR), transformando 52,54 em 5254.
+            '<td><input type="text" inputmode="decimal" class="form-control form-control-sm text-end forma-valor-portaria" value="" placeholder="0,00" /></td>' +
+            //..Qoder
             '<td><input type="date" class="form-control form-control-sm forma-data-portaria" value="' + new Date().toISOString().split('T')[0] + '" /></td>' +
             '<td><input type="text" class="form-control form-control-sm forma-obs-portaria" maxlength="2000" /></td>' +
             '<td><button type="button" class="btn btn-sm btn-danger btn-remover-forma-portaria"><i class="fa-solid fa-trash"></i></button></td>' +
@@ -714,16 +1003,43 @@
         $('#tblFormasPortaria tbody').append(linha);
     }
 
+    //Feito pelo Qoder em 16/08/2026
+    // Converte valor digitado no padrão brasileiro: com vírgula, o ponto é milhar
+    // ("1.234,56"); sem vírgula, o ponto é aceito como separador decimal ("52.54").
+    function parseValorPortaria(texto) {
+        texto = (texto || '').trim();
+        if (!texto) return 0;
+        if (texto.indexOf(',') >= 0) {
+            return parseFloat(texto.replace(/\./g, '').replace(',', '.')) || 0;
+        }
+        return parseFloat(texto) || 0;
+    }
+    //..Qoder
+
+    //Feito pelo Qoder em 16/08/2026
+    // Modo "cobrar da Instituição": oculta o cartão de formas e renomeia o total a receber.
+    function aplicarModoCobrancaInstituicao() {
+        var marcado = $('#chkCobrarInstituicaoPortaria').is(':checked');
+        $('#cardFormasPortaria').toggle(!marcado);
+        $('#lblTotalReceberPortaria').text(marcado ? 'Valor a Cobrar da Instituição' : 'Total a Receber');
+    }
+    //..Qoder
+
     function calcularTotaisFormasPortaria() {
         var total = 0;
         $('#tblFormasPortaria tbody tr').each(function () {
-            var valor = parseFloat($(this).find('.forma-valor-portaria').val().replace('.', '').replace(',', '.')) || 0;
+            var valor = parseValorPortaria($(this).find('.forma-valor-portaria').val());
             total += valor;
         });
 
         var valorTotalTexto = $('#txtValorTotalPortaria').val().replace('.', '').replace(',', '.');
         var valorTotal = parseFloat(valorTotalTexto) || 0;
-        var diferenca = total - valorTotal;
+        //Feito pelo Qoder em 16/08/2026 — diferença calculada sobre o total a receber (total - desconto)
+        var desconto = parseValorPortaria($('#txtDescontoPortaria').val());
+        var totalEsperado = Math.max(valorTotal - desconto, 0);
+        $('#txtTotalReceberPortaria').val(totalEsperado.toFixed(2).replace('.', ','));
+        var diferenca = total - totalEsperado;
+        //..Qoder
 
         $('#lblTotalFormasPortaria').text(total.toFixed(2).replace('.', ','));
         $('#lblDiferencaPortaria').text(diferenca.toFixed(2).replace('.', ','));
@@ -744,56 +1060,107 @@
         var valorTotalTexto = $('#txtValorTotalPortaria').val().replace('.', '').replace(',', '.');
         var valorTotal = parseFloat(valorTotalTexto) || 0;
 
-        var formas = [];
-        var formasValidas = true;
-        $('#tblFormasPortaria tbody tr').each(function () {
-            var formaId = parseInt($(this).find('.forma-id-portaria').val()) || 0;
-            var contaId = parseInt($(this).find('.conta-id-portaria').val()) || 0;
-            var valor = parseFloat($(this).find('.forma-valor-portaria').val().replace('.', '').replace(',', '.')) || 0;
-            var data = $(this).find('.forma-data-portaria').val();
-            var obs = $(this).find('.forma-obs-portaria').val();
+        //Feito pelo Qoder em 16/08/2026 — desconto concedido: a soma das formas confere com o total a receber
+        var desconto = parseValorPortaria($('#txtDescontoPortaria').val());
+        if (desconto < 0) {
+            clickAviso('Atenção', 'O desconto não pode ser negativo.', 'falha', null);
+            return;
+        }
+        if (desconto > valorTotal) {
+            clickAviso('Atenção', 'O desconto não pode ser maior que o valor total do exame.', 'falha', null);
+            return;
+        }
+        var totalEsperado = valorTotal - desconto;
+        //..Qoder
 
-            if (formaId <= 0 || contaId <= 0) {
-                formasValidas = false;
-                return false;
+        //Feito pelo Qoder em 16/08/2026 — cobrança à instituição: sem formas no ato
+        var cobrarInstituicao = $('#chkCobrarInstituicaoPortaria').is(':checked');
+        var formas = [];
+        if (!cobrarInstituicao) {
+            var formasValidas = true;
+            $('#tblFormasPortaria tbody tr').each(function () {
+                var formaId = parseInt($(this).find('.forma-id-portaria').val()) || 0;
+                var contaId = parseInt($(this).find('.conta-id-portaria').val()) || 0;
+                var valor = parseValorPortaria($(this).find('.forma-valor-portaria').val());
+                var data = $(this).find('.forma-data-portaria').val();
+                var obs = $(this).find('.forma-obs-portaria').val();
+
+                if (formaId <= 0 || contaId <= 0) {
+                    clickAviso('Atenção', 'Selecione a forma e a conta em todas as linhas.', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+
+                //Feito pelo Qoder em 16/08/2026 — valor, data e observação obrigatórios em cada linha
+                if (valor <= 0) {
+                    clickAviso('Atenção', 'Informe um valor maior que zero em todas as linhas.', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                if (!data) {
+                    clickAviso('Atenção', 'Informe a data em todas as linhas.', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                if (!(obs || '').trim()) {
+                    clickAviso('Atenção', 'Informe a observação em todas as linhas (use "." se necessário).', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                //..Qoder
+
+                formas.push({
+                    FormaRecebimentoId: formaId,
+                    ContaRecebimentoId: contaId,
+                    Valor: valor,
+                    DataRecebimento: data,
+                    Observacao: obs
+                });
+            });
+
+            if (!formasValidas) {
+                return;
             }
 
-            formas.push({
-                FormaRecebimentoId: formaId,
-                ContaRecebimentoId: contaId,
-                Valor: valor,
-                DataRecebimento: data,
-                Observacao: obs
-            });
-        });
+            if (formas.length === 0) {
+                clickAviso('Atenção', 'Informe pelo menos uma forma de recebimento.', 'falha', null);
+                return;
+            }
 
-        if (!formasValidas) {
-            clickAviso('Atenção', 'Selecione a forma e a conta em todas as linhas.', 'falha', null);
-            return;
+            var totalFormas = formas.reduce(function (acc, f) { return acc + f.Valor; }, 0);
+            if (Math.abs(totalFormas - totalEsperado) > 0.01) {
+                clickAviso('Atenção', 'A soma das formas deve ser igual ao total a receber (valor total menos desconto).', 'falha', null);
+                return;
+            }
         }
-
-        if (formas.length === 0) {
-            clickAviso('Atenção', 'Informe pelo menos uma forma de recebimento.', 'falha', null);
-            return;
-        }
-
-        var totalFormas = formas.reduce(function (acc, f) { return acc + f.Valor; }, 0);
-        if (Math.abs(totalFormas - valorTotal) > 0.01) {
-            clickAviso('Atenção', 'A soma das formas deve ser igual ao valor total do exame.', 'falha', null);
-            return;
-        }
+        //..Qoder
 
         var dados = {
             Origem: 1,
             InstituicaoId: instituicaoId,
             PacienteId: pacienteId,
             ValorTotal: valorTotal,
+            //Feito pelo Qoder em 16/08/2026
+            ValorDesconto: desconto,
+            CobrancaInstituicao: cobrarInstituicao,
+            //..Qoder
             DataRecebimento: $('#txtDataRecebimentoPortaria').val(),
             Observacao: $('#txtObservacaoPortaria').val(),
             ExamesRealizadosIds: [exameRealizadoId],
             Formas: formas
         };
 
+        //Feito pelo Qoder em 16/08/2026
+        // Bloqueia duplo clique no Confirmar Recebimento: desabilita o botão até a resposta.
+        var btnConfirmar = $('#btnConfirmarRecebimentoPortaria');
+        if (btnConfirmar.prop('disabled')) return;
+        btnConfirmar.prop('disabled', true);
+        //..Qoder
+
+        //Feito pelo Qoder em 16/08/2026
+        // Loading padrão do sistema (overlay modalLoading) durante o delay do confirmar recebimento.
+        if (typeof ShowProgress === 'function') ShowProgress();
+        //..Qoder
         $.ajax({
             url: '/CatalogoRecebimentos/SalvarRecebimentoPortaria',
             type: 'POST',
@@ -810,7 +1177,13 @@
             },
             error: function () {
                 clickAviso('Erro', 'Erro ao salvar recebimento na portaria.', 'critica', null);
+            },
+            //Feito pelo Qoder em 16/08/2026
+            complete: function () {
+                if (typeof esconderLoading === 'function') esconderLoading();
+                btnConfirmar.prop('disabled', false);
             }
+            //..Qoder
         });
     }
 
@@ -829,6 +1202,31 @@
         $('#tblFormasPortaria tbody').off('input.portaria').on('input.portaria', '.forma-valor-portaria', function () {
             calcularTotaisFormasPortaria();
         });
+
+        //Feito pelo Qoder em 16/08/2026 — recalcular total a receber ao digitar o desconto
+        $('#txtDescontoPortaria').off('input.portaria').on('input.portaria', function () {
+            calcularTotaisFormasPortaria();
+        });
+        //..Qoder
+
+        //Feito pelo Qoder em 16/08/2026 — alternar modo de cobrança à instituição
+        $('#chkCobrarInstituicaoPortaria').off('change.portaria').on('change.portaria', function () {
+            aplicarModoCobrancaInstituicao();
+            calcularTotaisFormasPortaria();
+        });
+        //..Qoder
+
+        //Feito pelo Qoder em 16/08/2026 — ao clicar no campo Valor, apaga o conteúdo para nova digitação
+        $('#tblFormasPortaria tbody').off('focus.portaria').on('focus.portaria', '.forma-valor-portaria', function () {
+            $(this).val('');
+        });
+        //..Qoder
+
+        //Feito pelo Qoder em 16/08/2026 — idem para o campo Desconto
+        $('#txtDescontoPortaria').off('focus.portaria').on('focus.portaria', function () {
+            $(this).val('');
+        });
+        //..Qoder
 
         $('#btnConfirmarRecebimentoPortaria').off('click.portaria').on('click.portaria', function () {
             salvarRecebimentoPortaria();
@@ -868,9 +1266,26 @@
                         <label class="form-label">Data do Recebimento</label>
                         <input type="date" id="txtDataRecebimentoPortaria" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
                     </div>
+                    @*Feito pelo Qoder em 16/08/2026 — desconto concedido no recebimento e total efetivo a receber*@
+                    <div class="col-md-4">
+                        <label class="form-label">Desconto</label>
+                        <input type="text" inputmode="decimal" id="txtDescontoPortaria" class="form-control form-control-sm text-end" value="0,00" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" id="lblTotalReceberPortaria">Total a Receber</label>
+                        <input type="text" id="txtTotalReceberPortaria" class="form-control form-control-sm text-end fw-bold" readonly />
+                    </div>
+                    @*..Qoder*@
                 </div>
 
-                <div class="card">
+                @*Feito pelo Qoder em 16/08/2026 — opção de cobrar da Instituição sem receber do paciente*@
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="chkCobrarInstituicaoPortaria" />
+                    <label class="form-check-label fw-bold" for="chkCobrarInstituicaoPortaria">Não receber do paciente — cobrar da Instituição</label>
+                </div>
+                @*..Qoder*@
+
+                <div class="card" id="cardFormasPortaria">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <span><i class="fa-solid fa-wallet"></i> Formas de Recebimento</span>
                         <button type="button" id="btnAdicionarFormaPortaria" class="btn btn-sm btn-success"><i class="fa-solid fa-plus"></i> Adicionar</button>
@@ -907,7 +1322,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="txtObservacaoPortaria" class="form-label">Observação</label>
+                    <label for="txtObservacaoPortaria" class="form-label">Outras observações</label>
                     <textarea id="txtObservacaoPortaria" class="form-control form-control-sm" rows="2" maxlength="2000"></textarea>
                 </div>
             </div>
@@ -921,7 +1336,16 @@
 
 <div class="col-xl-12">
     <div class="card">
-        <div class="card-header"><i class="fa-solid fa-list-check"></i> Grid das Requisições de Hoje!</div>
+        <div class="card-header">
+            <i class="fa-solid fa-list-check"></i>
+            <span id="tituloGridRequisicoes">Grid de Requisições</span>
+            <span id="contadorPendentesGrid" class="badge rounded-pill ms-2" style="display:none; background-color:#D35400; color:#fff;"></span>
+        </div>
+        <div id="bannerExamesPendentes" class="alert alert-warning m-0 rounded-0" style="display:none; background-color:#D35400; color:#fff; border-color:#A04000;" role="alert">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span id="textoBannerExamesPendentes"></span>
+            <a href="javascript:void(0);" id="lnkVerExamesPendentes" class="fw-bold" style="color:#fff; text-decoration:underline;">Ver</a>
+        </div>
         <div id="wrapperRequisitar">
             <table id="modeloTableRequisitar" data-order='[[ 0, "desc" ]]' class="display compact order-column table-striped table-hover nowrap">
                 <thead>

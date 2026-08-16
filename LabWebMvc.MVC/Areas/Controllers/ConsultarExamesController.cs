@@ -258,7 +258,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Include(e => e.Postos)
                 .Include(e => e.Pacientes)
                 .Include(e => e.TabelaExames)
-                .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc)
+                .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc && e.Situacao >= 1)
                 .Select(e => new ConsultarExamesGridItem
                 {
                     Id = e.Id,
@@ -283,7 +283,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Include(e => e.Postos)
                 .Include(e => e.Pacientes)
                 .Include(e => e.TabelaExames)
-                .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc)
+                //Feito pelo Qoder em 15/08/2026 — item 5.4 do plano: oculta registros
+                // baixados não enviados para análise (Situacao == 0).
+                .Where(e => e.DataIni >= inicioDeUtc && e.DataIni <= fimParaUtc && e.Situacao >= 1)
+                //..Qoder
                 .Select(e => new ConsultarExamesGridItem
                 {
                     Id = e.Id,
@@ -426,6 +429,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [Route("ConsultarExames/ObterItensExame")]
         public async Task<IActionResult> ObterItensExame(int exameRealizadoId)
         {
+            //Feito pelo Qoder em 15/08/2026 — Laboratório de Apoio (Fase 1 do plano):
+            // valores do header usados como fallback quando o item não tiver sigla/controle.
+            var header = await _db.ExamesRealizados
+                .AsNoTracking()
+                .Where(e => e.Id == exameRealizadoId)
+                .Select(e => new { e.LaboratorioApoio, e.ControleApoio })
+                .FirstOrDefaultAsync();
+            //..Qoder
+
             var itensRaw = await _db.ItensExamesRealizados
                 .AsNoTracking()
                 .Where(i => i.ExameRealizadoId == exameRealizadoId)
@@ -439,7 +451,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     i.ContaExame,
                     i.Descricao,
                     i.ValorItem,
-                    i.Etiquetas
+                    i.Etiquetas,
+                    i.LaboratorioApoio,
+                    i.ControleApoio
                 })
                 .ToListAsync();
 
@@ -454,7 +468,16 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 ValorItem = i.ValorItem.HasValue
                     ? i.ValorItem.Value.ToString("N2")
                     : "-",
-                i.Etiquetas
+                i.Etiquetas,
+                //Feito pelo Qoder em 15/08/2026 — exibe sigla/controle do item,
+                // com fallback para o header (registros antigos).
+                LaboratorioApoio = string.IsNullOrEmpty(i.LaboratorioApoio)
+                    ? (header != null ? header.LaboratorioApoio ?? "" : "")
+                    : i.LaboratorioApoio,
+                ControleApoio = string.IsNullOrEmpty(i.ControleApoio)
+                    ? (header != null ? header.ControleApoio ?? "" : "")
+                    : i.ControleApoio
+                //..Qoder
             }).ToList();
 
             return Json(new { sucesso = true, itens });

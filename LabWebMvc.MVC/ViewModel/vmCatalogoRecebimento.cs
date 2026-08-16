@@ -66,6 +66,14 @@ public class vmCatalogoRecebimentoSalvar
 
     public decimal ValorTotal { get; set; }
 
+    //Feito pelo Qoder em 16/08/2026 — desconto concedido no recebimento (0 = sem desconto)
+    public decimal ValorDesconto { get; set; }
+    //..Qoder
+
+    //Feito pelo Qoder em 16/08/2026 — true: não receber do paciente; cobrar da Instituição (Status Pendente)
+    public bool CobrancaInstituicao { get; set; }
+    //..Qoder
+
     public DateTime DataRecebimento { get; set; } = DateTime.Now.Date;
 
     public string? Observacao { get; set; }
@@ -74,3 +82,17 @@ public class vmCatalogoRecebimentoSalvar
 
     public List<vmCatalogoRecebimentoForma> Formas { get; set; } = [];
 }
+
+//Feito pelo Qoder em 16/08/2026
+/// <summary>
+/// DTO para baixa de título pendente de cobrança à instituição.
+/// </summary>
+public class vmReceberPendente
+{
+    public int CatalogoId { get; set; }
+
+    public string? PeriodoFaturamento { get; set; }
+
+    public List<vmCatalogoRecebimentoForma> Formas { get; set; } = [];
+}
+//..Qoder

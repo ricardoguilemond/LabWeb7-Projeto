@@ -1,5 +1,7 @@
 -- Migração: Adicionar itens do Catálogo de Recebimentos ao menu existente
 -- Adiciona subitens no grupo "Faturamento" já criado pela migração 002.
+-- SUPERADA pela migração 009_menu_recebimentos_grupo_proprio.sql: os itens de
+-- recebimento foram movidos para o grupo próprio "Recebimentos".
 -- Data: 2026
 
 DO $$

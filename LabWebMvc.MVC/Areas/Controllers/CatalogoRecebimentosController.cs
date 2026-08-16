@@ -10,6 +10,7 @@ using LabWebMvc.MVC.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace LabWebMvc.MVC.Areas.Controllers
 {
@@ -70,7 +71,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .AsNoTracking()
                     .Include(e => e.Pacientes)
                     .Include(e => e.Instituicao)
-                    .Where(e => e.Liberacao == 1
+                    .Where(e => e.Situacao >= 1
+                             && e.Liberacao == 1
                              && e.Baixado != 1
                              && !e.EmCatalogoRecebimentos
                              && e.DataExame >= dataIni.Date
@@ -210,13 +212,19 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             try
             {
+                //Feito pelo Qoder em 15/08/2026
+                // Sem filtro de Situacao nem de Liberacao aqui: este endpoint é acionado
+                // pelo botão "Receber" do Grid de Requisições (Portaria), que lista exames
+                // ainda não enviados para análise (Situacao == 0) e, portanto, ainda não
+                // liberados (Liberacao == 0) — o recebimento ocorre no ato da requisição.
+                // Mantido apenas Baixado != 1 (arquivados não podem ser recebidos).
                 var exame = await _db.ExamesRealizados
                     .AsNoTracking()
                     .Include(e => e.Pacientes)
                     .Include(e => e.Instituicao)
                     .FirstOrDefaultAsync(e => e.Id == exameRealizadoId
-                                              && e.Liberacao == 1
                                               && e.Baixado != 1);
+                //..Qoder
 
                 if (exame == null)
                     return Json(new { sucesso = false, mensagem = "Exame não encontrado ou não disponível para recebimento." });
@@ -272,13 +280,24 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     return Json(new { sucesso = false, mensagem = "Dados inválidos." });
 
                 dto.Origem = 1; // Portaria
+                //Feito pelo Qoder em 16/08/2026
+                // Período não é informado na portaria: preenche automaticamente com MM/AAAA da data do recebimento.
+                // Na cobrança à instituição o período entra na baixa do título, não no ato.
+                if (!dto.CobrancaInstituicao && string.IsNullOrWhiteSpace(dto.PeriodoFaturamento))
+                    dto.PeriodoFaturamento = dto.DataRecebimento.ToString("MM/yyyy");
+                //..Qoder
                 var resultado = await SalvarCatalogoInterno(dto);
                 return Json(resultado);
             }
             catch (Exception ex)
             {
-                _eventLogHelper.LogEventViewer("[CatalogoRecebimentos] SalvarRecebimentoPortaria - Erro: " + ex.Message, "wError");
-                return Json(new { sucesso = false, mensagem = "Erro ao salvar recebimento na portaria." });
+                _eventLogHelper.LogEventViewer("[CatalogoRecebimentos] SalvarRecebimentoPortaria - Erro: " + ex, "wError");
+                //Feito pelo Qoder em 15/08/2026
+                // Diagnóstico: grava a exceção completa em arquivo e expõe o erro real na resposta,
+                // pois a mensagem genérica impedia identificar a causa da falha de salvamento.
+                RegistrarErroCatalogo("SalvarRecebimentoPortaria", ex);
+                return Json(new { sucesso = false, mensagem = "Erro ao salvar recebimento na portaria: [" + ex.GetType().Name + "] " + ex.Message });
+                //..Qoder
             }
         }
 
@@ -305,10 +324,34 @@ namespace LabWebMvc.MVC.Areas.Controllers
             }
             catch (Exception ex)
             {
-                _eventLogHelper.LogEventViewer("[CatalogoRecebimentos] Salvar - Erro: " + ex.Message, "wError");
-                return Json(new { sucesso = false, mensagem = "Erro ao salvar catálogo de recebimentos." });
+                _eventLogHelper.LogEventViewer("[CatalogoRecebimentos] Salvar - Erro: " + ex, "wError");
+                //Feito pelo Qoder em 15/08/2026
+                RegistrarErroCatalogo("Salvar", ex);
+                return Json(new { sucesso = false, mensagem = "Erro ao salvar catálogo de recebimentos: [" + ex.GetType().Name + "] " + ex.Message });
+                //..Qoder
             }
         }
+
+        //Feito pelo Qoder em 15/08/2026
+        /// <summary>
+        /// Grava a exceção completa em App_Data/Logs/erro_catalogo_recebimentos.log para diagnóstico.
+        /// </summary>
+        private void RegistrarErroCatalogo(string origem, Exception ex)
+        {
+            try
+            {
+                var dir = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "Logs");
+                Directory.CreateDirectory(dir);
+                var arquivo = System.IO.Path.Combine(dir, "erro_catalogo_recebimentos.log");
+                var texto = $"=== {DateTime.Now:yyyy-MM-dd HH:mm:ss} | {origem} ==={Environment.NewLine}{ex}{Environment.NewLine}";
+                System.IO.File.AppendAllText(arquivo, texto);
+            }
+            catch
+            {
+                // falha de log não pode mascarar o erro original
+            }
+        }
+        //..Qoder
 
         private async Task<object> SalvarCatalogoInterno(vmCatalogoRecebimentoSalvar dto)
         {
@@ -322,12 +365,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (dto.ExamesRealizadosIds == null || dto.ExamesRealizadosIds.Count == 0)
                 return new { sucesso = false, mensagem = "Selecione pelo menos um exame." };
 
-            if (dto.Formas == null || dto.Formas.Count == 0)
-                return new { sucesso = false, mensagem = "Informe pelo menos uma forma de recebimento." };
-
+            //Feito pelo Qoder em 15/08/2026
+            // Sem filtro de Situacao aqui: o recebimento na portaria pode ocorrer
+            // antes do envio para análise (exames com Situacao == 0).
             var exames = await _db.ExamesRealizados
                 .Where(e => dto.ExamesRealizadosIds.Contains(e.Id))
                 .ToListAsync();
+            //..Qoder
 
             if (exames.Count != dto.ExamesRealizadosIds.Count)
                 return new { sucesso = false, mensagem = "Um ou mais exames não foram encontrados." };
@@ -345,22 +389,54 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 .Where(i => dto.ExamesRealizadosIds.Contains(i.ExameRealizadoId) && i.ValorItem.HasValue)
                 .SumAsync(i => i.ValorItem.Value);
 
-            decimal valorTotalFormas = dto.Formas.Sum(f => f.Valor);
+            //Feito pelo Qoder em 16/08/2026
+            // Desconto concedido no recebimento: o valor a receber é o total dos exames
+            // menos o desconto; a soma das formas deve bater com o valor a receber.
+            decimal valorDesconto = dto.ValorDesconto > 0 ? dto.ValorDesconto : 0m;
+            if (valorDesconto > valorTotalExames)
+                return new { sucesso = false, mensagem = $"Desconto ({valorDesconto:N2}) não pode ser maior que o valor total dos exames ({valorTotalExames:N2})." };
+            decimal valorTotalEsperado = valorTotalExames - valorDesconto;
+            //..Qoder
 
-            if (Math.Abs(valorTotalExames - valorTotalFormas) > 0.01m)
-                return new { sucesso = false, mensagem = $"Soma das formas ({valorTotalFormas:N2}) diferente do valor total dos exames ({valorTotalExames:N2})." };
+            //Feito pelo Qoder em 16/08/2026
+            // Cobrança à instituição: sem formas no ato (título Pendente) — a forma
+            // de recebimento é tratada depois, na baixa do título (ReceberPendente);
+            // demais casos: formas obrigatórias somando o valor a receber.
+            if (dto.CobrancaInstituicao)
+            {
+                if (dto.Formas != null && dto.Formas.Count > 0)
+                    return new { sucesso = false, mensagem = "Com cobrança à instituição não se informa formas de recebimento no ato." };
+            }
+            else
+            {
+                if (dto.Formas == null || dto.Formas.Count == 0)
+                    return new { sucesso = false, mensagem = "Informe pelo menos uma forma de recebimento." };
 
-            var formasIds = dto.Formas.Select(f => f.FormaRecebimentoId).Distinct();
-            var contasIds = dto.Formas.Select(f => f.ContaRecebimentoId).Distinct();
+                //Feito pelo Qoder em 16/08/2026
+                // Portaria: todos os campos da forma são obrigatórios
+                // (valor > 0 e observação preenchida; data é obrigatória por tipo).
+                if (dto.Origem == 1 && dto.Formas.Any(f => f.Valor <= 0 || string.IsNullOrWhiteSpace(f.Observacao)))
+                    return new { sucesso = false, mensagem = "Forma, conta, valor, data e observação são obrigatórios em todas as linhas." };
+                //..Qoder
 
-            int formasCount = await _db.FormasRecebimento.CountAsync(f => formasIds.Contains(f.Id) && f.Ativo);
-            int contasCount = await _db.ContasRecebimento.CountAsync(c => contasIds.Contains(c.Id) && c.Ativo);
+                decimal valorTotalFormas = dto.Formas.Sum(f => f.Valor);
 
-            if (formasCount != formasIds.Count())
-                return new { sucesso = false, mensagem = "Uma ou mais formas de recebimento são inválidas ou inativas." };
+                if (Math.Abs(valorTotalEsperado - valorTotalFormas) > 0.01m)
+                    return new { sucesso = false, mensagem = $"Soma das formas ({valorTotalFormas:N2}) diferente do valor a receber ({valorTotalEsperado:N2})." };
 
-            if (contasCount != contasIds.Count())
-                return new { sucesso = false, mensagem = "Uma ou mais contas de recebimento são inválidas ou inativas." };
+                var formasIds = dto.Formas.Select(f => f.FormaRecebimentoId).Distinct();
+                var contasIds = dto.Formas.Select(f => f.ContaRecebimentoId).Distinct();
+
+                int formasCount = await _db.FormasRecebimento.CountAsync(f => formasIds.Contains(f.Id) && f.Ativo);
+                int contasCount = await _db.ContasRecebimento.CountAsync(c => contasIds.Contains(c.Id) && c.Ativo);
+
+                if (formasCount != formasIds.Count())
+                    return new { sucesso = false, mensagem = "Uma ou mais formas de recebimento são inválidas ou inativas." };
+
+                if (contasCount != contasIds.Count())
+                    return new { sucesso = false, mensagem = "Uma ou mais contas de recebimento são inválidas ou inativas." };
+            }
+            //..Qoder
 
             // Cria o catálogo
             var catalogo = new CatalogoRecebimentos
@@ -369,9 +445,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 InstituicaoId = dto.InstituicaoId,
                 PacienteId = dto.PacienteId,
                 PeriodoFaturamento = dto.PeriodoFaturamento,
-                ValorTotal = valorTotalExames,
+                //Feito pelo Qoder em 16/08/2026 — ValorTotal guarda o valor efetivamente recebido (após desconto)
+                ValorTotal = valorTotalEsperado,
+                ValorDesconto = valorDesconto,
+                //..Qoder
                 DataRecebimento = dto.DataRecebimento.Date,
-                Status = 1, // Recebido
+                //Feito pelo Qoder em 16/08/2026 — cobrança à instituição nasce Pendente (0)
+                Status = dto.CobrancaInstituicao ? 0 : 1,
+                CobrancaInstituicao = dto.CobrancaInstituicao,
+                //..Qoder
                 Observacao = dto.Observacao,
                 UsuarioRegistro = HttpContext.Session.GetString("SessionNome") ?? "sistema",
                 DataRegistro = _geralController.ObterDataHoraUtc()
@@ -379,7 +461,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             _db.CatalogoRecebimentos.Add(catalogo);
 
-            foreach (var formaDto in dto.Formas)
+            //Feito pelo Qoder em 16/08/2026 — na cobrança à instituição Formas vem vazio/null no ato
+            foreach (var formaDto in dto.Formas ?? [])
             {
                 catalogo.CatalogoRecebimentosFormas.Add(new CatalogoRecebimentosFormas
                 {
@@ -406,7 +489,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 exame.EmCatalogoRecebimentos = true;
             }
 
-            await _db.SaveChangesAsync();
+            //Feito pelo Qoder em 16/08/2026
+            // Defesa final contra duplo clique: o índice único de exame faz o segundo
+            // salvamento concorrente falhar aqui com mensagem clara (SQLSTATE 23505).
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (PostgresException pgEx) when (pgEx.SqlState == "23505")
+            {
+                return new { sucesso = false, mensagem = "Este exame já possui recebimento registrado. Operação duplicada não é permitida." };
+            }
+            //..Qoder
 
             _eventLogHelper.LogEventViewer(
                 $"[CatalogoRecebimentos] Catálogo salvo - Id={catalogo.Id}, Origem={(dto.Origem == 1 ? "Portaria" : "Faturamento")}, PacienteId={dto.PacienteId}, Valor={valorTotalExames:N2}",
@@ -414,6 +508,89 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             return new { sucesso = true, mensagem = "Catálogo de recebimentos salvo com sucesso.", id = catalogo.Id };
         }
+
+        //Feito pelo Qoder em 16/08/2026
+        /// <summary>
+        /// Baixa de título pendente de cobrança à instituição: registra período e formas, tornando-o Recebido.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("CatalogoRecebimentos/ReceberPendente")]
+        public async Task<IActionResult> ReceberPendente([FromBody] vmReceberPendente dto)
+        {
+            try
+            {
+                if (dto == null || dto.CatalogoId <= 0)
+                    return Json(new { sucesso = false, mensagem = "Dados inválidos." });
+
+                var catalogo = await _db.CatalogoRecebimentos.FirstOrDefaultAsync(c => c.Id == dto.CatalogoId);
+                if (catalogo == null)
+                    return Json(new { sucesso = false, mensagem = "Catálogo não encontrado." });
+
+                if (catalogo.Status != 0)
+                    return Json(new { sucesso = false, mensagem = "Este título já foi recebido." });
+
+                if (!catalogo.CobrancaInstituicao)
+                    return Json(new { sucesso = false, mensagem = "Este título não é de cobrança à instituição." });
+
+                if (string.IsNullOrWhiteSpace(dto.PeriodoFaturamento))
+                    return Json(new { sucesso = false, mensagem = "Informe o período de faturamento (MM/AAAA)." });
+
+                if (dto.Formas == null || dto.Formas.Count == 0)
+                    return Json(new { sucesso = false, mensagem = "Informe pelo menos uma forma de recebimento." });
+
+                //Feito pelo Qoder em 16/08/2026 — na baixa, todos os campos da forma são obrigatórios
+                if (dto.Formas.Any(f => f.FormaRecebimentoId <= 0 || f.ContaRecebimentoId <= 0 || f.Valor <= 0 || string.IsNullOrWhiteSpace(f.Observacao)))
+                    return Json(new { sucesso = false, mensagem = "Forma, conta, valor, data e observação são obrigatórios em todas as linhas." });
+                //..Qoder
+
+                decimal valorTotalFormas = dto.Formas.Sum(f => f.Valor);
+                if (Math.Abs(catalogo.ValorTotal - valorTotalFormas) > 0.01m)
+                    return Json(new { sucesso = false, mensagem = $"Soma das formas ({valorTotalFormas:N2}) diferente do valor a receber ({catalogo.ValorTotal:N2})." });
+
+                var formasIds = dto.Formas.Select(f => f.FormaRecebimentoId).Distinct();
+                var contasIds = dto.Formas.Select(f => f.ContaRecebimentoId).Distinct();
+
+                int formasCount = await _db.FormasRecebimento.CountAsync(f => formasIds.Contains(f.Id) && f.Ativo);
+                int contasCount = await _db.ContasRecebimento.CountAsync(c => contasIds.Contains(c.Id) && c.Ativo);
+
+                if (formasCount != formasIds.Count())
+                    return Json(new { sucesso = false, mensagem = "Uma ou mais formas de recebimento são inválidas ou inativas." });
+
+                if (contasCount != contasIds.Count())
+                    return Json(new { sucesso = false, mensagem = "Uma ou mais contas de recebimento são inválidas ou inativas." });
+
+                foreach (var formaDto in dto.Formas)
+                {
+                    catalogo.CatalogoRecebimentosFormas.Add(new CatalogoRecebimentosFormas
+                    {
+                        FormaRecebimentoId = formaDto.FormaRecebimentoId,
+                        ContaRecebimentoId = formaDto.ContaRecebimentoId,
+                        Valor = formaDto.Valor,
+                        DataRecebimento = formaDto.DataRecebimento.Date,
+                        Observacao = formaDto.Observacao
+                    });
+                }
+
+                catalogo.PeriodoFaturamento = dto.PeriodoFaturamento;
+                catalogo.Status = 1; // Recebido
+
+                await _db.SaveChangesAsync();
+
+                _eventLogHelper.LogEventViewer(
+                    $"[CatalogoRecebimentos] Título pendente recebido - Id={catalogo.Id}, Período={dto.PeriodoFaturamento}, Valor={catalogo.ValorTotal:N2}",
+                    "wInformation");
+
+                return Json(new { sucesso = true, mensagem = "Recebimento registrado com sucesso." });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[CatalogoRecebimentos] ReceberPendente - Erro: " + ex, "wError");
+                RegistrarErroCatalogo("ReceberPendente", ex);
+                return Json(new { sucesso = false, mensagem = "Erro ao registrar recebimento: [" + ex.GetType().Name + "] " + ex.Message });
+            }
+        }
+        //..Qoder
 
         #endregion
 
@@ -458,6 +635,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     .Include(c => c.Paciente)
                     .Include(c => c.CatalogoRecebimentosFormas)
                         .ThenInclude(f => f.FormaRecebimento)
+                    //Feito pelo Qoder em 16/08/2026
+                    // Tabela de preços (sigla e nome) exibida na Consulta de Recebimentos.
+                    .Include(c => c.CatalogoRecebimentosExames)
+                        .ThenInclude(e => e.ExameRealizado)
+                            .ThenInclude(e => e.TabelaExames)
+                    //..Qoder
                     .AsQueryable();
 
                 if (dataIni.HasValue)
@@ -521,12 +704,23 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     id = c.Id,
                     dataRecebimento = c.DataRecebimento.ToString("dd/MM/yyyy"),
                     instituicao = $"{c.Instituicao?.Sigla ?? ""} - {c.Instituicao?.Nome ?? ""}".Trim(' ', '-'),
+                    //Feito pelo Qoder em 16/08/2026
+                    tabelaPreco = string.Join(", ", c.CatalogoRecebimentosExames
+                        .Where(e => e.ExameRealizado != null && e.ExameRealizado.TabelaExames != null)
+                        .Select(e => $"{e.ExameRealizado.TabelaExames.SiglaTabela} - {e.ExameRealizado.TabelaExames.NomeTabela}")
+                        .Distinct()),
+                    //..Qoder
                     paciente = c.Paciente?.NomePaciente ?? "",
                     periodo = c.PeriodoFaturamento ?? "",
                     valorTotal = c.ValorTotal.ToString("N2"),
-                    origem = c.Origem == 1 ? "Portaria" : "Faturamento",
+                    //Feito pelo Qoder em 16/08/2026 — cobrança à instituição aparece como origem "Instituição"
+                    origem = c.CobrancaInstituicao ? "Instituição" : (c.Origem == 1 ? "Portaria" : "Faturamento"),
+                    //..Qoder
                     status = c.Status == 1 ? "Recebido" : "Pendente",
-                    acoes = $"<button class='btn btn-sm btn-info btn-detalhes' data-id='{c.Id}'><i class='fa-solid fa-eye'></i></button>"
+                    //Feito pelo Qoder em 16/08/2026 — botão Receber para títulos pendentes (cobrança à instituição)
+                    acoes = $"<button class='btn btn-sm btn-info btn-detalhes' data-id='{c.Id}'><i class='fa-solid fa-eye'></i></button>" +
+                            (c.Status == 0 ? $" <button class='btn btn-sm btn-success btn-receber-pendente' data-id='{c.Id}' title='Receber título pendente'><i class='fa-solid fa-hand-holding-dollar'></i></button>" : "")
+                    //..Qoder
                 }).ToList();
 
                 return Json(new DataTableResponse<object>
@@ -600,13 +794,17 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     {
                         catalogo.Id,
                         catalogo.Origem,
-                        origemDescricao = catalogo.Origem == 1 ? "Portaria" : "Faturamento",
+                        //Feito pelo Qoder em 16/08/2026 — cobrança à instituição aparece como origem "Instituição"
+                        origemDescricao = catalogo.CobrancaInstituicao ? "Instituição" : (catalogo.Origem == 1 ? "Portaria" : "Faturamento"),
+                        //..Qoder
                         catalogo.InstituicaoId,
                         instituicao = $"{catalogo.Instituicao?.Sigla ?? ""} - {catalogo.Instituicao?.Nome ?? ""}".Trim(' ', '-'),
                         catalogo.PacienteId,
                         paciente = catalogo.Paciente?.NomePaciente ?? "",
                         catalogo.PeriodoFaturamento,
                         catalogo.ValorTotal,
+                        catalogo.ValorDesconto,
+                        catalogo.CobrancaInstituicao,
                         dataRecebimento = catalogo.DataRecebimento.ToString("dd/MM/yyyy"),
                         status = catalogo.Status == 1 ? "Recebido" : "Pendente",
                         catalogo.Observacao,
@@ -739,12 +937,17 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 {
                     CatalogoId = c.Id,
                     DataRecebimento = c.DataRecebimento,
-                    Origem = c.Origem == 1 ? "Portaria" : "Faturamento",
+                    //Feito pelo Qoder em 16/08/2026 — cobrança à instituição aparece como origem "Instituição"
+                    Origem = c.CobrancaInstituicao ? "Instituição" : (c.Origem == 1 ? "Portaria" : "Faturamento"),
+                    //..Qoder
                     SiglaInstituicao = c.Instituicao?.Sigla ?? "",
                     NomeInstituicao = c.Instituicao?.Nome ?? "",
                     NomePaciente = c.Paciente?.NomePaciente ?? "",
                     PeriodoFaturamento = c.PeriodoFaturamento,
                     ValorTotal = c.ValorTotal,
+                    //Feito pelo Qoder em 16/08/2026 — desconto apresentado no relatório
+                    ValorDesconto = c.ValorDesconto,
+                    //..Qoder
                     Observacao = c.Observacao,
                     Formas = c.CatalogoRecebimentosFormas.Select(f => new FormaRecebimentoCatalogoDto
                     {
@@ -768,16 +971,28 @@ namespace LabWebMvc.MVC.Areas.Controllers
             dados.TotaisPorForma = dados.Recebimentos
                 .SelectMany(r => r.Formas)
                 .GroupBy(f => f.FormaNome)
-                .Select(g => new TotalCatalogoDto { Descricao = g.Key, Valor = g.Sum(f => f.Valor) })
+                //Feito pelo Qoder em 16/08/2026 — quantidade de itens por forma
+                .Select(g => new TotalCatalogoDto { Descricao = g.Key, Valor = g.Sum(f => f.Valor), Quantidade = g.Count() })
+                //..Qoder
                 .OrderBy(t => t.Descricao)
                 .ToList();
 
             dados.TotaisPorConta = dados.Recebimentos
                 .SelectMany(r => r.Formas)
                 .GroupBy(f => f.ContaNome)
-                .Select(g => new TotalCatalogoDto { Descricao = g.Key, Valor = g.Sum(f => f.Valor) })
+                //Feito pelo Qoder em 16/08/2026 — quantidade de itens por conta
+                .Select(g => new TotalCatalogoDto { Descricao = g.Key, Valor = g.Sum(f => f.Valor), Quantidade = g.Count() })
+                //..Qoder
                 .OrderBy(t => t.Descricao)
                 .ToList();
+
+            //Feito pelo Qoder em 16/08/2026 — totais por origem ao final do relatório
+            dados.TotaisPorOrigem = dados.Recebimentos
+                .GroupBy(r => r.Origem)
+                .Select(g => new TotalCatalogoDto { Descricao = g.Key, Valor = g.Sum(r => r.ValorTotal), Quantidade = g.Count() })
+                .OrderBy(t => t.Descricao)
+                .ToList();
+            //..Qoder
 
             return dados;
         }

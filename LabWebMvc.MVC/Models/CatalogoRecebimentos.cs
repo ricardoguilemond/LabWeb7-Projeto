@@ -14,6 +14,14 @@ public partial class CatalogoRecebimentos
 
     public decimal ValorTotal { get; set; }
 
+    //Feito pelo Qoder em 16/08/2026 — desconto concedido no recebimento
+    public decimal ValorDesconto { get; set; }
+    //..Qoder
+
+    //Feito pelo Qoder em 16/08/2026 — true: valor a cobrar da Instituição (título Pendente)
+    public bool CobrancaInstituicao { get; set; }
+    //..Qoder
+
     public DateTime DataRecebimento { get; set; }
 
     public int Status { get; set; }
