@@ -2391,6 +2391,9 @@ public class Db : DbContext
 
             entity.Property(e => e.PeriodoFaturamento).HasMaxLength(10).IsUnicode(false);
             entity.Property(e => e.ValorTotal).HasPrecision(18, 2);
+            //Feito pelo Qoder em 16/08/2026 — soma imutável dos exames no recebimento consolidado
+            entity.Property(e => e.ValorTotalDevido).HasPrecision(18, 2);
+            //..Qoder
             entity.Property(e => e.Observacao).HasMaxLength(2000).IsUnicode(false);
             entity.Property(e => e.UsuarioRegistro).HasMaxLength(100).IsUnicode(false);
             entity.Property(e => e.DataRegistro).HasColumnType("timestamp with time zone");

@@ -96,3 +96,35 @@ public class vmReceberPendente
     public List<vmCatalogoRecebimentoForma> Formas { get; set; } = [];
 }
 //..Qoder
+
+//Feito pelo Qoder em 16/08/2026
+/// <summary>
+/// DTO para recebimento consolidado por instituição/período:
+/// soma todos os exames da instituição no período em um único recebimento.
+/// </summary>
+public class vmReceberConsolidado
+{
+    public int InstituicaoId { get; set; }
+
+    public DateTime DataIni { get; set; }
+
+    public DateTime DataFim { get; set; }
+
+    /// <summary>
+    /// Declaração obrigatória de conferência: "Declaro que confere o recebimento pelo total
+    /// dos exames no período, e que qualquer desconto ou acréscimo não impacta os valores
+    /// reais devidos e somados dos exames realizados".
+    /// </summary>
+    public bool DeclaracaoConferencia { get; set; }
+
+    /// <summary>
+    /// Ajuste único sobre o total devido: negativo = desconto, positivo = acréscimo.
+    /// Não altera o valor individual de cada exame.
+    /// </summary>
+    public decimal ValorAjuste { get; set; }
+
+    public string? Observacao { get; set; }
+
+    public List<vmCatalogoRecebimentoForma> Formas { get; set; } = [];
+}
+//..Qoder

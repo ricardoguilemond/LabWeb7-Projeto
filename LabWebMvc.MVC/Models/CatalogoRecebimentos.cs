@@ -8,7 +8,9 @@ public partial class CatalogoRecebimentos
 
     public int InstituicaoId { get; set; }
 
-    public int PacienteId { get; set; }
+    //Feito pelo Qoder em 16/08/2026 — opcional: recebimento consolidado por instituição/período abrange vários pacientes
+    public int? PacienteId { get; set; }
+    //..Qoder
 
     public string? PeriodoFaturamento { get; set; }
 
@@ -16,6 +18,10 @@ public partial class CatalogoRecebimentos
 
     //Feito pelo Qoder em 16/08/2026 — desconto concedido no recebimento
     public decimal ValorDesconto { get; set; }
+    //..Qoder
+
+    //Feito pelo Qoder em 16/08/2026 — soma imutável dos valores dos exames (recebimento consolidado)
+    public decimal? ValorTotalDevido { get; set; }
     //..Qoder
 
     //Feito pelo Qoder em 16/08/2026 — true: valor a cobrar da Instituição (título Pendente)
@@ -34,7 +40,9 @@ public partial class CatalogoRecebimentos
 
     public virtual Instituicao Instituicao { get; set; } = null!;
 
-    public virtual Pacientes Paciente { get; set; } = null!;
+    //Feito pelo Qoder em 16/08/2026 — opcional no recebimento consolidado
+    public virtual Pacientes? Paciente { get; set; }
+    //..Qoder
 
     public virtual ICollection<CatalogoRecebimentosExames> CatalogoRecebimentosExames { get; set; } = [];
 

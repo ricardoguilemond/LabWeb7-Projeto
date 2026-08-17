@@ -65,7 +65,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 int length = Math.Max(request.Length, 10);
                 string searchValue = request.Search?.Value?.Trim() ?? string.Empty;
 
-                var dataFimAjustada = dataFim.Date.AddDays(1).AddTicks(-1);
+                //Feito pelo Qoder em 16/08/2026
+                // Npgsql 8 rejeita Kind=Unspecified em colunas timestamptz: converte o período local em range UTC.
+                var (iniExamesUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataIni);
+                var (_, fimExamesUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataFim);
+                //..Qoder
 
                 var query = _db.ExamesRealizados
                     .AsNoTracking()
@@ -75,8 +79,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                              && e.Liberacao == 1
                              && e.Baixado != 1
                              && !e.EmCatalogoRecebimentos
-                             && e.DataExame >= dataIni.Date
-                             && e.DataExame <= dataFimAjustada)
+                             && e.DataExame >= iniExamesUtc
+                             && e.DataExame <= fimExamesUtc)
                     .AsQueryable();
 
                 if (instituicaoId.HasValue && instituicaoId.Value > 0)
@@ -594,6 +598,312 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         #endregion
 
+        #region Recebimento Consolidado por Instituição/Período
+
+        //Feito pelo Qoder em 16/08/2026
+        /// <summary>
+        /// Pré-visualiza os exames disponíveis para recebimento consolidado por instituição/período:
+        /// liberados, não baixados e ainda não incluídos em catálogo — ou já cobrados da Instituição
+        /// com título Pendente (absorvidos pelo recebimento consolidado) —, com a soma dos valores
+        /// (Valor Total Devido, imutável) que será cobrada em um único recebimento.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpGet]
+        [Route("CatalogoRecebimentos/PreviewRecebimentoConsolidado")]
+        public async Task<IActionResult> PreviewRecebimentoConsolidado(int instituicaoId, DateTime dataIni, DateTime dataFim)
+        {
+            try
+            {
+                if (instituicaoId <= 0)
+                    return Json(new { sucesso = false, mensagem = "Selecione a instituição." });
+
+                if (dataIni.Date > dataFim.Date)
+                    return Json(new { sucesso = false, mensagem = "A data inicial não pode ser maior que a data final." });
+
+                //Feito pelo Qoder em 16/08/2026
+                // Npgsql 8 rejeita Kind=Unspecified em colunas timestamptz: converte o período local em range UTC.
+                var (iniPrevUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataIni);
+                var (_, fimPrevUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataFim);
+                //..Qoder
+
+                //Feito pelo Qoder em 16/08/2026
+                // Critérios do consolidado:
+                //  - Fora do catálogo: liberado, não baixado, DataExame no período;
+                //  - Título pendente de Instituição (Status=0 + CobrancaInstituicao): absorvido,
+                //    com o período avaliado pela data do título (DataRecebimento) — há exames
+                //    migrados com DataExame sentinela (01/01/1900);
+                //  - Sem filtro de Situacao: a cobrança à Instituição é o ato que habilita o
+                //    envio para análise (mesma regra do fluxo por paciente);
+                //  - Títulos já Recebidos (Status=1) continuam excluídos (não cobra duas vezes).
+                var exames = await _db.ExamesRealizados
+                    .AsNoTracking()
+                    .Include(e => e.Pacientes)
+                    .Where(e => e.InstituicaoId == instituicaoId
+                             && e.Liberacao == 1
+                             && e.Baixado != 1
+                             && ((!e.EmCatalogoRecebimentos
+                                  && e.DataExame >= iniPrevUtc
+                                  && e.DataExame <= fimPrevUtc)
+                                 || e.CatalogoRecebimentosExames.Any(l => l.CatalogoRecebimento.Status == 0
+                                                                       && l.CatalogoRecebimento.CobrancaInstituicao
+                                                                       && l.CatalogoRecebimento.DataRecebimento >= dataIni.Date
+                                                                       && l.CatalogoRecebimento.DataRecebimento <= dataFim.Date)))
+                    .OrderBy(e => e.DataExame)
+                    .ThenBy(e => e.Pacientes.NomePaciente)
+                    .Select(e => new
+                    {
+                        exameRealizadoId = e.Id,
+                        e.Sequencial,
+                        nomePaciente = e.Pacientes.NomePaciente ?? "",
+                        e.DataExame,
+                        valor = e.ItensExamesRealizados.Where(i => i.ValorItem.HasValue).Sum(i => i.ValorItem.Value),
+                        tituloPendente = e.EmCatalogoRecebimentos,
+                        //Feito pelo Qoder em 16/08/2026
+                        // Para título pendente absorvido, exibe a data do título (exames migrados
+                        // podem ter DataExame sentinela 01/01/1900).
+                        dataTitulo = e.CatalogoRecebimentosExames
+                            .Where(l => l.CatalogoRecebimento.Status == 0 && l.CatalogoRecebimento.CobrancaInstituicao)
+                            .Select(l => (DateTime?)l.CatalogoRecebimento.DataRecebimento)
+                            .FirstOrDefault()
+                        //..Qoder
+                    })
+                    .ToListAsync();
+                //..Qoder
+
+                var resultado = exames.Select(e => new
+                {
+                    e.exameRealizadoId,
+                    e.Sequencial,
+                    e.nomePaciente,
+                    dataExame = (e.tituloPendente ? e.dataTitulo : e.DataExame) is DateTime dt ? dt.ToString("dd/MM/yyyy") : "",
+                    e.valor,
+                    e.tituloPendente
+                }).ToList();
+
+                return Json(new
+                {
+                    sucesso = true,
+                    quantidade = resultado.Count,
+                    valorTotalDevido = resultado.Sum(e => e.valor),
+                    exames = resultado
+                });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[CatalogoRecebimentos] PreviewRecebimentoConsolidado - Erro: " + ex.Message, "wError");
+                return Json(new { sucesso = false, mensagem = "Erro ao carregar os exames do período." });
+            }
+        }
+
+        /// <summary>
+        /// Recebimento consolidado por instituição/período: soma os exames do período em um único
+        /// recebimento (Valor Total Devido imutável), aplica desconto/acréscimo opcional no total
+        /// (Valor Total a ser Pago) e baixa cada exame individualmente pelo seu valor original.
+        /// </summary>
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("CatalogoRecebimentos/SalvarRecebimentoConsolidado")]
+        public async Task<IActionResult> SalvarRecebimentoConsolidado([FromBody] vmReceberConsolidado dto)
+        {
+            try
+            {
+                if (dto == null || dto.InstituicaoId <= 0)
+                    return Json(new { sucesso = false, mensagem = "Selecione a instituição." });
+
+                if (dto.DataIni.Date > dto.DataFim.Date)
+                    return Json(new { sucesso = false, mensagem = "A data inicial não pode ser maior que a data final." });
+
+                if (!dto.DeclaracaoConferencia)
+                    return Json(new { sucesso = false, mensagem = "É necessário declarar a conferência do total dos exames no período." });
+
+                if (dto.Formas == null || dto.Formas.Count == 0)
+                    return Json(new { sucesso = false, mensagem = "Informe pelo menos uma forma de recebimento." });
+
+                if (dto.Formas.Any(f => f.FormaRecebimentoId <= 0 || f.ContaRecebimentoId <= 0 || f.Valor <= 0 || string.IsNullOrWhiteSpace(f.Observacao)))
+                    return Json(new { sucesso = false, mensagem = "Forma, conta, valor, data e observação são obrigatórios em todas as linhas." });
+
+                //Feito pelo Qoder em 16/08/2026
+                // Npgsql 8 rejeita Kind=Unspecified em colunas timestamptz: converte o período local em range UTC.
+                var (iniSalvUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dto.DataIni);
+                var (_, fimSalvUtc) = _geralController.ConverterDataLocalParaRangeUtc(dto.DataFim);
+                //..Qoder
+
+                // Reconsulta os exames no servidor: o Valor Total Devido é sempre calculado pelo sistema.
+                //Feito pelo Qoder em 16/08/2026
+                // Mesmo critério do preview: fora do catálogo pelo DataExame no período, ou título
+                // pendente de Instituição absorvido pela data do título (DataRecebimento).
+                var exames = await _db.ExamesRealizados
+                    .Where(e => e.InstituicaoId == dto.InstituicaoId
+                             && e.Liberacao == 1
+                             && e.Baixado != 1
+                             && ((!e.EmCatalogoRecebimentos
+                                  && e.DataExame >= iniSalvUtc
+                                  && e.DataExame <= fimSalvUtc)
+                                 || e.CatalogoRecebimentosExames.Any(l => l.CatalogoRecebimento.Status == 0
+                                                                       && l.CatalogoRecebimento.CobrancaInstituicao
+                                                                       && l.CatalogoRecebimento.DataRecebimento >= dto.DataIni.Date
+                                                                       && l.CatalogoRecebimento.DataRecebimento <= dto.DataFim.Date)))
+                    .ToListAsync();
+                //..Qoder
+
+                if (exames.Count == 0)
+                    return Json(new { sucesso = false, mensagem = "Nenhum exame disponível para recebimento no período informado." });
+
+                decimal valorTotalDevido = 0m;
+                var valoresPorExame = new Dictionary<int, decimal>();
+                foreach (var exame in exames)
+                {
+                    decimal valorExame = await _db.ItensExamesRealizados
+                        .Where(i => i.ExameRealizadoId == exame.Id && i.ValorItem.HasValue)
+                        .SumAsync(i => i.ValorItem.Value);
+                    valoresPorExame[exame.Id] = valorExame;
+                    valorTotalDevido += valorExame;
+                }
+
+                // Ajuste único: negativo = desconto, positivo = acréscimo.
+                // Não altera o valor individual de cada exame (rateio mantém valores originais).
+                decimal valorAjuste = dto.ValorAjuste;
+                decimal valorTotalAPagar = valorTotalDevido + valorAjuste;
+                if (valorTotalAPagar <= 0)
+                    return Json(new { sucesso = false, mensagem = $"O Valor Total a ser Pago ({valorTotalAPagar:N2}) não pode ser zero ou negativo." });
+
+                decimal valorTotalFormas = dto.Formas.Sum(f => f.Valor);
+                if (Math.Abs(valorTotalAPagar - valorTotalFormas) > 0.01m)
+                    return Json(new { sucesso = false, mensagem = $"Soma das formas ({valorTotalFormas:N2}) diferente do Valor Total a ser Pago ({valorTotalAPagar:N2})." });
+
+                var formasIds = dto.Formas.Select(f => f.FormaRecebimentoId).Distinct();
+                var contasIds = dto.Formas.Select(f => f.ContaRecebimentoId).Distinct();
+
+                int formasCount = await _db.FormasRecebimento.CountAsync(f => formasIds.Contains(f.Id) && f.Ativo);
+                int contasCount = await _db.ContasRecebimento.CountAsync(c => contasIds.Contains(c.Id) && c.Ativo);
+
+                if (formasCount != formasIds.Count())
+                    return Json(new { sucesso = false, mensagem = "Uma ou mais formas de recebimento são inválidas ou inativas." });
+
+                if (contasCount != contasIds.Count())
+                    return Json(new { sucesso = false, mensagem = "Uma ou mais contas de recebimento são inválidas ou inativas." });
+
+                //Feito pelo Qoder em 16/08/2026
+                // Absorção dos títulos pendentes de Instituição: remove o vínculo antigo do exame
+                // com o catálogo Pendente para poder vinculá-lo ao recebimento consolidado
+                // (índice único de exame). O título pendente é reajustado/excluído mais abaixo.
+                var catalogosAbsorvidos = new Dictionary<int, CatalogoRecebimentos>();
+                foreach (var exame in exames.Where(x => x.EmCatalogoRecebimentos))
+                {
+                    var linkAntigo = await _db.CatalogoRecebimentosExames
+                        .Include(l => l.CatalogoRecebimento)
+                        .FirstOrDefaultAsync(l => l.ExameRealizadoId == exame.Id
+                                               && l.CatalogoRecebimento.Status == 0
+                                               && l.CatalogoRecebimento.CobrancaInstituicao);
+
+                    if (linkAntigo == null)
+                        continue; // defesa: exame marcado, mas sem título pendente de Instituição
+
+                    _db.CatalogoRecebimentosExames.Remove(linkAntigo);
+
+                    if (!catalogosAbsorvidos.ContainsKey(linkAntigo.CatalogoRecebimentoId))
+                    {
+                        var catalogoAntigo = await _db.CatalogoRecebimentos
+                            .Include(c => c.CatalogoRecebimentosExames)
+                            .FirstAsync(c => c.Id == linkAntigo.CatalogoRecebimentoId);
+                        catalogosAbsorvidos[catalogoAntigo.Id] = catalogoAntigo;
+                    }
+                }
+                //..Qoder
+
+                var observacao = $"Recebimento consolidado por instituição/período: exames de {dto.DataIni:dd/MM/yyyy} a {dto.DataFim:dd/MM/yyyy} ({exames.Count} exames).";
+                if (catalogosAbsorvidos.Count > 0)
+                    observacao += $" Absorve {catalogosAbsorvidos.Count} título(s) pendente(s) de Instituição.";
+                if (!string.IsNullOrWhiteSpace(dto.Observacao))
+                    observacao += " " + dto.Observacao.Trim();
+
+                var catalogo = new CatalogoRecebimentos
+                {
+                    Origem = 2, // Faturamento
+                    InstituicaoId = dto.InstituicaoId,
+                    PacienteId = null, // consolidado: abrange vários pacientes
+                    PeriodoFaturamento = null,
+                    ValorTotal = valorTotalAPagar,
+                    ValorDesconto = -valorAjuste, // desconto positivo; acréscimo negativo
+                    ValorTotalDevido = valorTotalDevido,
+                    DataRecebimento = DateTime.Now.Date,
+                    Status = 1, // Recebido
+                    CobrancaInstituicao = true,
+                    Observacao = observacao,
+                    UsuarioRegistro = HttpContext.Session.GetString("SessionNome") ?? "sistema",
+                    DataRegistro = _geralController.ObterDataHoraUtc()
+                };
+
+                _db.CatalogoRecebimentos.Add(catalogo);
+
+                foreach (var formaDto in dto.Formas)
+                {
+                    catalogo.CatalogoRecebimentosFormas.Add(new CatalogoRecebimentosFormas
+                    {
+                        FormaRecebimentoId = formaDto.FormaRecebimentoId,
+                        ContaRecebimentoId = formaDto.ContaRecebimentoId,
+                        Valor = formaDto.Valor,
+                        DataRecebimento = formaDto.DataRecebimento.Date,
+                        Observacao = formaDto.Observacao
+                    });
+                }
+
+                // Rateio: cada exame é baixado individualmente pelo seu valor original.
+                foreach (var exame in exames)
+                {
+                    catalogo.CatalogoRecebimentosExames.Add(new CatalogoRecebimentosExames
+                    {
+                        ExameRealizadoId = exame.Id,
+                        Valor = valoresPorExame[exame.Id]
+                    });
+
+                    exame.EmCatalogoRecebimentos = true;
+                }
+
+                //Feito pelo Qoder em 16/08/2026
+                // Reajusta os títulos pendentes absorvidos: recalcula o total pelos vínculos
+                // restantes; o título que ficou sem exames é excluído.
+                foreach (var catalogoAntigo in catalogosAbsorvidos.Values)
+                {
+                    var vinculosRestantes = catalogoAntigo.CatalogoRecebimentosExames
+                        .Where(l => _db.Entry(l).State != EntityState.Deleted)
+                        .ToList();
+
+                    if (vinculosRestantes.Count == 0)
+                        _db.CatalogoRecebimentos.Remove(catalogoAntigo);
+                    else
+                        catalogoAntigo.ValorTotal = vinculosRestantes.Sum(l => l.Valor);
+                }
+                //..Qoder
+
+                // Defesa final contra duplo clique: o índice único de exame faz o segundo
+                // salvamento concorrente falhar aqui com mensagem clara (SQLSTATE 23505).
+                try
+                {
+                    await _db.SaveChangesAsync();
+                }
+                catch (PostgresException pgEx) when (pgEx.SqlState == "23505")
+                {
+                    return Json(new { sucesso = false, mensagem = "Um ou mais exames já possuem recebimento registrado. Operação duplicada não é permitida." });
+                }
+
+                _eventLogHelper.LogEventViewer(
+                    $"[CatalogoRecebimentos] Recebimento consolidado - Id={catalogo.Id}, InstituiçãoId={dto.InstituicaoId}, Período={dto.DataIni:dd/MM/yyyy} a {dto.DataFim:dd/MM/yyyy}, Devido={valorTotalDevido:N2}, Ajuste={valorAjuste:N2}, Pago={valorTotalAPagar:N2}, Exames={exames.Count}, TítulosPendentesAbsorvidos={catalogosAbsorvidos.Count}",
+                    "wInformation");
+
+                return Json(new { sucesso = true, mensagem = $"Recebimento consolidado registrado com sucesso ({exames.Count} exames)." });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[CatalogoRecebimentos] SalvarRecebimentoConsolidado - Erro: " + ex, "wError");
+                RegistrarErroCatalogo("SalvarRecebimentoConsolidado", ex);
+                return Json(new { sucesso = false, mensagem = "Erro ao registrar recebimento consolidado: [" + ex.GetType().Name + "] " + ex.Message });
+            }
+        }
+        //..Qoder
+
+        #endregion
+
         #region Consulta
 
         [TypeFilter(typeof(SessionFilter))]
@@ -710,7 +1020,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         .Select(e => $"{e.ExameRealizado.TabelaExames.SiglaTabela} - {e.ExameRealizado.TabelaExames.NomeTabela}")
                         .Distinct()),
                     //..Qoder
-                    paciente = c.Paciente?.NomePaciente ?? "",
+                    //Feito pelo Qoder em 16/08/2026 — recebimento consolidado não tem paciente único
+                    paciente = c.PacienteId == null
+                        ? $"{c.CatalogoRecebimentosExames.Count} exames (consolidado)"
+                        : (c.Paciente?.NomePaciente ?? ""),
+                    //..Qoder
                     periodo = c.PeriodoFaturamento ?? "",
                     valorTotal = c.ValorTotal.ToString("N2"),
                     //Feito pelo Qoder em 16/08/2026 — cobrança à instituição aparece como origem "Instituição"
@@ -800,10 +1114,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         catalogo.InstituicaoId,
                         instituicao = $"{catalogo.Instituicao?.Sigla ?? ""} - {catalogo.Instituicao?.Nome ?? ""}".Trim(' ', '-'),
                         catalogo.PacienteId,
-                        paciente = catalogo.Paciente?.NomePaciente ?? "",
+                        //Feito pelo Qoder em 16/08/2026 — recebimento consolidado não tem paciente único
+                        paciente = catalogo.PacienteId == null
+                            ? $"{catalogo.CatalogoRecebimentosExames.Count} exames (consolidado)"
+                            : (catalogo.Paciente?.NomePaciente ?? ""),
                         catalogo.PeriodoFaturamento,
                         catalogo.ValorTotal,
                         catalogo.ValorDesconto,
+                        catalogo.ValorTotalDevido,
+                        //..Qoder
                         catalogo.CobrancaInstituicao,
                         dataRecebimento = catalogo.DataRecebimento.ToString("dd/MM/yyyy"),
                         status = catalogo.Status == 1 ? "Recebido" : "Pendente",

@@ -54,6 +54,15 @@
                 </button>
             </div>
         </div>
+        @*Feito pelo Qoder em 16/08/2026 — recebimento consolidado por instituição/período*@
+        <div class="row mt-2">
+            <div class="col-12 text-end">
+                <button type="button" id="btnAbrirReceberConsolidado" class="btn btn-success btn-sm">
+                    <i class="fa-solid fa-building-columns"></i> Receber por Instituição/Período
+                </button>
+            </div>
+        </div>
+        @*..Qoder*@
     </div>
 </div>
 
@@ -100,8 +109,11 @@
                     <div class="col-md-6"><label class="form-label">Paciente</label><input type="text" id="detPaciente" class="form-control form-control-sm" readonly /></div>
                     <div class="col-md-4"><label class="form-label">Período</label><input type="text" id="detPeriodo" class="form-control form-control-sm" readonly /></div>
                     <div class="col-md-4"><label class="form-label">Valor Total</label><input type="text" id="detValor" class="form-control form-control-sm text-end" readonly /></div>
-                    @*Feito pelo Qoder em 16/08/2026 — desconto concedido no recebimento*@
-                    <div class="col-md-4"><label class="form-label">Desconto</label><input type="text" id="detDesconto" class="form-control form-control-sm text-end" readonly /></div>
+                    @*Feito pelo Qoder em 16/08/2026 — desconto/acréscimo do recebimento (negativo = desconto, positivo = acréscimo)*@
+                    <div class="col-md-4"><label class="form-label">Desconto/Acréscimo</label><input type="text" id="detDesconto" class="form-control form-control-sm text-end" readonly /></div>
+                    @*..Qoder*@
+                    @*Feito pelo Qoder em 16/08/2026 — soma imutável dos exames (recebimento consolidado)*@
+                    <div class="col-md-4"><label class="form-label">Valor Total Devido</label><input type="text" id="detValorDevido" class="form-control form-control-sm text-end" readonly /></div>
                     @*..Qoder*@
                     @*Feito pelo Qoder em 16/08/2026 — cobrança: Instituição ou Paciente*@
                     <div class="col-md-4"><label class="form-label">Cobrança</label><input type="text" id="detCobranca" class="form-control form-control-sm" readonly /></div>
@@ -209,6 +221,138 @@
 </div>
 @*..Qoder*@
 
+@*Feito pelo Qoder em 16/08/2026 — Modal de Recebimento Consolidado por Instituição/Período*@
+<div class="modal fade" id="modalReceberConsolidado" tabindex="-1" aria-labelledby="modalReceberConsolidadoLabel">
+    <div class="modal-dialog modal-xl">
+        <!--Feito pelo Qoder em 16/08/2026-->
+        <!-- Loading local do modal: o overlay padrão do layout (z-index 99) fica atrás do backdrop do modal. -->
+        <div id="loadingConsolidado" class="position-absolute top-0 start-0 w-100 h-100 d-none align-items-center justify-content-center" style="z-index: 1060; background: rgba(255,255,255,0.65); border-radius: .5rem;">
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div id="lblLoadingConsolidado" class="mt-2 fw-bold text-primary">Carregando...</div>
+            </div>
+        </div>
+        <!--..Qoder-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalReceberConsolidadoLabel"><i class="fa-solid fa-building-columns"></i> Receber por Instituição/Período</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Instituição (Sigla)</label>
+                        <select id="selInstituicaoConsolidado" class="form-select form-select-sm">
+                            <option value="">Selecione</option>
+                            @foreach (var inst in Model.Instituicoes)
+                            {
+                                <option value="@inst.Value">@inst.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Data Inicial</label>
+                        <input type="date" id="txtDataIniConsolidado" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Data Final</label>
+                        <input type="date" id="txtDataFimConsolidado" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="button" id="btnCarregarExamesConsolidado" class="btn btn-primary btn-sm w-100"><i class="fa-solid fa-search"></i> Carregar Exames</button>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <span><i class="fa-solid fa-flask"></i> Exames do Período</span>
+                        <span id="lblQuantidadeConsolidado" class="badge bg-secondary">0 exames</span>
+                    </div>
+                    <div class="card-body p-2" style="max-height: 220px; overflow-y: auto;">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead><tr><th>Sequencial</th><th>Paciente</th><th>Data</th><th>Situação</th><th class="text-end">Valor</th></tr></thead>
+                            <tbody id="tblPreviewConsolidadoBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Valor Total Devido</label>
+                        <input type="text" id="txtValorDevidoConsolidado" class="form-control form-control-sm text-end fw-bold" readonly value="0,00" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Desconto/Acréscimo (- desconto / + acréscimo)</label>
+                        <input type="text" id="txtAjusteConsolidado" class="form-control form-control-sm text-end" inputmode="decimal" placeholder="0,00" disabled />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Valor Total a ser Pago</label>
+                        <input type="text" id="txtValorAPagarConsolidado" class="form-control form-control-sm text-end fw-bold" readonly value="0,00" />
+                    </div>
+                    <div class="col-12">
+                        <div class="border rounded p-2 bg-light">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="chkDeclaracaoConsolidado" disabled />
+                                <label class="form-check-label" for="chkDeclaracaoConsolidado">
+                                    Declaro que confere o recebimento pelo total dos exames no período, e que qualquer desconto ou acréscimo não impacta os valores reais devidos e somados dos exames realizados
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Observação (opcional)</label>
+                        <textarea id="txtObservacaoConsolidado" class="form-control form-control-sm" rows="2" maxlength="2000"></textarea>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <span><i class="fa-solid fa-wallet"></i> Formas de Recebimento</span>
+                        <button type="button" id="btnAdicionarFormaConsolidado" class="btn btn-sm btn-success"><i class="fa-solid fa-plus"></i> Adicionar</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm" id="tblFormasConsolidado">
+                                <thead>
+                                    <tr>
+                                        <th>Forma</th>
+                                        <th>Conta</th>
+                                        <th>Valor</th>
+                                        <th>Data</th>
+                                        <th>Observação</th>
+                                        <th style="width:40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Total Informado:</th>
+                                        <th class="text-end" id="lblTotalFormasConsolidado">0,00</th>
+                                        <th colspan="3"></th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Diferença:</th>
+                                        <th class="text-end" id="lblDiferencaConsolidado">0,00</th>
+                                        <th colspan="3"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <!--Feito pelo Qoder em 16/08/2026-->
+                <!-- O botão só aparece com declaração marcada + forma(s) adicionada(s) somando o Valor Total a ser Pago. -->
+                <button type="button" id="btnConfirmarReceberConsolidado" class="btn btn-primary d-none"><i class="fa-solid fa-save"></i> Confirmar Recebimento</button>
+                <!--..Qoder-->
+            </div>
+        </div>
+    </div>
+</div>
+@*..Qoder*@
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
@@ -285,6 +429,41 @@
                 salvarReceberPendente();
             });
             //..Qoder
+
+            //Feito pelo Qoder em 16/08/2026 — recebimento consolidado por instituição/período
+            $('#btnAbrirReceberConsolidado').on('click', function () {
+                abrirReceberConsolidado();
+            });
+
+            $('#btnCarregarExamesConsolidado').on('click', function () {
+                carregarExamesConsolidado();
+            });
+
+            $('#txtAjusteConsolidado').on('input', function () {
+                calcularTotaisConsolidado();
+            });
+
+            $('#chkDeclaracaoConsolidado').on('change', function () {
+                atualizarConfirmarConsolidado();
+            });
+
+            $('#btnAdicionarFormaConsolidado').on('click', function () {
+                adicionarLinhaFormaConsolidado();
+            });
+
+            $('#tblFormasConsolidado tbody').on('click', '.btn-remover-forma-consolidado', function () {
+                $(this).closest('tr').remove();
+                calcularTotaisConsolidado();
+            });
+
+            $('#tblFormasConsolidado tbody').on('input', '.forma-valor-consolidado', function () {
+                calcularTotaisConsolidado();
+            });
+
+            $('#btnConfirmarReceberConsolidado').on('click', function () {
+                salvarReceberConsolidado();
+            });
+            //..Qoder
         });
 
         function carregarDetalhes(id) {
@@ -300,7 +479,10 @@
                         $('#detPeriodo').val(res.catalogo.periodoFaturamento);
                         $('#detValor').val(res.catalogo.valorTotal.toFixed(2).replace('.', ','));
                         //Feito pelo Qoder em 16/08/2026
-                        $('#detDesconto').val((res.catalogo.valorDesconto || 0).toFixed(2).replace('.', ','));
+                        // Convenção do ajuste: negativo = desconto, positivo = acréscimo
+                        // (o banco grava ValorDesconto positivo para desconto).
+                        $('#detDesconto').val((-(res.catalogo.valorDesconto || 0)).toFixed(2).replace('.', ','));
+                        $('#detValorDevido').val((res.catalogo.valorTotalDevido || 0).toFixed(2).replace('.', ','));
                         $('#detCobranca').val(res.catalogo.cobrancaInstituicao ? 'Instituição' : 'Paciente');
                         //..Qoder
                         $('#detUsuario').val(res.catalogo.usuarioRegistro);
@@ -495,6 +677,276 @@
                 complete: function () {
                     if (typeof esconderLoading === 'function') esconderLoading();
                     btn.prop('disabled', false);
+                }
+            });
+        }
+        //..Qoder
+
+        //Feito pelo Qoder em 16/08/2026 — recebimento consolidado por instituição/período
+        var _valorDevidoConsolidado = 0;
+        var _previewConsolidadoCarregado = false;
+
+        function parseValorConsolidado(texto) {
+            texto = (texto || '').trim();
+            if (!texto) return 0;
+            if (texto.indexOf(',') >= 0) {
+                return parseFloat(texto.replace(/\./g, '').replace(',', '.')) || 0;
+            }
+            return parseFloat(texto) || 0;
+        }
+
+        function abrirReceberConsolidado() {
+            _valorDevidoConsolidado = 0;
+            _previewConsolidadoCarregado = false;
+            $('#selInstituicaoConsolidado').val($('#selInstituicao').val() || '');
+            $('#txtDataIniConsolidado').val($('#txtDataIni').val());
+            $('#txtDataFimConsolidado').val($('#txtDataFim').val());
+            $('#tblPreviewConsolidadoBody').empty();
+            $('#lblQuantidadeConsolidado').text('0 exames');
+            $('#txtValorDevidoConsolidado').val('0,00');
+            $('#txtAjusteConsolidado').val('').prop('disabled', true);
+            $('#txtValorAPagarConsolidado').val('0,00');
+            $('#chkDeclaracaoConsolidado').prop('checked', false).prop('disabled', true);
+            $('#txtObservacaoConsolidado').val('');
+            $('#tblFormasConsolidado tbody').empty();
+            calcularTotaisConsolidado();
+            $('#modalReceberConsolidado').modal('show');
+        }
+
+        //Feito pelo Qoder em 16/08/2026
+        // Liga/desliga o overlay de loading dentro do modal do recebimento consolidado.
+        function setLoadingConsolidado(ativo, texto) {
+            if (texto) $('#lblLoadingConsolidado').text(texto);
+            $('#loadingConsolidado').toggleClass('d-none', !ativo).toggleClass('d-flex', ativo);
+        }
+        //..Qoder
+
+        function carregarExamesConsolidado() {
+            var instituicaoId = parseInt($('#selInstituicaoConsolidado').val()) || 0;
+            var dataIni = $('#txtDataIniConsolidado').val();
+            var dataFim = $('#txtDataFimConsolidado').val();
+            if (instituicaoId <= 0) {
+                clickAviso('Atenção', 'Selecione a instituição.', 'falha', null);
+                return;
+            }
+            if (!dataIni || !dataFim) {
+                clickAviso('Atenção', 'Informe a data inicial e a data final.', 'falha', null);
+                return;
+            }
+
+            //Feito pelo Qoder em 16/08/2026
+            // Loading visível dentro do modal (o overlay do layout fica atrás do backdrop).
+            setLoadingConsolidado(true, 'Carregando exames do período...');
+            //..Qoder
+            $.get('/CatalogoRecebimentos/PreviewRecebimentoConsolidado', { instituicaoId: instituicaoId, dataIni: dataIni, dataFim: dataFim })
+                .done(function (res) {
+                    if (!res.sucesso) {
+                        clickAviso('Atenção', res.mensagem, 'falha', null);
+                        return;
+                    }
+                    if (res.quantidade === 0) {
+                        clickAviso('Atenção', 'Nenhum exame disponível para recebimento no período informado.', 'falha', null);
+                    }
+
+                    var tbody = $('#tblPreviewConsolidadoBody');
+                    tbody.empty();
+                    res.exames.forEach(function (e) {
+                        //Feito pelo Qoder em 16/08/2026
+                        // Situação do exame no período: título pendente de Instituição absorvido
+                        // pelo consolidado ou exame ainda fora do catálogo.
+                        var situacao = e.tituloPendente
+                            ? '<span class="badge bg-warning text-dark" title="Título pendente de Instituição absorvido por este recebimento">Título Pendente</span>'
+                            : '<span class="badge bg-secondary" title="Exame liberado ainda não incluído no catálogo">Fora do Catálogo</span>';
+                        //..Qoder
+                        tbody.append('<tr>' +
+                            '<td>' + e.sequencial + '</td>' +
+                            '<td>' + e.nomePaciente + '</td>' +
+                            '<td>' + e.dataExame + '</td>' +
+                            '<td>' + situacao + '</td>' +
+                            '<td class="text-end">' + e.valor.toFixed(2).replace('.', ',') + '</td>' +
+                            '</tr>');
+                    });
+
+                    $('#lblQuantidadeConsolidado').text(res.quantidade + ' exame' + (res.quantidade === 1 ? '' : 's'));
+                    _valorDevidoConsolidado = res.valorTotalDevido;
+                    _previewConsolidadoCarregado = res.quantidade > 0;
+                    $('#txtValorDevidoConsolidado').val(_valorDevidoConsolidado.toFixed(2).replace('.', ','));
+                    $('#txtAjusteConsolidado').prop('disabled', !_previewConsolidadoCarregado);
+                    $('#chkDeclaracaoConsolidado').prop('disabled', !_previewConsolidadoCarregado);
+                    calcularTotaisConsolidado();
+                })
+                .fail(function () {
+                    clickAviso('Erro', 'Erro ao carregar os exames do período.', 'critica', null);
+                })
+                .always(function () {
+                    //Feito pelo Qoder em 16/08/2026
+                    setLoadingConsolidado(false);
+                    //..Qoder
+                });
+        }
+
+        function valorAPagarConsolidado() {
+            return _valorDevidoConsolidado + parseValorConsolidado($('#txtAjusteConsolidado').val());
+        }
+
+        function calcularTotaisConsolidado() {
+            var pagar = valorAPagarConsolidado();
+            $('#txtValorAPagarConsolidado').val(pagar.toFixed(2).replace('.', ','));
+
+            var total = 0;
+            $('#tblFormasConsolidado tbody tr').each(function () {
+                total += parseValorConsolidado($(this).find('.forma-valor-consolidado').val());
+            });
+            var diferenca = total - pagar;
+            $('#lblTotalFormasConsolidado').text(total.toFixed(2).replace('.', ','));
+            $('#lblDiferencaConsolidado').text(diferenca.toFixed(2).replace('.', ','));
+            var cor = Math.abs(diferenca) < 0.01 ? 'text-success' : 'text-danger';
+            $('#lblDiferencaConsolidado').removeClass('text-success text-danger').addClass(cor);
+
+            atualizarConfirmarConsolidado();
+        }
+
+        function atualizarConfirmarConsolidado() {
+            //Feito pelo Qoder em 16/08/2026
+            // O botão "Confirmar Recebimento" somente aparece quando:
+            //  1) o preview foi carregado; 2) a declaração de conferência está marcada;
+            //  3) há pelo menos uma forma de recebimento; 4) a soma das formas completa
+            //     o Valor Total a ser Pago (diferença zero).
+            var pagar = valorAPagarConsolidado();
+            var linhas = 0;
+            var totalFormas = 0;
+            $('#tblFormasConsolidado tbody tr').each(function () {
+                linhas++;
+                totalFormas += parseValorConsolidado($(this).find('.forma-valor-consolidado').val());
+            });
+            var formasCompletas = linhas > 0 && Math.abs(totalFormas - pagar) < 0.01;
+            var visivel = _previewConsolidadoCarregado
+                && $('#chkDeclaracaoConsolidado').is(':checked')
+                && formasCompletas;
+            $('#btnConfirmarReceberConsolidado').prop('disabled', false).toggleClass('d-none', !visivel);
+            //..Qoder
+        }
+
+        function adicionarLinhaFormaConsolidado() {
+            // Selects iniciam em "Selecione": todos os campos da linha são obrigatórios.
+            var linha = '<tr>' +
+                '<td><select class="form-select form-select-sm forma-id-consolidado"><option value="0">Selecione</option>' + opcoesSelectPendente('#selForma') + '</select></td>' +
+                '<td><select class="form-select form-select-sm conta-id-consolidado"><option value="0">Selecione</option>' + opcoesSelectPendente('#selConta') + '</select></td>' +
+                '<td><input type="text" inputmode="decimal" class="form-control form-control-sm text-end forma-valor-consolidado" value="" placeholder="0,00" /></td>' +
+                '<td><input type="date" class="form-control form-control-sm forma-data-consolidado" value="' + new Date().toISOString().split('T')[0] + '" /></td>' +
+                '<td><input type="text" class="form-control form-control-sm forma-obs-consolidado" maxlength="2000" /></td>' +
+                '<td><button type="button" class="btn btn-sm btn-danger btn-remover-forma-consolidado"><i class="fa-solid fa-trash"></i></button></td>' +
+                '</tr>';
+            $('#tblFormasConsolidado tbody').append(linha);
+            //Feito pelo Qoder em 16/08/2026
+            // Nova linha altera a soma das formas: reavalia o botão de confirmar.
+            calcularTotaisConsolidado();
+            //..Qoder
+        }
+
+        function salvarReceberConsolidado() {
+            var instituicaoId = parseInt($('#selInstituicaoConsolidado').val()) || 0;
+            var dataIni = $('#txtDataIniConsolidado').val();
+            var dataFim = $('#txtDataFimConsolidado').val();
+
+            if (!_previewConsolidadoCarregado) {
+                clickAviso('Atenção', 'Carregue os exames do período antes de confirmar.', 'falha', null);
+                return;
+            }
+            if (!$('#chkDeclaracaoConsolidado').is(':checked')) {
+                clickAviso('Atenção', 'Marque a declaração de conferência do total dos exames.', 'falha', null);
+                return;
+            }
+
+            var formas = [];
+            var formasValidas = true;
+            $('#tblFormasConsolidado tbody tr').each(function () {
+                var formaId = parseInt($(this).find('.forma-id-consolidado').val()) || 0;
+                var contaId = parseInt($(this).find('.conta-id-consolidado').val()) || 0;
+                var valor = parseValorConsolidado($(this).find('.forma-valor-consolidado').val());
+                var data = $(this).find('.forma-data-consolidado').val();
+                var obs = $(this).find('.forma-obs-consolidado').val();
+                if (formaId <= 0 || contaId <= 0) {
+                    clickAviso('Atenção', 'Selecione a forma e a conta em todas as linhas.', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                if (valor <= 0) {
+                    clickAviso('Atenção', 'Informe um valor maior que zero em todas as linhas.', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                if (!data) {
+                    clickAviso('Atenção', 'Informe a data em todas as linhas.', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                if (!(obs || '').trim()) {
+                    clickAviso('Atenção', 'Informe a observação em todas as linhas (use "." se necessário).', 'falha', null);
+                    formasValidas = false;
+                    return false;
+                }
+                formas.push({
+                    FormaRecebimentoId: formaId,
+                    ContaRecebimentoId: contaId,
+                    Valor: valor,
+                    DataRecebimento: data,
+                    Observacao: obs
+                });
+            });
+
+            if (!formasValidas) {
+                return;
+            }
+
+            if (formas.length === 0) {
+                clickAviso('Atenção', 'Informe pelo menos uma forma de recebimento.', 'falha', null);
+                return;
+            }
+
+            var totalFormas = formas.reduce(function (acc, f) { return acc + f.Valor; }, 0);
+            if (Math.abs(totalFormas - valorAPagarConsolidado()) > 0.01) {
+                clickAviso('Atenção', 'A soma das formas deve ser igual ao Valor Total a ser Pago.', 'falha', null);
+                return;
+            }
+
+            var btn = $('#btnConfirmarReceberConsolidado');
+            if (btn.prop('disabled')) return;
+            btn.prop('disabled', true);
+            //Feito pelo Qoder em 16/08/2026
+            setLoadingConsolidado(true, 'Registrando recebimento consolidado...');
+            //..Qoder
+
+            $.ajax({
+                url: '/CatalogoRecebimentos/SalvarRecebimentoConsolidado',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    InstituicaoId: instituicaoId,
+                    DataIni: dataIni,
+                    DataFim: dataFim,
+                    DeclaracaoConferencia: true,
+                    ValorAjuste: parseValorConsolidado($('#txtAjusteConsolidado').val()),
+                    Observacao: $('#txtObservacaoConsolidado').val(),
+                    Formas: formas
+                }),
+                success: function (res) {
+                    if (res.sucesso) {
+                        $('#modalReceberConsolidado').modal('hide');
+                        table.ajax.reload();
+                        clickAviso('Sucesso', res.mensagem, 'sucesso', null);
+                    } else {
+                        clickAviso('Atenção', res.mensagem, 'falha', null);
+                    }
+                },
+                error: function () {
+                    clickAviso('Erro', 'Erro ao registrar o recebimento consolidado.', 'critica', null);
+                },
+                complete: function () {
+                    //Feito pelo Qoder em 16/08/2026
+                    setLoadingConsolidado(false);
+                    //..Qoder
+                    atualizarConfirmarConsolidado();
                 }
             });
         }
