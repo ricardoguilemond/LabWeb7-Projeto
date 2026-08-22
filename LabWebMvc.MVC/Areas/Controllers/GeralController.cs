@@ -2,6 +2,7 @@
 using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Mensagens;
 using LabWebMvc.MVC.Models;
@@ -18,6 +19,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         private readonly IValidadorDeSessao _validador;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ITempoServidorService _tempoService;
+        private readonly IGeralService _geralService;
 
         // Acessa o HttpContext atual dinamicamente
         private HttpContext? _httpContext => _httpContextAccessor.HttpContext;
@@ -25,12 +27,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IDbFactory dbFactory,
             IValidadorDeSessao validador,
             IHttpContextAccessor httpContextAccessor,
-            ITempoServidorService tempoService)
+            ITempoServidorService tempoService,
+            IGeralService geralService)
         {
             _db = dbFactory.Create();
             _validador = validador;
             _httpContextAccessor = httpContextAccessor;
             _tempoService = tempoService;
+            _geralService = geralService;
         }
 
 
@@ -188,14 +192,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             return View();
         }
 
+        // Feito pelo Qoder em 22/08/2026 — Dívida Técnica §1 (opção A): os utilitários de data/hora/fuso
+        // foram extraídos para IGeralService/GeralService (Areas\Servicos), que é registrado no DI e pode
+        // ser injetado em qualquer classe sem infraestrutura MVC. Este controller agora apenas delega,
+        // mantendo as assinaturas públicas para compatibilidade retroativa.
         [TypeFilter(typeof(SessionFilter))]  //observar a classe ValidacoesDeSessao que iniciou essa tratativa aqui.
-        public string ObterDataHoraServidor(bool iso = false)
-        {
-            if (iso)
-                return _tempoService.ObterDataHoraServidor("iso");  //yyyy/mm/ddTHH:mm:ss.fffZ
-            else
-                return _tempoService.ObterDataHoraServidor();       //dd/mm/yyyy HH:mm:ss
-        }
+        public string ObterDataHoraServidor(bool iso = false) => _geralService.ObterDataHoraServidor(iso);
 
         /// <summary>
         /// Retorna DateTime UTC para uso em persistência.
@@ -203,10 +205,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         /// NUNCA use DateTime.Now ou dados do cliente para timestamps de criacao.
         /// </summary>
         [TypeFilter(typeof(SessionFilter))]
-        public DateTime ObterDataHoraUtc()
-        {
-            return _tempoService.ObterDataHoraUtc();
-        }
+        public DateTime ObterDataHoraUtc() => _geralService.ObterDataHoraUtc();
 
         /// <summary>
         /// Retorna DateTime no timezone local (America/Sao_Paulo) com Kind=Unspecified.
@@ -215,13 +214,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         /// NÃO use como parâmetro de query EF Core com colunas timestamptz — use ObterRangeDiaUtc().
         /// </summary>
         [TypeFilter(typeof(SessionFilter))]
-        public DateTime ObterDataHoraLocal()
-        {
-            var utc = _tempoService.ObterDataHoraUtc();
-            var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-            var local = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
-            return DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
-        }
+        public DateTime ObterDataHoraLocal() => _geralService.ObterDataHoraLocal();
 
         /// <summary>
         /// Retorna o range do dia atual em UTC (Kind=Utc), pronto para uso em
@@ -232,13 +225,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         /// Este método converte meia-noite local (America/Sao_Paulo) para UTC corretamente.
         /// </summary>
         [TypeFilter(typeof(SessionFilter))]
-        public (DateTime inicioUtc, DateTime fimUtc) ObterRangeDiaUtc()
-        {
-            var utcAgora = _tempoService.ObterDataHoraUtc();
-            var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-            var hojeLocal = TimeZoneInfo.ConvertTimeFromUtc(utcAgora, tz).Date; // meia-noite local
-            return ConverterDataLocalParaRangeUtc(hojeLocal);
-        }
+        public (DateTime inicioUtc, DateTime fimUtc) ObterRangeDiaUtc() => _geralService.ObterRangeDiaUtc();
 
         /// <summary>
         /// Converte uma data local (meia-noite America/Sao_Paulo) para range UTC (Kind=Utc),
@@ -251,27 +238,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         ///          inicioUtc = 2026-05-03 03:00:00 UTC
         ///          fimUtc    = 2026-05-04 02:59:59 UTC
         /// </summary>
-        public (DateTime inicioUtc, DateTime fimUtc) ConverterDataLocalParaRangeUtc(DateTime dataLocal)
-        {
-            // Se já é UTC, extrai a data e calcula o range diretamente
-            if (dataLocal.Kind == DateTimeKind.Utc)
-            {
-                var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-                var dataLocalBr = TimeZoneInfo.ConvertTimeFromUtc(dataLocal, tz).Date;
-                var offset = tz.GetUtcOffset(dataLocalBr);
-                var inicioUtc = new DateTimeOffset(dataLocalBr, offset).UtcDateTime;
-                var fimUtc = new DateTimeOffset(dataLocalBr.AddDays(1).AddTicks(-1), offset).UtcDateTime;
-                return (inicioUtc, fimUtc);
-            }
-
-            // Kind=Unspecified ou Kind=Local: trata como horário de Brasília
-            var tz2 = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-            var data = dataLocal.Date; // garante meia-noite
-            var offset2 = tz2.GetUtcOffset(data);
-            var inicioUtc2 = new DateTimeOffset(data, offset2).UtcDateTime;
-            var fimUtc2 = new DateTimeOffset(data.AddDays(1).AddTicks(-1), offset2).UtcDateTime;
-            return (inicioUtc2, fimUtc2);
-        }
+        public (DateTime inicioUtc, DateTime fimUtc) ConverterDataLocalParaRangeUtc(DateTime dataLocal) => _geralService.ConverterDataLocalParaRangeUtc(dataLocal);
 
         /// <summary>
         /// Converte um DateTime local (America/Sao_Paulo, Kind=Unspecified) para UTC (Kind=Utc),
@@ -280,16 +247,6 @@ namespace LabWebMvc.MVC.Areas.Controllers
         /// Use quando um valor de data/hora vem do cliente (ex: DataEntregaParcial)
         /// e precisa ser persistido como UTC.
         /// </summary>
-        public DateTime ConverterLocalParaUtc(DateTime dataLocal)
-        {
-            // Se já é UTC, retorna sem conversão (evita dobrar o offset)
-            if (dataLocal.Kind == DateTimeKind.Utc)
-                return dataLocal;
-
-            // Kind=Unspecified ou Kind=Local: trata como horário de Brasília e converte para UTC
-            var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-            var offset = tz.GetUtcOffset(dataLocal);
-            return new DateTimeOffset(dataLocal, offset).UtcDateTime;
-        }
+        public DateTime ConverterLocalParaUtc(DateTime dataLocal) => _geralService.ConverterLocalParaUtc(dataLocal);
     }
 }

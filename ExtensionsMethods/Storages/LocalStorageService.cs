@@ -1,6 +1,4 @@
-﻿using Amazon.S3;
-using Amazon.S3.Model;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace ExtensionsMethods.Storages
 {
@@ -56,48 +54,9 @@ namespace ExtensionsMethods.Storages
             return Task.FromResult(false);
         }
 
-        /*
-         * AWS (Amazon): Implementa armazenamento na Nuvem
+        /* Feito pelo Qoder em 22/08/2026 — removida a classe de exemplo S3StorageService (credenciais placeholder e dependência
+         * AWSSDK.S3 sem uso em produção). Quando houver requisito real de storage em nuvem, implementar um serviço dedicado
+         * por trás de IStorageService com credenciais via variável de ambiente (nunca em código).
          */
-
-        public class S3StorageService : IStorageService
-        {
-            private readonly AmazonS3Client _s3Client;
-            private readonly string _bucketName = "meu-bucket";
-
-            public S3StorageService()
-            {
-                _s3Client = new AmazonS3Client("suaAccessKey", "suaSecretKey", Amazon.RegionEndpoint.USEast1);
-            }
-
-            public async Task<bool> SaveFileAsync(string fileName, byte[] data)
-            {
-                using MemoryStream stream = new(data);
-                PutObjectRequest request = new()
-                {
-                    BucketName = _bucketName,
-                    Key = fileName,
-                    InputStream = stream
-                };
-                PutObjectResponse response = await _s3Client.PutObjectAsync(request);
-                return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
-            }
-
-            public async Task<byte[]?> GetFileAsync(string fileName)
-            {
-                GetObjectRequest request = new() { BucketName = _bucketName, Key = fileName };
-                using GetObjectResponse response = await _s3Client.GetObjectAsync(request);
-                using MemoryStream stream = new();
-                await response.ResponseStream.CopyToAsync(stream);
-                return stream.ToArray();
-            }
-
-            public async Task<bool> DeleteFileAsync(string fileName)
-            {
-                DeleteObjectRequest request = new() { BucketName = _bucketName, Key = fileName };
-                DeleteObjectResponse response = await _s3Client.DeleteObjectAsync(request);
-                return response.HttpStatusCode == System.Net.HttpStatusCode.NoContent;
-            }
-        }
     }//Fim
 }

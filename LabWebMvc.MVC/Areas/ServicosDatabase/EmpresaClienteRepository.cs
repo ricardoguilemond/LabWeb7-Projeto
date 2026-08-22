@@ -1,5 +1,6 @@
 ﻿using ExtensionsMethods.EventViewerHelper;
 using LabWebMvc.MVC.Areas.Controllers;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.Utils;
 using Npgsql;
 
@@ -8,13 +9,13 @@ namespace LabWebMvc.MVC.Areas.ServicosDatabase
     public class EmpresaClienteRepository
     {
         private string _connectionString;
-        private readonly GeralController _geralController;
+        private readonly IGeralService _geralService;
         private readonly IEventLogHelper _eventLog;
 
-        public EmpresaClienteRepository(string connectionString = "", GeralController geralController = null!, IEventLogHelper eventLogHelper = null!)
+        public EmpresaClienteRepository(string connectionString = "", IGeralService geralService = null!, IEventLogHelper eventLogHelper = null!)
         {
             _connectionString = connectionString;
-            _geralController = geralController;
+            _geralService = geralService;
             _eventLog = eventLogHelper;
         }
 
@@ -117,7 +118,7 @@ namespace LabWebMvc.MVC.Areas.ServicosDatabase
                                 StringConexao = reader["StringConexao"].ToString() ?? "",
                                 LimiteUsuarios = reader["LimiteUsuarios"].ToString() ?? "0",
                                 //Feito pelo Kiro em 03/05/2026 — migrado para UTC (timestamptz)
-                                DataExpira = string.IsNullOrEmpty(reader["DataExpira"].ToString()) ? _geralController.ObterDataHoraUtc().AddDays(30) : Convert.ToDateTime(reader["DataExpira"])
+                                DataExpira = string.IsNullOrEmpty(reader["DataExpira"].ToString()) ? _geralService.ObterDataHoraUtc().AddDays(30) : Convert.ToDateTime(reader["DataExpira"])
                                 //..Kiro
                             };
                         }

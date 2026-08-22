@@ -313,31 +313,9 @@ namespace LabWebMvc.MVC.Areas.Utils
 
         #region EnviarEmail
 
-        public static string EnviarEmail(string Assunto, string Mensagem, string Email, bool html)
-        {
-            string log = "";
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            System.Net.Mail.SmtpClient smtp = new();
-
-            if ((NetworkCredential?)smtp.Credentials != null)
-            {
-                log += "Credential UserName: " + ((NetworkCredential)smtp.Credentials).UserName + "\n";
-            }
-            else
-                throw new ApplicationException("Credenciais de Email estão nulas");
-
-            System.Net.Mail.MailMessage mail = new(((NetworkCredential)smtp.Credentials).UserName, Email)
-            {
-                From = new System.Net.Mail.MailAddress(((NetworkCredential)smtp.Credentials).UserName),
-                Subject = Assunto,
-                Body = Mensagem,
-                IsBodyHtml = html
-            };
-            //Envia
-            smtp.Send(mail);
-
-            return log;
-        }
+        // Feito pelo Qoder em 22/08/2026 — esqueleto morto de envio de e-mail REMOVIDO daqui (Dívida Técnica §4):
+        // nunca foi chamado e falharia sempre (SmtpClient sem configuração = credenciais nulas).
+        // O serviço de e-mail real agora vive em ExtensionsMethods\MensagemEmail\Email.cs (IMensagem).
 
         #endregion EnviarEmail
 

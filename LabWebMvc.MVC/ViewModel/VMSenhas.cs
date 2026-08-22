@@ -63,6 +63,10 @@ namespace LabWebMvc.MVC.ViewModel
         public string? PathImages { get; set; }
         public List<SelectListItem> Funcoes { get; set; } = new();
         public string? TextoReset { get; set; }
+
+        // Feito pelo Qoder em 22/08/2026 — token assinado do fluxo de recuperação de senha por e-mail (Dívida Técnica §4)
+        public string? TokenReset { get; set; }
+
         public ICollection<dynamic> ListaDados { get; set; } = [];
     }
 }

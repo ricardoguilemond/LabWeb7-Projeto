@@ -1,0 +1,62 @@
+@using LabWebMvc.MVC.ViewModel
+@model vmSenhas
+@{
+    // Feito pelo Qoder em 22/08/2026 — Passo 2 da recuperação de senha por e-mail (Dívida Técnica §4):
+    // o usuário chega aqui pelo link temporário recebido no e-mail (token validado no controller).
+    //Layout = "_Layout";
+}
+<div class="col-md-12">
+    <section id="NovaSenhaForm">
+        <div class="row d-flex col-12">
+            <div class="col-4 card-secao m-20">
+                <div class="mt-2">
+                    <i class="fa-solid fa-key fa-2x"></i>
+                </div>
+                @using (Html.BeginForm("DefineNovaSenha", "Senhas", new { @class = "form-horizontal", role = "form" }, FormMethod.Post))
+                {
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                    @Html.HiddenFor(m => m.Id)
+                    @Html.HiddenFor(m => m.LoginUsuario)
+                    @Html.HiddenFor(m => m.TokenReset)
+                    <div>
+                        <h4 class="mb-3 fw-normal">Definir nova senha</h4>
+                        <p class="text-muted">Olá, <b>@Model.NomeCompleto</b>. Digite a nova senha para a conta <b>@Model.LoginUsuario</b>.</p>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.TextoReset))
+                    {
+                        <div class="alert alert-warning">
+                            @Html.Raw(Model.TextoReset)
+                        </div>
+                    }
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.SenhaUsuario, "Nova senha", new { @class = "text-muted" })
+                        @Html.TextBoxFor(m => m.SenhaUsuario, new { @class = "form-control",
+                                        @type = "password", @placeholder = "Digite a nova senha",
+                                        @required = "required",
+                                        @autofocus = "autofocus",
+                                        @title = "Digite a nova senha"
+                                        })
+                        @Html.ValidationMessageFor(m => m.SenhaUsuario, "", new { @class = "field-validation-valid text-danger" })
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.SenhaRepete, "Repita a nova senha", new { @class = "text-muted" })
+                        @Html.TextBoxFor(m => m.SenhaRepete, new { @class = "form-control",
+                                        @type = "password", @placeholder = "Repita a nova senha",
+                                        @required = "required",
+                                        @title = "Repita a nova senha"
+                                        })
+                        @Html.ValidationMessageFor(m => m.SenhaRepete, "", new { @class = "field-validation-valid text-danger" })
+                    </div>
+                    <div class="form-group botao-centralizado">
+                        <button id="clickSubmit" type="submit" class="btn btn-lg btn-success botao-verde">
+                            Salvar nova senha
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

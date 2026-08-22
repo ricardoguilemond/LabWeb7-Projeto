@@ -4,6 +4,7 @@ using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Mensagens;
 using LabWebMvc.MVC.Models;
@@ -20,6 +21,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
     public class ConsultarExamesController : BaseController
     {
         private readonly IMemoryCache _cache;
+        private readonly IGeralService _geralService;
 
         public ConsultarExamesController(
             IDbFactory dbFactory,
@@ -29,10 +31,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             Imagem imagem,
             ExclusaoService exclusaoService,
             IConnectionService connectionService,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            IGeralService geralService)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _cache = cache;
+            _geralService = geralService;
         }
 
         //Feito pelo Kiro em 17/05/2026
@@ -188,8 +192,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!string.IsNullOrEmpty(dataExamePara))
                 dataPara = dataExamePara.Trim().FormataData("dd/MM/yyyy", true);
 
-            var (inicioDeUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataDe);
-            var (_, fimParaUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataPara);
+            var (inicioDeUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataDe);
+            var (_, fimParaUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataPara);
 
             return (dataDe, dataPara, inicioDeUtc, fimParaUtc);
         }

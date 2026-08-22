@@ -1,6 +1,7 @@
 ﻿using BLL;
 using ExtensionsMethods.EventViewerHelper;
 using LabWebMvc.MVC.Areas.Controllers;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Interfaces.Criptografias;
@@ -17,17 +18,17 @@ namespace LabWebMvc.MVC.Areas.Validations
         private Db _db;
 
         private readonly IEventLogHelper _eventLog;
-        private readonly GeralController _geralController;
+        private readonly IGeralService _geralService;
         private readonly ITempoServidorService _tempoService;
         private readonly IConnectionService _connectionService;
         private readonly IDbFactory _dbFactory;
 
-        public ValidacoesDeSenhas(IEventLogHelper eventLog, GeralController geralController, 
+        public ValidacoesDeSenhas(IEventLogHelper eventLog, IGeralService geralService,
                                   ITempoServidorService tempoService, IConnectionService connectionService, 
                                   IDbFactory dbFactory)
         {
             _eventLog = eventLog;
-            _geralController = geralController;
+            _geralService = geralService;
             _tempoService = tempoService;
             _connectionService = connectionService;
             _dbFactory = dbFactory;
@@ -227,9 +228,9 @@ namespace LabWebMvc.MVC.Areas.Validations
         /* Retorna Login para fazer acesso efetivo ao Sistema com o email do usuário na empresa do cliente correto */
         public async Task<vmSenhas>? RetornaValidacaoLogin(vmLogin? vm)
         {
-            static async Task<EmpresaCliente> LocalizaEmpresaAsync(GeralController geralController, IEventLogHelper eventLog, string admStringConexao, string? loginEmail, string empresaId = "0")
+            static async Task<EmpresaCliente> LocalizaEmpresaAsync(IGeralService geralService, IEventLogHelper eventLog, string admStringConexao, string? loginEmail, string empresaId = "0")
             {
-                var repo = new EmpresaClienteRepository(admStringConexao, geralController, eventLog);
+                var repo = new EmpresaClienteRepository(admStringConexao, geralService, eventLog);
                 var (SQLEmpresa, parametrosEmpresa) = !string.IsNullOrEmpty(loginEmail) && empresaId.ToInt32() == 0
                        ? repo.RetornaSelectEmpresaCliente(loginEmail, "Email")
                        : repo.RetornaSelectEmpresaCliente(empresaId, "Id");
@@ -363,7 +364,7 @@ namespace LabWebMvc.MVC.Areas.Validations
             _connectionService.SetConnectionString(admStringConexao);
 
             //Está acessando o banco de dados LABWEB7Empresas para validar o Email na tabela de Emails
-            EmpresaClienteRepository repo = new(admStringConexao, _geralController, _eventLog);
+            EmpresaClienteRepository repo = new(admStringConexao, _geralService, _eventLog);
             var (SQL, parametrosEmail) = repo.RetornaSelectEmails(loginEmail);
 
             Emails emailLocalizado = new();
@@ -389,7 +390,7 @@ namespace LabWebMvc.MVC.Areas.Validations
             if (emailLocalizado == null || string.IsNullOrEmpty(emailLocalizado.Email) || emailLocalizado.Email != loginEmail)
             {
                 //Significa que é o primeiro acesso do ADMINISTRADOR Cliente do Sistema
-                EmpresaCliente cliente = await LocalizaEmpresaAsync(_geralController, _eventLog, admStringConexao, loginEmail, "0");
+                EmpresaCliente cliente = await LocalizaEmpresaAsync(_geralService, _eventLog, admStringConexao, loginEmail, "0");
                 admStringConexao = await CriaCacheEmailAsync(admStringConexao, loginEmail, cliente);
 
                 vmSenhas vmS = new()
@@ -423,7 +424,7 @@ namespace LabWebMvc.MVC.Areas.Validations
                     System.Text.RegularExpressions.Regex.Replace(conn, @"(?i)Password\s*=\s*[^;]+", "Password=***");
                 //..Qoder
                 _eventLog.LogEventViewer($"[DEV-LOGIN] Buscando EmpresaCliente: email='{emailLocalizado.Email}' id='{emailLocalizado.EmpresaClienteId}'", "wInfo");
-                EmpresaCliente cliente = await LocalizaEmpresaAsync(_geralController, _eventLog, admStringConexao, emailLocalizado.Email, emailLocalizado.EmpresaClienteId.ToString());
+                EmpresaCliente cliente = await LocalizaEmpresaAsync(_geralService, _eventLog, admStringConexao, emailLocalizado.Email, emailLocalizado.EmpresaClienteId.ToString());
                 _eventLog.LogEventViewer($"[DEV-LOGIN] EmpresaCliente encontrada: CNPJ='{cliente.CNPJ}' StringConexao='{OcultaSenhaConexao(cliente.StringConexao)}'", "wInfo");
                 admStringConexao = cliente.StringConexao;  //pega o script de conexão do cliente
                 cnpjEmpresaLogada = cliente.CNPJ;           // guarda o CNPJ correto da empresa

@@ -4,6 +4,7 @@ using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Models;
@@ -18,6 +19,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
     public class ExameReferenciaController : BaseController
     {
         private readonly IWebHostEnvironment _env;
+        private readonly IGeralService _geralService;
 
         public ExameReferenciaController(
             IDbFactory dbFactory,
@@ -27,10 +29,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             Imagem imagem,
             ExclusaoService exclusaoService,
             IConnectionService connectionService,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IGeralService geralService)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _env = env;
+            _geralService = geralService;
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -206,7 +210,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 int alinhaLaudo = request.AlinhaLaudo;
 
                 string usuario = HttpContext.Session.GetString("SessionNome") ?? "sistema";
-                DateTime agora = _geralController.ObterDataHoraUtc();
+                DateTime agora = _geralService.ObterDataHoraUtc();
                 byte[] conteudoBytes = System.Text.Encoding.UTF8.GetBytes(conteudoHtml);
 
                 if (id > 0)
@@ -268,7 +272,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     return Json(new { sucesso = false, mensagem = "Formato inválido. Permitidos: .DOC, .DOCX, .RTF" });
 
                 string usuario = HttpContext.Session.GetString("SessionNome") ?? "sistema";
-                DateTime agora = _geralController.ObterDataHoraUtc();
+                DateTime agora = _geralService.ObterDataHoraUtc();
 
                 // Ler bytes do arquivo
                 byte[] arquivoBytes;

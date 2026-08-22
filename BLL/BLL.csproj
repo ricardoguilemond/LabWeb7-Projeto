@@ -6,24 +6,25 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="8.0.19" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.19" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.19" />
-		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.19" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.10" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-		<PackageReference Include="PdfSharpCore" Version="1.3.67" />
-		<PackageReference Include="RecaptchaNet" Version="3.1.0" />
-		<PackageReference Include="SixLabors.Fonts" Version="2.1.3" />
-		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
-		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
-		<PackageReference Include="System.Drawing.Common" Version="9.0.10" />
-		<PackageReference Include="System.Net.Http" Version="4.3.4" />
-		<PackageReference Include="System.Security.Cryptography.Xml" Version="9.0.*" />
-		<PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.10" />
-		<PackageReference Include="System.Text.Json" Version="9.0.10" />
+		<!-- Feito pelo Qoder em 22/08/2026 — Central Package Management: versões centralizadas em Directory.Packages.props (raiz da solução). -->
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+		<PackageReference Include="Newtonsoft.Json" />
+		<PackageReference Include="PdfSharpCore" />
+		<PackageReference Include="RecaptchaNet" />
+		<PackageReference Include="SixLabors.Fonts" />
+		<PackageReference Include="SixLabors.ImageSharp" />
+		<PackageReference Include="SixLabors.ImageSharp.Drawing" />
+		<PackageReference Include="System.Drawing.Common" />
+		<PackageReference Include="System.Net.Http" />
+		<PackageReference Include="System.Security.Cryptography.Xml" />
+		<PackageReference Include="System.ServiceProcess.ServiceController" />
+		<PackageReference Include="System.Text.Json" />
 	</ItemGroup>
 
 	<ItemGroup>

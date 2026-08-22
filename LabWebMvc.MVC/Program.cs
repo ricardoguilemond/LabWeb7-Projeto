@@ -34,6 +34,9 @@ namespace LabWebMvc.MVC
                 {
                     config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
                     config.AddJsonFile($"appsettings.{osSuffix}.json", optional: true, reloadOnChange: true);
+                    // Feito pelo Qoder em 22/08/2026 — segredos fora do repositório Git (ver .gitignore):
+                    // valores reais de chaves/senhas ficam em appsettings.Segredos.json (ou em variáveis de ambiente em produção).
+                    config.AddJsonFile("appsettings.Segredos.json", optional: true, reloadOnChange: true);
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {

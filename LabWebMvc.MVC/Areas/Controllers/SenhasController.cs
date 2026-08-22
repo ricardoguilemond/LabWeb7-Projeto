@@ -1,10 +1,12 @@
 ﻿using BLL;
 using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
+using ExtensionsMethods.MensagemEmail;
 using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.ExpressionCombiner;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Areas.Validations;
@@ -27,6 +29,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
     {
         private readonly IPathHelper _pathHelper;
         private readonly IValidacoesDeSenhas _validacoesDeSenhas;
+        private readonly IGeralService _geralService;
 
         public SenhasController(
             IDbFactory dbFactory,
@@ -37,11 +40,13 @@ namespace LabWebMvc.MVC.Areas.Controllers
             ExclusaoService exclusaoService,
             IConnectionService connectionService,
             IPathHelper pathHelper,
-            IValidacoesDeSenhas validacoesDeSenhas)
+            IValidacoesDeSenhas validacoesDeSenhas,
+            IGeralService geralService)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _pathHelper = pathHelper;
             _validacoesDeSenhas = validacoesDeSenhas;
+            _geralService = geralService;
         }
 
         private static readonly HttpClient client = new();
@@ -85,7 +90,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     DateTime dataBusca = Conteudo.Trim().FormataData("dd/MM/yyyy", true);
                     // Converte data local para range UTC — necessário para comparar com colunas timestamptz no Npgsql 8.x
                     // (Usar .Day/.Month/.Year em timestamptz traduz para EXTRACT() que opera em UTC, causando resultados incorretos)
-                    var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataBusca);
+                    var (inicioUtc, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataBusca);
                     ICollection<Senhas> dadosQuery = await _db.Senhas.AsNoTracking()
                                                        .Where(l => (l.DataCadastro >= inicioUtc &&
                                                                     l.DataCadastro <= fimUtc) ||
@@ -299,7 +304,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     LoggerFile.Write("ERRO: A senha alterada pelo administrador não foi salva para o usuário que está bloqueado: " + loginUsuario);
                     return Json(new { titulo = "Ops", mensagem = "Este usuário <b>" + loginUsuario + "</b> está bloqueado, não posso alterar a senha", action = redirecionaUrl, sucesso = false });
                 }
-                if (senhas.DataExpira.HasValue && senhas.DataExpira <= _geralController.ObterDataHoraUtc()) //se a data de expiração for menor ou igual a data atual (UTC)
+                if (senhas.DataExpira.HasValue && senhas.DataExpira <= _geralService.ObterDataHoraUtc()) //se a data de expiração for menor ou igual a data atual (UTC)
                 {
                     LoggerFile.Write("ERRO: A senha do usuário não foi alterada pelo administrador porque tem data expirada: " + loginUsuario);
                     return Json(new { titulo = "Ops", mensagem = "Este usuário <b>" + loginUsuario + "</b> está com data expirada, não posso alterar sua senha", action = redirecionaUrl, sucesso = false });
@@ -444,12 +449,17 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         /* REFERENTE A LOGIN:
          * Usuário esqueceu a senha.
-         * A senha é recriada e enviada por Email que consta na tabela de cadastro do usuário web) */
+         * Feito pelo Qoder em 22/08/2026 (Dívida Técnica §4) — fluxo completo de recuperação por e-mail:
+         * em vez de gerar senha temporária (que circulava em texto claro e nunca era enviada), o sistema
+         * gera um TOKEN ASSINADO (TokenRecuperacao, validade 30 min) e envia por e-mail um link que leva
+         * o usuário a definir uma NOVA senha. Nada sensível trafega no e-mail além do link temporário. */
 
         public IActionResult ResetarSenha(vmSenhas objLogin)
         {
-            objLogin.TextoReset = "Foi enviado um Email para você com uma senha temporária.<br />" +
-                                 "Verifique sua caixa de Emails e siga as instruções contidas nela.";
+            // Mensagem padrão igual para sucesso e falha: não revela se o login/e-mail existe no sistema
+            objLogin.TextoReset = "Se os dados informados conferem com o cadastro, você receberá um Email " +
+                                 "com um link temporário para definir uma nova senha.<br />" +
+                                 "Verifique sua caixa de Emails (inclusive lixeira e spam) e siga as instruções contidas nela.";
 
             /* Vamos verificar o Email do Reset de senha */
             if (!string.IsNullOrEmpty(objLogin.LoginUsuario) && !string.IsNullOrEmpty(objLogin.CPF))
@@ -461,30 +471,55 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     !string.IsNullOrEmpty(validaLogin.LoginUsuario))
                 {
                     Senhas senhas = _db.Senhas.Where(s => s.LoginUsuario == objLogin.LoginUsuario).Single();
-                    //Feito pelo Kiro em 03/05/2026 — migrado TransactionScope → EF Core nativo
-                    using var transaction = _db.Database.BeginTransaction();
-                    try
+
+                    if (string.IsNullOrEmpty(senhas.Email))
                     {
-                        //Gera uma senha aleatória para o usuário, gera hash BCrypt e salva na tabela para enviar por Email
-                        string senhaAleatoria = Criptografias.GeraSenhaAleatoria();
-                        senhas.SenhaUsuario = CriptoDecripto.HashSenha(senhaAleatoria);
-                        senhas.EmailConfirmado = (int)TipoSituacaoLogin.SemVerificacao;
-                        if (_db.SaveChanges() < 1)
-                        {
-                            LoggerFile.Write("RECUPERACAO DE LOGIN/ERRO: O usuário não conseguiu recuperar/alterar sua senha : " + objLogin.LoginUsuario);
-                        }
-                        else
-                        {
-                            LoggerFile.Write("RECUPERACAO DE LOGIN: usuário resetou a senha para recuperação do Login: " + objLogin.LoginUsuario);
-                        }
-                        transaction.Commit();
+                        objLogin.TextoReset = "Não foi possível recuperar a senha porque não há Email cadastrado para este usuário.<br />" +
+                                             "Solicite ao administrador do sistema o cadastro do seu Email.";
                     }
-                    catch
+                    else
                     {
-                        transaction.Rollback();
-                        throw;
+                        //Feito pelo Kiro em 03/05/2026 — migrado TransactionScope → EF Core nativo
+                        using var transaction = _db.Database.BeginTransaction();
+                        try
+                        {
+                            // Feito pelo Qoder em 22/08/2026 — marca o e-mail como pendente de validação
+                            // (mesmo comportamento original) ANTES do envio do link de recuperação
+                            senhas.EmailConfirmado = (int)TipoSituacaoLogin.SemVerificacao;
+                            if (_db.SaveChanges() < 1)
+                            {
+                                LoggerFile.Write("RECUPERACAO DE LOGIN/ERRO: O usuário não conseguiu recuperar/alterar sua senha : " + objLogin.LoginUsuario);
+                            }
+                            else
+                            {
+                                // Link temporário (30 minutos) assinado com HMACSHA256 — ver TokenRecuperacao
+                                string token = TokenRecuperacao.Gerar(senhas.Id, senhas.LoginUsuario);
+                                string baseUrl = string.Format("{0}://{1}", Request.Scheme, Request.Host.Value);
+                                string link = string.Format("{0}/DefineNovaSenha?token={1}&id={2}&login={3}",
+                                                            baseUrl,
+                                    Uri.EscapeDataString(token), senhas.Id, Uri.EscapeDataString(senhas.LoginUsuario));
+
+                                string corpo = MontaCorpoEmailRecuperacao(senhas.NomeCompleto, link);
+
+                                // O envio fica dentro da mesma transação: se o SMTP falhar, nada é gravado
+                                // e o usuário pode tentar novamente sem efeitos colaterais.
+                                IMensagem servicoEmail = new Email();
+                                servicoEmail.Enviar(senhas.Email, corpo, "LabWeb — Recuperação de senha");
+
+                                LoggerFile.Write("RECUPERACAO DE LOGIN: link de recuperação de senha enviado por Email: " + objLogin.LoginUsuario);
+                            }
+                            transaction.Commit();
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            _eventLogHelper.LogEventViewer("[Senhas] ResetarSenha - falha ao enviar Email de recuperação: " + ex.Message, "wError");
+                            // Mensagem genérica de propósito (não revela se o login existe)
+                            objLogin.TextoReset = "Não foi possível enviar o Email de recuperação neste momento.<br />" +
+                                                 "Por favor, tente novamente em alguns instantes.";
+                        }
+                        //..Kiro
                     }
-                    //..Kiro
                 }
                 else
                 {
@@ -498,6 +533,100 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 ViewBag.TextoMenu = "Recuperação de senha".MensagemStartUp();
             }
             return View(objLogin);
+        }
+
+        /* Corpo HTML do e-mail de recuperação. Contém APENAS o link temporário — nenhuma senha trafega no e-mail. */
+        private static string MontaCorpoEmailRecuperacao(string nomeCompleto, string link)
+        {
+            return string.Format(
+                "<div style='font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333'>" +
+                "<h2 style='color:#1a7f37'>Recuperação de senha — LabWeb</h2>" +
+                "<p>Olá, <b>{0}</b>.</p>" +
+                "<p>Você (ou alguém) solicitou a recuperação de senha da sua conta.</p>" +
+                "<p>Clique no botão abaixo para definir uma <b>nova senha</b>. Este link é válido por <b>30 minutos</b> e só pode ser usado uma vez.</p>" +
+                "<p style='margin:24px 0'><a href='{1}' style='background:#1a7f37;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold'>Definir nova senha</a></p>" +
+                "<p>Se o botão não funcionar, copie e cole o endereço abaixo no seu navegador:</p>" +
+                "<p style='word-break:break-all;color:#666'>{1}</p>" +
+                "<p>Se você <b>não</b> solicitou esta recuperação, ignore este e-mail — sua senha atual continua válida.</p>" +
+                "<hr style='border:none;border-top:1px solid #ddd' />" +
+                "<p style='font-size:12px;color:#888'>Mensagem automática do sistema LabWeb. Não responda a este e-mail.</p>" +
+                "</div>",
+                System.Net.WebUtility.HtmlEncode(nomeCompleto), link);
+        }
+
+        /* Passo 2 do fluxo de recuperação: o usuário chega aqui pelo link recebido no e-mail. */
+
+        [HttpGet]
+        [Route("DefineNovaSenha")]
+        public IActionResult DefineNovaSenha(string? token, int id, string? login)
+        {
+            ViewBag.TextoMenu = "Recuperação de senha".MensagemStartUp();
+
+            if (string.IsNullOrEmpty(login) || !TokenRecuperacao.Validar(token, id, login))
+            {
+                TempData["MensagemLogin"] = "Link de recuperação inválido ou expirado. Solicite novamente pela tela 'Esqueci minha senha'.";
+                return View("Login");
+            }
+
+            Senhas? senhas = _db.Senhas.AsNoTracking().FirstOrDefault(s => s.Id == id && s.LoginUsuario == login);
+            if (senhas == null || senhas.Bloqueado == 1)
+            {
+                TempData["MensagemLogin"] = "Usuário não encontrado ou bloqueado. Contate o administrador do sistema.";
+                return View("Login");
+            }
+
+            vmSenhas vm = new()
+            {
+                Id = senhas.Id,
+                LoginUsuario = senhas.LoginUsuario,
+                NomeCompleto = senhas.NomeCompleto,
+                Email = senhas.Email,
+                TokenReset = token
+            };
+            return View(vm);
+        }
+
+        /* Passo 3 do fluxo de recuperação: grava a nova senha (hash BCrypt) mediante token válido. */
+
+        [HttpPost]
+        [Route("DefineNovaSenha")]
+        public async Task<IActionResult> DefineNovaSenha(vmSenhas objLogin)
+        {
+            ViewBag.TextoMenu = "Recuperação de senha".MensagemStartUp();
+
+            if (string.IsNullOrEmpty(objLogin.SenhaUsuario) || objLogin.SenhaUsuario != objLogin.SenhaRepete)
+            {
+                objLogin.TextoReset = "As senhas digitadas precisam ser iguais e não podem ser vazias.";
+                return View(objLogin);
+            }
+
+            Senhas? senhas = await _db.Senhas.FirstOrDefaultAsync(s => s.Id == objLogin.Id && s.LoginUsuario == objLogin.LoginUsuario);
+            if (senhas == null || senhas.Bloqueado == 1 || !TokenRecuperacao.Validar(objLogin.TokenReset, objLogin.Id, objLogin.LoginUsuario))
+            {
+                TempData["MensagemLogin"] = "Link de recuperação inválido, expirado ou usuário bloqueado. Solicite novamente pela tela 'Esqueci minha senha'.";
+                return View("Login");
+            }
+
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                senhas.SenhaUsuario = CriptoDecripto.HashSenha(objLogin.SenhaUsuario);
+                senhas.EmailConfirmado = (int)TipoEmailConfirmado.Sim;   //chegou aqui pelo link enviado ao e-mail cadastrado
+                if (await _db.SaveChangesAsync() < 1)
+                {
+                    LoggerFile.Write("RECUPERACAO DE LOGIN/ERRO: nova senha não foi salva para o usuário: " + objLogin.LoginUsuario);
+                }
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+            LoggerFile.Write("RECUPERACAO DE LOGIN: usuário definiu nova senha pelo link do Email: " + objLogin.LoginUsuario);
+            TempData["MensagemLogin"] = "Senha redefinida com sucesso. Faça login com a nova senha.";
+            return View("Login");
         }
 
         /* REFERENTE A LOGIN */

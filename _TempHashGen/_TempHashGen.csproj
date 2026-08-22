@@ -8,7 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+    <!-- Feito pelo Qoder em 22/08/2026 — Central Package Management: versões centralizadas em Directory.Packages.props. -->
+    <PackageReference Include="BCrypt.Net-Next" />
   </ItemGroup>
 
 </Project>

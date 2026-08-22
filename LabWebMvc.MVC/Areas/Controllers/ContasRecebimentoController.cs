@@ -3,6 +3,7 @@ using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Models;
 using LabWebMvc.MVC.ViewModel;
@@ -15,6 +16,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
     public class ContasRecebimentoController : BaseController
     {
         private static bool _sequenceVerificado;
+        private readonly IGeralService _geralService;
+
         public ContasRecebimentoController(
             IDbFactory dbFactory,
             IValidadorDeSessao validador,
@@ -22,9 +25,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
-            IConnectionService connectionService)
+            IConnectionService connectionService,
+            IGeralService geralService)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
+            _geralService = geralService;
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -188,7 +193,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                     entity = new ContasRecebimento
                     {
-                        DataRegistro = _geralController.ObterDataHoraUtc()
+                        DataRegistro = _geralService.ObterDataHoraUtc()
                     };
                     _db.ContasRecebimento.Add(entity);
                 }

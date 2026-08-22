@@ -5,6 +5,7 @@ using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.Controllers;
 using LabWebMvc.MVC.Areas.Impressoras;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Validations;
 using LabWebMvc.MVC.Integracoes.Exportacao;
@@ -67,6 +68,7 @@ namespace LabWebMvc.MVC
             // Fonte de data/hora: PostgreSQL (SELECT NOW() → UTC/timestamptz)
             // Fallback automático para DateTime.UtcNow se banco inacessível
             services.AddScoped<ITempoServidorService, TempoServidorPostgreSQL>();
+            services.AddScoped<IGeralService, GeralService>();  //utilitários de data/hora/fuso (Dívida Técnica §1, opção A)
             services.AddScoped<GeralController>();  //para injeção de dependência do serviço de métodos gerais de controller
             services.AddScoped<IValidacoesDeSenhas, ValidacoesDeSenhas>();  //para injeção de dependência do serviço de validações de senhas
             services.AddSingleton<IEventLogHelper, EventLogHelper>();   //para injeção de uma única instância do Log Helper por toda a aplicação.

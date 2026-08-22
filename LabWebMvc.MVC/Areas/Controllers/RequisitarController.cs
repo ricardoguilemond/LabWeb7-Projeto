@@ -5,6 +5,7 @@ using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.Impressoras;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Interfaces.Collections;
@@ -23,6 +24,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
     public class RequisitarController : BaseController
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly IGeralService _geralService;
         public record ApiResult(bool sucesso, string mensagem, string? action, object? dados);
 
         public RequisitarController(
@@ -33,10 +35,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             Imagem imagem,
             ExclusaoService exclusaoService,
             IConnectionService connectionService,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            IGeralService geralService)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _serviceProvider = serviceProvider;
+            _geralService = geralService;
         }
 
         private void MontaControllers(string action, string controller, string parametros = "")
@@ -122,8 +126,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     // Se não encontrar, cria novo
                     paciente = new Pacientes();
                     _db.Pacientes.Add(paciente);
-                    paciente.DataEntrada = _geralController.ObterDataHoraUtc();
-                    paciente.DataRegistro = _geralController.ObterDataHoraUtc();
+                    paciente.DataEntrada = _geralService.ObterDataHoraUtc();
+                    paciente.DataRegistro = _geralService.ObterDataHoraUtc();
                     paciente.StatusBaixa = 0;
                 }
                 else
@@ -137,8 +141,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // Cria novo paciente
                 paciente = new Pacientes();
                 _db.Pacientes.Add(paciente);
-                paciente.DataEntrada = _geralController.ObterDataHoraUtc();
-                paciente.DataRegistro = _geralController.ObterDataHoraUtc();
+                paciente.DataEntrada = _geralService.ObterDataHoraUtc();
+                paciente.DataRegistro = _geralService.ObterDataHoraUtc();
                 paciente.StatusBaixa = 0;
             }
 
@@ -147,7 +151,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             paciente.NomePaciente = vm.VmPacientes.NomePaciente.ToUpper();
             // Nascimento, DUM e DataEntradaBrasil são colunas timestamptz — o model binder gera Kind=Unspecified,
             // que o Npgsql 8.x rejeita. Converte para UTC antes de gravar.
-            paciente.Nascimento = _geralController.ConverterLocalParaUtc(vm.VmPacientes.Nascimento);
+            paciente.Nascimento = _geralService.ConverterLocalParaUtc(vm.VmPacientes.Nascimento);
             paciente.NomeSocial = vm.VmPacientes.NomeSocial.SafeUpper();
             paciente.NomeMae = vm.VmPacientes.NomeMae.SafeUpper();
             paciente.NomePai = vm.VmPacientes.NomePai.SafeUpper();
@@ -162,14 +166,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
             paciente.EtniaIndigena = vm.VmPacientes.EtniaIndigena.SafeUpper();
             paciente.TipoSanguineo = vm.VmPacientes.TipoSanguineo.Safe();
             paciente.DUM = vm.VmPacientes.DUM.HasValue
-                ? _geralController.ConverterLocalParaUtc(vm.VmPacientes.DUM.Value)
+                ? _geralService.ConverterLocalParaUtc(vm.VmPacientes.DUM.Value)
                 : null;
             paciente.TempoGestacao = vm.VmPacientes.TempoGestacao;
             paciente.Profissao = vm.VmPacientes.Profissao.SafeUpper();
             paciente.Naturalidade = vm.VmPacientes.Naturalidade.SafeUpper();
             paciente.Nacionalidade = vm.VmPacientes.Nacionalidade.SafeUpper();
             paciente.DataEntradaBrasil = vm.VmPacientes.DataEntradaBrasil.HasValue
-                ? _geralController.ConverterLocalParaUtc(vm.VmPacientes.DataEntradaBrasil.Value)
+                ? _geralService.ConverterLocalParaUtc(vm.VmPacientes.DataEntradaBrasil.Value)
                 : null;
             paciente.Logradouro = vm.VmPacientes.Logradouro.SafeUpper();
             paciente.Endereco = vm.VmPacientes.Endereco.SafeUpper();
@@ -233,11 +237,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             // ObterDataHoraUtc() retorna UTC do servidor PostgreSQL — fonte canônica
             // Fallback: DateTime.UtcNow do servidor de aplicação
-            DateTime dataIni = _geralController.ObterDataHoraUtc();
+            DateTime dataIni = _geralService.ObterDataHoraUtc();
             // DataEntregaParcial vem do cliente como horário local — converter para UTC
             // antes de gravar em timestamptz (Npgsql 8.x rejeita Unspecified)
             DateTime dataEntregaParcial = vm.DataEntregaParcial.HasValue
-                ? _geralController.ConverterLocalParaUtc(vm.DataEntregaParcial.Value)
+                ? _geralService.ConverterLocalParaUtc(vm.DataEntregaParcial.Value)
                 : dataIni.AddDays(7);
 
             var lista = new List<DadosItemCupom>();
@@ -333,7 +337,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         // do MAX(ControleApoio) dos exames lançados no dia local.
         private async Task<string> GerarControleApoioAsync()
         {
-            var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(DateTime.Now.Date);
+            var (inicioUtc, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(DateTime.Now.Date);
 
             var maxControle = await _db.ExamesRealizados
                 .AsNoTracking()
@@ -387,7 +391,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     ControleApoio = controleApoioEfetivo,
                     DataIni = primeiroItem.DataIni,
                     Liberacao = 0,
-                    DataExame = _geralController.ObterDataHoraUtc(),
+                    DataExame = _geralService.ObterDataHoraUtc(),
                     DataColeta = primeiroItem.DataIni.ToString("yyyy-MM-dd"),
                     Baixado = 0,
                     EnviarEmail = 0,
@@ -1208,7 +1212,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 return Json(new { sucesso = false, mensagem = "Formato de data inválido." });
 
             // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
-            var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
+            var (dataInicio, dataFim) = _geralService.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
 
             //Feito pelo Kiro em 02/05/2026
             //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados + ItensExamesRealizados
@@ -1345,7 +1349,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         System.Globalization.DateTimeStyles.None, out DateTime dataConsulta))
                 {
                     // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
-                    var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
+                    var (dataInicio, dataFim) = _geralService.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
 
                     //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados + ItensExamesRealizados
                     // Busca o header da requisição do paciente na data
@@ -1419,7 +1423,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 return Json(new { sucesso = false, mensagem = "Dados inválidos para exclusão." });
 
             // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
-            var (dataInicio, dataFim) = _geralController.ConverterDataLocalParaRangeUtc(vm.Data.Value.Date);
+            var (dataInicio, dataFim) = _geralService.ConverterDataLocalParaRangeUtc(vm.Data.Value.Date);
 
             //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados
             // Filtro primário: ExameRealizadoId (header da sessão), quando informado.
@@ -1505,7 +1509,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 return BadRequest("Bad Request ::: Dados inválidos.");
             }
             // Se a data não vier na query, usa a data/hora atual do servidor
-            var dataConsulta = vm.Data ?? _geralController.ObterDataHoraLocal().Date;
+            var dataConsulta = vm.Data ?? _geralService.ObterDataHoraLocal().Date;
 
             var paciente = _db.Pacientes.Where(s => s.Id == vm.IdPaciente).FirstOrDefault();
             if (paciente == null)
@@ -1520,7 +1524,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             // itens de outras requisições do mesmo paciente no mesmo dia.
             // Usa range UTC em vez de .Date (Npgsql 8.x + timestamptz)
             //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados + ItensExamesRealizados
-            var (dataInicioUtc, dataFimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
+            var (dataInicioUtc, dataFimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
             var headerQuery = _db.ExamesRealizados
                          .Where(e => e.PacienteId == vm.IdPaciente
                                   && e.DataIni >= dataInicioUtc
@@ -1573,7 +1577,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             //Feito pelo Kiro em 20/04/2026
             // Usa ObterDataHoraLocal() — converte UTC do PostgreSQL para timezone local
-            var dataServidorCupom = _geralController.ObterDataHoraLocal();
+            var dataServidorCupom = _geralService.ObterDataHoraLocal();
             string dataHoje     = dataServidorCupom.ToString("dd/MM/yyyy");
             string horaHoje     = dataServidorCupom.ToString("HH:mm");
             string dataPrevista = dataServidorCupom.AddDays(7).ToString("dd/MM/yyyy"); //padrão 7 dias para entrega inicial

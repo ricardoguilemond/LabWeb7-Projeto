@@ -7,7 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <!-- Feito pelo Qoder em 22/08/2026 — Central Package Management: versões centralizadas em Directory.Packages.props. -->
+    <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,12 +16,12 @@
   </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="EntityFramework" Version="6.4.4" />
-        <PackageReference Include="RecaptchaNet" Version="3.1.0" />
-        <PackageReference Include="System.Collections" Version="4.3.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="6.0.9" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="6.0.0" />
+        <PackageReference Include="EntityFramework" />
+        <PackageReference Include="RecaptchaNet" />
+        <PackageReference Include="System.Collections" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
     </ItemGroup>  
     
 </Project>

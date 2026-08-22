@@ -4,6 +4,7 @@ using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Models;
@@ -18,6 +19,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
     public class ManutencaoController : BaseController
     {
         private readonly IWebHostEnvironment _env;
+        private readonly IGeralService _geralService;
 
         public ManutencaoController(
             IDbFactory dbFactory,
@@ -27,10 +29,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
             Imagem imagem,
             ExclusaoService exclusaoService,
             IConnectionService connectionService,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IGeralService geralService)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _env = env;
+            _geralService = geralService;
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -80,7 +84,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             try
             {
-                var importador = new ImportadorReferenciaExames(_db, _env, _geralController);
+                var importador = new ImportadorReferenciaExames(_db, _env, _geralService);
                 var resultado = await importador.ExecutarAsync(pastaOrigem);
                 return Json(new { sucesso = true, resultado });
             }

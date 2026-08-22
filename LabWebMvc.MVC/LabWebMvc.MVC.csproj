@@ -21,30 +21,32 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
-		<PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="10.3.2" />
-		<PackageReference Include="Google.Cloud.Monitoring.V3" Version="3.5.0" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
-		<PackageReference Include="Npgsql" Version="8.0.4" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="8.0.19" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.19" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.19" />
-		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.19" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.10" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
-		<PackageReference Include="AWSSDK.S3" Version="4.0.6.2" />
-		<PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
-		<PackageReference Include="Google.Api.Gax" Version="4.11.0" />
-		<PackageReference Include="Google.Cloud.RecaptchaEnterprise.V1" Version="2.18.0" />
+		<!-- Feito pelo Qoder em 22/08/2026 — Central Package Management: versões centralizadas em Directory.Packages.props (raiz da solução). -->
+		<PackageReference Include="BCrypt.Net-Next" />
+		<PackageReference Include="FirebirdSql.Data.FirebirdClient" />
+		<PackageReference Include="Google.Cloud.Monitoring.V3" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+		<PackageReference Include="Npgsql" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+		<!-- Feito pelo Qoder em 22/08/2026 — removido AWSSDK.S3: nenhum código deste projeto o utiliza.
+		     Azure.Storage.Blobs permanece: é usado por Areas\ControleDeImagens\Imagem.cs. -->
+		<PackageReference Include="Azure.Storage.Blobs" />
+		<PackageReference Include="Google.Api.Gax" />
+		<PackageReference Include="Google.Cloud.RecaptchaEnterprise.V1" />
 
-		<PackageReference Include="DocumentFormat.OpenXml" Version="3.1.0" />
-		<PackageReference Include="PdfSharpCore" Version="1.3.67" />
-		<PackageReference Include="RecaptchaNet" Version="3.1.0" />
-		<PackageReference Include="SixLabors.Fonts" Version="2.1.3" />
-		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
-		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
-		<PackageReference Include="System.Data.Odbc" Version="8.0.0" />
-		<PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.10" />
+		<PackageReference Include="DocumentFormat.OpenXml" />
+		<PackageReference Include="PdfSharpCore" />
+		<PackageReference Include="RecaptchaNet" />
+		<PackageReference Include="SixLabors.Fonts" />
+		<PackageReference Include="SixLabors.ImageSharp" />
+		<PackageReference Include="SixLabors.ImageSharp.Drawing" />
+		<PackageReference Include="System.Data.Odbc" />
+		<PackageReference Include="System.ServiceProcess.ServiceController" />
 	</ItemGroup>
 
 	<ItemGroup>

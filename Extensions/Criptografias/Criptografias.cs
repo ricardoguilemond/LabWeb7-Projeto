@@ -10,14 +10,13 @@ namespace Extensions
 
         private static void Embaralhar(ref char[] array, int vezes)
         {
-            Random rand = new Random(DateTime.Now.Millisecond);
-
+            // Feito pelo Qoder em 22/08/2026 — Random previsível trocado por gerador criptograficamente seguro (Dívida Técnica §2.3)
             for (int i = 1; i <= vezes; i++)
             {
                 for (int x = 1; x <= array.Length; x++)
                 {
-                    Trocar(ref array[rand.Next(0, array.Length)],
-                      ref array[rand.Next(0, array.Length)]);
+                    Trocar(ref array[RandomNumberGenerator.GetInt32(0, array.Length)],
+                      ref array[RandomNumberGenerator.GetInt32(0, array.Length)]);
                 }
             }
         }
@@ -31,12 +30,13 @@ namespace Extensions
 
         public static string GeraSenhaAleatoria()
         {
-            Random randomico = new Random();
-            int numero = randomico.Next(1000, 9000);
+            // Feito pelo Qoder em 22/08/2026 — aleatoriedade criptograficamente segura (Dívida Técnica §2.3),
+            // mantendo exatamente o formato original da senha gerada: "@" + 4 letras + 4 dígitos embaralhados.
+            int numero = RandomNumberGenerator.GetInt32(1000, 9000);
 
             //Algumas letras foram retiradas para evitar que usuários confundam com certos números por problemas visuais
             const string chars = "ABCDEGHKLMNPRTWXYZabcdfghmnpqrtxyz";
-            string caracter = new string(Enumerable.Repeat(chars, 4).Select(s => s[randomico.Next(s.Length)]).ToArray());
+            string caracter = new string(Enumerable.Repeat(chars, 4).Select(s => s[RandomNumberGenerator.GetInt32(0, s.Length)]).ToArray());
 
             string senhaGerada = caracter + numero.ToString();
 

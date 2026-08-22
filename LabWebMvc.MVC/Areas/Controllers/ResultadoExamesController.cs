@@ -4,6 +4,7 @@ using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Mensagens;
@@ -24,6 +25,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
         private readonly IWebHostEnvironment _env;
         private readonly IExameReferenciaCache _exameReferenciaCache;
         private readonly IMemoryCache _cache;
+        private readonly IGeralService _geralService;
 
         public ResultadoExamesController(
             IDbFactory dbFactory,
@@ -35,12 +37,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IConnectionService connectionService,
             IWebHostEnvironment env,
             IExameReferenciaCache exameReferenciaCache,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            IGeralService geralService)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _env = env;
             _exameReferenciaCache = exameReferenciaCache;
             _cache = cache;
+            _geralService = geralService;
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -200,14 +204,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!string.IsNullOrEmpty(dataInicial))
             {
                 DateTime dataParsed = dataInicial.Trim().FormataData("dd/MM/yyyy", true);
-                var (inicioUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataParsed);
+                var (inicioUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataParsed);
                 queryEr = queryEr.Where(e => e.DataIni >= inicioUtc);
             }
 
             if (!string.IsNullOrEmpty(dataFinal))
             {
                 DateTime dataParsed = dataFinal.Trim().FormataData("dd/MM/yyyy", true);
-                var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataParsed);
+                var (_, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataParsed);
                 queryEr = queryEr.Where(e => e.DataIni <= fimUtc);
             }
 
@@ -485,7 +489,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
 
                 exame.Liberacao = 1;
-                exame.DataFim = _geralController.ObterDataHoraUtc();
+                exame.DataFim = _geralService.ObterDataHoraUtc();
                 await _db.SaveChangesAsync();
 
                 return Json(new { sucesso = true, mensagem = "Exame liberado com sucesso." });
@@ -544,7 +548,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 var assinaturas = await _db.Assinaturas.AsNoTracking().FirstOrDefaultAsync();
 
                 // Obter data/hora local para exibição no PDF
-                var dataImpressaoLocal = _geralController.ObterDataHoraLocal();
+                var dataImpressaoLocal = _geralService.ObterDataHoraLocal();
 
                 // Montar procedência: Paciente → Instituição → Empresa → em branco
                 string procedencia = "";
@@ -707,7 +711,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 await System.IO.File.WriteAllBytesAsync(caminhoArquivo, pdfBytes);
 
                 // Atualizar ExamesRealizados: DataEntrega, Situacao = 3, TotalImpresso += 1
-                exame.DataEntrega = _geralController.ObterDataHoraUtc();
+                exame.DataEntrega = _geralService.ObterDataHoraUtc();
                 exame.Situacao = 3;
                 exame.TotalImpresso += 1;
                 await _db.SaveChangesAsync();

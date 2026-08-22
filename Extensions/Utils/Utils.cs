@@ -874,29 +874,9 @@ namespace Extensions
             return log;
         }
 
-        public static string EnviarEmail(string Assunto, string Mensagem, string Email, bool html)
-        {
-            var log = "";
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient();
-
-            if (((System.Net.NetworkCredential)smtp.Credentials) != null)
-            {
-                log += "Credential UserName: " + ((System.Net.NetworkCredential)smtp.Credentials).UserName + "\n";
-            }
-            else
-                throw new ApplicationException("Credenciais de Email estão nulas");
-
-            System.Net.Mail.MailMessage mail = new System.Net.Mail.MailMessage(((System.Net.NetworkCredential)smtp.Credentials).UserName, Email);
-            mail.From = new System.Net.Mail.MailAddress(((System.Net.NetworkCredential)smtp.Credentials).UserName);
-            mail.Subject = Assunto;
-            mail.Body = Mensagem;
-            mail.IsBodyHtml = html;
-            //Envia
-            smtp.Send(mail);
-
-            return log;
-        }
+        // Feito pelo Qoder em 22/08/2026 — esqueleto morto de envio de e-mail REMOVIDO daqui (Dívida Técnica §4):
+        // nunca foi chamado e falharia sempre (SmtpClient sem configuração = credenciais nulas).
+        // O serviço de e-mail real agora vive em ExtensionsMethods\MensagemEmail\Email.cs (IMensagem).
 
         /* Converte String para a Base64 */
         public static string Base64Encode(string plainText)

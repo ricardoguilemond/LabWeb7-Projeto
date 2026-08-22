@@ -1,0 +1,87 @@
+<Project>
+
+  <!-- ====================================================================================================================
+    Feito pelo Qoder em 22/08/2026 — CENTRAL PACKAGE MANAGEMENT (Dívida Técnica §3, opção A).
+    ====================================================================================================================
+    Todas as VERSÕES de pacotes NuGet da solução ficam centralizadas neste arquivo.
+    Os .csproj mantêm apenas <PackageReference Include="..." /> (sem Version).
+
+    Benefícios:
+      - upgrade de versão (ex.: patch de segurança do Npgsql) é feito em UM único lugar;
+      - elimina binários mistos por esquecimento de sincronização entre projetos;
+      - suportado nativamente pelo .NET 8 (NuGet 6.2+ / MSBuild 17.2+).
+
+    Correções de inconsistências já existentes aplicadas nesta centralização:
+      - Microsoft.EntityFrameworkCore: 8.0.6 (ServicosDatabase) × 8.0.19 (ModeloDeDados) → unificado em 8.0.19;
+      - System.Security.Cryptography.Xml: flutuante "9.0.*" (BLL/ExtensionsMethods) × 9.0.15 → fixado em 9.0.15
+        (versão flutuante é proibida no modo centralizado);
+      - Microsoft.Extensions.Configuration*: 8.0.x (ExtensionsMethods/FerramentaCripto) × 9.0.6 (ServicosDatabase)
+        → unificado em 9.0.6 (retrocompatível com net8.0; runtime continua 8.x).
+    ==================================================================================================================== -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Avisos NU1605/NU1701 permanecem como avisos; o travamento de versões é feito aqui -->
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Banco de dados / Entity Framework Core -->
+    <PackageVersion Include="Npgsql" Version="8.0.4" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.19" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="8.0.19" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.19" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.19" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.19" />
+
+    <!-- Segurança / Criptografia -->
+    <PackageVersion Include="BCrypt.Net-Next" Version="4.1.0" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="9.0.15" />
+
+    <!-- Configuração / Hospedagem / Infraestrutura Microsoft -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
+    <PackageVersion Include="System.Configuration.ConfigurationManager" Version="9.0.10" />
+    <PackageVersion Include="System.ServiceProcess.ServiceController" Version="9.0.10" />
+    <PackageVersion Include="System.Text.Json" Version="9.0.10" />
+    <PackageVersion Include="System.Net.Http" Version="4.3.4" />
+    <PackageVersion Include="System.Drawing.Common" Version="9.0.10" />
+
+    <!-- Google Cloud / reCAPTCHA -->
+    <PackageVersion Include="Google.Api.Gax" Version="4.11.0" />
+    <PackageVersion Include="Google.Cloud.Monitoring.V3" Version="3.5.0" />
+    <PackageVersion Include="Google.Cloud.RecaptchaEnterprise.V1" Version="2.18.0" />
+    <PackageVersion Include="RecaptchaNet" Version="3.1.0" />
+
+    <!-- Storage em nuvem (uso real apenas em LabWebMvc.MVC\Areas\ControleDeImagens\Imagem.cs) -->
+    <PackageVersion Include="Azure.Storage.Blobs" Version="12.25.0" />
+
+    <!-- Serialização -->
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+
+    <!-- Documentos / Acesso a dados diversos -->
+    <PackageVersion Include="DocumentFormat.OpenXml" Version="3.1.0" />
+    <PackageVersion Include="System.Data.Odbc" Version="8.0.0" />
+
+    <!-- Imagem / PDF -->
+    <PackageVersion Include="PdfSharpCore" Version="1.3.67" />
+    <PackageVersion Include="SixLabors.Fonts" Version="2.1.3" />
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <PackageVersion Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+
+    <!-- Firebird (importação legada) -->
+    <PackageVersion Include="FirebirdSql.Data.FirebirdClient" Version="10.3.2" />
+
+    <!-- Projeto Extensions (net6.0) -->
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageVersion Include="EntityFramework" Version="6.4.4" />
+    <PackageVersion Include="System.Collections" Version="4.3.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Localization.Abstractions" Version="6.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="6.0.0" />
+  </ItemGroup>
+
+</Project>

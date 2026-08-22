@@ -5,6 +5,7 @@ using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
 using LabWebMvc.MVC.Areas.ExpressionCombiner;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Strategy;
 using LabWebMvc.MVC.Areas.Utils;
@@ -24,6 +25,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
     public class PacientesController : BaseController
     {
         private readonly IMemoryCache _cache;
+        private readonly IGeralService _geralService;
 
         public PacientesController(IDbFactory dbFactory, 
                                    IValidadorDeSessao validador, 
@@ -32,10 +34,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                    Imagem imagem,
                                    ExclusaoService exclusaoService,
                                    IConnectionService connectionService,
-                                   IMemoryCache cache)
+                                   IMemoryCache cache,
+                                   IGeralService geralService)
                : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
             _cache = cache;
+            _geralService = geralService;
         }
 
         private void MontaControllers(string action, string controller, string parametros = "")
@@ -185,7 +189,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!string.IsNullOrEmpty(dataNascimento))
             {
                 DateTime dataNascParsed = dataNascimento.Trim().FormataData("dd/MM/yyyy", true);
-                var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataNascParsed);
+                var (inicioUtc, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataNascParsed);
                 query = query.Where(p => p.Nascimento >= inicioUtc && p.Nascimento <= fimUtc);
             }
 
@@ -204,7 +208,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 if (searchValue.Split('/').Length == 3 || searchValue.Split('-').Length == 3)
                 {
                     DateTime dataBusca = searchValue.Trim().FormataData("dd/MM/yyyy", true);
-                    var (inicioUtc, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataBusca);
+                    var (inicioUtc, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataBusca);
                     query = query.Where(l => l.Nascimento >= inicioUtc && l.Nascimento <= fimUtc);
                 }
             }
@@ -295,18 +299,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         paciente.NomePaciente = obj.NomePaciente.ToUpper();
                         // Nascimento e DUM são timestamptz — o model binder gera Kind=Unspecified
                         // que o Npgsql 8.x rejeita. Converte para UTC antes de gravar.
-                        paciente.Nascimento = _geralController.ConverterLocalParaUtc(obj.Nascimento);
+                        paciente.Nascimento = _geralService.ConverterLocalParaUtc(obj.Nascimento);
                         paciente.EstadoCivil = obj.EstadoCivil; // obj.vmGeral.TipoEstadoCivil;
                         paciente.TempoGestacao = obj.vmGeral.TipoTempoGestacao;
-                        paciente.DataEntrada = _geralController.ObterDataHoraUtc();
-                        paciente.DataRegistro = _geralController.ObterDataHoraUtc();
+                        paciente.DataEntrada = _geralService.ObterDataHoraUtc();
+                        paciente.DataRegistro = _geralService.ObterDataHoraUtc();
                         paciente.StatusBaixa = 0;
                         paciente.IdPacienteExterno = obj.IdPacienteExterno;
 
                         //Endereçamento e outros dados que aceitam nulos:
                         paciente.CarteiraSUS = obj.CarteiraSUS;
                         paciente.Complemento = obj.Complemento;
-                        paciente.DUM = obj.DUM.HasValue ? _geralController.ConverterLocalParaUtc(obj.DUM.Value) : null;
+                        paciente.DUM = obj.DUM.HasValue ? _geralService.ConverterLocalParaUtc(obj.DUM.Value) : null;
                         paciente.Email = obj.Email;
                         paciente.CEP = obj.CEP;
                         paciente.Logradouro = obj.Logradouro.ToCapitalize();
@@ -452,7 +456,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                         //Colunas NÃO nulas:
                         paciente.NomePaciente = vm.NomePaciente.ToUpper();
-                        paciente.Nascimento = _geralController.ConverterLocalParaUtc(vm.Nascimento);
+                        paciente.Nascimento = _geralService.ConverterLocalParaUtc(vm.Nascimento);
                         paciente.EstadoCivil = vm.EstadoCivil;
                         paciente.TempoGestacao = vm.vmGeral.TipoTempoGestacao;
 
@@ -462,7 +466,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         paciente.CEP = vm.CEP;
                         paciente.Cidade = vm.Cidade.ToCapitalize();
                         paciente.Complemento = vm.Complemento;
-                        paciente.DUM = vm.DUM.HasValue ? _geralController.ConverterLocalParaUtc(vm.DUM.Value) : null;
+                        paciente.DUM = vm.DUM.HasValue ? _geralService.ConverterLocalParaUtc(vm.DUM.Value) : null;
                         paciente.Email = vm.Email;
                         paciente.Endereco = vm.Endereco.ToCapitalize();
                         paciente.IdPacienteExterno = vm.IdPacienteExterno;
@@ -616,14 +620,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     if (!string.IsNullOrEmpty(dataInicial))
                     {
                         DateTime dataIniParsed = dataInicial.Trim().FormataData("dd/MM/yyyy", true);
-                        var (inicioUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataIniParsed);
+                        var (inicioUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataIniParsed);
                         query = query.Where(e => e.DataIni >= inicioUtc);
                     }
 
                     if (!string.IsNullOrEmpty(dataFinal))
                     {
                         DateTime dataFimParsed = dataFinal.Trim().FormataData("dd/MM/yyyy", true);
-                        var (_, fimUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataFimParsed);
+                        var (_, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataFimParsed);
                         query = query.Where(e => e.DataIni <= fimUtc);
                     }
 

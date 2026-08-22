@@ -3,6 +3,7 @@ using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
 using LabWebMvc.MVC.Areas.Concorrencias;
 using LabWebMvc.MVC.Areas.ControleDeImagens;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Areas.ServicosDatabase;
 using LabWebMvc.MVC.Areas.Utils;
 using LabWebMvc.MVC.Models;
@@ -21,6 +22,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
     /// </summary>
     public class CatalogoRecebimentosController : BaseController
     {
+        private readonly IGeralService _geralService;
+
         public CatalogoRecebimentosController(
             IDbFactory dbFactory,
             IValidadorDeSessao validador,
@@ -28,9 +31,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
             IEventLogHelper eventLogHelper,
             Imagem imagem,
             ExclusaoService exclusaoService,
-            IConnectionService connectionService)
+            IConnectionService connectionService,
+            IGeralService geralService)
             : base(dbFactory, validador, geralController, eventLogHelper, imagem, exclusaoService, connectionService)
         {
+            _geralService = geralService;
         }
 
         #region Tela de Lançamento por Instituição/Período
@@ -67,8 +72,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 //Feito pelo Qoder em 16/08/2026
                 // Npgsql 8 rejeita Kind=Unspecified em colunas timestamptz: converte o período local em range UTC.
-                var (iniExamesUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataIni);
-                var (_, fimExamesUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataFim);
+                var (iniExamesUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataIni);
+                var (_, fimExamesUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataFim);
                 //..Qoder
 
                 var query = _db.ExamesRealizados
@@ -460,7 +465,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 //..Qoder
                 Observacao = dto.Observacao,
                 UsuarioRegistro = HttpContext.Session.GetString("SessionNome") ?? "sistema",
-                DataRegistro = _geralController.ObterDataHoraUtc()
+                DataRegistro = _geralService.ObterDataHoraUtc()
             };
 
             _db.CatalogoRecebimentos.Add(catalogo);
@@ -622,8 +627,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 //Feito pelo Qoder em 16/08/2026
                 // Npgsql 8 rejeita Kind=Unspecified em colunas timestamptz: converte o período local em range UTC.
-                var (iniPrevUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dataIni);
-                var (_, fimPrevUtc) = _geralController.ConverterDataLocalParaRangeUtc(dataFim);
+                var (iniPrevUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataIni);
+                var (_, fimPrevUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataFim);
                 //..Qoder
 
                 //Feito pelo Qoder em 16/08/2026
@@ -724,8 +729,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 //Feito pelo Qoder em 16/08/2026
                 // Npgsql 8 rejeita Kind=Unspecified em colunas timestamptz: converte o período local em range UTC.
-                var (iniSalvUtc, _) = _geralController.ConverterDataLocalParaRangeUtc(dto.DataIni);
-                var (_, fimSalvUtc) = _geralController.ConverterDataLocalParaRangeUtc(dto.DataFim);
+                var (iniSalvUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dto.DataIni);
+                var (_, fimSalvUtc) = _geralService.ConverterDataLocalParaRangeUtc(dto.DataFim);
                 //..Qoder
 
                 // Reconsulta os exames no servidor: o Valor Total Devido é sempre calculado pelo sistema.
@@ -831,7 +836,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     CobrancaInstituicao = true,
                     Observacao = observacao,
                     UsuarioRegistro = HttpContext.Session.GetString("SessionNome") ?? "sistema",
-                    DataRegistro = _geralController.ObterDataHoraUtc()
+                    DataRegistro = _geralService.ObterDataHoraUtc()
                 };
 
                 _db.CatalogoRecebimentos.Add(catalogo);

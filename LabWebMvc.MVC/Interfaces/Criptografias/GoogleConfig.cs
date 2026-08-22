@@ -11,9 +11,14 @@
 
         static GoogleConfig()
         {
+            // Feito pelo Qoder em 22/08/2026 — cadeia de leitura de segredos (o último vence):
+            //   1º) appsettings.json           (valores de template / desenvolvimento)
+            //   2º) appsettings.Segredos.json  (valores reais, FORA do repositório Git via .gitignore)
+            //   3º) Variáveis de ambiente      (ex.: Secrets__myVetorDeCifras) — produção
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory) // ou Directory.GetCurrentDirectory()
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile("appsettings.Segredos.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .Build();
 

@@ -1,4 +1,5 @@
 ﻿using LabWebMvc.MVC.Areas.Controllers;
+using LabWebMvc.MVC.Areas.Servicos;
 using LabWebMvc.MVC.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,13 +14,13 @@ namespace LabWebMvc.MVC.Areas.Utils
     {
         private readonly Db _db;
         private readonly IWebHostEnvironment _env;
-        private readonly GeralController _geralController;
+        private readonly IGeralService _geralService;
 
-        public ImportadorReferenciaExames(Db db, IWebHostEnvironment env, GeralController geralController)
+        public ImportadorReferenciaExames(Db db, IWebHostEnvironment env, IGeralService geralService)
         {
             _db = db;
             _env = env;
-            _geralController = geralController;
+            _geralService = geralService;
         }
 
         public async Task<ResultadoImportacao> ExecutarAsync(string? pastaCustomizada = null)
@@ -67,7 +68,7 @@ namespace LabWebMvc.MVC.Areas.Utils
                 .Select(g => new { ContaExame = g.Key, TabelaExamesId = g.Min(p => p.TabelaExamesId) })
                 .ToDictionaryAsync(x => x.ContaExame, x => x.TabelaExamesId);
 
-            DateTime agora = _geralController.ObterDataHoraUtc();
+            DateTime agora = _geralService.ObterDataHoraUtc();
 
             foreach (var arquivo in arquivos)
             {

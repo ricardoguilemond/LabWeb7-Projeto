@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Feito pelo Qoder em 22/08/2026 — FERRAMENTA AUTÔNOMA DO DESENVOLVEDOR (execução apartada do sistema).
+       Descriptografa campos criptografados do LabWeb7 (formatos legado e v2, além da cifra interna e de nomes
+       de arquivo). NÃO descriptografa senhas de usuário, que são BCrypt irreversível por definição.
+       Propositalmente NÃO referencia nenhum projeto da solução: ela replica as rotinas de forma autossuficiente,
+       para que possa ser executada/compilada isoladamente, sem depender da aplicação web. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>FerramentaCripto</RootNamespace>
+    <AssemblyName>FerramentaCripto</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Leitura da chave a partir de appsettings.json / appsettings.Segredos.json (mesma cadeia da aplicação web).
+         Versões centralizadas em Directory.Packages.props (raiz da solução). -->
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+  </ItemGroup>
+
+</Project>

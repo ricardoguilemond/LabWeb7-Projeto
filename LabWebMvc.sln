@@ -20,6 +20,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsService", "WindowsSe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExtensionsMethods", "ExtensionsMethods\ExtensionsMethods.csproj", "{96DC42B1-F6F8-49CC-97CF-E50A66918C3B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FerramentasDoDesenvolvedor", "FerramentasDoDesenvolvedor", "{EE0C2328-2B2D-485D-854D-A45EE96B1ABB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FerramentaCripto", "FerramentasDoDesenvolvedor\FerramentaCripto\FerramentaCripto.csproj", "{8156005D-CDF0-4CFD-B7D2-BC1961B7A937}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,12 +50,17 @@ Global
 		{96DC42B1-F6F8-49CC-97CF-E50A66918C3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96DC42B1-F6F8-49CC-97CF-E50A66918C3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96DC42B1-F6F8-49CC-97CF-E50A66918C3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8156005D-CDF0-4CFD-B7D2-BC1961B7A937}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8156005D-CDF0-4CFD-B7D2-BC1961B7A937}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8156005D-CDF0-4CFD-B7D2-BC1961B7A937}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8156005D-CDF0-4CFD-B7D2-BC1961B7A937}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F23A51E1-7149-4FBE-8950-81F7D1339827} = {C6FF9FC5-4DF7-41CE-B68B-834A732829F7}
+		{8156005D-CDF0-4CFD-B7D2-BC1961B7A937} = {EE0C2328-2B2D-485D-854D-A45EE96B1ABB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4BF60186-6FB8-404F-A54B-EBCD3D659F4B}
