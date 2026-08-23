@@ -389,7 +389,16 @@ LabWebMvc.MVC/Interfaces/Criptografias/CriptoDecripto.cs
 LabWeb7-Project Documentos/Biblioteca EXE/
 LabWeb7-Project Documentos/Biblioteca PDF/
 LabWeb7-Project Documentos/Biblioteca SQL/
-LabWeb7-Project Documentos/Biblioteca PostgreSql/
+LabWeb7-Project Documentos/Biblioteca PostgreSql/*
+#Feito pelo Qoder em 23/08/2026 — esqueleto de implantação versionado: DDL base e menu do sistema.
+#O restante da pasta continua ignorado (scripts com credenciais, dados de clientes e backups).
+!LabWeb7-Project Documentos/Biblioteca PostgreSql/Tabelas_Vazias.sql
+!LabWeb7-Project Documentos/Biblioteca PostgreSql/Menu.sql
+!LabWeb7-Project Documentos/Biblioteca PostgreSql/Scripts Tabelas por Banco de Dados/
+LabWeb7-Project Documentos/Biblioteca PostgreSql/Scripts Tabelas por Banco de Dados/*
+!LabWeb7-Project Documentos/Biblioteca PostgreSql/Scripts Tabelas por Banco de Dados/LABWEB7Empresas/
+LabWeb7-Project Documentos/Biblioteca PostgreSql/Scripts Tabelas por Banco de Dados/LABWEB7Empresas/*
+!LabWeb7-Project Documentos/Biblioteca PostgreSql/Scripts Tabelas por Banco de Dados/LABWEB7Empresas/Tabelas_Vazias.sql
 LabWeb7-Project Documentos/Biblioteca Google Cloud e ReCaptcha/
 LabWeb7-Project Documentos/Biblioteca Frameworks/*.zip
 LabWeb7-Project Documentos/Biblioteca Frameworks/*.7z
