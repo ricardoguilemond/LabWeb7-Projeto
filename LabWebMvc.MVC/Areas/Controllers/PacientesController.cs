@@ -189,8 +189,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!string.IsNullOrEmpty(dataNascimento))
             {
                 DateTime dataNascParsed = dataNascimento.Trim().FormataData("dd/MM/yyyy", true);
-                var (inicioUtc, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataNascParsed);
-                query = query.Where(p => p.Nascimento >= inicioUtc && p.Nascimento <= fimUtc);
+                // Feito pelo Qoder em 22/08/2026 — Nascimento agora é DATE: comparação direta pela data local
+                query = query.Where(p => p.Nascimento == dataNascParsed.Date);
             }
 
             // Busca global do DataTables
@@ -208,8 +208,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 if (searchValue.Split('/').Length == 3 || searchValue.Split('-').Length == 3)
                 {
                     DateTime dataBusca = searchValue.Trim().FormataData("dd/MM/yyyy", true);
-                    var (inicioUtc, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataBusca);
-                    query = query.Where(l => l.Nascimento >= inicioUtc && l.Nascimento <= fimUtc);
+                    // Feito pelo Qoder em 22/08/2026 — Nascimento agora é DATE: comparação direta pela data local
+                    query = query.Where(l => l.Nascimento == dataBusca.Date);
                 }
             }
 
@@ -234,8 +234,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
         private static string BuildAcoes(int id)
         {
-            return $"<a id='{id}' class='grid_itens' onclick=clickConsulta(this) title='Consultar'><i class='fa-sharp fa-solid fa-display'></i> </a>" +
-                   $"<a id='{id}' class='grid_itens' onclick=clickExames(this) title='Exames Realizados'><i class='fa-sharp fa-solid fa-file-medical'></i> </a>" +
+            //Feito pelo Qoder em 22/08/2026 — ícone "Exibir exames" (1º da linha): "+" dentro de moldura redonda verde (saúde/exames); abre o detail inline
+            return $"<a id='{id}' class='grid_itens' onclick=clickExames(this) title='Exibir exames'><span style='display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border:2px solid #28a745;border-radius:50%;color:#28a745;vertical-align:middle;'><i class='fa-solid fa-plus' style='font-size:9px;'></i></span> </a>" +
+                   $"<a id='{id}' class='grid_itens' onclick=clickConsulta(this) title='Consultar'><i class='fa-sharp fa-solid fa-display'></i> </a>" +
+                   $"<a id='{id}' class='grid_itens' onclick=clickExamesRealizados(this) title='Exames Realizados'><i class='fa-sharp fa-solid fa-file-medical'></i> </a>" +
                    $"<a id='{id}' class='grid_itens' onclick=clickAlterar(this) title='Alterar'><i class='fa-sharp fa-solid fa-file-pen'></i> </a>" +
                    $"<a id='{id}' class='grid_itens' onclick=clickDelete(this) title='Excluir'><i class='fa-sharp fa-solid fa-trash-can'></i> </a>";
         }
@@ -297,12 +299,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                         //Colunas NÃO nulas:
                         paciente.NomePaciente = obj.NomePaciente.ToUpper();
-                        // Nascimento e DUM são timestamptz — o model binder gera Kind=Unspecified
-                        // que o Npgsql 8.x rejeita. Converte para UTC antes de gravar.
-                        paciente.Nascimento = _geralService.ConverterLocalParaUtc(obj.Nascimento);
+                        // Feito pelo Qoder em 22/08/2026 — Nascimento agora é DATE: grava apenas a data digitada
+                        paciente.Nascimento = obj.Nascimento.Date;
                         paciente.EstadoCivil = obj.EstadoCivil; // obj.vmGeral.TipoEstadoCivil;
                         paciente.TempoGestacao = obj.vmGeral.TipoTempoGestacao;
-                        paciente.DataEntrada = _geralService.ObterDataHoraUtc();
+                        paciente.DataEntrada = _geralService.ObterDataHoraLocal().Date; //Feito pelo Qoder em 22/08/2026 — agora DATE: data local do dia
                         paciente.DataRegistro = _geralService.ObterDataHoraUtc();
                         paciente.StatusBaixa = 0;
                         paciente.IdPacienteExterno = obj.IdPacienteExterno;
@@ -310,7 +311,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         //Endereçamento e outros dados que aceitam nulos:
                         paciente.CarteiraSUS = obj.CarteiraSUS;
                         paciente.Complemento = obj.Complemento;
-                        paciente.DUM = obj.DUM.HasValue ? _geralService.ConverterLocalParaUtc(obj.DUM.Value) : null;
+                        paciente.DUM = obj.DUM?.Date; //Feito pelo Qoder em 22/08/2026 — DUM agora é DATE
                         paciente.Email = obj.Email;
                         paciente.CEP = obj.CEP;
                         paciente.Logradouro = obj.Logradouro.ToCapitalize();
@@ -329,7 +330,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         paciente.Observacao = obj.Observacao;
                         paciente.Profissao = obj.Profissao.ToCapitalize();
                         paciente.Sexo = obj.Sexo;
-                        paciente.Telefone = obj.Telefone;
+                        paciente.Telefone = obj.Telefone.ApenasNumeros();
                         paciente.TipoSanguineo = obj.TipoSanguineo;
 
                         await _db.Pacientes.AddAsync(paciente);
@@ -384,7 +385,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.CEP = dados.CEP;
                 vm.Cidade = dados.Cidade;
                 vm.Complemento = dados.Complemento;
-                vm.DUM = dados.DUM;
+                vm.DUM = dados.DUM != null && dados.DUM.Value.Date > new DateTime(1900, 1, 1) ? dados.DUM : null; //Feito pelo Qoder em 22/08/2026 — sentinela ≤ 01/01/1900 exibida em branco
                 vm.Email = dados.Email;
                 vm.Endereco = dados.Endereco;
                 vm.IdPacienteExterno = dados.IdPacienteExterno;
@@ -398,7 +399,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.Observacao = dados.Observacao;
                 vm.Profissao = dados.Profissao;
                 vm.Sexo = dados.Sexo;
-                vm.Telefone = dados.Telefone;
+                vm.Telefone = dados.Telefone.FormataTelefone();
                 vm.TipoSanguineo = dados.TipoSanguineo;
                 vm.UF = dados.UF;
                 /*
@@ -456,7 +457,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                         //Colunas NÃO nulas:
                         paciente.NomePaciente = vm.NomePaciente.ToUpper();
-                        paciente.Nascimento = _geralService.ConverterLocalParaUtc(vm.Nascimento);
+                        // Feito pelo Qoder em 22/08/2026 — Nascimento agora é DATE; campo readonly na edição:
+                        // preserva o valor existente se vier vazio/sentinela (evita gravar DateTime.MinValue)
+                        if (vm.Nascimento.Date > new DateTime(1900, 1, 1))
+                            paciente.Nascimento = vm.Nascimento.Date;
                         paciente.EstadoCivil = vm.EstadoCivil;
                         paciente.TempoGestacao = vm.vmGeral.TipoTempoGestacao;
 
@@ -466,7 +470,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         paciente.CEP = vm.CEP;
                         paciente.Cidade = vm.Cidade.ToCapitalize();
                         paciente.Complemento = vm.Complemento;
-                        paciente.DUM = vm.DUM.HasValue ? _geralService.ConverterLocalParaUtc(vm.DUM.Value) : null;
+                        paciente.DUM = vm.DUM?.Date; //Feito pelo Qoder em 22/08/2026 — DUM agora é DATE
                         paciente.Email = vm.Email;
                         paciente.Endereco = vm.Endereco.ToCapitalize();
                         paciente.IdPacienteExterno = vm.IdPacienteExterno;
@@ -480,7 +484,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         paciente.Observacao = vm.Observacao;
                         paciente.Profissao = vm.Profissao.ToCapitalize();
                         paciente.Sexo = vm.Sexo;
-                        paciente.Telefone = vm.Telefone;
+                        paciente.Telefone = vm.Telefone.ApenasNumeros();
                         paciente.TipoSanguineo = vm.TipoSanguineo;
                         paciente.UF = vm.vmGeral.TipoUF;
 
@@ -555,7 +559,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.CEP = dados.CEP;
                 vm.Cidade = dados.Cidade;
                 vm.Complemento = dados.Complemento;
-                vm.DUM = dados.DUM;
+                vm.DUM = dados.DUM != null && dados.DUM.Value.Date > new DateTime(1900, 1, 1) ? dados.DUM : null; //Feito pelo Qoder em 22/08/2026 — sentinela ≤ 01/01/1900 exibida em branco
                 vm.Email = dados.Email;
                 vm.Endereco = dados.Endereco;
                 vm.IdPacienteExterno = dados.IdPacienteExterno;
@@ -569,7 +573,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.Observacao = dados.Observacao;
                 vm.Profissao = dados.Profissao;
                 vm.Sexo = dados.Sexo;
-                vm.Telefone = dados.Telefone;
+                vm.Telefone = dados.Telefone.FormataTelefone();
                 vm.TipoSanguineo = dados.TipoSanguineo;
                 vm.UF = dados.UF;
                 /*
@@ -620,15 +624,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     if (!string.IsNullOrEmpty(dataInicial))
                     {
                         DateTime dataIniParsed = dataInicial.Trim().FormataData("dd/MM/yyyy", true);
-                        var (inicioUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataIniParsed);
-                        query = query.Where(e => e.DataIni >= inicioUtc);
+                        // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: comparação direta pela data local
+                        query = query.Where(e => e.DataIni >= dataIniParsed.Date);
                     }
 
                     if (!string.IsNullOrEmpty(dataFinal))
                     {
                         DateTime dataFimParsed = dataFinal.Trim().FormataData("dd/MM/yyyy", true);
-                        var (_, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataFimParsed);
-                        query = query.Where(e => e.DataIni <= fimUtc);
+                        // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: comparação direta pela data local
+                        query = query.Where(e => e.DataIni <= dataFimParsed.Date);
                     }
 
                     int totalExamesFiltrados = await query.CountAsync();
@@ -648,8 +652,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     {
                         e.Id,
                         MedicoId = e.MedicoId,
-                        DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
-                        DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
+                        DataIni = e.DataIni.FormataData(),
+                        DataFim = e.DataFim.FormataData(),
                         SiglaInstituicao = e.Instituicao?.Sigla ?? "",
                         NomePosto = e.Postos != null
                             ? (e.Postos.SiglaPosto ?? "") + "-" + (e.Postos.NomePosto ?? "")
@@ -658,9 +662,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             ? (e.Medicos?.NomeMedico ?? "").Substring(0, 22) + "..."
                             : e.Medicos?.NomeMedico ?? "",
                         CRM = e.Medicos?.CRM ?? "",
+                        //Feito pelo Qoder em 23/08/2026 — só exibe itens de exame com ValorItem > 0
                         Folha = e.ItensExamesRealizados
+                            .Where(i => i.ValorItem > 0)
                             .FirstOrDefault()?.ClasseExames?.RefExame ?? "",
                         Itens = e.ItensExamesRealizados
+                            .Where(i => i.ValorItem > 0)
                             .OrderBy(i => i.OrdemItem)
                             .Select(i => new
                             {
@@ -679,7 +686,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 if (expandir)
                 {
                     // Modo expandido: exames dos últimos 12 meses (sem limite de quantidade)
-                    DateTime dataLimite12Meses = DateTime.UtcNow.AddMonths(-12);
+                    DateTime dataLimite12Meses = _geralService.ObterDataHoraLocal().Date.AddMonths(-12); //Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: limite pela data local
 
                     var dadosExpandidos = await _db.ExamesRealizados
                         .AsNoTracking()
@@ -697,8 +704,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     {
                         e.Id,
                         MedicoId = e.MedicoId,
-                        DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
-                        DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
+                        DataIni = e.DataIni.FormataData(),
+                        DataFim = e.DataFim.FormataData(),
                         SiglaInstituicao = e.Instituicao?.Sigla ?? "",
                         NomePosto = e.Postos != null
                             ? (e.Postos.SiglaPosto ?? "") + "-" + (e.Postos.NomePosto ?? "")
@@ -707,9 +714,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             ? (e.Medicos?.NomeMedico ?? "").Substring(0, 22) + "..."
                             : e.Medicos?.NomeMedico ?? "",
                         CRM = e.Medicos?.CRM ?? "",
+                        //Feito pelo Qoder em 23/08/2026 — só exibe itens de exame com ValorItem > 0
                         Folha = e.ItensExamesRealizados
+                            .Where(i => i.ValorItem > 0)
                             .FirstOrDefault()?.ClasseExames?.RefExame ?? "",
                         Itens = e.ItensExamesRealizados
+                            .Where(i => i.ValorItem > 0)
                             .OrderBy(i => i.OrdemItem)
                             .Select(i => new
                             {
@@ -748,7 +758,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // Regra: MAX(últimos 4, exames nos últimos 90 dias) LIMIT 8
                 // - Pegar todos os exames dos últimos 90 dias dentre os 8 buscados
                 // - Se forem menos de 4, completar com os mais recentes até ter 4
-                DateTime dataLimite90Dias = DateTime.UtcNow.AddDays(-diasJanela);
+                DateTime dataLimite90Dias = _geralService.ObterDataHoraLocal().Date.AddDays(-diasJanela); //Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: limite pela data local
                 var examesDentro90Dias = ultimos8.Where(e => e.DataIni >= dataLimite90Dias).ToList();
 
                 List<ExamesRealizados> examesExibidos;
@@ -775,8 +785,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 {
                     e.Id,
                     MedicoId = e.MedicoId,
-                    DataIni = e.DataIni.ToLocalString("dd/MM/yyyy"),
-                    DataFim = e.DataFim != null ? e.DataFim.Value.ToLocalString("dd/MM/yyyy") : "",
+                    DataIni = e.DataIni.FormataData(),
+                    DataFim = e.DataFim.FormataData(),
                     SiglaInstituicao = e.Instituicao?.Sigla ?? "",
                     NomePosto = e.Postos != null
                         ? (e.Postos.SiglaPosto ?? "") + "-" + (e.Postos.NomePosto ?? "")
@@ -785,9 +795,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         ? (e.Medicos?.NomeMedico ?? "").Substring(0, 22) + "..."
                         : e.Medicos?.NomeMedico ?? "",
                     CRM = e.Medicos?.CRM ?? "",
+                    //Feito pelo Qoder em 23/08/2026 — só exibe itens de exame com ValorItem > 0
                     Folha = e.ItensExamesRealizados
+                        .Where(i => i.ValorItem > 0)
                         .FirstOrDefault()?.ClasseExames?.RefExame ?? "",
                     Itens = e.ItensExamesRealizados
+                        .Where(i => i.ValorItem > 0)
                         .OrderBy(i => i.OrdemItem)
                         .Select(i => new
                         {

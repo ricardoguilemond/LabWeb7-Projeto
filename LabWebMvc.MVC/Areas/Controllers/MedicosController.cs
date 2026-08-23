@@ -238,7 +238,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                             //Colunas que aceitam nulas:
                             CRM = obj.CRM,
-                            Telefone = obj.Telefone,
+                            Telefone = obj.Telefone.ApenasNumeros(),
                             Email = obj.Email,
                             Especialidade = obj.Especialidade
                         });
@@ -275,7 +275,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.NomeMedico = dados.NomeMedico;
                 vm.CRM = dados.CRM;
                 vm.Email = dados.Email;
-                vm.Telefone = dados.Telefone;
+                vm.Telefone = dados.Telefone.FormataTelefone();
                 vm.Especialidade = dados.Especialidade;
             }
 
@@ -312,7 +312,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         Medicos.NomeMedico = vm.NomeMedico.ToUpper();
                         Medicos.CRM = vm.CRM;
                         Medicos.Especialidade = vm.Especialidade != null ? vm.Especialidade.ToUpper() : string.Empty;
-                        Medicos.Telefone = vm.Telefone;
+                        Medicos.Telefone = vm.Telefone.ApenasNumeros();
                         Medicos.Email = vm.Email != null ? vm.Email.ToLower() : string.Empty;
 
                         await _db.SaveChangesAsync();
@@ -395,7 +395,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.NomeMedico = dados.NomeMedico.ToUpper();
                 vm.CRM = dados.CRM;
                 vm.Especialidade = dados.Especialidade.ToCapitalize();
-                vm.Telefone = dados.Telefone;
+                vm.Telefone = dados.Telefone.FormataTelefone();
                 vm.Email = dados.Email != null ? dados.Email.ToLower() : string.Empty;
             }
             //Parâmetros auxiliares em ViewBag
@@ -419,7 +419,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.NomeMedico = dados.NomeMedico.ToUpper();
                 vm.CRM = dados.CRM;
                 vm.Especialidade = dados.Especialidade.ToCapitalize();
-                vm.Telefone = dados.Telefone;
+                vm.Telefone = dados.Telefone.FormataTelefone();
                 vm.Email = dados.Email != null ? dados.Email.ToLower() : string.Empty;
             }
             ViewBag.TextoMenu = new object[] { "Consulta de Médico", false };

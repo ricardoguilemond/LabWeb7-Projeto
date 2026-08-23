@@ -322,7 +322,7 @@ namespace LabWebMvc.MVC.Areas.Utils
                 : InferirSexoPeloNome(dados.NomePaciente);
 
             string idadeTexto = "";
-            if (dados.Nascimento.HasValue)
+            if (dados.Nascimento.HasValue && dados.Nascimento.Value.Date > new DateTime(1900, 1, 1)) //Feito pelo Qoder em 22/08/2026 — sentinela ≤ 01/01/1900 exibida em branco
             {
                 int idade = CalcularIdade(dados.Nascimento.Value);
                 idadeTexto = $"{dados.Nascimento.Value:dd/MM/yyyy} ({idade} anos), Sexo: {sexoExibir}";

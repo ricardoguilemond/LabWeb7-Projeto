@@ -1157,16 +1157,15 @@
         btnConfirmar.prop('disabled', true);
         //..Qoder
 
-        //Feito pelo Qoder em 16/08/2026
-        // Loading padrão do sistema (overlay modalLoading) durante o delay do confirmar recebimento.
+        //Feito pelo Qoder em 23/08/2026 — loading padrão único (loader modal Swal) durante o confirmar recebimento.
         if (typeof ShowProgress === 'function') ShowProgress();
-        //..Qoder
         $.ajax({
             url: '/CatalogoRecebimentos/SalvarRecebimentoPortaria',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(dados),
             success: function (res) {
+                if (typeof esconderLoading === 'function') esconderLoading(); // fecha o loader antes da mensagem
                 if (res.sucesso) {
                     $('#modalRecebimentoPortaria').modal('hide');
                     $('#modeloTableRequisitar').DataTable().ajax.reload();
@@ -1176,11 +1175,11 @@
                 }
             },
             error: function () {
+                if (typeof esconderLoading === 'function') esconderLoading();
                 clickAviso('Erro', 'Erro ao salvar recebimento na portaria.', 'critica', null);
             },
-            //Feito pelo Qoder em 16/08/2026
+            //Feito pelo Qoder em 23/08/2026 — loader fechado em success/error (antes da mensagem)
             complete: function () {
-                if (typeof esconderLoading === 'function') esconderLoading();
                 btnConfirmar.prop('disabled', false);
             }
             //..Qoder

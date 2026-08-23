@@ -2,12 +2,8 @@
 @using BLL
 @using static BLL.UtilBLL
 <div class="groupButtton">
-    @if (!PartialFiltro.Esconde)
-    {
-        <button class="myButton">
-            <a asp-action=@PartialFiltro.ActionButton asp-controller=@PartialFiltro.ControllerButton><i class="fa-sharp fa-solid fa-plus"></i> Incluir Usuário</a>
-        </button>
-    }
+    @*Feito pelo Qoder em 22/08/2026 — o botão "Incluir Usuário" foi transferido para a linha de título
+      do card no Index (tela sem linha de filtros); neste partial resta apenas o retorno "Consulta".*@
     @if (PartialFiltro.Esconde)
     {
         <button class="myButton">

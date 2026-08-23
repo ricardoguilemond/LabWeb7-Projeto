@@ -36,7 +36,7 @@
                         </div>
                         <div class="field-group w-sm">
                             <label>Data Nascimento</label>
-                            <div class="field-readonly">@Model.Nascimento.ToString("dd/MM/yyyy")</div>
+                            <div class="field-readonly">@Model.Nascimento.FormataData()</div>
                         </div>
                         <div class="field-group w-xs">
                             <label>Sexo</label>
@@ -149,7 +149,7 @@
                     <div class="field-row">
                         <div class="field-group w-sm">
                             <label>DUM</label>
-                            <div class="field-readonly">@Model.DUM</div>
+                            <div class="field-readonly">@Model.DUM.FormataData()</div>
                         </div>
                         <div class="field-group w-sm">
                             <label>Tempo Gestação</label>

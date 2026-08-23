@@ -2106,5 +2106,86 @@ public class Db : DbContext
         });
         //..Qoder
 
+        //Feito pelo Qoder em 22/08/2026 — Migração de datas de negócio para DATE (somente dia/mês/ano)
+        // Colunas físicas migradas via ServicosDatabase/migra_datas_para_date.sql.
+        // Última configuração vence: este bloco sobrepõe os HasColumnType anteriores destes campos.
+        // Auditoria/rastreio (DataRegistro, DataCadastro, DataExpira, DataOcorrencia, LogArquivos.Data,
+        // DataHora, DataExportado, DataImportado, DataImpresso, Inicio/Termino) permanece TIMESTAMPTZ.
+        modelBuilder.Entity<Pacientes>(entity =>
+        {
+            entity.Property(e => e.Nascimento).HasColumnType("date");
+            entity.Property(e => e.DUM).HasColumnType("date");
+            entity.Property(e => e.DataEntradaBrasil).HasColumnType("date");
+            entity.Property(e => e.DataEntrada).HasColumnType("date");
+            entity.Property(e => e.DataBaixa).HasColumnType("date");
+        });
+        modelBuilder.Entity<UsuariosWeb>(entity =>
+        {
+            entity.Property(e => e.DataNascimentoUsuario).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesRealizados>(entity =>
+        {
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataEntrega).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesRealizadosAM>(entity =>
+        {
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataEntrega).HasColumnType("date");
+        });
+        modelBuilder.Entity<ERTemporario>(entity =>
+        {
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataEntrega).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesPendentes>(entity =>
+        {
+            entity.Property(e => e.DataIni).HasColumnType("date");
+        });
+        modelBuilder.Entity<ItensExamesRealizados>(entity =>
+        {
+            entity.Property(e => e.DataEntregaParcial).HasColumnType("date");
+        });
+        modelBuilder.Entity<ItensExamesRealizadosAM>(entity =>
+        {
+            entity.Property(e => e.DataEntregaParcial).HasColumnType("date");
+        });
+        modelBuilder.Entity<FichasInternas>(entity =>
+        {
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+        });
+        modelBuilder.Entity<FichasLotes>(entity =>
+        {
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+        });
+        modelBuilder.Entity<FichasPlanilhas>(entity =>
+        {
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesExportados>(entity =>
+        {
+            entity.Property(e => e.DataColeta).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesImpressos>(entity =>
+        {
+            entity.Property(e => e.DataExame).HasColumnType("date");
+        });
+        modelBuilder.Entity<CatalogoRecebimentosFormas>(entity =>
+        {
+            entity.Property(e => e.DataRecebimento).HasColumnType("date");
+        });
+
     }
 }

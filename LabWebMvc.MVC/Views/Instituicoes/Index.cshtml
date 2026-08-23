@@ -8,6 +8,16 @@
 <div class="card-secao">
     <div class="card-secao-header">
         <i class="fa-solid fa-building"></i> Instituições Cadastradas
+        @*Feito pelo Qoder em 22/08/2026 — botões de inclusão ao lado do título do card (tela sem linha de filtros)*@
+        @if (!PartialFiltro.Esconde)
+        {
+            <a asp-action=@PartialFiltro.ActionButton asp-controller=@PartialFiltro.ControllerButton class="btn btn-success btn-sm" style="display: inline-block;" title="Incluir Instituição">
+                <i class="fa-solid fa-building"></i> Incluir Instituição
+            </a>
+            <a asp-action=@PartialFiltro.ActionButton asp-controller=@PartialFiltro.ControllerButton class="btn btn-success btn-sm" style="display: inline-block;" title="Postos de Coletas">
+                <i class="fa-solid fa-location-dot"></i> Postos de Coletas
+            </a>
+        }
     </div>
     <div class="card-secao-body">
         <div class="table-responsive">

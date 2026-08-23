@@ -26,6 +26,13 @@
             @Html.DropDownListFor(x => x.PlanoExames.ClasseExamesId, Model.PlanoExames.FolhaIdList, new { @id = "id_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
             @Html.DropDownListFor(x => x.PlanoExames.ClasseExamesId, Model.PlanoExames.FolhaNomeList, new { @id = "nome_folha", @class = "itemFolhaExame", onchange = "atualizaBoxFolha(this);" })
         </div>
+        @*Feito pelo Qoder em 22/08/2026 — botão de inclusão ao lado direito do filtro do box existente*@
+        @if (!PartialFiltro.Esconde)
+        {
+            <a asp-action=@PartialFiltro.ActionButton asp-controller=@PartialFiltro.ControllerButton class="btn btn-success btn-sm" style="display: inline-block; margin-left: 10px;" title="Incluir Itens de Exame">
+                <i class="fa-solid fa-clipboard-list"></i> Incluir Itens de Exame
+            </a>
+        }
     </div>
 }
 else

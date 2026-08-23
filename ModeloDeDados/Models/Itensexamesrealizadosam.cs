@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 
 namespace LabWebMvc.MVC.Models;
@@ -63,6 +64,7 @@ public partial class ItensExamesRealizadosAM
 
     public int Etiquetas { get; set; }
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime? DataEntregaParcial { get; set; }
 
     public int Liberado { get; set; }

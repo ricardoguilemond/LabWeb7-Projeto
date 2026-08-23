@@ -256,7 +256,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                 Sigla = vm.Sigla.ToUpper(),
                                 CNPJ = vm.CNPJ.CNPJSemFormatacao(),
                                 Email = vm.Email.ToLower(),
-                                Telefone = vm.Telefone,
+                                Telefone = vm.Telefone.ApenasNumeros(),
                                 Contato = vm.Contato,
                                 CarimboSN = vm.CarimboSN,
                                 TimbreSN = vm.TimbreSN,
@@ -270,7 +270,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                                 Cidade = vm.Cidade.ToCapitalize(),
                                 UF = vm.vmGeral.TipoUF,
                                 CEP = vm.CEP,
-                                Celular = vm.Celular,
+                                Celular = vm.Celular.ApenasNumeros(),
                                 Sequencial = vm.Sequencial,
                                 TituloTimbre = vm.TituloTimbre != null ? vm.TituloTimbre.ToUpper() : string.Empty,
                                 SubTituloTimbre = vm.SubTituloTimbre.ToCapitalize(),
@@ -342,8 +342,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.Cidade = dados.Cidade.ToCapitalize();
                 vm.UF = dados.UF;
                 vm.CEP = dados.CEP;
-                vm.Telefone = dados.Telefone;
-                vm.Celular = dados.Celular;
+                vm.Telefone = dados.Telefone.FormataTelefoneNotNull();
+                vm.Celular = dados.Celular.FormataTelefone();
                 vm.Sequencial = dados.Sequencial;
                 vm.TituloTimbre = dados.TituloTimbre;
                 vm.SubTituloTimbre = dados.SubTituloTimbre;
@@ -424,7 +424,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         Instituicoes.Sigla = vm.Sigla.ToUpper();
                         Instituicoes.CNPJ = vm.CNPJ.CNPJSemFormatacao();
                         Instituicoes.Email = vm.Email;
-                        Instituicoes.Telefone = vm.Telefone;
+                        Instituicoes.Telefone = vm.Telefone.ApenasNumeros();
                         Instituicoes.Contato = vm.Contato;
                         Instituicoes.CarimboSN = vm.CarimboSN;
                         Instituicoes.TimbreSN = vm.TimbreSN;
@@ -438,7 +438,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         Instituicoes.Cidade = vm.Cidade.ToCapitalize();
                         Instituicoes.UF = vm.vmGeral.TipoUF;
                         Instituicoes.CEP = vm.CEP;
-                        Instituicoes.Celular = vm.Celular;
+                        Instituicoes.Celular = vm.Celular.ApenasNumeros();
                         Instituicoes.Sequencial = vm.Sequencial;
                         Instituicoes.TituloTimbre = vm.TituloTimbre;
                         Instituicoes.SubTituloTimbre = vm.SubTituloTimbre;
@@ -538,7 +538,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.UF = dados.UF;
                 vm.CEP = dados.CEP;
                 vm.Telefone = dados.Telefone.FormataTelefoneNotNull();
-                vm.Celular = dados.Celular;
+                vm.Celular = dados.Celular.FormataTelefone();
                 vm.Sequencial = dados.Sequencial;
                 vm.TituloTimbre = dados.TituloTimbre;
                 vm.SubTituloTimbre = dados.SubTituloTimbre;

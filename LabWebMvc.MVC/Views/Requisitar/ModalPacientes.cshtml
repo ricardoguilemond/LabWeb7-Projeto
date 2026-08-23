@@ -9,12 +9,76 @@
     $(document).ready(function () {
 
         // Inicializa DataTables e foca o Search somente após o modal estar visível
-        document.getElementById('modeloTableModalPaciente').addEventListener('shown.bs.modal', function () {
+        //Feito pelo Qoder em 23/08/2026 — Fase 2.3 do plano: grid convertido para serverSide.
+        //A lista deixou de vir renderizada no HTML (teto Take(1000)); as páginas, a busca e a
+        //ordenação agora vêm do endpoint ModalPacientesListar.
+        function inicializarTabelaPacientes() {
             if (!$.fn.dataTable.isDataTable('#tabelaPacientes')) {
-                configTableModal('#tabelaPacientes');
+                $('#tabelaPacientes').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: '@Url.Action("ModalPacientesListar", "Requisitar")',
+                        type: 'POST'
+                    },
+                    pageLength: 10,
+                    lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                    order: [[0, 'asc']],
+                    columns: [
+                        { data: 'nomePaciente', name: 'nomePaciente' },
+                        { data: 'cpf', name: 'cpf', orderable: false },
+                        { data: 'id', name: 'id' }
+                    ],
+                    autoWidth: false,
+                    layout: {
+                        topStart: {
+                            search: {
+                                placeholder: 'Digite aqui sua busca'
+                            }
+                        },
+                        topEnd: { /* obrigatório ter mesmo sem utilizar, porque desformata o Search */
+                        },
+                    },
+                    language: {
+                        search: "Busca:",
+                        lengthMenu: "Mostrar _MENU_ resultados por página",
+                        emptyTable: "<b style='color: red;'>Não haviam dados disponíveis para esta consulta</b>",
+                        info: "Exibindo: _START_/_END_ de _TOTAL_ registros",
+                        infoFiltered: "(Total de _MAX_ registros existentes na base de dados)",
+                        infoThousands: ".",
+                        thousands: ".",
+                        decimal: ",",
+                        loadingRecords: "Carregando...",
+                        zeroRecords: "<b style='color: red;'>A consulta não retornou dados para o Grid</b>",
+                        paginate: {
+                            next: "<img src='images/icones/arrow_right_uno.png' width='28%' border='none' />",
+                            previous: "<img src='images/icones/arrow_left_uno.png' width='28%' border='none' />",
+                            first: "<img src='images/icones/arrow_left.png' width='28%' border='none' />",
+                            last: "<img src='images/icones/arrow_right.png' width='28%' border='none' />"
+                        }
+                    },
+                    // Mantém a estrutura de seleção original (checkbox chk_nome + clique na linha)
+                    createdRow: function (row, data) {
+                        $(row).attr('id', 'tr_' + data.nomePaciente)
+                              .attr('name', 'trModal')
+                              .attr('title', 'Selecionar')
+                              .css('width', '90%');
+                    },
+                    rowCallback: function (row, data) {
+                        $('td:eq(0)', row).css('width', '58%')
+                            .html('<input id="chk_' + data.nomePaciente + '" name="input" type="checkbox" /> ' + data.nomePaciente);
+                        $('td:eq(1)', row).css('width', '12%').attr('id', data.cpf);
+                        $('td:eq(2)', row).attr('id', data.id);
+                    }
+                });
             } else {
                 $('#tabelaPacientes').DataTable().columns.adjust();
             }
+        }
+        //..Qoder
+
+        document.getElementById('modeloTableModalPaciente').addEventListener('shown.bs.modal', function () {
+            inicializarTabelaPacientes();
             var inputBusca = document.querySelector('#modeloTableModalPaciente input[type="search"]');
             if (inputBusca) inputBusca.focus();
         });
@@ -165,23 +229,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (Model.ListaPacientes != null)
-                            {
-                                @foreach (var item in Model.ListaPacientes)
-                                {
-                                    <tr id="tr_@item.NomePaciente" name="trModal" title="Selecionar" style="width: 90%;">
-                                        <td id="@item.NomePaciente" style="width:58%;"><input id="chk_@item.NomePaciente" name="input" type="checkbox" /> @item.NomePaciente</td>
-                                        <td id="@item.CPF" style="width:12%;">@item.CPF</td>
-                                        <td id="@item.Id">@item.Id</td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="3">Nenhum registro encontrado.</td>
-                                </tr>
-                            }
+                            @* Fase 2.3 do plano: linhas renderizadas via AJAX (serverSide) pelo ModalPacientesListar *@
                         </tbody>
                         </table>
                     </div>

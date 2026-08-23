@@ -121,6 +121,11 @@ namespace LabWebMvc.MVC
             services.AddControllersWithViews(options =>
             {
                 options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+                //Feito pelo Qoder em 23/08/2026 — Fase 0.5 do plano: proteção CSRF global.
+                //POST/PUT/DELETE passam a exigir token antiforgery. Formulários (Html.BeginForm e
+                //FormTagHelper) recebem o token automaticamente; o AJAX recebe via hooks no _Layout
+                //(ajaxSetup para jQuery + patch de fetch). Ações excepcionais usam [IgnoreAntiforgeryToken].
+                options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
             })
             .AddJsonOptions(options =>
             {

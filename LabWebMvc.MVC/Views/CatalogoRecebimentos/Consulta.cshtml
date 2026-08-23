@@ -386,7 +386,15 @@
                     { data: 'periodo', name: 'periodo', orderable: false },
                     { data: 'valorTotal', name: 'valorTotal', className: 'text-end' },
                     { data: 'origem', name: 'origem', orderable: false },
-                    { data: 'status', name: 'status', orderable: false },
+                    //Feito pelo Qoder em 23/08/2026 — título pendente destacado em vermelho
+                    {
+                        data: 'status', name: 'status', orderable: false,
+                        render: function (data) {
+                            return data === 'Pendente'
+                                ? '<span style="color:red; font-weight:bold;">' + data + '</span>'
+                                : data;
+                        }
+                    },
                     { data: 'acoes', name: 'acoes', orderable: false, searchable: false }
                 ],
                 language: {
@@ -655,6 +663,7 @@
             var btn = $('#btnConfirmarReceberPendente');
             if (btn.prop('disabled')) return;
             btn.prop('disabled', true);
+            //Feito pelo Qoder em 23/08/2026 — loading padrão único (loader modal Swal)
             if (typeof ShowProgress === 'function') ShowProgress();
 
             $.ajax({
@@ -663,6 +672,7 @@
                 contentType: 'application/json',
                 data: JSON.stringify({ CatalogoId: catalogoId, PeriodoFaturamento: periodo, Formas: formas }),
                 success: function (res) {
+                    if (typeof esconderLoading === 'function') esconderLoading(); // fecha o loader antes da mensagem
                     if (res.sucesso) {
                         $('#modalReceberPendente').modal('hide');
                         table.ajax.reload();
@@ -672,10 +682,10 @@
                     }
                 },
                 error: function () {
+                    if (typeof esconderLoading === 'function') esconderLoading();
                     clickAviso('Erro', 'Erro ao registrar o recebimento.', 'critica', null);
                 },
                 complete: function () {
-                    if (typeof esconderLoading === 'function') esconderLoading();
                     btn.prop('disabled', false);
                 }
             });

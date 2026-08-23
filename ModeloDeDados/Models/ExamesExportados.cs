@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 
 namespace LabWebMvc.MVC.Models;
@@ -23,6 +24,7 @@ public partial class ExamesExportados
 
     public string ControleApoio { get; set; } = null!;
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime? DataColeta { get; set; }
 
     public DateTime? DataExportado { get; set; }

@@ -1137,6 +1137,36 @@ namespace BLL
             return new string(valor.Where(char.IsDigit).ToArray());
         }
 
+        /* Feito pelo Qoder em 22/08/2026 — exibição de datas de negócio (somente dia/mês/ano, sem horário).
+         * Regra: datas sentinela <= 01/01/1900 (não informadas) são exibidas em branco,
+         * sem barras. Use FormataDataOuTraco onde o branco puder quebrar ordenação/leiaute. */
+
+        private static readonly DateTime DataSentinela = new DateTime(1900, 1, 1);
+
+        public static string FormataData(this DateTime? data)
+        {
+            if (data == null || data.Value.Date <= DataSentinela) return "";
+            return data.Value.ToString("dd/MM/yyyy");
+        }
+
+        public static string FormataData(this DateTime data)
+        {
+            if (data.Date <= DataSentinela) return "";
+            return data.ToString("dd/MM/yyyy");
+        }
+
+        public static string FormataDataOuTraco(this DateTime? data)
+        {
+            if (data == null || data.Value.Date <= DataSentinela) return "--";
+            return data.Value.ToString("dd/MM/yyyy");
+        }
+
+        public static string FormataDataOuTraco(this DateTime data)
+        {
+            if (data.Date <= DataSentinela) return "--";
+            return data.ToString("dd/MM/yyyy");
+        }
+
         /* Converte uma data String no formato dd/mm/aaaa para o tipo DateTime.
          * <param name="dataString">Data string no formato dd/mm/aaaa</param>
          * <param name="start">Gerar data com horário inicial ou final</param>

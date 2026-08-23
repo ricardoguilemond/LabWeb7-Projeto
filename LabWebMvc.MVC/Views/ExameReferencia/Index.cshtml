@@ -2,16 +2,13 @@
 @using BLL
 @using static BLL.UtilBLL
 
-@*Feito pelo Kiro em 14/07/2025*@
-<div class="groupButtton">
-    <button class="myButton">
-        <a asp-action="Incluir" asp-controller="ExameReferencia"><i class="fa-sharp fa-solid fa-square-plus"></i> Incluir Referência</a>
-    </button>
-</div>
-
+@*Feito pelo Kiro em 14/07/2025; atualizado pelo Qoder em 22/08/2026 — botão de inclusão transferido para a linha de título do card (tela sem linha de filtros)*@
 <div class="card-secao">
     <div class="card-secao-header">
         <i class="fa-solid fa-file-lines"></i> Referências de Laudo
+        <a asp-action="Incluir" asp-controller="ExameReferencia" class="btn btn-success btn-sm" style="display: inline-block;" title="Incluir Referência">
+            <i class="fa-solid fa-file-circle-plus"></i> Incluir Referência
+        </a>
     </div>
     <div class="card-secao-body">
         <div class="table-responsive">

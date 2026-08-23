@@ -126,7 +126,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     // Se não encontrar, cria novo
                     paciente = new Pacientes();
                     _db.Pacientes.Add(paciente);
-                    paciente.DataEntrada = _geralService.ObterDataHoraUtc();
+                    paciente.DataEntrada = _geralService.ObterDataHoraLocal().Date; //Feito pelo Qoder em 22/08/2026 — agora DATE: data local do dia
                     paciente.DataRegistro = _geralService.ObterDataHoraUtc();
                     paciente.StatusBaixa = 0;
                 }
@@ -141,7 +141,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 // Cria novo paciente
                 paciente = new Pacientes();
                 _db.Pacientes.Add(paciente);
-                paciente.DataEntrada = _geralService.ObterDataHoraUtc();
+                paciente.DataEntrada = _geralService.ObterDataHoraLocal().Date; //Feito pelo Qoder em 22/08/2026 — agora DATE: data local do dia
                 paciente.DataRegistro = _geralService.ObterDataHoraUtc();
                 paciente.StatusBaixa = 0;
             }
@@ -149,9 +149,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             // Atualiza os dados (comum para novo ou existente)
             paciente.IdPacienteExterno = vm.VmPacientes.IdPacienteExterno.Safe();
             paciente.NomePaciente = vm.VmPacientes.NomePaciente.ToUpper();
-            // Nascimento, DUM e DataEntradaBrasil são colunas timestamptz — o model binder gera Kind=Unspecified,
-            // que o Npgsql 8.x rejeita. Converte para UTC antes de gravar.
-            paciente.Nascimento = _geralService.ConverterLocalParaUtc(vm.VmPacientes.Nascimento);
+            // Feito pelo Qoder em 22/08/2026 — Nascimento, DUM e DataEntradaBrasil agora são DATE:
+            // grava apenas a data digitada (colunas date aceitam Kind=Unspecified no Npgsql 8.x)
+            paciente.Nascimento = vm.VmPacientes.Nascimento.Date;
             paciente.NomeSocial = vm.VmPacientes.NomeSocial.SafeUpper();
             paciente.NomeMae = vm.VmPacientes.NomeMae.SafeUpper();
             paciente.NomePai = vm.VmPacientes.NomePai.SafeUpper();
@@ -166,14 +166,14 @@ namespace LabWebMvc.MVC.Areas.Controllers
             paciente.EtniaIndigena = vm.VmPacientes.EtniaIndigena.SafeUpper();
             paciente.TipoSanguineo = vm.VmPacientes.TipoSanguineo.Safe();
             paciente.DUM = vm.VmPacientes.DUM.HasValue
-                ? _geralService.ConverterLocalParaUtc(vm.VmPacientes.DUM.Value)
+                ? vm.VmPacientes.DUM.Value.Date
                 : null;
             paciente.TempoGestacao = vm.VmPacientes.TempoGestacao;
             paciente.Profissao = vm.VmPacientes.Profissao.SafeUpper();
             paciente.Naturalidade = vm.VmPacientes.Naturalidade.SafeUpper();
             paciente.Nacionalidade = vm.VmPacientes.Nacionalidade.SafeUpper();
             paciente.DataEntradaBrasil = vm.VmPacientes.DataEntradaBrasil.HasValue
-                ? _geralService.ConverterLocalParaUtc(vm.VmPacientes.DataEntradaBrasil.Value)
+                ? vm.VmPacientes.DataEntradaBrasil.Value.Date
                 : null;
             paciente.Logradouro = vm.VmPacientes.Logradouro.SafeUpper();
             paciente.Endereco = vm.VmPacientes.Endereco.SafeUpper();
@@ -237,11 +237,11 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             // ObterDataHoraUtc() retorna UTC do servidor PostgreSQL — fonte canônica
             // Fallback: DateTime.UtcNow do servidor de aplicação
-            DateTime dataIni = _geralService.ObterDataHoraUtc();
-            // DataEntregaParcial vem do cliente como horário local — converter para UTC
-            // antes de gravar em timestamptz (Npgsql 8.x rejeita Unspecified)
+            // Feito pelo Qoder em 22/08/2026 — DataIni/DataEntregaParcial agora são DATE:
+            // grava apenas a data local (sem conversão UTC)
+            DateTime dataIni = _geralService.ObterDataHoraLocal().Date;
             DateTime dataEntregaParcial = vm.DataEntregaParcial.HasValue
-                ? _geralService.ConverterLocalParaUtc(vm.DataEntregaParcial.Value)
+                ? vm.DataEntregaParcial.Value.Date
                 : dataIni.AddDays(7);
 
             var lista = new List<DadosItemCupom>();
@@ -295,9 +295,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
             {
                 // Busca a instituição com lock pessimista PostgreSQL (FOR UPDATE)
                 var sigla = siglaInstituicao.Trim();
+                //Feito pelo Qoder em 23/08/2026 — Fase 2.4 do plano: o FOR UPDATE é mantido (correto);
+                //telemetria de espera adicionada para avaliar contenção por instituição (fila só se recorrente).
+                var swLock = System.Diagnostics.Stopwatch.StartNew();
                 var instituicao = await db.Instituicao
                     .FromSqlRaw(@"SELECT * FROM ""Instituicao"" WHERE ""Sigla"" = {0} FOR UPDATE", sigla)
                     .FirstOrDefaultAsync();
+                swLock.Stop();
+                if (swLock.ElapsedMilliseconds > 500)
+                    _eventLogHelper.LogEventViewer($"[GeraSequencial] Espera de lock de {swLock.ElapsedMilliseconds}ms na instituição '{sigla}' — avaliar fila por instituição se recorrente.", "wWarning");
 
                 if (instituicao == null)
                     throw new InvalidOperationException("Instituição não encontrada!");
@@ -337,11 +343,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
         // do MAX(ControleApoio) dos exames lançados no dia local.
         private async Task<string> GerarControleApoioAsync()
         {
-            var (inicioUtc, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(DateTime.Now.Date);
+            // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: comparação direta pela data local (sem conversão UTC)
+            var hojeLocal = DateTime.Now.Date;
 
             var maxControle = await _db.ExamesRealizados
                 .AsNoTracking()
-                .Where(e => e.DataIni >= inicioUtc && e.DataIni <= fimUtc
+                .Where(e => e.DataIni == hojeLocal
                          && e.ControleApoio != null && e.ControleApoio != "")
                 .MaxAsync(e => e.ControleApoio);
 
@@ -391,7 +398,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     ControleApoio = controleApoioEfetivo,
                     DataIni = primeiroItem.DataIni,
                     Liberacao = 0,
-                    DataExame = _geralService.ObterDataHoraUtc(),
+                    DataExame = _geralService.ObterDataHoraLocal().Date, //Feito pelo Qoder em 22/08/2026 — agora DATE: data local do dia
                     DataColeta = primeiroItem.DataIni.ToString("yyyy-MM-dd"),
                     Baixado = 0,
                     EnviarEmail = 0,
@@ -759,16 +766,90 @@ namespace LabWebMvc.MVC.Areas.Controllers
         [TypeFilter(typeof(SessionFilter))]
         [HttpGet]
         [Route("ModalPacientes")]
-        public async Task<ActionResult> ModalPacientes(vmRequisitar vm)
+        public ActionResult ModalPacientes(vmRequisitar vm)
         {
-            List<Pacientes> dados = [];
-
-            dados = await _db.Pacientes.AsNoTracking().Take(1000).ToListAsync();
-
-            vm.ListaPacientes = dados;
+            //Feito pelo Qoder em 23/08/2026 — Fase 2.3 do plano: o Take(1000) foi removido.
+            //O grid agora carrega via AJAX paginado pelo endpoint ModalPacientesListar
+            //(serverSide), eliminando o teto em que pacientes além do 1000º ficavam invisíveis.
+            //..Qoder
 
             ViewBag.TextoMenu = new object[] { "Consulta Tabelas de Pacientes", false };
             return PartialView(vm);
+        }
+
+        /* Fase 2.3 do plano — endpoint server-side do modal de pacientes do Requisitar.
+           Recebe o POST do DataTables (draw/start/length/search/order) e devolve apenas
+           a página solicitada, com busca e ordenação executadas no banco (sem Take(1000)). */
+        [TypeFilter(typeof(SessionFilter))]
+        [HttpPost]
+        [Route("ModalPacientesListar")]
+        public async Task<JsonResult> ModalPacientesListar([FromForm] DataTableRequest request)
+        {
+            try
+            {
+                int draw = request.Draw;
+                int start = Math.Max(request.Start, 0);
+                // length -1 ("Todos") não faz sentido no modal de seleção — limita a 100
+                int length = request.Length > 0 ? Math.Min(request.Length, 100) : 10;
+                string searchValue = request.Search?.Value?.Trim() ?? string.Empty;
+
+                // Whitelist de colunas ordenáveis (evita injeção de nome de coluna)
+                string sortColumn = request.Order.Count > 0 && request.Order[0].Column < request.Columns.Count
+                    ? (request.Columns[request.Order[0].Column].Data ?? "nomePaciente")
+                    : "nomePaciente";
+                if (sortColumn is not ("nomePaciente" or "cpf" or "id")) sortColumn = "nomePaciente";
+                bool ascending = string.Equals(request.Order.Count > 0 ? request.Order[0].Dir : "asc", "asc", StringComparison.OrdinalIgnoreCase);
+
+                IQueryable<Pacientes> query = _db.Pacientes.AsNoTracking();
+
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    string busca = searchValue.ToUpper();
+                    query = query.Where(p => p.NomePaciente.Contains(busca) || (p.CPF != null && p.CPF.Contains(busca)));
+                }
+
+                query = (sortColumn, ascending) switch
+                {
+                    ("id", true) => query.OrderBy(p => p.Id),
+                    ("id", false) => query.OrderByDescending(p => p.Id),
+                    ("cpf", true) => query.OrderBy(p => p.CPF),
+                    ("cpf", false) => query.OrderByDescending(p => p.CPF),
+                    (_, true) => query.OrderBy(p => p.NomePaciente),
+                    _ => query.OrderByDescending(p => p.NomePaciente)
+                };
+
+                int recordsTotal = await query.CountAsync();
+
+                var pageData = await query.Skip(start).Take(length)
+                    .Select(p => new { p.Id, p.NomePaciente, p.CPF })
+                    .ToListAsync();
+
+                List<object> result = pageData.Select(p => (object)new
+                {
+                    id = p.Id,
+                    nomePaciente = p.NomePaciente ?? string.Empty,
+                    cpf = p.CPF ?? string.Empty
+                }).ToList();
+
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = draw,
+                    RecordsTotal = recordsTotal,
+                    RecordsFiltered = recordsTotal,
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _eventLogHelper.LogEventViewer("[Requisitar] ModalPacientesListar - Erro: " + ex.Message, "wError");
+                return Json(new DataTableResponse<object>
+                {
+                    Draw = request.Draw,
+                    RecordsTotal = 0,
+                    RecordsFiltered = 0,
+                    Data = new List<object>()
+                });
+            }
         }
 
         [TypeFilter(typeof(SessionFilter))]
@@ -778,6 +859,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             ICollection<Instituicao> dados = [];
 
+            //Auditado pelo Qoder em 23/08/2026 — Fase 2.3 do plano: Take(1000) mantido como
+            //teto de segurança — domínio pequeno, sem problema real de escala.
             dados = await _db.Instituicao.AsNoTracking().Take(1000).ToListAsync();
 
             vm.ListaInstituicoes = dados;
@@ -797,6 +880,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
             //Sem Instituicao selecionada, retorna lista vazia (defesa em profundidade — o JS bloqueia a abertura).
             if (vm.InstituicaoId > 0)
             {
+                //Auditado pelo Qoder em 23/08/2026 — Fase 2.3 do plano: Take(1000) mantido como
+                //teto de segurança — postos por instituição é domínio pequeno.
                 dados = await _db.Postos.AsNoTracking()
                     .Where(p => p.InstituicaoId == vm.InstituicaoId)
                     .OrderBy(p => p.SiglaPosto)
@@ -818,6 +903,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             ICollection<TabelaExames> dados = [];
 
+            //Auditado pelo Qoder em 23/08/2026 — Fase 2.3 do plano: Take(1000) mantido como
+            //teto de segurança — tabelas de exames é domínio pequeno.
             dados = await _db.TabelaExames.AsNoTracking().Take(1000).ToListAsync();
 
             vm.ListaTabelas = dados;
@@ -833,6 +920,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             List<Medicos> dados = [];
 
+            //Auditado pelo Qoder em 23/08/2026 — Fase 2.3 do plano: Take(1000) mantido como
+            //teto de segurança — médicos é domínio pequeno.
             dados = await _db.Medicos.AsNoTracking().Take(1000).ToListAsync();
 
             vm.ListaMedicos = dados;
@@ -860,7 +949,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.PacienteId = dados.Id;         //Id do Paciente para localizar pro salvamento
                 vm.CPFPaciente = dados.CPF;
                 vm.NomePaciente = dados.NomePaciente.ToCapitalizeNotNull();
-                vm.Nascimento = dados.Nascimento.ToString("yyyy-MM-dd");
+                vm.Nascimento = dados.Nascimento.Date > new DateTime(1900, 1, 1) ? dados.Nascimento.ToString("yyyy-MM-dd") : ""; //Feito pelo Qoder em 22/08/2026 — sentinela ≤ 01/01/1900 em branco
                 vm.Email = (dados.Email ?? "").SafeLower();
 
                 vm.NomeSocial = dados.NomeSocial;
@@ -888,8 +977,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.Bairro = dados.Bairro;
                 vm.Cidade = dados.Cidade;
                 vm.UF = dados.UF;
-                vm.Telefone = dados.Telefone;
-                vm.DUM = dados.DUM?.ToString("yyyy-MM-dd");
+                vm.Telefone = dados.Telefone.FormataTelefone();
+                vm.DUM = dados.DUM != null && dados.DUM.Value.Date > new DateTime(1900, 1, 1) ? dados.DUM.Value.ToString("yyyy-MM-dd") : ""; //Feito pelo Qoder em 22/08/2026 — sentinela ≤ 01/01/1900 em branco
                 vm.TempoGestacao = dados.TempoGestacao;
                 vm.Observacao = dados.Observacao;
 
@@ -1211,8 +1300,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     System.Globalization.DateTimeStyles.None, out DateTime dataConsulta))
                 return Json(new { sucesso = false, mensagem = "Formato de data inválido." });
 
-            // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
-            var (dataInicio, dataFim) = _geralService.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
+            // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: comparação direta pela data local (sem conversão UTC)
+            var dataInicio = dataConsulta.Date;
+            var dataFim = dataConsulta.Date;
 
             //Feito pelo Kiro em 02/05/2026
             //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados + ItensExamesRealizados
@@ -1279,7 +1369,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 nomePaciente        = header.Pacientes?.NomePaciente ?? "",
                 nascimento          = header.Pacientes?.Nascimento.ToString("yyyy-MM-dd") ?? "",
                 cpfPaciente         = header.Pacientes?.CPF ?? "",
-                telefone            = header.Pacientes?.Telefone ?? "",
+                telefone            = header.Pacientes?.Telefone.FormataTelefone() ?? "",
                 email               = header.Pacientes?.Email ?? "",
                 nomeMae             = header.Pacientes?.NomeMae ?? "",
                 naturalidade        = header.Pacientes?.Naturalidade ?? "",
@@ -1348,8 +1438,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         System.Globalization.CultureInfo.InvariantCulture,
                         System.Globalization.DateTimeStyles.None, out DateTime dataConsulta))
                 {
-                    // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
-                    var (dataInicio, dataFim) = _geralService.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
+                    // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: comparação direta pela data local (sem conversão UTC)
+                    var dataInicio = dataConsulta.Date;
+                    var dataFim = dataConsulta.Date;
 
                     //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados + ItensExamesRealizados
                     // Busca o header da requisição do paciente na data
@@ -1422,8 +1513,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (vm == null || vm.IdPaciente <= 0 || vm.Data == null)
                 return Json(new { sucesso = false, mensagem = "Dados inválidos para exclusão." });
 
-            // Converte data local para range UTC — necessário para comparar com timestamptz no Npgsql 8.x
-            var (dataInicio, dataFim) = _geralService.ConverterDataLocalParaRangeUtc(vm.Data.Value.Date);
+            // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: comparação direta pela data local (sem conversão UTC)
+            var dataInicio = vm.Data.Value.Date;
+            var dataFim = vm.Data.Value.Date;
 
             //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados
             // Filtro primário: ExameRealizadoId (header da sessão), quando informado.
@@ -1522,9 +1614,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
             //Filtra por TabelaExamesId quando disponível para evitar incluir
             // itens de outras requisições do mesmo paciente no mesmo dia.
-            // Usa range UTC em vez de .Date (Npgsql 8.x + timestamptz)
+            // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: comparação direta pela data local (sem conversão UTC)
             //Feito pelo Qoder em 12/08/2026 — substituído query em Requisitar por ExamesRealizados + ItensExamesRealizados
-            var (dataInicioUtc, dataFimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataConsulta.Date);
+            var dataInicioUtc = dataConsulta.Date;
+            var dataFimUtc = dataConsulta.Date;
             var headerQuery = _db.ExamesRealizados
                          .Where(e => e.PacienteId == vm.IdPaciente
                                   && e.DataIni >= dataInicioUtc
@@ -1682,7 +1775,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         ExameRealizadoId   = e.Id,
                         PacienteId         = e.PacienteId,
                         NomePaciente       = e.Pacientes != null ? e.Pacientes.NomePaciente ?? "N/A" : "N/A",
-                        Nascimento         = e.Pacientes != null ? e.Pacientes.Nascimento.ToString("dd/MM/yyyy") : "N/A",
+                        Nascimento         = e.Pacientes != null ? (e.Pacientes.Nascimento > new DateTime(1900, 1, 1) ? e.Pacientes.Nascimento.ToString("dd/MM/yyyy") : "") : "N/A", //Feito pelo Qoder em 22/08/2026 — sentinela ≤ 01/01/1900 em branco
                         NomeInstituicao    = (e.Instituicao != null ? e.Instituicao.Sigla ?? "" : "") + " - " + (e.Instituicao != null ? e.Instituicao.Nome ?? "" : ""),
                         NomePosto          = e.Postos != null ? e.Postos.SiglaPosto ?? "-" : "-",
                         NomeTabela         = (e.TabelaExames != null ? e.TabelaExames.SiglaTabela ?? "" : "") + " - " + (e.TabelaExames != null ? e.TabelaExames.NomeTabela ?? "" : ""),
@@ -1759,10 +1852,12 @@ namespace LabWebMvc.MVC.Areas.Controllers
         {
             try
             {
-                var limite24Horas = DateTime.UtcNow.AddHours(-24);
+                // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: regra de pendência passa a ser
+                // "virada de dia" (passou-se 1 dia), conforme validação do usuário
+                var limiteDia = _geralService.ObterDataHoraLocal().Date.AddDays(-1);
                 int quantidade = _db.ExamesRealizados
                     .AsNoTracking()
-                    .Count(e => e.Situacao == 0 && e.DataIni < limite24Horas);
+                    .Count(e => e.Situacao == 0 && e.DataIni <= limiteDia);
 
                 return Json(new { quantidade });
             }

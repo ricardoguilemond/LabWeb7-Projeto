@@ -105,9 +105,24 @@ namespace LabWebMvc.MVC.Integracoes
                             }
                             execucao.NomeServico = nomeServico;
                             _db.Entry(execucao).State = EntityState.Modified;
-                            _db.SaveChanges();
+                            //Feito pelo Qoder em 23/08/2026 — Fase 1.1 do plano: SaveChanges agora re-lança;
+                            //a gravação do registro de execução não pode derrubar o serviço já processado.
+                            try
+                            {
+                                _db.SaveChanges();
+                            }
+                            catch (Exception exSave)
+                            {
+                                eventLog.LogEventViewer("[ServicoIntegracao] Erro ao gravar a execução do serviço " + nomeServico + ": " + exSave.Message, "wError");
+                            }
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    //Feito pelo Qoder em 23/08/2026 — Fase 1.1 do plano: este try externo não tinha catch;
+                    //com SaveChanges re-lançando, a exceção escaparia pelo Parallel.Invoke sem registro.
+                    eventLog.LogEventViewer("[ServicoIntegracao] Erro na execução do serviço " + nomeServico + ": " + ex.Message, "wError");
                 }
                 finally
                 { }

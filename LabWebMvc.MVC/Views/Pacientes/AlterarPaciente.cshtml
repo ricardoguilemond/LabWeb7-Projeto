@@ -57,7 +57,8 @@
                     </div>
                     <div class="field-group w-sm">
                         <label>*Data Nascimento</label>
-                        @Html.TextBoxFor(p => p.Nascimento, "{0:dd/MM/yyyy}", new { @class = "form-control", @type = "text", @readonly = "readonly" })
+                        @*Feito pelo Qoder em 22/08/2026 — data sem horário; sentinela ≤ 01/01/1900 em branco; readonly, POST preserva valor existente (guard no controller)*@
+                        <input name="Nascimento" type="text" class="form-control" readonly="readonly" value="@Model.Nascimento.FormataData()" />
                     </div>
                 </div>
                 <div class="field-row">
@@ -193,7 +194,7 @@
                 <div class="field-row">
                     <div class="field-group w-sm">
                         <label>DUM</label>
-                        @Html.TextBoxFor(p => p.DUM, new { @class = "form-control", @type = "date", @placeholder = "DUM" })
+                        @Html.TextBoxFor(p => p.DUM, "{0:yyyy-MM-dd}", new { @class = "form-control", @type = "date", @placeholder = "DUM" })
                     </div>
                     <div class="field-group w-md">
                         <label>Tempo de Gestação</label>

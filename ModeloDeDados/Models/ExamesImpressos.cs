@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 
 namespace LabWebMvc.MVC.Models;
@@ -15,6 +16,7 @@ public partial class ExamesImpressos
 
     public int Sequencial { get; set; }
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime? DataExame { get; set; }
 
     public DateTime? DataImpresso { get; set; }

@@ -455,11 +455,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de Exames possui exames pendentes ou requisições vinculadas e não pode ser excluída", action = "", sucesso = false });
 
             // 2) Verificação de vínculos indiretos: ItensExamesRealizados e ItensExamesRealizadosAM
+            //Feito pelo Qoder em 23/08/2026 — auditoria do ciclo de vida: a referência da folha no arquivo-morto
+            //reside em ItensExamesRealizadosAM (ClasseExamesId/ClasseExamesNome/ContaExame); o cabeçalho AM
+            //(ExamesRealizadosAM) não possui coluna ClasseExamesId no esquema. Logo, os dois checks abaixo
+            //cobrem toda a história (ativa + arquivada).
             bool possuiExamesRealizados = await _db.ItensExamesRealizados.AnyAsync(i => i.ClasseExamesId == id)
                                        || await _db.ItensExamesRealizadosAM.AnyAsync(i => i.ClasseExamesId == id);
 
             if (possuiExamesRealizados)
-                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de Exames possui itens de exames realizados vinculados e não pode ser excluída", action = "", sucesso = false });
+                return Json(new { titulo = MensagensError_pt_BR.ErroFalhou, mensagem = "Folha de Exames possui exames realizados ou arquivados (AM) vinculados e não pode ser excluída", action = "", sucesso = false });
 
             // 3) Exclusão em cascata com lock pessimista (semáforo dentro da transação)
             Microsoft.EntityFrameworkCore.Storage.IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();

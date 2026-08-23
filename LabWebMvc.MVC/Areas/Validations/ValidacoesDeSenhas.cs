@@ -557,8 +557,17 @@ namespace LabWebMvc.MVC.Areas.Validations
                     if (novoHash != null)
                     {
                         login.SenhaUsuario = novoHash;
-                        _db.SaveChanges();
-                        _eventLog.LogEventViewer("[ValidacoesDeSenhas] MIGRAÇÃO: Senha do usuário migrada de AES para BCrypt: " + loginUsuario, "wInfo");
+                        //Feito pelo Qoder em 23/08/2026 — Fase 1.1 do plano: SaveChanges agora re-lança.
+                        //A gravação da migração do hash é "best-effort" e não pode derrubar o login em andamento.
+                        try
+                        {
+                            _db.SaveChanges();
+                            _eventLog.LogEventViewer("[ValidacoesDeSenhas] MIGRAÇÃO: Senha do usuário migrada de AES para BCrypt: " + loginUsuario, "wInfo");
+                        }
+                        catch (Exception exMigracao)
+                        {
+                            _eventLog.LogEventViewer("[ValidacoesDeSenhas] Migração AES→BCrypt não pôde ser gravada (login segue normalmente, migra na próxima tentativa): " + exMigracao.Message, "wWarning");
+                        }
                     }
                     senhasLogin.Senhas = login;
                 }

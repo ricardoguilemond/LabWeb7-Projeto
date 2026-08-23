@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LabWebMvc.MVC.Models;
 
@@ -14,6 +15,7 @@ public partial class CatalogoRecebimentosFormas
 
     public decimal Valor { get; set; }
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime DataRecebimento { get; set; }
 
     public string? Observacao { get; set; }

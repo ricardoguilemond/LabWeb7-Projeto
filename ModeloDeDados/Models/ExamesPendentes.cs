@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 
 namespace LabWebMvc.MVC.Models;
@@ -31,6 +32,7 @@ public partial class ExamesPendentes
 
     public string? NomeItem { get; set; }
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime? DataIni { get; set; }
 
     public virtual ClasseExames ClasseExames { get; set; } = null!;

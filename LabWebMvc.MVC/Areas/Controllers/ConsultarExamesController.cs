@@ -69,6 +69,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!string.IsNullOrEmpty(dataExamePara))
                 dataPara = dataExamePara.Trim().FormataData("dd/MM/yyyy", true);
 
+            //Feito pelo Qoder em 23/08/2026 — período máximo de consulta: 90 dias (contagem inclusiva)
+            ViewBag.ErroPeriodo = ValidarPeriodoConsulta(dataDe, dataPara);
+
             ViewBag.DataExameDe = dataDe.ToString("dd/MM/yyyy");
             ViewBag.DataExamePara = dataPara.ToString("dd/MM/yyyy");
             ViewBag.SituacaoExame = situacaoExame;
@@ -104,6 +107,18 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     situacaoExame = "todos";
 
                 var (dataDe, dataPara, inicioDeUtc, fimParaUtc) = ObterDatasFiltro(dataExameDe, dataExamePara);
+
+                //Feito pelo Qoder em 23/08/2026 — bloqueio server-side: período inválido não consulta
+                if (ValidarPeriodoConsulta(dataDe, dataPara) != null)
+                {
+                    return Json(new DataTableResponse<object>
+                    {
+                        Draw = request.Draw,
+                        RecordsTotal = 0,
+                        RecordsFiltered = 0,
+                        Data = new List<object>()
+                    });
+                }
 
                 int draw = request.Draw;
                 int start = request.Start;
@@ -146,9 +161,9 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         siglaPosto = item.SiglaPosto,
                         nomePosto = item.NomePosto,
                         nomePaciente = item.NomePaciente,
-                        nascimento = item.Nascimento.ToLocalString("dd/MM/yyyy"),
+                        nascimento = item.Nascimento.FormataData(),
                         sequencial = item.Sequencial,
-                        dataIni = item.DataIni.ToLocalString("dd/MM/yyyy"),
+                        dataIni = item.DataIni.FormataData(),
                         liberacao = item.Liberacao,
                         baixado = item.Baixado,
                         situacaoExame = item.SituacaoExame,
@@ -192,10 +207,21 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!string.IsNullOrEmpty(dataExamePara))
                 dataPara = dataExamePara.Trim().FormataData("dd/MM/yyyy", true);
 
-            var (inicioDeUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataDe);
-            var (_, fimParaUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataPara);
+            // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: retorna as datas locais diretamente (sem conversão UTC)
+            return (dataDe.Date, dataPara.Date, dataDe.Date, dataPara.Date);
+        }
 
-            return (dataDe, dataPara, inicioDeUtc, fimParaUtc);
+        //Feito pelo Qoder em 23/08/2026 — regra de negócio: a consulta abrange no máximo 90 dias
+        //(contagem inclusiva: o dia inicial e o final entram no total). Retorna a mensagem de erro ou null.
+        private static string? ValidarPeriodoConsulta(DateTime dataDe, DateTime dataPara)
+        {
+            if (dataPara.Date < dataDe.Date)
+                return "A data final (ATÉ) não pode ser anterior à data inicial (DE).";
+
+            if ((dataPara.Date - dataDe.Date).Days + 1 > 90)
+                return "O período máximo de consulta é de 90 dias. Reduza o intervalo entre as datas.";
+
+            return null;
         }
 
         private IQueryable<int> ObterPendentesIdsQuery()

@@ -781,10 +781,10 @@ a {
 */
 /* The Modal (foreground) — limitado ao modal antigo myModal para não afetar os modais Bootstrap 5 */
 #myModal.modal {
-    display: block;
+    display: flex; /* Feito pelo Qoder em 22/08/2026 — flex + margin:auto no filho centraliza o modal
+                      na tela (horizontal e vertical), responsivamente; conteúdo alto rola sem cortar */
     position: fixed !important; /* Stay in place */
     z-index: 3000 !important; /* Sit on top */
-    padding-top: 100px; /* Location of the box */
     left: 0;
     top: 0;
     width: 100%; /* Full width */
@@ -804,6 +804,18 @@ a {
     border: 1px solid #888;
     width: 80%;
     max-width: 720px;
+}
+
+/* Feito pelo Qoder em 22/08/2026 — centraliza também a família Bootstrap 5 (.modal-dialog filho de #myModal)
+   em qualquer breakpoint; o margin:auto dentro do flex container vale nos dois eixos. */
+#myModal .modal-dialog {
+    margin: auto;
+}
+
+/* Feito pelo Qoder em 22/08/2026 — o Bootstrap abre o modal com display:block inline (que venceria o flex);
+   no estado aberto força flex para manter a centralização nos dois eixos via margin:auto do filho. */
+#myModal.modal.show {
+    display: flex !important;
 }
 /*..Qoder*/
 

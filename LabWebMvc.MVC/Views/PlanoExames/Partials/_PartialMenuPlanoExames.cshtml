@@ -2,12 +2,8 @@
 @using BLL
 @using static BLL.UtilBLL
 <div class="groupButtton">
-    @if (!PartialFiltro.Esconde)
-    {
-        <button class="myButton">
-            <a asp-action=@PartialFiltro.ActionButton asp-controller=@PartialFiltro.ControllerButton><i class="fa-sharp fa-solid fa-square-plus"></i> Incluir Itens de Exame</a>
-        </button>
-    }
+    @*Feito pelo Qoder em 22/08/2026 — o botão "Incluir Itens de Exame" foi transferido para a linha do box de
+      filtro da folha no Index; neste partial resta apenas o retorno "Consultar".*@
     @if (PartialFiltro.Esconde)
     {
         <button class="myButton">

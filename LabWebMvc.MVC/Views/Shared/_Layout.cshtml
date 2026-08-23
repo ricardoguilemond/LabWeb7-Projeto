@@ -1,11 +1,17 @@
 ﻿@using LabWebMvc.MVC.Areas.Utils
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @addTagHelper *, LabWebMvc.MVC.UtilHelper.MyTagHelpers
+@*Feito pelo Qoder em 23/08/2026 — Fase 0.5 do plano: token antiforgery disponível para o AJAX (CSRF global)*@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    var csrfTokens = Antiforgery.GetAndStoreTokens(Context);
+}
 <html>
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="RequestVerificationToken" content="@csrfTokens.RequestToken" />
     <title>@((ViewData["TextoMenu"] as List<string>)?.FirstOrDefault() ?? "LabWeb7")</title>
     <meta name="description" content="" />
     <meta name="author" content="" />
@@ -15,6 +21,47 @@
 
     <!-- JS para a aplicação -->
     <script src="~/js/jquery.min.js"></script>
+    @*Feito pelo Qoder em 23/08/2026 — Fase 0.5 do plano: envio automático do token antiforgery
+        em TODAS as requisições que alteram dados (POST/PUT/DELETE/PATCH), cobrindo $.ajax/$.post
+        (e plugins que usam $.ajax internamente, como DataTables) e fetch. GET/HEAD ficam isentos.*@
+    <script>
+        (function () {
+            var tokenMeta = document.querySelector('meta[name="RequestVerificationToken"]');
+            var token = tokenMeta ? tokenMeta.getAttribute('content') : '';
+            if (!token) return;
+
+            // jQuery: cobre $.ajax, $.post e qualquer plugin que use $.ajax internamente
+            if (window.jQuery) {
+                jQuery.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!/^(GET|HEAD)$/i.test(settings.type || 'GET')) {
+                            xhr.setRequestHeader('RequestVerificationToken', token);
+                        }
+                    }
+                });
+            }
+
+            // fetch: cobre chamadas fetch com métodos que alteram dados
+            var originalFetch = window.fetch;
+            if (originalFetch) {
+                window.fetch = function (input, init) {
+                    init = init || {};
+                    var method = String(init.method || (input && input.method) || 'GET').toUpperCase();
+                    if (method !== 'GET' && method !== 'HEAD') {
+                        if (init.headers instanceof Headers) {
+                            if (!init.headers.has('RequestVerificationToken')) {
+                                init.headers.set('RequestVerificationToken', token);
+                            }
+                        } else {
+                            init.headers = Object.assign({ 'RequestVerificationToken': token }, init.headers || {});
+                        }
+                    }
+                    return originalFetch.call(window, input, init);
+                };
+            }
+        })();
+    </script>
+    @*..Qoder*@
     <!-- Para as máscaras de HTML usadas apenas nas exibições -->
     <script src="~/js/inputmask/jquery.inputmask.js"></script>
     <script src="~/js/jquery.maskedinput-1.4.1.min.js"></script>
@@ -66,24 +113,12 @@
                 opacity: 0;
             }
 
-        .modalLoading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 99;
-            opacity: 0.8;
-            --filter: alpha(opacity=80);
-            --moz-opacity: 0.8;
-            min-height: 100%;
-            width: 100%;
-            background-color: inherit;
-            pointer-events: none;
-        }
-        /* Para todas as janelas de modal de mensagens/avisos */
-        .modal { /* modal alterado somente para esta tela */
-            width: 75%;
-            margin-left: 15%;
-        }
+        /* Feito pelo Qoder em 23/08/2026 — overlay de página inteira .modalLoading EXTINTO
+           (regra do loading padrão único: DataTables nos grids + Swal em operações longas). */
+        /* Feito pelo Qoder em 22/08/2026 — removida a regra global .modal { width:75%; margin-left:15% }:
+           ela vazava para TODOS os modais (Bootstrap 5 e #myModal) e os deslocava para a direita.
+           Regra do projeto: modais sempre centralizados na tela; a centralização correta vive em
+           wwwroot/css/site.css (#myModal.modal) e no próprio CSS do Bootstrap (.modal-dialog). */
 
         .card-header {
             background-color: #e4e4e4;
@@ -93,15 +128,7 @@
             box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
         }
 
-        .loading {
-            width: 200px;
-            height: 100px;
-            display: none;
-            position: fixed;
-            z-index: 999;
-            background-color: inherit;
-            pointer-events: none;
-        }
+        /* Feito pelo Qoder em 23/08/2026 — div .loading (gif preto) EXTINTA junto com o overlay. */
 
         .top-fixo {
             margin-top: -60px;
@@ -197,10 +224,8 @@
                     <!-- Fim da área dos Charts -->
                     <!-- Placeholder para injetar modais via JS -->
                 </div>
-                <!-- LOADING EM TODAS AS PÁGINAS -->
-                <div class="loading" align="center">
-                    <img src="~/images/Diversos/carregando-black-palitos.gif" border='none' style="width: 32%;" />
-                </div>
+                @* Feito pelo Qoder em 23/08/2026 — loading de página inteira removido; o feedback de
+                   carregamento de dados é o indicador do próprio DataTables ("Carregando..."). *@
                 <script type="text/javascript">
                     const card = document.createElement("div");
                     //..
@@ -231,21 +256,28 @@
                         }
                     }
                     //..
-                    var modalLoading, loading;
+                    //Feito pelo Qoder em 23/08/2026 — LOADING PADRÃO ÚNICO DO SISTEMA (regra imutável até segunda ordem):
+                    // 1) Cargas de dados em grids: indicador do próprio DataTables ("Carregando...");
+                    // 2) Operações longas: este loader modal (SweetAlert2), via ShowProgress()/esconderLoading();
+                    // 3) EXTINTO o antigo overlay de página inteira (modalLoading + gif carregando-black-palitos),
+                    //    que não cobria os ajax das tabelas (daí os 2 loadings simultâneos) e já causou bugs de remoção.
+                    var _swalLoadingAtivo = false;
                     function ShowProgress() {
-                        modalLoading = document.createElement("DIV");
-                        modalLoading.className = "modalLoading";
-                        document.body.appendChild(modalLoading);
-                        loading = document.getElementsByClassName("loading")[0];
-                        loading.style.display = "block";
-                        /* Aqui, centraliza o loading na página */
-                        var top = Math.max(window.innerHeight / 2 - loading.offsetHeight / 2, 0);
-                        var left = Math.max(window.innerWidth / 2 - loading.offsetWidth / 2, 0);
-                        loading.style.top = top + "px";
-                        loading.style.left = left + "px";
+                        _swalLoadingAtivo = true;
+                        Swal.fire({
+                            title: 'Carregando...',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: function () { Swal.showLoading(); }
+                        });
                     };
-                    ShowProgress();
-                    //..
+                    function esconderLoading() {
+                        if (_swalLoadingAtivo) {
+                            _swalLoadingAtivo = false;
+                            Swal.close();
+                        }
+                    };
+                    //..Qoder
                 </script>
                 <!-- Fim do Loading -->
                 <partial name="_CookieConsentPartial" />
@@ -288,51 +320,8 @@
         <script src="~/js/bootstrap.bundle.min.js"></script>
         <script src="~/js/scripts.js"></script>
 
-        <!-- ENCERRA O LOADING DE CARREGAMENTO DAS PÁGINAS -->
-        <script type="text/javascript">
-            //Feito pelo Kiro em 01/05/2026
-            // Reduzido de 1000ms para 200ms — o delay original mantinha o overlay
-            // de loading por 1 segundo mesmo com a página já renderizada.
-            // O DataTables exibe seu próprio "Carregando..." via language.loadingRecords.
-            function esconderLoading() {
-                if (modalLoading && modalLoading.parentNode === document.body) {
-                    document.body.removeChild(modalLoading);
-                }
-                if (loading) {
-                    loading.style.display = "none";
-                }
-            }
-
-            window.onload = function () {
-                setTimeout(esconderLoading, 200);
-            };
-            //..Kiro
-
-            //Feito pelo Qoder em 12/08/2026
-            // Fallback de segurança: se window.onload não disparar (erro JS,
-            // recurso pendente, etc.), garante a remoção do overlay após 2,5s.
-            // Também expõe a função globalmente para uso manual.
-            window.esconderLoadingGlobal = esconderLoading;
-
-            document.addEventListener('DOMContentLoaded', function () {
-                // Primeira tentativa rápida: se a página já estiver carregada
-                // quando este script executar, remove imediatamente.
-                if (document.readyState === 'complete') {
-                    esconderLoading();
-                    return;
-                }
-
-                // Timeout de segurança: remove o overlay mesmo se window.onload
-                // falhar por algum motivo.
-                setTimeout(function () {
-                    if (modalLoading && modalLoading.parentNode === document.body) {
-                        console.warn('[LabWeb7] Removendo overlay de loading via fallback (window.onload não disparou).');
-                        esconderLoading();
-                    }
-                }, 2500);
-            });
-            //..Qoder
-        </script>
+        @* Feito pelo Qoder em 23/08/2026 — bloco de encerramento do antigo overlay (window.onload + fallback)
+           removido: não há mais overlay de página. esconderLoading() agora fecha o loader modal Swal. *@
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 //-----------------------------------------------------------------------------------------------

@@ -1,3 +1,4 @@
+using BLL; //Feito pelo Qoder em 22/08/2026 — extensão FormataData (UtilBLL)
 using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
@@ -70,11 +71,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 int length = Math.Max(request.Length, 10);
                 string searchValue = request.Search?.Value?.Trim() ?? string.Empty;
 
-                //Feito pelo Qoder em 16/08/2026
-                // Npgsql 8 rejeita Kind=Unspecified em colunas timestamptz: converte o período local em range UTC.
-                var (iniExamesUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataIni);
-                var (_, fimExamesUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataFim);
-                //..Qoder
+                // Feito pelo Qoder em 22/08/2026 — DataExame agora é DATE: comparação direta pela data local (sem conversão UTC)
 
                 var query = _db.ExamesRealizados
                     .AsNoTracking()
@@ -84,8 +81,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                              && e.Liberacao == 1
                              && e.Baixado != 1
                              && !e.EmCatalogoRecebimentos
-                             && e.DataExame >= iniExamesUtc
-                             && e.DataExame <= fimExamesUtc)
+                             && e.DataExame >= dataIni.Date
+                             && e.DataExame <= dataFim.Date)
                     .AsQueryable();
 
                 if (instituicaoId.HasValue && instituicaoId.Value > 0)
@@ -144,7 +141,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     item.InstituicaoId,
                     item.SiglaInstituicao,
                     item.Sequencial,
-                    dataExame = item.DataExame?.ToString("dd/MM/yyyy") ?? "",
+                    dataExame = item.DataExame.FormataData(), //Feito pelo Qoder em 22/08/2026 — sentinela ≤ 01/01/1900 em branco
                     valorTotal = item.ValorTotal.ToString("N2")
                 }).ToList();
 
@@ -627,9 +624,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 //Feito pelo Qoder em 16/08/2026
                 // Npgsql 8 rejeita Kind=Unspecified em colunas timestamptz: converte o período local em range UTC.
-                var (iniPrevUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataIni);
-                var (_, fimPrevUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataFim);
-                //..Qoder
+                // Feito pelo Qoder em 22/08/2026 — DataExame agora é DATE: comparação direta pela data local (sem conversão UTC)
 
                 //Feito pelo Qoder em 16/08/2026
                 // Critérios do consolidado:
@@ -647,8 +642,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                              && e.Liberacao == 1
                              && e.Baixado != 1
                              && ((!e.EmCatalogoRecebimentos
-                                  && e.DataExame >= iniPrevUtc
-                                  && e.DataExame <= fimPrevUtc)
+                                  && e.DataExame >= dataIni.Date
+                                  && e.DataExame <= dataFim.Date)
                                  || e.CatalogoRecebimentosExames.Any(l => l.CatalogoRecebimento.Status == 0
                                                                        && l.CatalogoRecebimento.CobrancaInstituicao
                                                                        && l.CatalogoRecebimento.DataRecebimento >= dataIni.Date
@@ -680,7 +675,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     e.exameRealizadoId,
                     e.Sequencial,
                     e.nomePaciente,
-                    dataExame = (e.tituloPendente ? e.dataTitulo : e.DataExame) is DateTime dt ? dt.ToString("dd/MM/yyyy") : "",
+                    dataExame = (e.tituloPendente ? e.dataTitulo : e.DataExame) is DateTime dt && dt.Date > new DateTime(1900, 1, 1) ? dt.ToString("dd/MM/yyyy") : "", //Feito pelo Qoder em 22/08/2026 — sentinela em branco
                     e.valor,
                     e.tituloPendente
                 }).ToList();
@@ -729,9 +724,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 //Feito pelo Qoder em 16/08/2026
                 // Npgsql 8 rejeita Kind=Unspecified em colunas timestamptz: converte o período local em range UTC.
-                var (iniSalvUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dto.DataIni);
-                var (_, fimSalvUtc) = _geralService.ConverterDataLocalParaRangeUtc(dto.DataFim);
-                //..Qoder
+                // Feito pelo Qoder em 22/08/2026 — DataExame agora é DATE: comparação direta pela data local (sem conversão UTC)
 
                 // Reconsulta os exames no servidor: o Valor Total Devido é sempre calculado pelo sistema.
                 //Feito pelo Qoder em 16/08/2026
@@ -742,8 +735,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                              && e.Liberacao == 1
                              && e.Baixado != 1
                              && ((!e.EmCatalogoRecebimentos
-                                  && e.DataExame >= iniSalvUtc
-                                  && e.DataExame <= fimSalvUtc)
+                                  && e.DataExame >= dto.DataIni.Date
+                                  && e.DataExame <= dto.DataFim.Date)
                                  || e.CatalogoRecebimentosExames.Any(l => l.CatalogoRecebimento.Status == 0
                                                                        && l.CatalogoRecebimento.CobrancaInstituicao
                                                                        && l.CatalogoRecebimento.DataRecebimento >= dto.DataIni.Date
@@ -1017,7 +1010,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 var result = data.Select(c => (object)new
                 {
                     id = c.Id,
-                    dataRecebimento = c.DataRecebimento.ToString("dd/MM/yyyy"),
+                    dataRecebimento = c.DataRecebimento.FormataData(),
                     instituicao = $"{c.Instituicao?.Sigla ?? ""} - {c.Instituicao?.Nome ?? ""}".Trim(' ', '-'),
                     //Feito pelo Qoder em 16/08/2026
                     tabelaPreco = string.Join(", ", c.CatalogoRecebimentosExames
@@ -1102,7 +1095,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     f.ContaRecebimentoId,
                     contaNome = f.ContaRecebimento?.Nome ?? "",
                     f.Valor,
-                    dataRecebimento = f.DataRecebimento.ToString("dd/MM/yyyy"),
+                    dataRecebimento = f.DataRecebimento.FormataData(),
                     f.Observacao
                 }).ToList();
 
@@ -1129,7 +1122,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         catalogo.ValorTotalDevido,
                         //..Qoder
                         catalogo.CobrancaInstituicao,
-                        dataRecebimento = catalogo.DataRecebimento.ToString("dd/MM/yyyy"),
+                        dataRecebimento = catalogo.DataRecebimento.FormataData(),
                         status = catalogo.Status == 1 ? "Recebido" : "Pendente",
                         catalogo.Observacao,
                         catalogo.UsuarioRegistro,

@@ -1,3 +1,4 @@
+using BLL; //Feito pelo Qoder em 22/08/2026 — extensão FormataData (UtilBLL)
 using ExtensionsMethods.EventViewerHelper;
 using ExtensionsMethods.Genericos;
 using ExtensionsMethods.ValidadorDeSessao;
@@ -119,7 +120,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
 
                 // Calcular idade/nascimento formatado
                 string nascimentoIdade = "";
-                if (exame.Pacientes?.Nascimento != null)
+                if (exame.Pacientes?.Nascimento != null && exame.Pacientes.Nascimento.Date > new DateTime(1900, 1, 1)) //Feito pelo Qoder em 22/08/2026 — sentinela ≤ 01/01/1900 em branco
                 {
                     var dataNasc = exame.Pacientes.Nascimento;
                     int idade = DateTime.Now.Year - dataNasc.Year;
@@ -145,7 +146,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         sequencialFormatado = exame.Sequencial.ToString(),
                         crm = exame.Medicos?.CRM ?? "",
                         medicoNome = exame.Medicos?.NomeMedico ?? "",
-                        dataExame = exame.DataExame?.ToString("dd/MM/yyyy") ?? "",
+                        dataExame = exame.DataExame.FormataData(), //Feito pelo Qoder em 22/08/2026 — data sem horário; sentinela em branco
                         faturado = exame.Faturado,
                         emCatalogoRecebimentos = exame.EmCatalogoRecebimentos
                     },

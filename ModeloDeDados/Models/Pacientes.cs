@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 
 namespace LabWebMvc.MVC.Models;
@@ -17,6 +18,7 @@ public partial class Pacientes
 
     public string? NomeMae { get; set; }
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime Nascimento { get; set; }
 
     public string? CPF { get; set; }
@@ -39,6 +41,7 @@ public partial class Pacientes
 
     public string? TipoSanguineo { get; set; }
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime? DUM { get; set; }
 
     public int TempoGestacao { get; set; }
@@ -49,6 +52,7 @@ public partial class Pacientes
 
     public string? Nacionalidade { get; set; }
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime? DataEntradaBrasil { get; set; }
 
     public string? Logradouro { get; set; }
@@ -73,8 +77,10 @@ public partial class Pacientes
 
     public string? Observacao { get; set; }
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime DataEntrada { get; set; }
 
+    [Column(TypeName = "date")] //Feito pelo Qoder em 22/08/2026 — data de negócio (somente dia/mês/ano)
     public DateTime? DataBaixa { get; set; }
 
     public int StatusBaixa { get; set; }

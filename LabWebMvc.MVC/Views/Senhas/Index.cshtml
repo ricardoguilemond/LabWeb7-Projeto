@@ -97,6 +97,13 @@
 <div class="card-secao">
     <div class="card-secao-header">
         <i class="fa-solid fa-users"></i> Usuários Cadastrados
+        @*Feito pelo Qoder em 22/08/2026 — botão de inclusão ao lado do título do card (tela sem linha de filtros)*@
+        @if (!PartialFiltro.Esconde)
+        {
+            <a asp-action=@PartialFiltro.ActionButton asp-controller=@PartialFiltro.ControllerButton class="btn btn-success btn-sm" style="display: inline-block;" title="Incluir Usuário">
+                <i class="fa-solid fa-user-plus"></i> Incluir Usuário
+            </a>
+        }
     </div>
     <div class="card-secao-body">
         <div class="table-responsive">

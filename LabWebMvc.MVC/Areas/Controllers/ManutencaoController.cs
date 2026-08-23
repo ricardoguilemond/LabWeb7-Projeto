@@ -37,33 +37,10 @@ namespace LabWebMvc.MVC.Areas.Controllers
             _geralService = geralService;
         }
 
-        [TypeFilter(typeof(SessionFilter))]
-        [HttpGet]
-        [Route("CompactarRequisicoes")]
-        public IActionResult CompactarRequisicoes()
-        {
-            ViewBag.TextoMenu = new object[] { "Manutenção", false };
-            return View();
-        }
-
-        [TypeFilter(typeof(SessionFilter))]
-        [HttpGet]
-        [Route("ContarRequisicoes")]
-        //Feito pelo Qoder em 12/08/2026 — desativado: tabela Requisitar eliminada.
-        // Mantido o endpoint para compatibilidade com a interface de manutenção.
-        public IActionResult ContarRequisicoes(string? dataLimite)
-        {
-            return Json(new { sucesso = true, total = 0, mensagem = "Compactação de requisições desativada (tabela Requisitar eliminada)." });
-        }
-
-        [TypeFilter(typeof(SessionFilter))]
-        [HttpPost]
-        [Route("ExecutarCompactacao")]
-        //Feito pelo Qoder em 12/08/2026 — desativado: tabela Requisitar eliminada.
-        public IActionResult ExecutarCompactacao(string? dataLimite)
-        {
-            return Json(new { sucesso = true, totalRemovido = 0, mensagem = "Compactação de requisições desativada (tabela Requisitar eliminada)." });
-        }
+        //Feito pelo Qoder em 23/08/2026 — REMOVIDOS os endpoints CompactarRequisicoes/ContarRequisicoes/
+        //ExecutarCompactacao e a view CompactarRequisicoes.cshtml: a tabela Requisitar foi eliminada
+        //e a tela de compactação perdeu o sentido. O item de menu correspondente (ControleDePerfilMenu)
+        //é removido por SQL no banco de cada cliente.
 
         //Feito pelo Kiro em 03/07/2026
         [TypeFilter(typeof(SessionFilter))]

@@ -122,7 +122,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         siglaTabela = item.SiglaTabela,
                         nomePosto = item.NomePosto,
                         sequencial = item.Sequencial,
-                        dataFim = item.DataFim?.ToLocalString("dd/MM/yyyy") ?? "-",
+                        dataFim = item.DataFim.FormataDataOuTraco(), //Feito pelo Qoder em 22/08/2026 — data sem horário; sentinela → traço no grid
                         medico = (item.NomeMedico + " " + item.CRM).Trim(),
                         situacao = item.Situacao,
                         totalImpresso = item.TotalImpresso,
@@ -204,15 +204,15 @@ namespace LabWebMvc.MVC.Areas.Controllers
             if (!string.IsNullOrEmpty(dataInicial))
             {
                 DateTime dataParsed = dataInicial.Trim().FormataData("dd/MM/yyyy", true);
-                var (inicioUtc, _) = _geralService.ConverterDataLocalParaRangeUtc(dataParsed);
-                queryEr = queryEr.Where(e => e.DataIni >= inicioUtc);
+                // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: comparação direta pela data local
+                queryEr = queryEr.Where(e => e.DataIni >= dataParsed.Date);
             }
 
             if (!string.IsNullOrEmpty(dataFinal))
             {
                 DateTime dataParsed = dataFinal.Trim().FormataData("dd/MM/yyyy", true);
-                var (_, fimUtc) = _geralService.ConverterDataLocalParaRangeUtc(dataParsed);
-                queryEr = queryEr.Where(e => e.DataIni <= fimUtc);
+                // Feito pelo Qoder em 22/08/2026 — DataIni agora é DATE: comparação direta pela data local
+                queryEr = queryEr.Where(e => e.DataIni <= dataParsed.Date);
             }
 
             if (!string.IsNullOrEmpty(nomePaciente))
@@ -361,7 +361,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     ExameId = exame.Id,
                     NomePaciente = exame.Pacientes?.NomePaciente ?? "",
                     PacienteId = exame.PacienteId,
-                    Nascimento = exame.Pacientes?.Nascimento.ToLocalString("dd/MM/yyyy") ?? "",
+                    Nascimento = exame.Pacientes?.Nascimento.FormataData() ?? "",
                     CPF = exame.Pacientes?.CPF ?? "",
                     NomeMedico = exame.Medicos?.NomeMedico ?? "",
                     CRM = exame.Medicos?.CRM ?? "",
@@ -372,8 +372,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         ? (exame.Postos.SiglaPosto ?? "") + "-" + (exame.Postos.NomePosto ?? "")
                         : "",
                     Sequencial = exame.Sequencial,
-                    DataIni = exame.DataIni.ToLocalString("dd/MM/yyyy"),
-                    DataFim = exame.DataFim?.ToLocalString("dd/MM/yyyy") ?? "",
+                    DataIni = exame.DataIni.FormataData(),
+                    DataFim = exame.DataFim.FormataData(),
                     Situacao = exame.Situacao,
                     TotalImpresso = exame.TotalImpresso
                 };
@@ -489,7 +489,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 }
 
                 exame.Liberacao = 1;
-                exame.DataFim = _geralService.ObterDataHoraUtc();
+                exame.DataFim = _geralService.ObterDataHoraLocal().Date; //Feito pelo Qoder em 22/08/2026 — agora DATE: data local do dia
                 await _db.SaveChangesAsync();
 
                 return Json(new { sucesso = true, mensagem = "Exame liberado com sucesso." });
@@ -609,8 +609,8 @@ namespace LabWebMvc.MVC.Areas.Controllers
                     ExameId = exame.Id,
                     ControleApoioFormatado = controleFormatado,
                     SequencialFormatado = sequencialFormatado,
-                    DataExameColeta = exame.DataIni.ToLocalString("dd/MM/yyyy"),
-                    DataLaudoLiberado = exame.DataFim?.ToLocalString("dd/MM/yyyy") ?? dataImpressaoLocal.ToString("dd/MM/yyyy"),
+                    DataExameColeta = exame.DataIni.FormataData(),
+                    DataLaudoLiberado = !string.IsNullOrEmpty(exame.DataFim.FormataData()) ? exame.DataFim.FormataData() : dataImpressaoLocal.ToString("dd/MM/yyyy"),
                     DataImpressao = dataImpressaoLocal.ToString("dd/MM/yyyy"),
                     HoraImpressao = dataImpressaoLocal.ToString("HH:mm"),
 
@@ -711,7 +711,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 await System.IO.File.WriteAllBytesAsync(caminhoArquivo, pdfBytes);
 
                 // Atualizar ExamesRealizados: DataEntrega, Situacao = 3, TotalImpresso += 1
-                exame.DataEntrega = _geralService.ObterDataHoraUtc();
+                exame.DataEntrega = _geralService.ObterDataHoraLocal().Date; //Feito pelo Qoder em 22/08/2026 — agora DATE: data local do dia
                 exame.Situacao = 3;
                 exame.TotalImpresso += 1;
                 await _db.SaveChangesAsync();

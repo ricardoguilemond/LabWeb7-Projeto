@@ -33,6 +33,11 @@
         <button type="submit" class="btn btn-success btn-sm" style="display: inline-block;">
             <i class="fa-sharp fa-solid fa-magnifying-glass"></i> Pesquisar
         </button>
+
+        @*Feito pelo Qoder em 22/08/2026 — botão de inclusão compactado na linha de filtros (ganho de espaço vertical), mesmo estilo do Pesquisar*@
+        <a asp-action="IncluirPaciente" asp-controller="Pacientes" class="btn btn-success btn-sm" style="display: inline-block;" title="Incluir Pacientes">
+            <i class="fa-solid fa-user-plus"></i> Incluir Pacientes
+        </a>
     </form>
     </div>
 </div>
@@ -260,7 +265,29 @@
         window.open(url, "_self")
         //window.location.href = '@Url.Action("ConsultarPaciente", "Pacientes")?id=' + x.id;
     }
+    //Feito pelo Qoder em 22/08/2026 — ícone "Exibir exames" (1º da coluna Opções) abre/fecha o detail inline de exames
     function clickExames(x) {
+        if (_carregandoDetailExames) return;
+
+        var $row = $(x).closest('tr');
+        var pacienteId = x.id;
+        if (!pacienteId) return;
+
+        // Clicar de novo no ícone da mesma linha recolhe o detail
+        var jaAberto = $row.hasClass('detail-parent-highlight');
+
+        // Fechar detail anterior (somente um aberto por vez)
+        $('#modeloTable tbody tr.detail-item-row').remove();
+        $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
+        $('#modeloTable tbody tr.detail-parent-highlight').removeClass('detail-parent-highlight');
+
+        if (jaAberto) return;
+
+        // Destacar a linha do paciente e carregar exames via AJAX
+        $row.addClass('detail-parent-highlight');
+        carregarExamesPaciente($row, pacienteId);
+    }
+    function clickExamesRealizados(x) {
         alert("Em desenvolvimento - Exames Realizados: " + x.id);
         //window.location.href = '@Url.Action("ExamesPaciente", "Pacientes")?id=' + x.id;
     }
@@ -289,35 +316,9 @@
     }
     //..Kiro
 
-    //Feito pelo Kiro em 17/05/2026
-    // Detail inline de exames — expand/collapse ao clicar na linha do paciente
+    //Feito pelo Qoder em 22/08/2026 — o detail inline de exames agora abre pelo ícone "Exibir exames" da coluna Opções
+    //(o clique na linha do paciente não abre mais o detail)
     var _carregandoDetailExames = false;
-
-    $(document).ready(function () {
-        $(document).off('click.detailExames').on('click.detailExames', '#modeloTable tbody tr', function (e) {
-            // Ignorar cliques na coluna de opções
-            if ($(e.target).closest('.grid_fundo_opcoes').length) return;
-            // Ignorar cliques em linhas de detalhe
-            if ($(this).hasClass('detail-row') || $(this).hasClass('detail-header-row')) return;
-            // Prevenir clique duplo
-            if (_carregandoDetailExames) return;
-
-            var $row = $(this);
-            var pacienteId = $.trim($row.find('td:first').text());
-            if (!pacienteId) return;
-
-            // Fechar detail anterior (somente um aberto por vez)
-            $('#modeloTable tbody tr.detail-item-row').remove();
-            $('#modeloTable tbody tr.detail-row, #modeloTable tbody tr.detail-header-row').remove();
-            $('#modeloTable tbody tr.detail-parent-highlight').removeClass('detail-parent-highlight');
-
-            // Destacar a linha do paciente clicado
-            $row.addClass('detail-parent-highlight');
-
-            // Carregar exames do paciente via AJAX
-            carregarExamesPaciente($row, pacienteId);
-        });
-    });
 
     // Handler do filtro inline de datas no detail de exames
     $(document).ready(function () {
@@ -345,6 +346,14 @@
     function carregarExamesPaciente($row, pacienteId, dataInicial, dataFinal) {
         _carregandoDetailExames = true;
 
+        //Feito pelo Qoder em 23/08/2026 — indicador de carregamento enquanto o AJAX busca os exames
+        $('#modeloTable tbody tr.detail-loading-row').remove();
+        $row.after('<tr class="detail-row detail-loading-row">' +
+            '<td colspan="9" style="text-align:center; padding:8px; color:#555;">' +
+            '<i class="fa-solid fa-circle-notch fa-spin" style="margin-right:6px;"></i>' +
+            'Carregando exames do paciente...</td>' +
+            '</tr>');
+
         var requestData = { pacienteId: pacienteId };
         if (dataInicial) requestData.dataInicial = dataInicial;
         if (dataFinal) requestData.dataFinal = dataFinal;
@@ -355,6 +364,7 @@
             type: 'GET',
             dataType: 'json',
             success: function (data) {
+                $('#modeloTable tbody tr.detail-loading-row').remove();
                 if (data.sucesso && data.exames && data.exames.length > 0) {
                     renderizarExamesPaciente($row, data.exames, data.examesOcultos || 0, data.totalExames || 0);
                 } else if (data.sucesso && (!data.exames || data.exames.length === 0)) {
@@ -366,6 +376,7 @@
                 }
             },
             error: function () {
+                $('#modeloTable tbody tr.detail-loading-row').remove();
                 clickAviso('Erro de Rede', 'Não foi possível carregar os exames do paciente. Talvez seja necessário refazer login.', 'critica', null);
                 $row.removeClass('detail-parent-highlight');
             },
@@ -487,12 +498,21 @@
     function carregarExamesPacienteExpandido($row, pacienteId) {
         _carregandoDetailExames = true;
 
+        //Feito pelo Qoder em 23/08/2026 — indicador de carregamento (histórico de 12 meses é o caso mais pesado)
+        $('#modeloTable tbody tr.detail-loading-row').remove();
+        $row.after('<tr class="detail-row detail-loading-row">' +
+            '<td colspan="9" style="text-align:center; padding:8px; color:#555;">' +
+            '<i class="fa-solid fa-circle-notch fa-spin" style="margin-right:6px;"></i>' +
+            'Carregando exames do paciente...</td>' +
+            '</tr>');
+
         $.ajax({
             url: '/Pacientes/ObterExamesPaciente',
             data: { pacienteId: pacienteId, expandir: true },
             type: 'GET',
             dataType: 'json',
             success: function (data) {
+                $('#modeloTable tbody tr.detail-loading-row').remove();
                 if (data.sucesso && data.exames && data.exames.length > 0) {
                     renderizarExamesPaciente($row, data.exames, 0, 0);
                     // Adicionar link "Recolher exames mostrados" ao final
@@ -510,6 +530,7 @@
                 }
             },
             error: function () {
+                $('#modeloTable tbody tr.detail-loading-row').remove();
                 clickAviso('Erro de Rede', 'Não foi possível carregar os exames expandidos.', 'critica', null);
             },
             complete: function () {

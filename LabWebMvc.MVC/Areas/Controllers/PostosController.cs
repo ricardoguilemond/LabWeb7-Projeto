@@ -265,7 +265,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                             Responsavel = vm.Responsavel,
 
                             //Colunas que aceitam nulas:
-                            Telefone = vm.Telefone,
+                            Telefone = vm.Telefone.ApenasNumeros(),
                             Endereco = vm.Endereco.ToCapitalize(),
                             Logradouro = vm.Logradouro.ToCapitalize(),
                             Numero = vm.Numero,
@@ -318,7 +318,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                 vm.Cidade = dados.Cidade.ToCapitalize();
                 vm.UF = dados.UF;
                 vm.CEP = dados.CEP;
-                vm.Telefone = dados.Telefone;
+                vm.Telefone = dados.Telefone.FormataTelefone();
                 vm.Responsavel = dados.Responsavel;
                 /*
                  * vm.vmGeral que pode receber dados de listas de tipos
@@ -393,7 +393,7 @@ namespace LabWebMvc.MVC.Areas.Controllers
                         Postos.Responsavel = vm.Responsavel.ToCapitalizeNotNull();
 
                         //Colunas que aceitam nulo:
-                        Postos.Telefone = vm.Telefone;
+                        Postos.Telefone = vm.Telefone.ApenasNumeros();
                         Postos.Logradouro = vm.Logradouro.ToCapitalize();
                         Postos.Endereco = vm.Endereco.ToCapitalize();
                         Postos.Numero = vm.Numero;

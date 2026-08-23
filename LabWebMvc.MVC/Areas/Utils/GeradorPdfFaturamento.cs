@@ -104,8 +104,10 @@ namespace LabWebMvc.MVC.Areas.Utils
             string? instituicaoAtual = null;
             decimal totalInstituicao = 0;
 
-            foreach (var exame in dados.Exames)
+            for (int indice = 0; indice < dados.Exames.Count; indice++)
             {
+                var exame = dados.Exames[indice];
+
                 if (instituicaoAtual != exame.SiglaInstituicao)
                 {
                     if (instituicaoAtual != null)
@@ -117,8 +119,19 @@ namespace LabWebMvc.MVC.Areas.Utils
                     instituicaoAtual = exame.SiglaInstituicao;
                 }
 
-                double alturaEstimada = 40 + (exame.Itens.Count * 14) + 20;
-                if (y + alturaEstimada > LimiteY)
+                //Feito pelo Qoder em 23/08/2026 — altura EXATA espelhando DesenharExame linha a
+                //linha (inclusive o layout em duas colunas). Antes a estimativa contava todos os
+                //itens em coluna única mesmo no modo duas colunas, desperdiçando páginas em branco.
+                double alturaNecessaria = CalcularAlturaExame(exame, duasColunas);
+
+                // Se este exame fecha o bloco da instituição, reserva também a linha de total,
+                // para que ela continue colada aos exames sem forçar estouro nem quebra extra
+                bool fechaBlocoInstituicao = indice + 1 == dados.Exames.Count
+                    || dados.Exames[indice + 1].SiglaInstituicao != exame.SiglaInstituicao;
+                if (fechaBlocoInstituicao)
+                    alturaNecessaria += 22; // DesenharTotalInstituicao: linha (4) + texto (18)
+
+                if (y + alturaNecessaria > LimiteY)
                 {
                     DesenharRodape(gfx, page);
                     page = pdfDocument.AddPage();
@@ -136,6 +149,17 @@ namespace LabWebMvc.MVC.Areas.Utils
             if (instituicaoAtual != null)
             {
                 y = DesenharTotalInstituicao(gfx, instituicaoAtual, totalInstituicao, y);
+            }
+
+            //Feito pelo Qoder em 23/08/2026 — reserva exata do bloco TOTAL GERAL (74):
+            //se não couber, abre página nova em vez de estourar o rodapé.
+            if (y + 74 > LimiteY)
+            {
+                DesenharRodape(gfx, page);
+                page = pdfDocument.AddPage();
+                page.Size = PdfSharpCore.PageSize.A4;
+                gfx = XGraphics.FromPdfPage(page);
+                y = MargemTopo;
             }
 
             y = DesenharTotalGeral(gfx, totalGeral, dados, y);
@@ -299,13 +323,22 @@ namespace LabWebMvc.MVC.Areas.Utils
             return y;
         }
 
+        //Feito pelo Qoder em 23/08/2026 — espelha exatamente o consumo de Y de DesenharExame:
+        //separador 6 + código único 14 + referência/tabela/data 14 + paciente 18
+        //+ itens (14 por linha; em duas colunas, metade arredondada para cima) + total 18.
+        private static double CalcularAlturaExame(ExameFaturamentoDto exame, bool duasColunas)
+        {
+            double alturaItens = duasColunas
+                ? ((exame.Itens.Count + 1) / 2) * 14
+                : exame.Itens.Count * 14;
+
+            return 6 + 14 + 14 + 18 + alturaItens + 18;
+        }
+
         private double DesenharTotalInstituicao(XGraphics gfx, string siglaInstituicao, decimal total, double y)
         {
-            if (y + 30 > LimiteY)
-            {
-                // Se não couber, deixa para próxima página não implementado aqui por simplicidade
-            }
-
+            //Feito pelo Qoder em 23/08/2026 — o espaço (22) agora é reservado pelo chamador
+            //no cálculo da quebra de página, mantendo o total colado ao bloco da instituição.
             gfx.DrawLine(XPens.Gray, MargemEsquerda, y, LarguraPagina - MargemDireita, y);
             y += 4;
             gfx.DrawString($"Total Instituição {siglaInstituicao}:", _fontTotal, XBrushes.Black, new XRect(MargemEsquerda, y, AreaUtil - 70, 16), XStringFormats.TopLeft);
@@ -342,9 +375,15 @@ namespace LabWebMvc.MVC.Areas.Utils
             if (dados.QuantitativoItens.Count == 0)
                 return (y, gfx, page);
 
-            // Verifica espaco na pagina; se necessario, cria nova pagina
-            double alturaEstimada = 50 + (dados.QuantitativoItens.Count * 14) + 20;
-            if (y + alturaEstimada > LimiteY)
+            //Feito pelo Qoder em 23/08/2026 — paginação linha a linha: o quantitativo pode
+            //ocupar várias páginas. Antes o espaço era verificado uma única vez e, com muitos
+            //itens, as linhas estouravam o limite da página e invadiam o rodapé.
+            string cabecalhoQuant = RetornaLinhaPontilhada("Folha de Exame, Item", "Quantidade");
+
+            //Feito pelo Qoder em 23/08/2026 — o quantitativo sempre abre página própria (salvo
+            //página ainda em branco): o relatório pode ser entregue ao SUS sem essa contagem,
+            //bastando separar/remover as páginas finais da seção.
+            if (y > MargemTopo)
             {
                 DesenharRodape(gfx, page);
                 page = gfx.PdfPage.Owner.AddPage();
@@ -357,12 +396,27 @@ namespace LabWebMvc.MVC.Areas.Utils
             gfx.DrawString("QUANTITATIVO DE ITENS DE EXAMES REALIZADOS:", _fontQuantitativoTitulo, XBrushes.Black, new XRect(MargemEsquerda, y, AreaUtil, 16), XStringFormats.TopLeft);
             y += 18;
 
-            string cabecalhoQuant = RetornaLinhaPontilhada("Folha de Exame, Item", "Quantidade");
             gfx.DrawString(cabecalhoQuant, _fontQuantitativo, _brushQuantitativo, new XRect(MargemEsquerda, y, AreaUtil, 14), XStringFormats.TopLeft);
             y += 16;
 
             foreach (var item in dados.QuantitativoItens)
             {
+                // Avançar para a próxima página quando a linha não couber
+                if (y + 14 > LimiteY)
+                {
+                    DesenharRodape(gfx, page);
+                    page = gfx.PdfPage.Owner.AddPage();
+                    page.Size = PdfSharpCore.PageSize.A4;
+                    gfx = XGraphics.FromPdfPage(page);
+                    y = MargemTopo;
+
+                    // Repete o cabeçalho da seção na página de continuação
+                    gfx.DrawString("QUANTITATIVO DE ITENS DE EXAMES REALIZADOS (continuação):", _fontQuantitativoTitulo, XBrushes.Black, new XRect(MargemEsquerda, y, AreaUtil, 16), XStringFormats.TopLeft);
+                    y += 18;
+                    gfx.DrawString(cabecalhoQuant, _fontQuantitativo, _brushQuantitativo, new XRect(MargemEsquerda, y, AreaUtil, 14), XStringFormats.TopLeft);
+                    y += 16;
+                }
+
                 string descricao = item.DescricaoCompleta;
                 string quantidade = item.Quantidade.ToString("N0");
                 string linha = RetornaLinhaPontilhada(descricao, quantidade);

@@ -136,6 +136,32 @@
 
             var urlParams = new URLSearchParams(window.location.search);
 
+            //Feito pelo Qoder em 23/08/2026 — período máximo de consulta: 90 dias (contagem inclusiva)
+            function validarPeriodoFiltros() {
+                var txtDe = ($('input[name="dataExameDe"]').val() || '').trim();
+                var txtPara = ($('input[name="dataExamePara"]').val() || '').trim();
+                if (!txtDe || !txtPara) return null; // vazios: servidor aplica o período padrão
+                var pDe = txtDe.split('/');
+                var pPara = txtPara.split('/');
+                if (pDe.length !== 3 || pPara.length !== 3) return 'Data inválida. Use o formato dd/MM/yyyy.';
+                var de = new Date(+pDe[2], +pDe[1] - 1, +pDe[0]);
+                var para = new Date(+pPara[2], +pPara[1] - 1, +pPara[0]);
+                if (isNaN(de.getTime()) || isNaN(para.getTime())) return 'Data inválida. Use o formato dd/MM/yyyy.';
+                if (para < de) return 'A data final (ATÉ) não pode ser anterior à data inicial (DE).';
+                var dias = Math.round((para - de) / 86400000) + 1;
+                if (dias > 90) return 'O período máximo de consulta é de 90 dias. Reduza o intervalo entre as datas (informado: ' + dias + ' dias).';
+                return null;
+            }
+
+            $('#filtrosConsultarExames form').on('submit', function (e) {
+                var erro = validarPeriodoFiltros();
+                if (erro) {
+                    e.preventDefault();
+                    clickAviso('Período inválido', erro, 'falha');
+                }
+            });
+            //..Qoder
+
             $('#modeloTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -256,6 +282,16 @@
     </script>
 }
 @*..Kiro*@
+
+@*Feito pelo Qoder em 23/08/2026 — servidor recusou o período (>90 dias ou invertido): avisa no retorno e o grid vem vazio*@
+@if (ViewBag.ErroPeriodo != null)
+{
+    <script>
+        $(function () {
+            clickAviso('Período inválido', '@Html.Raw(ViewBag.ErroPeriodo)', 'falha');
+        });
+    </script>
+}
 <style>
     tr.detail-row {
         background-color: #f0f8f0 !important;

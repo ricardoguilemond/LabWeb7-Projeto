@@ -3,6 +3,7 @@ using LabWebMvc.MVC.Areas.ServicosDatabase;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System.Collections;
 using System.Diagnostics;
 using System.Linq.Expressions;
@@ -103,20 +104,31 @@ public class Db : DbContext
 
             if (!string.IsNullOrEmpty(stringConnection))
             {
-                optionsBuilder.UseNpgsql(stringConnection)
-                              .EnableSensitiveDataLogging()
-                              .LogTo(log =>
-                              {
-                                  // Log detalhado para SQL e erros
-                                  if (log.Contains("CommandExecuting") || log.Contains("CommandText"))
+                optionsBuilder.UseNpgsql(stringConnection);
+
+                //Feito pelo Qoder em 23/08/2026 — Fase 0.4 do plano de segurança: logging sensível/detalhado
+                //de SQL APENAS em Development. O host define ASPNETCORE_ENVIRONMENT (launchSettings em dev);
+                //fora de Development nem EnableSensitiveDataLogging nem LogTo são aplicados.
+                bool ambienteDesenvolvimento = string.Equals(
+                    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                    "Development", StringComparison.OrdinalIgnoreCase);
+
+                if (ambienteDesenvolvimento)
+                {
+                    optionsBuilder.EnableSensitiveDataLogging()
+                                  .LogTo(log =>
                                   {
-                                      _eventLog.LogEventViewer($"LABWE7 ::: EFCore SQL: {log}", "Information");
-                                  }
-                                  else if (log.Contains("Exception") || log.Contains("fail") || log.Contains("error"))
-                                  {
-                                      _eventLog.LogEventViewer($"LABWE7 ::: EFCore ERROR: {log}", "Error");
-                                  }
-                              }, LogLevel.Information);
+                                      // Log detalhado para SQL e erros
+                                      if (log.Contains("CommandExecuting") || log.Contains("CommandText"))
+                                      {
+                                          _eventLog.LogEventViewer($"LABWE7 ::: EFCore SQL: {log}", "Information");
+                                      }
+                                      else if (log.Contains("Exception") || log.Contains("fail") || log.Contains("error"))
+                                      {
+                                          _eventLog.LogEventViewer($"LABWE7 ::: EFCore ERROR: {log}", "Error");
+                                      }
+                                  }, LogLevel.Information);
+                }
             }
             else
             {
@@ -150,18 +162,17 @@ public class Db : DbContext
         }
         catch (Exception ex)
         {
-            // Retrieve the error messages as a list of strings.
-            char[] errorMessages = ex.Message.ToArray();
+            //Feito pelo Qoder em 23/08/2026 — Fase 1.1 do plano: parar de engolir a exceção.
+            //Comportamento alinhado ao SaveChangesIfChangedAsync: loga e re-lança, para que o
+            //chamador não interprete falha de gravação como "salvou 0 registros".
+            string exceptionMessage = $"Erro ao salvar alterações: {ex.Message}";
+            string innerExceptionMessage = ex.InnerException != null
+                ? $" Inner Exception: {ex.InnerException.Message}"
+                : string.Empty;
 
-            // Join the list to a single string.
-            string fullErrorMessage = string.Join("; ", errorMessages);
+            _eventLog.LogEventViewer($"{innerExceptionMessage}, db: {ex.Message}; StackTrace: {ex.StackTrace}", "wError");
 
-            // Combine the original exception message with the new one.
-            string exceptionMessage = string.Concat(ex.Message, " Os erros validados são: ", fullErrorMessage);
-
-            _eventLog.LogEventViewer("db: " + errorMessages + " ::: " + fullErrorMessage + " ::: " + exceptionMessage, "wError");
-
-            return 0;
+            throw new Exception(exceptionMessage, ex);
         }
     }
 
@@ -221,32 +232,41 @@ public class Db : DbContext
                 if (idProperty == null || idProperty.PropertyType != typeof(int))
                     throw new InvalidOperationException($"A entidade {entityType.Name} não possui uma propriedade 'Id' do tipo int.");
 
-                // Usa reflexão para obter o DbSet<TEntity>
-                var setMethod = typeof(DbContext).GetMethod(nameof(Set), Type.EmptyTypes)
-                    ?? throw new InvalidOperationException("Método Set não encontrado no DbContext.");
-                var genericSetMethod = setMethod.MakeGenericMethod(entityType);
-                var dbSet = genericSetMethod.Invoke(this, null);
-
-                // Executa ToListAsync via reflexão
-                var toListAsyncMethod = typeof(EntityFrameworkQueryableExtensions)
-                    .GetMethods()
-                    .First(m => m.Name == "ToListAsync" && m.GetParameters().Length == 2);
-                var genericToListAsync = toListAsyncMethod.MakeGenericMethod(entityType);
-                var task = (Task)(genericToListAsync.Invoke(null, new object[] { dbSet!, cts.Token })
-                    ?? throw new InvalidOperationException("ToListAsync retornou null."));
-                await task.ConfigureAwait(false);
-                var resultProperty = task.GetType().GetProperty("Result")
-                    ?? throw new InvalidOperationException("Propriedade Result não encontrada na Task.");
-                var entityList = (IList)(resultProperty.GetValue(task)
-                    ?? throw new InvalidOperationException("Result da Task retornou null."));
-
-                var usedIds = entityList
-                    .Cast<object>()
-                    .Select(e => (int)idProperty.GetValue(e)!)
-                    .ToList();
-
                 var tableName = Model.FindEntityType(entityType)?.GetTableName();
-                if (!string.IsNullOrEmpty(tableName))
+                if (string.IsNullOrEmpty(tableName))
+                    throw new InvalidOperationException($"Não foi possível resolver o nome da tabela para a entidade {entityType.Name}.");
+
+                if (quantidadeRegistrosMaximo.HasValue)
+                {
+                    //Feito pelo Qoder em 23/08/2026 — DOMÍNIO LIMITADO (ex.: Folha de Exames, até 99):
+                    //mantém o reuso de Ids vagos — decisão de negócio validada: a folha só é excluída quando
+                    //não resta QUALQUER referência histórica (pendente/realizado/AM), portanto o reuso é
+                    //seguro e necessário para não esgotar o limite estrutural do laboratório.
+
+                    // Usa reflexão para obter o DbSet<TEntity>
+                    var setMethod = typeof(DbContext).GetMethod(nameof(Set), Type.EmptyTypes)
+                        ?? throw new InvalidOperationException("Método Set não encontrado no DbContext.");
+                    var genericSetMethod = setMethod.MakeGenericMethod(entityType);
+                    var dbSet = genericSetMethod.Invoke(this, null);
+
+                    // Executa ToListAsync via reflexão
+                    var toListAsyncMethod = typeof(EntityFrameworkQueryableExtensions)
+                        .GetMethods()
+                        .First(m => m.Name == "ToListAsync" && m.GetParameters().Length == 2);
+                    var genericToListAsync = toListAsyncMethod.MakeGenericMethod(entityType);
+                    var task = (Task)(genericToListAsync.Invoke(null, new object[] { dbSet!, cts.Token })
+                        ?? throw new InvalidOperationException("ToListAsync retornou null."));
+                    await task.ConfigureAwait(false);
+                    var resultProperty = task.GetType().GetProperty("Result")
+                        ?? throw new InvalidOperationException("Propriedade Result não encontrada na Task.");
+                    var entityList = (IList)(resultProperty.GetValue(task)
+                        ?? throw new InvalidOperationException("Result da Task retornou null."));
+
+                    var usedIds = entityList
+                        .Cast<object>()
+                        .Select(e => (int)idProperty.GetValue(e)!)
+                        .ToList();
+
                     // Feito pelo Qoder em 21/04/2026 — tableName vem do modelo EF Core (GetTableName), não de input externo;
                     // supressão de EF1002 é segura pois o valor é controlado internamente pelo framework.
 #pragma warning disable EF1002
@@ -254,39 +274,62 @@ public class Db : DbContext
 #pragma warning restore EF1002
                     //..Qoder
 
-                foreach (var entry in addedEntries)
-                {
-                    int? availableId = null;
-
-                    if (quantidadeRegistrosMaximo.HasValue)
+                    foreach (var entry in addedEntries)
                     {
                         // Com limite: busca o primeiro gap de 1 até o limite
-                        availableId = Enumerable.Range(1, quantidadeRegistrosMaximo.Value)
+                        int? availableId = Enumerable.Range(1, quantidadeRegistrosMaximo.Value)
                             .Cast<int?>()
                             .FirstOrDefault(i => !usedIds.Contains(i!.Value));
 
                         if (availableId == null)
                             throw new InvalidOperationException($"Limite de {quantidadeRegistrosMaximo.Value} registros atingido para a entidade {entityType.Name}.");
-                    }
-                    else
-                    {
-                        //Feito pelo Qoder em 21/04/2026 - sem limite: busca o primeiro gap na sequência sem OverflowException
-                        int maximo = usedIds.Count > 0 ? usedIds.Max() : 0;
-                        for (int i = 1; i <= maximo + 1; i++)
-                        {
-                            if (!usedIds.Contains(i))
-                            {
-                                availableId = i;
-                                break;
-                            }
-                        }
-                        availableId ??= maximo + 1;
-                        //..Qoder
+
+                        idProperty.SetValue(entry.Entity, availableId.Value);
+                        entry.Property("Id").IsTemporary = false;
+                        usedIds.Add(availableId.Value);
                     }
 
-                    idProperty.SetValue(entry.Entity, availableId.Value);
-                    entry.Property("Id").IsTemporary = false;
-                    usedIds.Add(availableId.Value);
+                    if (sincroniza)
+                        DeleteOrphans();
+
+                    return await base.SaveChangesAsync(cts.Token);
+                }
+                else
+                {
+                    //Feito pelo Qoder em 23/08/2026 — Fases 2.1/2.2 do plano — DOMÍNIO ILIMITADO (ex.: Postos):
+                    //max+1 direto, SEM reuso de Ids vagos (fora de domínios limitados o reuso é preciosismo com
+                    //risco de referência cruzada) e SEM carregar a tabela inteira em memória: uma consulta escalar
+                    //serializada por advisory lock transacional substitui o LOCK TABLE EXCLUSIVE + ToListAsync.
+                    await using var transaction = await Database.BeginTransactionAsync(cts.Token);
+                    try
+                    {
+#pragma warning disable EF1002
+                        await Database.ExecuteSqlRawAsync($"SELECT pg_advisory_xact_lock(hashtext('{tableName}'))", Array.Empty<object>(), cts.Token);
+
+                        int proximoId = await Database.SqlQueryRaw<int>(
+                                $"SELECT COALESCE(MAX(\"Id\"), 0) + 1 AS \"Value\" FROM \"{tableName}\"")
+                            .FirstOrDefaultAsync(cts.Token);
+#pragma warning restore EF1002
+
+                        foreach (var entry in addedEntries)
+                        {
+                            idProperty.SetValue(entry.Entity, proximoId);
+                            entry.Property("Id").IsTemporary = false;
+                            proximoId++;
+                        }
+
+                        if (sincroniza)
+                            DeleteOrphans();
+
+                        int salvos = await base.SaveChangesAsync(cts.Token);
+                        await transaction.CommitAsync(cts.Token);
+                        return salvos;
+                    }
+                    catch
+                    {
+                        await transaction.RollbackAsync(cts.Token);
+                        throw;
+                    }
                 }
             }
 
@@ -321,12 +364,19 @@ public class Db : DbContext
      */
     public int DeleteOrphans()
     {
+        //Feito pelo Qoder em 23/08/2026 — Fases 1.2/1.3 do plano: reescrita total em SQL.
+        //A versão anterior carregava TODAS as tabelas em memória (entityList + refList por FK,
+        //incluindo tabelas históricas gigantes) e fazia a detecção de órfãos em memória com
+        //reflection registro a registro. Agora tudo é delegado ao PostgreSQL:
+        //um DELETE ... NOT EXISTS por par filho/pai e um setval por sequência.
+        //Zero materialização em memória, um round-trip por operação.
         int totalRemovidos = 0;
         var model = this.Model;
 
         var dbSets = this.GetType().GetProperties()
             .Where(p => p.PropertyType.IsGenericType &&
-                        p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>));
+                        p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>))
+            .ToList();
 
         foreach (var dbSetProp in dbSets)
         {
@@ -334,34 +384,21 @@ public class Db : DbContext
             var entityTypeModel = model.FindEntityType(entityType);
             if (entityTypeModel == null) continue;
 
-            var dbSet = dbSetProp.GetValue(this);
-            if (dbSet is not IQueryable entityQueryable) continue;
-
-            var entityList = entityQueryable.Cast<object>().ToList();
+            var tableName = entityTypeModel.GetTableName();
+            if (string.IsNullOrEmpty(tableName)) continue;
 
             //Sincronizar sequência PostgreSQL se a entidade tiver campo Id do tipo int
             var idProp = entityType.GetProperty("Id");
             if (idProp != null && idProp.PropertyType == typeof(int))
             {
-                var tableName = entityTypeModel.GetTableName();
-                var sequenceName = $"{tableName}_id_seq";
-
-                var maxId = entityList
-                    .Select(e => (int?)idProp.GetValue(e))
-                    .Where(id => id.HasValue)
-                    .Max();
-
-                if (maxId.HasValue)
+                try
                 {
-                    try
-                    {
-                        var sql = $"SELECT setval(pg_get_serial_sequence('\"{tableName}\"', 'Id'), {maxId.Value})";
-                        this.Database.ExecuteSqlRaw(sql);
-                    }
-                    catch (Exception ex)
-                    {
-                        _eventLog.LogEventViewer($"Erro ao sincronizar sequência '{sequenceName}': {ex.Message}", "wError");
-                    }
+                    this.Database.ExecuteSqlRaw(
+                        $"SELECT setval(pg_get_serial_sequence('\"{tableName}\"', 'Id'), COALESCE((SELECT MAX(\"Id\") FROM \"{tableName}\"), 1))");
+                }
+                catch (Exception ex)
+                {
+                    _eventLog.LogEventViewer($"Erro ao sincronizar sequência '{tableName}': {ex.Message}", "wError");
                 }
             }
 
@@ -374,8 +411,6 @@ public class Db : DbContext
             foreach (var fkPropModel in fkProps)
             {
                 var fkName = fkPropModel.Name;
-                var fkProp = entityType.GetProperty(fkName);
-                if (fkProp == null) continue;
 
                 string refTableName = fkName.Replace("Id", "", StringComparison.OrdinalIgnoreCase);
                 var refDbSetProp = dbSets.FirstOrDefault(p =>
@@ -386,50 +421,25 @@ public class Db : DbContext
                 var refEntityTypeModel = model.FindEntityType(refEntityType);
                 if (refEntityTypeModel == null) continue;
 
-                var refDbSet = refDbSetProp.GetValue(this);
-                if (refDbSet is not IQueryable refQueryable) continue;
+                var refTable = refEntityTypeModel.GetTableName();
+                if (string.IsNullOrEmpty(refTable)) continue;
 
-                var refIdProp = refEntityType.GetProperty("Id");
-                if (refIdProp == null) continue;
+                string fkColumn = fkPropModel.GetColumnName(StoreObjectIdentifier.Table(tableName)) ?? fkName;
 
-                var refList = refQueryable.Cast<object>().ToList();
-
-                var refIds = new HashSet<object>();
-
-                foreach (var r in refList)
+                try
                 {
-                    var id = refIdProp.GetValue(r);
-                    if (id != null)
+                    int removidos = this.Database.ExecuteSqlRaw(
+                        $"DELETE FROM \"{tableName}\" f WHERE f.\"{fkColumn}\" IS NOT NULL AND NOT EXISTS (SELECT 1 FROM \"{refTable}\" p WHERE p.\"Id\" = f.\"{fkColumn}\")");
+
+                    if (removidos > 0)
                     {
-                        refIds.Add(id);
+                        _eventLog.LogEventViewer($"Removendo {removidos} órfãos de {entityType.Name} via {fkName}", "wInfo");
+                        totalRemovidos += removidos;
                     }
                 }
-
-                var orfaos = entityList
-                    .Where(e =>
-                    {
-                        var fkValue = fkProp.GetValue(e);
-                        var isOrfao = fkValue != null && !refIds.Contains(fkValue);
-
-                        if (!isOrfao) return false;
-
-                        var entry = this.Entry(e);
-                        return entry.State == EntityState.Added ||
-                               entry.State == EntityState.Unchanged ||
-                               entry.State == EntityState.Modified;
-                    })
-                    .ToList();
-
-                if (orfaos.Any())
+                catch (Exception ex)
                 {
-                    _eventLog.LogEventViewer($"Removendo {orfaos.Count} órfãos de {entityType.Name} via {fkName}", "wInfo");
-
-                    totalRemovidos += orfaos.Count;
-
-                    foreach (var orfao in orfaos)
-                    {
-                        this.Entry(orfao).State = EntityState.Deleted;
-                    }
+                    _eventLog.LogEventViewer($"Erro ao remover órfãos de '{tableName}' via '{fkName}': {ex.Message}", "wError");
                 }
             }
         }
@@ -2483,6 +2493,87 @@ public class Db : DbContext
             entity.Property(e => e.DataRegistro).HasColumnType("timestamp with time zone");
         });
         //..Qoder
+
+        //Feito pelo Qoder em 22/08/2026 — Migração de datas de negócio para DATE (somente dia/mês/ano)
+        // Colunas físicas migradas via ServicosDatabase/migra_datas_para_date.sql.
+        // Última configuração vence: este bloco sobrepõe os HasColumnType anteriores destes campos.
+        // Auditoria/rastreio (DataRegistro, DataCadastro, DataExpira, DataOcorrencia, LogArquivos.Data,
+        // DataHora, DataExportado, DataImportado, DataImpresso, Inicio/Termino) permanece TIMESTAMPTZ.
+        modelBuilder.Entity<Pacientes>(entity =>
+        {
+            entity.Property(e => e.Nascimento).HasColumnType("date");
+            entity.Property(e => e.DUM).HasColumnType("date");
+            entity.Property(e => e.DataEntradaBrasil).HasColumnType("date");
+            entity.Property(e => e.DataEntrada).HasColumnType("date");
+            entity.Property(e => e.DataBaixa).HasColumnType("date");
+        });
+        modelBuilder.Entity<UsuariosWeb>(entity =>
+        {
+            entity.Property(e => e.DataNascimentoUsuario).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesRealizados>(entity =>
+        {
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataEntrega).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesRealizadosAM>(entity =>
+        {
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataEntrega).HasColumnType("date");
+        });
+        modelBuilder.Entity<ERTemporario>(entity =>
+        {
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataEntrega).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesPendentes>(entity =>
+        {
+            entity.Property(e => e.DataIni).HasColumnType("date");
+        });
+        modelBuilder.Entity<ItensExamesRealizados>(entity =>
+        {
+            entity.Property(e => e.DataEntregaParcial).HasColumnType("date");
+        });
+        modelBuilder.Entity<ItensExamesRealizadosAM>(entity =>
+        {
+            entity.Property(e => e.DataEntregaParcial).HasColumnType("date");
+        });
+        modelBuilder.Entity<FichasInternas>(entity =>
+        {
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+        });
+        modelBuilder.Entity<FichasLotes>(entity =>
+        {
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+        });
+        modelBuilder.Entity<FichasPlanilhas>(entity =>
+        {
+            entity.Property(e => e.DataExame).HasColumnType("date");
+            entity.Property(e => e.DataIni).HasColumnType("date");
+            entity.Property(e => e.DataFim).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesExportados>(entity =>
+        {
+            entity.Property(e => e.DataColeta).HasColumnType("date");
+        });
+        modelBuilder.Entity<ExamesImpressos>(entity =>
+        {
+            entity.Property(e => e.DataExame).HasColumnType("date");
+        });
+        modelBuilder.Entity<CatalogoRecebimentosFormas>(entity =>
+        {
+            entity.Property(e => e.DataRecebimento).HasColumnType("date");
+        });
 
     }
 }
