@@ -902,20 +902,22 @@ CREATE TABLE IF NOT EXISTS "UsuariosWeb"
 
 ----Insere Senhas e UsuariosWeb para testes
 ---- Inserção de dados iniciais de teste
+----Feito pelo Qoder em 23/08/2026 — credenciais reais substituídas por PLACEHOLDERS para versionamento.
+----Na implantação, gere o valor criptografado da senha (FerramentaCripto) e ajuste os dados do administrador.
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM "Senhas" WHERE "Id" > 0) THEN
     INSERT INTO "Senhas"
            ("LoginUsuario", "NomeUsuario", "NomeCompleto", "SenhaUsuario", "DataCadastro", "DataExpira", "Assinatura", "UsarAssinatura", "Bloqueado", "Administrador", "Email", "EmailConfirmado", "CNPJEmpresa") 
     VALUES 
-           ('rguilemond@gmail.com', 'Ricardo', 'Ricardo Guilemond', 'BAHImD+dYlY+zWRFNMimXw==', '2023-03-25 00:00:00+00', NULL, NULL, 0, 0, 1, 'rguilemond@gmail.com', 1, '00000000000100');
+           ('admin@exemplo.com.br', 'Admin', 'Administrador do Sistema', '<VALOR_CRIPTOGRAFADO_DA_SENHA>', NOW(), NULL, NULL, 0, 0, 1, 'admin@exemplo.com.br', 1, '00000000000100');
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM "UsuariosWeb" WHERE "Id" > 0) THEN
     INSERT INTO "UsuariosWeb"
            ("SenhaId", "CPFUsuario", "DataNascimentoUsuario", "CNPJEmpresa", "DataCadastro") 
     VALUES 
-           (1, '77777777777', '1966-05-05', '00000000000100', '2023-03-25 00:00:00+00');
+           (1, '00000000000', '1990-01-01', '00000000000100', NOW());
   END IF;
 END $$;
 
@@ -989,13 +991,13 @@ BEGIN
          "DataCadastro") 
      VALUES 
         (1, 'TESTE', 'TESTE EMPRESA', 'TESTE EMPRESA FICTICIA', '00000000000100', 'Rua', 'Endereço Teste', '1', '1-andar', 'Barra da Tijuca', 'Rio de Janeiro', 'RJ', '20000000',
-         '21992624215', 'ricardoguilemond@gmail.com', 'TESTE LABORATORIOS', 'ANÁLISES CLÍNICAS E PATOLÓGICAS', 'Laboratório Credenciado',
-         'Host=localhost;Database=LABWEB7;Username=sistema;Password=Acer@105;',
+         '21992624215', 'contato@exemplo.com.br', 'TESTE LABORATORIOS', 'ANÁLISES CLÍNICAS E PATOLÓGICAS', 'Laboratório Credenciado',
+         'Host=localhost;Database=LABWEB7;Username=sistema;Password=<SENHA_DO_USUARIO_SISTEMA>;',
          'smtp.gmail.com', 465, 1, 587, 1, 
-         'ricardoguilemond@gmail.com', 'Acer@105',
-         'Ricardo Guilemond', 'fbducjybmmyflfqc',   ----Senha gerada no Google que habilita o App a usar o Email/Smtp livremente para o Email informado SITE.
+         'smtp@exemplo.com.br', '<SENHA_SMTP>',
+         'Nome do Responsável', '<SENHA_APP_GOOGLE>',   ----Senha gerada no Google que habilita o App a usar o Email/Smtp livremente para o Email informado SITE.
          'imap.gmail.com', 993,                     ----porta padrão seria 995, mas Google está na 993 e requer SSL
-         1, 'ricardoguilemond@gmail.com', 'Acer@105', 'Ricardo Guilemond',
+         1, 'pop@exemplo.com.br', '<SENHA_POP>', 'Nome do Responsável',
          NOW());
   END IF;
 END $$;

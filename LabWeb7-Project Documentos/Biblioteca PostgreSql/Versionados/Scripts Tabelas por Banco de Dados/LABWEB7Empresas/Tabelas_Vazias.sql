@@ -1371,17 +1371,19 @@ END
 $$;
 
 -- Só insere o registro na tabela "Senhas" se o mesmo não existir
+--Feito pelo Qoder em 23/08/2026 — credenciais reais substituídas por PLACEHOLDERS para versionamento.
+--Na implantação, gere o valor criptografado da senha (FerramentaCripto) e ajuste os dados do administrador.
 INSERT INTO "Senhas"
     ("LoginUsuario", "NomeUsuario", "NomeCompleto", "SenhaUsuario", "DataCadastro", "DataExpira", "Assinatura", "UsarAssinatura", "Bloqueado", "Administrador", "Email", "EmailConfirmado", "CNPJEmpresa")
 VALUES
-    ('rguilemond@gmail.com', 'Ricardo', 'Ricardo Guilemond', 'BAHImD+dYlY+zWRFNMimXw==', '2023-03-25', NULL, NULL, 0, 0, 1, 'rguilemond@gmail.com', 1, '00000000000100')
+    ('admin@exemplo.com.br', 'Admin', 'Administrador do Sistema', '<VALOR_CRIPTOGRAFADO_DA_SENHA>', NOW(), NULL, NULL, 0, 0, 1, 'admin@exemplo.com.br', 1, '00000000000100')
 ON CONFLICT ("LoginUsuario") DO NOTHING;
 
 -- Só insere o registro na tabela "UsuariosWeb" se o mesmo não existir
 INSERT INTO "UsuariosWeb"
     ("SenhaId", "CPFUsuario", "DataNascimentoUsuario", "CNPJEmpresa", "DataCadastro")
 VALUES
-    (1, '77777777777', '1966-05-05', '00000000000100', '2023-03-25')
+    (1, '00000000000', '1990-01-01', '00000000000100', NOW())
 ON CONFLICT DO NOTHING;
 
 
