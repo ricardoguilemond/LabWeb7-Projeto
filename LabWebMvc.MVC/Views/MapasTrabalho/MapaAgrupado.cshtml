@@ -1,0 +1,262 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<partial name='Partials/_PartialMenuMapasTrabalho' />
+
+@*Feito pelo Qoder em 23/08/2026 — Mapa Agrupado (portabilidade do FFichaAgrupada.pas):
+    marcação das folhas (Marcado), geração de lote por data única e impressão em PDF. *@
+
+<!-- Data do Mapa e Geração de Lote -->
+<div id="filtrosMapaAgrupado" class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-calendar-day"></i> Mapa Agrupado — Data da Coleta
+    </div>
+    <div class="card-secao-body">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+            <label style="font: normal 13px calibri, arial, sans-serif;">Data do Mapa:</label>
+            <input type="date" id="filtroData"
+                   style="width: 150px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+            <label style="font: normal 13px calibri, arial, sans-serif; margin-left: 12px;">Resultados:</label>
+            <select id="filtroResultados" style="width: 190px; height: 32px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;">
+                <option value="1" selected>Somente sem resultados</option>
+                <option value="0">Todos (com e sem)</option>
+            </select>
+
+            <button type="button" id="btnGerarLote" class="btn btn-success btn-sm" style="display: inline-block;">
+                <i class="fa-sharp fa-solid fa-layer-group"></i> Gerar Lote
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Folhas de Exame (marcação Marcado) -->
+<div class="card-secao" style="margin-top:10px;">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-table-list"></i> Folhas de Exame — marque as que entram no Mapa Agrupado
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+            <table class="table table-sm table-bordered" style="font-size:13px;">
+                <thead style="background-color:#d4edda;">
+                    <tr>
+                        <th style="width:10%;">Marcado</th>
+                        <th style="width:90%;">Folha de Exame</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaFolhasBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Lotes da Data -->
+<div class="card-secao" style="margin-top:10px; margin-bottom:150px;">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-boxes-stacked"></i> Lotes Gerados na Data
+    </div>
+    <div class="card-secao-body">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+            <label style="font: normal 13px calibri, arial, sans-serif;">Lote:</label>
+            <select id="boxLote" style="width: 120px; height: 32px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;">
+            </select>
+            <button type="button" id="btnImprimirLote" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-print"></i> Imprimir (PDF)
+            </button>
+            <button type="button" id="btnExcluirLote" class="btn btn-danger btn-sm">
+                <i class="fa-solid fa-trash"></i> Eliminar Lote
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Feito pelo Qoder em 23/08/2026 — campo de data agora é <input type="date">
+        // (valor ISO yyyy-MM-dd); o controller continua recebendo dd/MM/yyyy.
+        function hojeIso() {
+            var d = new Date();
+            return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+        }
+
+        function dataBr(valorIso) {
+            if (!valorIso) return '';
+            var p = valorIso.split('-');
+            return p[2] + '/' + p[1] + '/' + p[0];
+        }
+
+        function carregarFolhas() {
+            $.ajax({
+                url: '/MapasTrabalho/ObterFolhasAgrupadas',
+                type: 'POST',
+                dataType: 'json',
+                success: function (data) {
+                    var $body = $('#tabelaFolhasBody');
+                    $body.empty();
+                    if (!data.sucesso) { clickAviso('Erro', data.mensagem, 'critica', null); return; }
+
+                    data.folhas.forEach(function (folha) {
+                        var $check = $('<input type="checkbox">')
+                            .addClass('chk-marcado')
+                            .attr('data-classe-id', folha.id)
+                            .prop('checked', folha.marcado === 1);
+                        var $tr = $('<tr>');
+                        $tr.append($('<td>').css('text-align', 'center').append($check));
+                        $tr.append($('<td>').text(folha.refExame));
+                        $body.append($tr);
+                    });
+                },
+                error: function () { clickAviso('Erro', 'Falha de comunicação ao carregar as folhas.', 'critica', null); }
+            });
+        }
+
+        function carregarLotes() {
+            $.ajax({
+                url: '/MapasTrabalho/ListarLotesAgrupados',
+                type: 'POST',
+                data: { data: dataBr($('#filtroData').val()) },
+                dataType: 'json',
+                success: function (data) {
+                    var $box = $('#boxLote');
+                    $box.empty();
+                    if (!data.sucesso) return;
+
+                    if (!data.lotes || data.lotes.length === 0) {
+                        $box.append($('<option>').val('').text('(sem lotes)'));
+                        return;
+                    }
+
+                    data.lotes.forEach(function (lote) {
+                        $box.append($('<option>').val(lote).text('Lote Nº ' + lote));
+                    });
+                },
+                error: function () { clickAviso('Erro', 'Falha de comunicação ao listar os lotes.', 'critica', null); }
+            });
+        }
+
+        $(document).ready(function () {
+            $('#filtroData').val(hojeIso());
+
+            $('#tabelaFolhasBody').on('change', '.chk-marcado', function () {
+                var $chk = $(this);
+                $.ajax({
+                    url: '/MapasTrabalho/AlternarMarcado',
+                    type: 'POST',
+                    data: { classeExamesId: $chk.attr('data-classe-id') },
+                    dataType: 'json',
+                    success: function (data) {
+                        if (!data.sucesso) {
+                            $chk.prop('checked', !$chk.prop('checked'));
+                            clickAviso('Erro', data.mensagem, 'critica', null);
+                        }
+                    },
+                    error: function () {
+                        $chk.prop('checked', !$chk.prop('checked'));
+                        clickAviso('Erro', 'Falha de comunicação ao alternar o marcador.', 'critica', null);
+                    }
+                });
+            });
+
+            $('#filtroData').on('change', function () { carregarLotes(); });
+
+            $('#btnGerarLote').on('click', function () {
+                Swal.fire({
+                    title: 'Gerar Lote do Mapa Agrupado',
+                    text: 'Gerar um novo Lote do Mapa Agrupado para a data informada?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, gerar',
+                    cancelButtonText: 'Cancelar'
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        url: '/MapasTrabalho/GerarLoteAgrupado',
+                        type: 'POST',
+                        data: {
+                            data: dataBr($('#filtroData').val()),
+                            somenteSemResultados: $('#filtroResultados').val() === '1'
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            clickAviso(data.sucesso ? 'Sucesso' : 'Erro', data.mensagem, data.sucesso ? 'sucesso' : 'critica', null);
+                            if (data.sucesso) carregarLotes();
+                        },
+                        error: function () { clickAviso('Erro', 'Falha de comunicação ao gerar o lote.', 'critica', null); }
+                    });
+                });
+            });
+
+            $('#btnImprimirLote').on('click', function () {
+                var lote = $('#boxLote').val();
+                if (!lote) { clickAviso('Atenção', 'Nenhum lote selecionado.', 'normal', null); return; }
+
+                Swal.fire({
+                    title: 'Imprimir Mapa Agrupado',
+                    text: 'Lote: ' + lote + ' - Confirma Impressão?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, imprimir',
+                    cancelButtonText: 'Cancelar'
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+
+                    window.location.href = '/MapasTrabalho/ImprimirMapaAgrupado?data=' +
+                        encodeURIComponent(dataBr($('#filtroData').val())) + '&lote=' + lote;
+                });
+            });
+
+            $('#btnExcluirLote').on('click', function () {
+                var lote = $('#boxLote').val();
+                if (!lote) { clickAviso('Atenção', 'Nenhum lote selecionado.', 'normal', null); return; }
+
+                Swal.fire({
+                    title: 'Eliminar Lote',
+                    text: 'TEM CERTEZA DE QUE DESEJA ELIMINAR O LOTE: (' + lote + ') ?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sim, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        url: '/MapasTrabalho/ExcluirLoteAgrupado',
+                        type: 'POST',
+                        data: { data: dataBr($('#filtroData').val()), lote: lote },
+                        dataType: 'json',
+                        success: function (data) {
+                            clickAviso(data.sucesso ? 'Sucesso' : 'Erro', data.mensagem, data.sucesso ? 'sucesso' : 'critica', null);
+                            if (data.sucesso) carregarLotes();
+                        },
+                        error: function () { clickAviso('Erro', 'Falha de comunicação ao excluir o lote.', 'critica', null); }
+                    });
+                });
+            });
+
+            carregarFolhas();
+            carregarLotes();
+        });
+    </script>
+}
+
+<style>
+    /*Feito pelo Qoder em 23/08/2026*/
+    #tabelaFolhasBody tr:hover {
+        background-color: #f0f8f0;
+    }
+    @@media (max-width: 768px) {
+        #filtrosMapaAgrupado .card-secao-body > div {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+@*..Qoder*@

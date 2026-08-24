@@ -1,0 +1,346 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<partial name='Partials/_PartialMenuMapasTrabalho' />
+
+@*Feito pelo Qoder em 23/08/2026 — Mapa Planilhado (portabilidade do FMapaExcel.pas):
+    marcação das folhas, geração de lote por data única e exportação para XLSX. *@
+
+<!-- Data do Mapa e Geração de Lote -->
+<div id="filtrosMapaPlanilhado" class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-calendar-day"></i> Mapa Planilhado — Data da Coleta
+    </div>
+    <div class="card-secao-body">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+            <label style="font: normal 13px calibri, arial, sans-serif;">Data do Mapa:</label>
+            <input type="date" id="filtroData"
+                   style="width: 150px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+            <label style="font: normal 13px calibri, arial, sans-serif; margin-left: 12px;">Resultados:</label>
+            <select id="filtroResultados" style="width: 190px; height: 32px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;">
+                <option value="1" selected>Somente sem resultados</option>
+                <option value="0">Todos (com e sem)</option>
+            </select>
+
+            <button type="button" id="btnGerarLote" class="btn btn-success btn-sm" style="display: inline-block;">
+                <i class="fa-sharp fa-solid fa-layer-group"></i> Gerar Lote
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Folhas de Exame (marcação Planilha) -->
+<div class="card-secao" style="margin-top:10px;">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-table-list"></i> Folhas de Exame — marque as que entram no Mapa Planilhado
+    </div>
+    <div class="card-secao-body">
+        <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+            <table class="table table-sm table-bordered" style="font-size:13px;">
+                <thead style="background-color:#d4edda;">
+                    <tr>
+                        <th style="width:10%;">Planilha</th>
+                        <th style="width:90%;">Folha de Exame</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaFolhasBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Lotes da Data -->
+<div class="card-secao" style="margin-top:10px;">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-boxes-stacked"></i> Lotes Gerados na Data
+    </div>
+    <div class="card-secao-body">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+            <label style="font: normal 13px calibri, arial, sans-serif;">Lote:</label>
+            <select id="boxLote" style="width: 120px; height: 32px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;">
+            </select>
+            <button type="button" id="btnExcluirLote" class="btn btn-danger btn-sm">
+                <i class="fa-solid fa-trash"></i> Eliminar Lote
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Espelho do Lote (escolha das colunas) + Exportação -->
+<div id="painelEspelho" class="card-secao" style="margin-top:10px; margin-bottom:150px;">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-table-columns"></i> Itens de Exame do Lote — escolha as colunas da Planilha
+    </div>
+    <div class="card-secao-body">
+        <div style="margin-bottom:8px; display:flex; flex-wrap:wrap; gap:6px;">
+            <button type="button" id="btnEnviaTodos" class="btn btn-outline-success btn-sm">
+                <i class="fa-solid fa-forward"></i> Enviar Todos
+            </button>
+            <button type="button" id="btnRetiraTodos" class="btn btn-outline-danger btn-sm">
+                <i class="fa-solid fa-backward"></i> Retira Todos
+            </button>
+            <button type="button" id="btnExportarExcel" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-file-excel"></i> Exportar Planilha (XLSX)
+            </button>
+        </div>
+
+        <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+            <table class="table table-sm table-bordered" style="font-size:13px;">
+                <thead style="background-color:#d4edda;">
+                    <tr>
+                        <th style="width:10%;">Coluna</th>
+                        <th style="width:50%;">Item de Exame</th>
+                        <th style="width:25%;">Abreviação (MapaHorizontal)</th>
+                        <th style="width:15%;">Qtde</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaEspelhoBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Feito pelo Qoder em 23/08/2026 — campo de data agora é <input type="date">
+        // (valor ISO yyyy-MM-dd); o controller continua recebendo dd/MM/yyyy.
+        function hojeIso() {
+            var d = new Date();
+            return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+        }
+
+        function dataBr(valorIso) {
+            if (!valorIso) return '';
+            var p = valorIso.split('-');
+            return p[2] + '/' + p[1] + '/' + p[0];
+        }
+
+        function carregarFolhas() {
+            $.ajax({
+                url: '/MapasTrabalho/ObterFolhasPlanilha',
+                type: 'POST',
+                dataType: 'json',
+                success: function (data) {
+                    var $body = $('#tabelaFolhasBody');
+                    $body.empty();
+                    if (!data.sucesso) { clickAviso('Erro', data.mensagem, 'critica', null); return; }
+
+                    data.folhas.forEach(function (folha) {
+                        var $check = $('<input type="checkbox">')
+                            .addClass('chk-planilha')
+                            .attr('data-classe-id', folha.id)
+                            .prop('checked', folha.planilha === 1);
+                        var $tr = $('<tr>');
+                        $tr.append($('<td>').css('text-align', 'center').append($check));
+                        $tr.append($('<td>').text(folha.refExame));
+                        $body.append($tr);
+                    });
+                },
+                error: function () { clickAviso('Erro', 'Falha de comunicação ao carregar as folhas.', 'critica', null); }
+            });
+        }
+
+        function carregarLotes() {
+            $.ajax({
+                url: '/MapasTrabalho/ListarLotesPlanilha',
+                type: 'POST',
+                data: { data: dataBr($('#filtroData').val()) },
+                dataType: 'json',
+                success: function (data) {
+                    var $box = $('#boxLote');
+                    $box.empty();
+                    if (!data.sucesso) return;
+
+                    if (!data.lotes || data.lotes.length === 0) {
+                        $box.append($('<option>').val('').text('(sem lotes)'));
+                        $('#tabelaEspelhoBody').empty();
+                        return;
+                    }
+
+                    data.lotes.forEach(function (lote) {
+                        $box.append($('<option>').val(lote).text('Lote Nº ' + lote));
+                    });
+                    carregarEspelho();
+                },
+                error: function () { clickAviso('Erro', 'Falha de comunicação ao listar os lotes.', 'critica', null); }
+            });
+        }
+
+        function carregarEspelho() {
+            var lote = $('#boxLote').val();
+            if (!lote) return;
+
+            $.ajax({
+                url: '/MapasTrabalho/ObterEspelhoLotePlanilha',
+                type: 'POST',
+                data: { data: dataBr($('#filtroData').val()), lote: lote },
+                dataType: 'json',
+                success: function (data) {
+                    var $body = $('#tabelaEspelhoBody');
+                    $body.empty();
+                    if (!data.sucesso) { clickAviso('Erro', data.mensagem, 'critica', null); return; }
+
+                    data.itens.forEach(function (item) {
+                        var $check = $('<input type="checkbox">')
+                            .addClass('chk-coluna')
+                            .attr('data-descricao', item.descricao)
+                            .prop('checked', true);
+                        var $tr = $('<tr>');
+                        $tr.append($('<td>').css('text-align', 'center').append($check));
+                        $tr.append($('<td>').text(item.descricao));
+                        $tr.append($('<td>').text(item.abreviacao || ''));
+                        $tr.append($('<td>').text(item.quantidade).css('text-align', 'center'));
+                        $body.append($tr);
+                    });
+                },
+                error: function () { clickAviso('Erro', 'Falha de comunicação ao carregar o espelho.', 'critica', null); }
+            });
+        }
+
+        $(document).ready(function () {
+            $('#filtroData').val(hojeIso());
+
+            // Marca/desmarca a folha para o Mapa Planilhado (persiste em ClasseExames.Planilha).
+            $('#tabelaFolhasBody').on('change', '.chk-planilha', function () {
+                var $chk = $(this);
+                $.ajax({
+                    url: '/MapasTrabalho/AlternarPlanilha',
+                    type: 'POST',
+                    data: { classeExamesId: $chk.attr('data-classe-id') },
+                    dataType: 'json',
+                    success: function (data) {
+                        if (!data.sucesso) {
+                            $chk.prop('checked', !$chk.prop('checked'));
+                            clickAviso('Erro', data.mensagem, 'critica', null);
+                        }
+                    },
+                    error: function () {
+                        $chk.prop('checked', !$chk.prop('checked'));
+                        clickAviso('Erro', 'Falha de comunicação ao alternar o marcador.', 'critica', null);
+                    }
+                });
+            });
+
+            $('#filtroData').on('change', function () { carregarLotes(); });
+
+            $('#btnGerarLote').on('click', function () {
+                Swal.fire({
+                    title: 'Gerar Lote do Mapa Planilhado',
+                    text: 'Gerar um novo Lote do Mapa Planilhado para a data informada?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, gerar',
+                    cancelButtonText: 'Cancelar'
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        url: '/MapasTrabalho/GerarLotePlanilhado',
+                        type: 'POST',
+                        data: {
+                            data: dataBr($('#filtroData').val()),
+                            somenteSemResultados: $('#filtroResultados').val() === '1'
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            clickAviso(data.sucesso ? 'Sucesso' : 'Erro', data.mensagem, data.sucesso ? 'sucesso' : 'critica', null);
+                            if (data.sucesso) carregarLotes();
+                        },
+                        error: function () { clickAviso('Erro', 'Falha de comunicação ao gerar o lote.', 'critica', null); }
+                    });
+                });
+            });
+
+            $('#boxLote').on('change', function () { carregarEspelho(); });
+
+            $('#btnExcluirLote').on('click', function () {
+                var lote = $('#boxLote').val();
+                if (!lote) { clickAviso('Atenção', 'Nenhum lote selecionado.', 'normal', null); return; }
+
+                Swal.fire({
+                    title: 'Eliminar Lote',
+                    text: 'TEM CERTEZA DE QUE DESEJA ELIMINAR O LOTE: (' + lote + ') ?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sim, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        url: '/MapasTrabalho/ExcluirLotePlanilha',
+                        type: 'POST',
+                        data: { data: dataBr($('#filtroData').val()), lote: lote },
+                        dataType: 'json',
+                        success: function (data) {
+                            clickAviso(data.sucesso ? 'Sucesso' : 'Erro', data.mensagem, data.sucesso ? 'sucesso' : 'critica', null);
+                            if (data.sucesso) carregarLotes();
+                        },
+                        error: function () { clickAviso('Erro', 'Falha de comunicação ao excluir o lote.', 'critica', null); }
+                    });
+                });
+            });
+
+            $('#btnEnviaTodos').on('click', function () {
+                $('#tabelaEspelhoBody .chk-coluna').prop('checked', true);
+            });
+
+            $('#btnRetiraTodos').on('click', function () {
+                $('#tabelaEspelhoBody .chk-coluna').prop('checked', false);
+            });
+
+            $('#btnExportarExcel').on('click', function () {
+                var lote = $('#boxLote').val();
+                if (!lote) { clickAviso('Atenção', 'Nenhum lote selecionado.', 'normal', null); return; }
+
+                var marcadas = [];
+                $('#tabelaEspelhoBody .chk-coluna:checked').each(function () {
+                    marcadas.push(encodeURIComponent($(this).attr('data-descricao')));
+                });
+                if (marcadas.length === 0) { clickAviso('Atenção', 'Selecione ao menos uma coluna para a Planilha.', 'normal', null); return; }
+
+                Swal.fire({
+                    title: 'Exportar Planilha Excel',
+                    text: 'Exportar para Planilha Office Excel (XLSX) o Lote Nº ' + lote + '?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, exportar',
+                    cancelButtonText: 'Cancelar'
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+
+                    window.location.href = '/MapasTrabalho/ExportarMapaPlanilhado?data=' +
+                        encodeURIComponent(dataBr($('#filtroData').val())) +
+                        '&lote=' + lote +
+                        '&descricoes=' + marcadas.join('|');
+                });
+            });
+
+            carregarFolhas();
+            carregarLotes();
+        });
+    </script>
+}
+
+<style>
+    /*Feito pelo Qoder em 23/08/2026*/
+    #tabelaFolhasBody tr:hover, #tabelaEspelhoBody tr:hover {
+        background-color: #f0f8f0;
+    }
+    @@media (max-width: 768px) {
+        #filtrosMapaPlanilhado .card-secao-body > div {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+@*..Qoder*@

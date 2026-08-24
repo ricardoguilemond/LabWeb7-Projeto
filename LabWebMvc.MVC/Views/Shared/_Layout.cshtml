@@ -174,7 +174,8 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        @* Menu dinâmico + itens fixos sempre renderizados; o Login/Logout alterna conforme autenticação *@
+                        @* Feito pelo Qoder em 23/08/2026 — menu 100% dinâmico pela tabela ControleDePerfilMenu
+                           (inclusive os grupos Sobre e Login/Logout, antes hardcoded no component). *@
                         @await Component.InvokeAsync("MenuDinamico")
                     </div>
                 </div>

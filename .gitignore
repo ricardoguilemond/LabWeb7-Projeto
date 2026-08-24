@@ -407,3 +407,6 @@ LabWebMvc.MVC/App_Data/Resultados/
 
 # Outras configurações
 Config/labweb-recaptcha-metrics.json
+
+#Feito pelo Qoder em 23/08/2026 — scripts de diagnóstico locais (podem conter credenciais)
+diag_temp/

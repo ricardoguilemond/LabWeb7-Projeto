@@ -1,0 +1,82 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<partial name='Partials/_PartialMenuMapasTrabalho' />
+
+@*Feito pelo Qoder em 23/08/2026 — Etiquetas (portabilidade do FEtiquetasHemograma.pas):
+    etiquetas dos exames presentes no mapa gerado (FichasInternas), com marcadores
+    VHS / Fator RH / Grupo Sanguíneo, em PDF com 3 etiquetas por linha. *@
+
+<!-- Data do Mapa e Impressão -->
+<div id="filtrosEtiquetas" class="card-secao">
+    <div class="card-secao-header">
+        <i class="fa-solid fa-tags"></i> Etiquetas dos Exames do Mapa
+    </div>
+    <div class="card-secao-body">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+            <label style="font: normal 13px calibri, arial, sans-serif;">Data do Mapa:</label>
+            <input type="date" id="filtroData"
+                   style="width: 150px; padding-left: 4px; border: 1px solid #69c38a; border-radius: 6px; font-size: 13px;" />
+
+            <button type="button" id="btnImprimirEtiquetas" class="btn btn-primary btn-sm" style="display: inline-block;">
+                <i class="fa-solid fa-print"></i> Imprimir (PDF)
+            </button>
+        </div>
+        <div style="margin-top: 8px; font: normal 12px calibri, arial, sans-serif; color: #666;">
+            As etiquetas são geradas a partir do mapa já criado: gere antes o
+            <b>Mapa Horizontal</b> ou o <b>Mapa Meia-Folha</b> para a mesma data.
+        </div>
+    </div>
+</div>
+
+<div style="margin-bottom:150px;"></div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Feito pelo Qoder em 23/08/2026 — campo de data agora é <input type="date">
+        // (valor ISO yyyy-MM-dd); o controller continua recebendo dd/MM/yyyy.
+        function hojeIso() {
+            var d = new Date();
+            return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+        }
+
+        function dataBr(valorIso) {
+            if (!valorIso) return '';
+            var p = valorIso.split('-');
+            return p[2] + '/' + p[1] + '/' + p[0];
+        }
+
+        $(document).ready(function () {
+            $('#filtroData').val(hojeIso());
+
+            $('#btnImprimirEtiquetas').on('click', function () {
+                Swal.fire({
+                    title: 'Imprimir Etiquetas',
+                    text: 'Confirma a Impressão das Etiquetas dos Exames?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, imprimir',
+                    cancelButtonText: 'Cancelar'
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+
+                    window.location.href = '/MapasTrabalho/ImprimirEtiquetas?data=' +
+                        encodeURIComponent(dataBr($('#filtroData').val()));
+                });
+            });
+        });
+    </script>
+}
+
+<style>
+    /*Feito pelo Qoder em 23/08/2026*/
+    @@media (max-width: 768px) {
+        #filtrosEtiquetas .card-secao-body > div {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+@*..Qoder*@
